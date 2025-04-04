@@ -2,10 +2,9 @@
   <div class="electronics-container">
     <div class="header">
       <h2>我的电子产品</h2>
-      <a-button type="primary" @click="showModal">新增设备</a-button>
     </div>
     
-    <!-- 新增设备弹窗 -->
+    <!-- 维护设备弹窗 -->
     <a-modal v-model:visible="visible" title="新增设备" @ok="handleOk" @cancel="handleCancel">
       <a-form :model="newDevice" layout="vertical">
         <a-form-item label="设备名称">
@@ -17,6 +16,14 @@
         <a-form-item label="购买日期">
           <a-date-picker format="YYYY-MM-DD"
           v-model:value="newDevice.purchaseDate" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="设备状态">
+          <a-select v-model:value="newDevice.status" style="width: 100%">
+            <a-select-option value="using">使用中</a-select-option>
+            <a-select-option value="damaged">已损坏</a-select-option>
+            <a-select-option value="processed">已处理</a-select-option>
+            <a-select-option value="idle">吃灰中</a-select-option>
+          </a-select>
         </a-form-item>
         <a-form-item label="图片链接">
           <a-input v-model:value="newDevice.image" />
@@ -59,14 +66,26 @@
           <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
           <p class="usage-days">已使用: {{ getUsageDays(item.purchaseDate) }} 天</p>
           <p class="avg-cost">日均费用: {{ calculateAvgCost(item.purchasePrice, item.purchaseDate) }} 元/天</p>
+          <div class="status-badge" :class="getStatusClass(item.status)">
+            {{ getStatusText(item.status) }}
+          </div>
         </div>
       </div>
+    </div>
+    <!-- 新增可拖动悬浮球 -->
+    <div 
+      class="floating-btn"
+      ref="floatingBtn"
+      @mousedown="startDrag"
+      @click="showModal"
+    >
+      <plus-outlined style="font-size: 24px; color: white" />
     </div>
   </div>
 </template>
 
 <script>
-import { Button, Modal, Form, Input, InputNumber, DatePicker } from 'ant-design-vue';
+import { Button, Modal, Form, Input, InputNumber, DatePicker, Select } from 'ant-design-vue';
 
 import moment from 'moment'; // 添加moment导入
 
@@ -79,6 +98,8 @@ import {  insertOrUpdate } from '#/api/core/device';
 
 import { DeleteOutlined } from '@ant-design/icons-vue';
 
+import { PlusOutlined } from '@ant-design/icons-vue';
+
 export default {
   components: {
     'a-button': Button,
@@ -87,7 +108,9 @@ export default {
     'a-form-item': Form.Item,
     'a-input': Input,
     'a-input-number': InputNumber,
-    'a-date-picker': DatePicker
+    'a-date-picker': DatePicker,
+    'a-select': Select,
+    'a-select-option': Select.Option
   },
   data() {
     return {
@@ -96,7 +119,10 @@ export default {
         name: '',
         purchasePrice: 0,
         purchaseDate: '',
-        image: ''
+        image: '',
+        status: 'using', // 默认状态为"使用中"
+        purchasePlace: '',
+        orderNumber: ''
       },
       electronics: [
       ]
@@ -117,6 +143,7 @@ export default {
         name: '',
         purchasePrice: 0,
         purchaseDate: dayjs(),
+        status: 'using', // 默认状态为"使用中",
         image: ''
       };
       this.visible = true;
@@ -179,7 +206,25 @@ export default {
       const diffTime = now - purchase;
       const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       return days <= 0 ? 1 : days; // 确保除数不为0
-    }
+    },
+    
+  getStatusClass(status) {
+    return {
+      'using': 'status-using',
+      'damaged': 'status-damaged',
+      'processed': 'status-processed',
+      'idle': 'status-idle'
+    }[status] || 'status-using';
+  },
+  
+  getStatusText(status) {
+    return {
+      'using': '使用中',
+      'damaged': '已损坏',
+      'processed': '已处理',
+      'idle': '吃灰中'
+    }[status] || '使用中';
+  }
   },
   mounted() {
     this.query();
@@ -296,5 +341,79 @@ export default {
   font-size: 14px;
   margin: 5px 0;
   font-weight: bold;
+}
+
+.floating-btn {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  width: 56px;
+  height: 56px;
+  background-color: #1890ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s;
+  z-index: 1000;
+  user-select: none;
+  /* 添加以下属性确保拖动时位置更新 */
+  left: auto;
+  top: auto;
+}
+
+.floating-btn:hover {
+  background-color: #40a9ff;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 添加十字图标样式 */
+.floating-btn::before,
+.floating-btn::after {
+  content: '';
+  position: absolute;
+  background-color: white;
+}
+
+.floating-btn::before {
+  width: 24px;
+  height: 2px;
+}
+
+.floating-btn::after {
+  width: 2px;
+  height: 24px;
+}
+
+/* 修改状态标签样式到右下角 */
+.status-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  color: white;
+  z-index: 1;
+}
+
+.status-using {
+  background-color: #7fbd60; /* 绿色 */
+}
+
+.status-damaged {
+  background-color: #f5222d; /* 红色 */
+}
+
+.status-processed {
+  background-color: #b7eb8f; /* 浅绿色 */
+}
+
+.status-idle {
+  background-color: #d9d9d9; /* 灰色 */
+  color: #666;
 }
 </style>
