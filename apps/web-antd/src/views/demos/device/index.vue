@@ -3,7 +3,7 @@
     <div class="header">
       <h2>我的电子产品</h2>
     </div>
-    
+
     <!-- 维护设备弹窗 -->
     <a-modal v-model:visible="visible" title="新增设备" @ok="handleOk" @cancel="handleCancel">
       <a-form :model="newDevice" layout="vertical">
@@ -18,12 +18,12 @@
           v-model:value="newDevice.purchaseDate" style="width: 100%" />
         </a-form-item>
         <a-form-item label="设备状态">
-          <a-select v-model:value="newDevice.status" style="width: 100%">
-            <a-select-option value="using">使用中</a-select-option>
-            <a-select-option value="damaged">已损坏</a-select-option>
-            <a-select-option value="processed">已处理</a-select-option>
-            <a-select-option value="idle">吃灰中</a-select-option>
-          </a-select>
+          <a-select
+            v-model:value="newDevice.status"
+            style="width: 100%"
+            :options="statusOptions"
+            :fieldNames="fieldNames"
+          />
         </a-form-item>
         <a-form-item label="图片链接">
           <a-input v-model:value="newDevice.image" />
@@ -39,9 +39,9 @@
 
     <!-- 原有电子设备列表 -->
     <div class="electronics-grid">
-      <div 
-        v-for="(item, index) in electronics" 
-        :key="index" 
+      <div
+        v-for="(item, index) in electronics"
+        :key="index"
         class="electronics-card"
         @click="showEditModal(item)"
       >
@@ -54,10 +54,10 @@
           </div>
         </div>
         <div class="card-content">
-          <a-button 
-            class="delete-btn" 
-            type="text" 
-            danger 
+          <a-button
+            class="delete-btn"
+            type="text"
+            danger
             @click.stop="handleDelete(item, index)"
           >
           </a-button>
@@ -73,7 +73,7 @@
       </div>
     </div>
     <!-- 新增可拖动悬浮球 -->
-    <div 
+    <div
       class="floating-btn"
       ref="floatingBtn"
       @mousedown="startDrag"
@@ -95,6 +95,7 @@ import {  query } from '#/api/core/device';
 
 import {  insertOrUpdate } from '#/api/core/device';
 
+import {  getByDictType } from '#/api/core/common';
 
 import { DeleteOutlined } from '@ant-design/icons-vue';
 
@@ -115,12 +116,17 @@ export default {
   data() {
     return {
       visible: false,
+      fieldNames: {
+        label: 'dictLabel',
+        value: 'dictValue',
+      },
+      statusOptions: [],
       newDevice: {
         name: '',
         purchasePrice: 0,
         purchaseDate: '',
         image: '',
-        status: 'using', // 默认状态为"使用中"
+        status: '1', // 默认状态为"使用中"
         purchasePlace: '',
         orderNumber: ''
       },
@@ -137,19 +143,19 @@ export default {
         this.electronics = res.items
         console.log('查询设备:', res);
     },
-    
+
     showModal() {
       this.newDevice = {
         name: '',
         purchasePrice: 0,
         purchaseDate: dayjs(),
-        status: 'using', // 默认状态为"使用中",
+        status: '1', // 默认状态为"使用中",
         image: ''
       };
       this.visible = true;
     },
     showEditModal(item) {
-      this.newDevice = { 
+      this.newDevice = {
         ...item,
         // 确保日期类型一致
         purchaseDate: dayjs(item.purchaseDate)
@@ -163,13 +169,13 @@ export default {
       let formattedDate = '';
       if (this.newDevice.purchaseDate) {
         // 如果是字符串直接使用，如果是moment对象则格式化
-        formattedDate = typeof this.newDevice.purchaseDate === 'string' 
-          ? this.newDevice.purchaseDate 
+        formattedDate = typeof this.newDevice.purchaseDate === 'string'
+          ? this.newDevice.purchaseDate
           : this.newDevice.purchaseDate.format('YYYY-MM-DD');
       }
 
       console.log('格式化后的日期:', formattedDate);
-      
+
       const deviceData = {
         ...this.newDevice,
         purchaseDate: formattedDate
@@ -199,7 +205,7 @@ export default {
       if (usageDays <= 0) return price.toFixed(2); // 如果使用天数小于等于0，直接返回价格
       return (price / usageDays).toFixed(2); // 保留两位小数
     },
-    
+
     getUsageDays(purchaseDate) {
       const purchase = new Date(purchaseDate);
       const now = new Date();
@@ -207,27 +213,33 @@ export default {
       const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       return days <= 0 ? 1 : days; // 确保除数不为0
     },
-    
+
   getStatusClass(status) {
     return {
-      'using': 'status-using',
-      'damaged': 'status-damaged',
-      'processed': 'status-processed',
-      'idle': 'status-idle'
+      '1': 'status-using',
+      '2': 'status-damaged',
+      '3': 'status-processed',
+      '4': 'status-idle'
     }[status] || 'status-using';
   },
-  
+
   getStatusText(status) {
     return {
-      'using': '使用中',
-      'damaged': '已损坏',
-      'processed': '已处理',
-      'idle': '吃灰中'
+      '1': '使用中',
+      '2': '已损坏',
+      '3': '已送人',
+      '4': '吃灰中'
     }[status] || '使用中';
   }
   },
-  mounted() {
-    this.query();
+  async mounted() {
+    await this.query();
+    // 获取状态枚举值
+    const res = await getByDictType('device_status');
+    console.log('状态枚举值:', res);
+    console.log('状态枚举值:', res.sysDictDataEntityList);
+    this.statusOptions = res.sysDictDataEntityList;
+
   }
 }
 </script>
