@@ -122,21 +122,8 @@ export default {
       },
       electronics: [
       ],
-      tabList: [
-        {
-          key: '',
-          tab: '全部',
-        },
-        {
-          key: '1',
-          tab: '手机',
-        },
-        {
-          key: '2',
-          tab: '电脑',
-        },
-      ],
-      tabKey: '', // 页签
+      tabList: [], // 页签列表
+      tabKey: '', // 当前选中的页签
     }
   },
   methods: {
@@ -253,6 +240,18 @@ export default {
       if (res && res.dictDetailList) {
         this.typeOptions = res.dictDetailList;
       }
+
+      // 赋值给页签
+      this.tabList = [
+        {
+          key: '',
+          tab: '全部',
+        },
+        ...this.typeOptions.map(item => ({
+          key: item.dictValue,
+          tab: item.dictLabel,
+        }))
+      ]
 
     },
     async getDeviceStatusOptions() {
