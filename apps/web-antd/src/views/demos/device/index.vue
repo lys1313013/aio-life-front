@@ -260,9 +260,8 @@ export default {
 
 .electronics-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 改为4列 */
   gap: 20px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 动态控制每行显示个数 */
 }
 
 .electronics-card {
