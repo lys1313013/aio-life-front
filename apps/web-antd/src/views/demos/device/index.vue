@@ -1,8 +1,11 @@
 <template>
-  <div class="electronics-container">
-    <div class="header">
-      <h2>我的电子产品</h2>
-    </div>
+      <a-card
+      style="width: 100%"
+      :tab-list="tabList"
+      :active-tab-key="tabKey"
+      @tabChange="(key) => onTabChange(key, 'tabKey')"
+    >
+    <div class="electronics-container">
 
     <!-- 维护设备弹窗 -->
     <a-modal v-model:visible="visible" title="新增设备" @ok="handleOk" @cancel="handleCancel">
@@ -16,6 +19,14 @@
         <a-form-item label="购买日期">
           <a-date-picker format="YYYY-MM-DD"
           v-model:value="newDevice.purchaseDate" style="width: 100%" />
+        </a-form-item>
+        <a-form-item label="设备类型">
+          <a-select
+            v-model:value="newDevice.type"
+            style="width: 100%"
+            :options="typeOptions"
+            :fieldNames="fieldNames"
+          />
         </a-form-item>
         <a-form-item label="设备状态">
           <a-select
@@ -82,10 +93,12 @@
       <plus-outlined style="font-size: 24px; color: white" />
     </div>
   </div>
+  </a-card>
+ 
 </template>
 
 <script>
-import { Button, Modal, Form, Input, InputNumber, DatePicker, Select } from 'ant-design-vue';
+import { Button, Modal, Form, Input, InputNumber, DatePicker, Select, Card } from 'ant-design-vue';
 
 import moment from 'moment'; // 添加moment导入
 
@@ -111,7 +124,9 @@ export default {
     'a-input-number': InputNumber,
     'a-date-picker': DatePicker,
     'a-select': Select,
-    'a-select-option': Select.Option
+    'a-select-option': Select.Option,
+    'a-card': Card,
+    'plus-outlined': PlusOutlined,
   },
   data() {
     return {
@@ -120,7 +135,8 @@ export default {
         label: 'dictLabel',
         value: 'dictValue',
       },
-      statusOptions: [],
+      typeOptions: [], // 设备类型选项
+      statusOptions: [], // 设备状态选项
       newDevice: {
         name: '',
         purchasePrice: 0,
@@ -131,7 +147,22 @@ export default {
         orderNumber: ''
       },
       electronics: [
-      ]
+      ],
+      tabList: [
+    {
+      key: '',
+      tab: '全部',
+    },
+    {
+      key: '1',
+      tab: '手机',
+    },
+    {
+      key: '2',
+      tab: '电脑',
+    },
+  ],
+  tabKey: '', // 页签
     }
   },
   methods: {
@@ -139,6 +170,9 @@ export default {
       const res = await query({
           page: 1,
           pageSize: 50,
+          condition: {
+            type: this.tabKey,
+          }
         });
         this.electronics = res.items
         console.log('查询设备:', res);
@@ -230,16 +264,37 @@ export default {
       '3': '已送人',
       '4': '吃灰中'
     }[status] || '使用中';
-  }
+  },
+  // 切换页签
+  onTabChange(value, type) {
+    console.log(value, type);
+    if (type === 'tabKey') {
+      this.tabKey = value; 
+    }
+    this.query();
+  },
+  async getDeviceTypeOptions() {
+      // 获取设备类型字典
+      const res = await getByDictType('device_type');
+      if (res && res.dictDetailList) {
+        this.typeOptions = res.dictDetailList;
+      }
+
+  },
+  async getDeviceStatusOptions() {
+      // 获取设备状态字典
+      const res = await getByDictType('device_status');
+      if (res && res.dictDetailList) {
+        this.statusOptions = res.dictDetailList;
+      }
+  },
   },
   async mounted() {
     await this.query();
+    
+    await this.getDeviceStatusOptions();
     // 获取状态枚举值
-    const res = await getByDictType('device_status');
-    console.log('状态枚举值:', res);
-    console.log('状态枚举值:', res.sysDictDataEntityList);
-    this.statusOptions = res.sysDictDataEntityList;
-
+    await this.getDeviceTypeOptions();
   }
 }
 </script>
@@ -253,7 +308,7 @@ export default {
 }
 
 .electronics-container {
-  padding: 20px;
+  padding: 10px;
   max-width: 1200px;
   margin: 0 auto;
 }
