@@ -23,6 +23,22 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '字典管理',
+        },
+        name: 'sysDictType',
+        path: '/demos/sysDictType',
+        component: () => import('#/views/demos/sysDictType/index.vue'),
+      },
+      {
+        meta: {
+          title: '字典数据',
+        },
+        name: 'sysDictData',
+        path: '/demos/sysDictData',
+        component: () => import('#/views/demos/sysDictData/index.vue'),
+      },
+      {
+        meta: {
           title: '设备墙',
         },
         name: 'device',
