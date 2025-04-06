@@ -71,7 +71,7 @@
 
 </template>
 
-<script>
+<script >
 import { Button, Modal, Form, Input, InputNumber, DatePicker, Select, Card } from 'ant-design-vue';
 
 import moment from 'moment'; // 添加moment导入
@@ -145,7 +145,8 @@ export default {
         purchasePrice: 0,
         purchaseDate: dayjs(),
         status: '1', // 默认状态为"使用中",
-        image: ''
+        image: '',
+        type: this.tabKey,
       };
       this.visible = true;
     },
