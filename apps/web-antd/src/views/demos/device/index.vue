@@ -16,12 +16,10 @@
             <a-date-picker format="YYYY-MM-DD" v-model:value="newDevice.purchaseDate" style="width: 100%" />
           </a-form-item>
           <a-form-item label="设备类型">
-            <a-select v-model:value="newDevice.type" style="width: 100%" :options="typeOptions"
-              :fieldNames="fieldNames" />
+            <a-select v-model:value="newDevice.type" style="width: 100%" :options="typeOptions"/>
           </a-form-item>
           <a-form-item label="设备状态">
-            <a-select v-model:value="newDevice.status" style="width: 100%" :options="statusOptions"
-              :fieldNames="fieldNames" />
+            <a-select v-model:value="newDevice.status" style="width: 100%" :options="statusOptions"/>
           </a-form-item>
           <a-form-item label="图片链接">
             <a-input v-model:value="newDevice.image" />
@@ -105,10 +103,6 @@ export default {
   data() {
     return {
       visible: false,
-      fieldNames: {
-        label: 'dictLabel',
-        value: 'dictValue',
-      },
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
       newDevice: {
@@ -249,9 +243,9 @@ export default {
           tab: '全部',
         },
         ...this.typeOptions.map(item => ({
-          key: item.dictValue,
-          tab: item.dictLabel,
-        }))
+          key: item.value,
+          tab: item.label,
+        })),
       ]
 
     },

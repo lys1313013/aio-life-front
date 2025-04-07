@@ -12,8 +12,8 @@ interface SysDictTypeEntity {
 }
 
 interface SysDictDataEntity {
-  dictLabel: string;
-  dictValue: string;
+  label: string;
+  value: string;
 }
 
 interface ResponseData {
