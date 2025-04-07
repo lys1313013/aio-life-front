@@ -4,8 +4,9 @@ import { toRaw, ref, onMounted } from 'vue';
 import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { query } from '#/api/core/sysDictType';
-import { insertOrUpdate } from '#/api/core/sysDictData';
+import { insertOrUpdate } from '#/api/core/performance';
+
+import { getByDictType } from '#/api/core/common';
 
 defineOptions({
   name: 'FormDrawerDemo',
@@ -20,11 +21,8 @@ const dictOptions = ref<Array<{label: string, value: string}>>([]);
 
 async function loadDictOptions() {
   try {
-    const res = await query({});
-    dictOptions.value = res.items.map((item: { dictName: string; dictId: string }) => ({
-      label: item.dictName,
-      value: item.dictId
-    }));
+    const res = await getByDictType('performance_type');
+    dictOptions.value = res.dictDetailList
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
@@ -41,9 +39,18 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '【自动生成】',
       },
-      fieldName: 'dictCode',
-      label: 'dictCode',
-      disabled: true
+      fieldName: 'id',
+      label: '主键',
+      disabled: true,
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入',
+      },
+      fieldName: 'performanceName',
+      label: '演出名称',
+      rules: 'required',
     },
     {
       component: 'Select',
@@ -52,42 +59,42 @@ const [Form, formApi] = useVbenForm({
         options: dictOptions,
         style: { width: '100%' }  // 设置为100%宽度
       },
-      fieldName: 'dictId',
-      label: '字典类型',
+      fieldName: 'performanceType',
+      label: '演出类型',
     },
     {
       component: 'Input',
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'dictValue',
-      label: '实际值',
-      rules: 'required',
+      fieldName: 'city',
+      label: '演出城市',
     },
     {
       component: 'Input',
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'dictLabel',
-      label: '展示值',
-      rules: 'required',
+      fieldName: 'venue',
+      label: '演出地点',
     },
     {
       component: 'Input',
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'dictSort',
-      label: '排序',
+      fieldName: 'ticketPrice',
+      label: '票价',
     },
     {
-      component: 'Input',
+      component: 'DatePicker',
       componentProps: {
-        placeholder: '请输入',
+        placeholder: '请选择演出日期',
+        format: 'YYYY-MM-DD',
+        valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'remark',
-      label: '备注',
+      fieldName: 'performanceDate',
+      label: '演出日期',
     },
   ],
   showDefaultActions: false,
