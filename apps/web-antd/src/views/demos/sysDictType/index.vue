@@ -12,9 +12,9 @@ import { deleteData, query } from '#/api/core/sysDictType';
 import FormDrawerDemo from './form-drawer-demo.vue';
 
 interface RowType {
+  dictId: any;
   category: string;
   color: string;
-  id: string;
   price: string;
   productName: string;
   releaseDate: string;
@@ -116,7 +116,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      id: row.id,
+      dictId: row.dictId,
     });
     gridApi.reload();
   } catch (error) {
