@@ -44,6 +44,14 @@ const [Form, formApi] = useVbenForm({
       label: '字典标识',
       rules: 'required',
     },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入',
+      },
+      fieldName: 'remark',
+      label: '备注',
+    },
   ],
   showDefaultActions: false,
   submitOnEnter: true,

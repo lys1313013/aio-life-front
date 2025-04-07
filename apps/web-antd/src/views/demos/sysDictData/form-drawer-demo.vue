@@ -21,7 +21,7 @@ const dictOptions = ref<Array<{label: string, value: string}>>([]);
 async function loadDictOptions() {
   try {
     // 这里替换为实际的API调用
-    const res = await query({}); 
+    const res = await query({});
     // 为 item 明确指定类型
     dictOptions.value = res.items.map((item: { dictName: string; dictId: string }) => ({
       label: item.dictName,
@@ -46,6 +46,16 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'dictCode',
       label: 'dictCode',
       disabled: true
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        placeholder: '请选择',
+        options: dictOptions,
+        style: { width: '100%' }  // 设置为100%宽度
+      },
+      fieldName: 'dictId',
+      label: '字典类型',
     },
     {
       component: 'Input',
@@ -74,15 +84,13 @@ const [Form, formApi] = useVbenForm({
       label: '排序',
     },
     {
-      component: 'Select',
+      component: 'Input',
       componentProps: {
-        placeholder: '请选择',
-        options: dictOptions,
-        style: { width: '100%' }  // 设置为100%宽度
+        placeholder: '请输入',
       },
-      fieldName: 'dictId',
-      label: '字典类型',
-    }
+      fieldName: 'remark',
+      label: '备注',
+    },
   ],
   showDefaultActions: false,
   submitOnEnter: true,
