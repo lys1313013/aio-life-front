@@ -53,6 +53,15 @@ const [Form, formApi] = useVbenForm({
       rules: 'required',
     },
     {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入',
+      },
+      fieldName: 'performer',
+      label: '演员名称',
+      rules: 'required',
+    },
+    {
       component: 'Select',
       componentProps: {
         placeholder: '请选择',
@@ -95,6 +104,14 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'performanceDate',
       label: '演出日期',
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入',
+      },
+      fieldName: 'imageUrl',
+      label: '封面地址',
     },
   ],
   showDefaultActions: false,

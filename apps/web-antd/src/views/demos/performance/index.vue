@@ -12,7 +12,7 @@ import { deleteData, query } from '#/api/core/performance';
 import FormDrawerDemo from './form-drawer-demo.vue';
 
 interface RowType {
-  dictId: any;
+  id: any;
   category: string;
   color: string;
   price: string;
@@ -59,9 +59,10 @@ const gridOptions: VxeGridProps<RowType> = {
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     { field: 'performanceName', title: '演出名称', sortable: true },
-    { 
-      field: 'performanceType', 
-      title: '演出类型', 
+    { field: 'performer', title: '演员', sortable: true },
+    {
+      field: 'performanceType',
+      title: '演出类型',
       sortable: true,
       formatter: ({ cellValue }) => {
         return cellValue === '1' ? '演唱会' : cellValue === '2' ? '音乐节' : cellValue;
@@ -70,6 +71,12 @@ const gridOptions: VxeGridProps<RowType> = {
     { field: 'performanceDate', title: '演出日期', sortable: true },
     { field: 'venue', title: '演出地点', sortable: true },
     { field: 'city', title: '演出城市', sortable: true },
+    {
+      cellRender: { name: 'CellImage' },
+      field: 'imageUrl',
+      title: '封面',
+      width: 130,
+    },
     { field: 'ticketPrice', title: '票价', sortable: true },
 
     {
@@ -125,7 +132,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      dictId: row.dictId,
+      id: row.id,
     });
     gridApi.reload();
   } catch (error) {
