@@ -39,6 +39,14 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '待办看板',
+        },
+        name: 'todo',
+        path: '/demos/todo',
+        component: () => import('#/views/demos/todo/index.vue'),
+      },
+      {
+        meta: {
           title: '设备墙',
         },
         name: 'device',
