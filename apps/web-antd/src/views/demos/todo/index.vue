@@ -10,7 +10,16 @@
       <template #item="{ element: column }">
         <div class="kanban-column">
           <div class="column-header">
-            <h3>{{ column.title }}</h3>
+            <h3 
+              @click="openEditColumnModal(column)"  
+              :style="{ 
+                backgroundColor: column.bgColor || '#fff',
+                borderRadius: '6px',
+                padding: '4px 10px',
+                margin: '0',
+                transition: 'all 0.3s'
+              }"
+            >{{ column.title }}</h3>
             <a-button 
               type="text" 
               danger 
@@ -47,9 +56,11 @@
                     </a-button>
                   </a-popconfirm>
                 </div>
+                <br>
                 <small v-if="element.dueDate">目标完成: {{ formatDate(element.dueDate) }}</small>
                 <br>
-                <small>创建于: {{ formatDate(element.createdAt) }}</small>
+                <br>
+                <small style="display: block; text-align: right"> {{ formatDate(element.createdAt) }}</small>
               </div>
             </template>
             <template #footer>
@@ -105,6 +116,25 @@
         style="margin-top: 10px; width: 100%"
       />
     </a-modal>
+    <a-modal 
+      v-model:visible="editColumnModalVisible"
+      title="编辑"
+      @ok="handleEditColumnOk"
+    >
+      <a-input 
+        v-model:value="editingColumn.title" 
+        placeholder="列名称" 
+        style="margin-bottom: 10px"
+      />
+      <div style="display: flex; align-items: center; margin-bottom: 10px">
+        <span style="margin-right: 10px">背景颜色:</span>
+        <a-input :style="{ backgroundColor: editingColumn.bgColor || '#fff'}"
+          v-model:value="editingColumn.bgColor" 
+          placeholder="输入颜色代码" 
+          style="width: 120px; margin-right: 10px"
+        />
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -113,7 +143,7 @@ import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
 import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
 
-import { getTaskColumnList, saveColumn, deleteColumn, getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
+import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
 import dayjs from 'dayjs';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
@@ -121,23 +151,23 @@ import { DeleteOutlined } from '@ant-design/icons-vue';
 import { Modal } from 'ant-design-vue';
 
 const columns = ref([
-  {
-    id: 1,
-    title: '待办',
-    tasks: [
-    ]
-  },
-  {
-    id: 2,
-    title: '进行中',
-    tasks: [
-    ]
-  },
-  {
-    id: 3,
-    title: '已完成',
-    tasks: []
-  }
+  // {
+  //   id: 1,
+  //   title: '待办',
+  //   tasks: [
+  //   ]
+  // },
+  // {
+  //   id: 2,
+  //   title: '进行中',
+  //   tasks: [
+  //   ]
+  // },
+  // {
+  //   id: 3,
+  //   title: '已完成',
+  //   tasks: []
+  // }
 ]);
 
 onMounted(async () => {
@@ -210,11 +240,18 @@ const editingTask = ref({
   createdAt: null
 });
 
+// 打开编辑模态框
 const openEditModal = (task) => {
-  editingTask.value = { ...task };
+  let dueDate = task.dueDate ? dayjs(task.dueDate) : '';
+  
+  editingTask.value = { 
+    ...task,
+    dueDate: dueDate
+  };
   editModalVisible.value = true;
 };
 
+// 编辑任务
 const handleEditOk = () => {
   const column = columns.value.find(col => 
     col.tasks.some(task => task.id === editingTask.value.id)
@@ -255,6 +292,28 @@ const deleteTaskFunc = async (taskId: number) => {
   columns.value.forEach(column => {
     column.tasks = column.tasks.filter((task: { id: number }) => task.id !== taskId);
   });
+};
+
+const editColumnModalVisible = ref(false);
+const editingColumn = ref({
+  id: null,
+  title: '',
+  bgColor: '#fff'
+});
+
+const openEditColumnModal = (column) => {
+  editingColumn.value = { ...column };
+  editColumnModalVisible.value = true;
+};
+
+const handleEditColumnOk = async () => {
+  const column = columns.value.find(col => col.id === editingColumn.value.id);
+  if (column) {
+    column.title = editingColumn.value.title;
+    column.bgColor = editingColumn.value.bgColor;
+    await updateColumn(column);
+  }
+  editColumnModalVisible.value = false;
 };
 </script>
 
@@ -419,5 +478,12 @@ const deleteTaskFunc = async (taskId: number) => {
 
 .delete-task-btn:hover .anticon {
   color: #ff4d4f !important;
+}
+
+/* 添加标题悬停效果 */
+.column-header h3:hover {
+  cursor: pointer;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

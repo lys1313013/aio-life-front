@@ -8,6 +8,10 @@ export async function saveColumn(data: any) {
   return await requestClient.post('/taskColumn/save', data);
 }
 
+export async function updateColumn(data: any) {
+    return await requestClient.post('/taskColumn/update', data);
+  }
+
 export async function deleteColumn(data: any) {
   return await requestClient.post('/taskColumn/delete', data);
 }
