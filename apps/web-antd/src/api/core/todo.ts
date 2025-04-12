@@ -35,3 +35,7 @@ export async function updateTask(data: any) {
 export async function deleteTask(data: any) {
   return await requestClient.post('/task/delete', data);
 }
+
+export async function reSortTask(data: any) {
+  return await requestClient.post('/task/reSort', data);
+}

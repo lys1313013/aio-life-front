@@ -34,10 +34,11 @@
             group="tasks"
             @end="onDragEnd"
             item-key="id"
+            :data-column-id="column.id"
             class="task-list"
           >
             <template #item="{ element }">
-              <div class="kanban-task" @click="openEditModal(element)">
+              <div class="kanban-task" :data-task-id="element.id" @click="openEditModal(element)">
                 <div class="task-header">
                   <p>{{ element.content }}</p>
                   <a-popconfirm
@@ -143,33 +144,25 @@ import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
 import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
 
-import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn,
-   getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
+import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn} from '#/api/core/todo';
+
+import { getTaskList, saveTask, updateTask, deleteTask, reSortTask } from '#/api/core/todo';
+
 import dayjs from 'dayjs';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
 import { DeleteOutlined } from '@ant-design/icons-vue';
 import { Modal } from 'ant-design-vue';
 
-const columns = ref([
-  // {
-  //   id: 1,
-  //   title: '待办',
-  //   tasks: [
-  //   ]
-  // },
-  // {
-  //   id: 2,
-  //   title: '进行中',
-  //   tasks: [
-  //   ]
-  // },
-  // {
-  //   id: 3,
-  //   title: '已完成',
-  //   tasks: []
-  // }
-]);
+const columns = ref<Array<{
+  id: number;
+  title: string;
+  tasks: Array<{
+    id: number;
+    content: string;
+  }>;
+  bgColor?: string;
+}>>([]);
 
 onMounted(async () => {
   // 初始化列
@@ -222,7 +215,31 @@ const addColumn = async () => {
 };
 
 const onDragEnd = (event: any) => {
-  console.log('任务已移动', event);
+  console.log('完整拖拽事件:', event);
+  const fromColumnId = Number(event.from.getAttribute('data-column-id'));
+  const toColumnId = Number(event.to.getAttribute('data-column-id'));
+  const taskId = Number(event.item.dataset.taskId);
+
+  console.log('移动前列ID:', fromColumnId);
+  console.log('移动后列ID:', toColumnId);
+  console.log('移动的任务ID:', taskId);
+  console.log('原始位置:', event.oldIndex);
+  console.log('新位置:', event.newIndex);
+
+  // 获取目标列
+  const toColumn = columns.value.find(col => col.id === toColumnId);
+  if (!toColumn) return;
+
+  // 准备重排序数据
+  const sortedTasks = toColumn.tasks.map((task, index) => ({
+    id: task.id,
+    columnId: toColumnId,
+    sortOrder: index + 1
+  }));
+  console.log('排序后的数据:', sortedTasks);
+
+  // 调用API更新排序
+  reSortTask(sortedTasks);
 };
 
 const onColumnDragEnd = (event: any) => {
@@ -235,7 +252,7 @@ const onColumnDragEnd = (event: any) => {
   reSortColumn(sortedData);
 };
 
-const formatDate = (date) => {
+const formatDate = (date: any) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
@@ -248,12 +265,12 @@ const editingTask = ref({
 });
 
 // 打开编辑模态框
-const openEditModal = (task) => {
+const openEditModal = (task: { id: null; content: string; dueDate: null; createdAt: null; } | { id: null; content: string; dueDate: null; createdAt: null; }) => {
   let dueDate = task.dueDate ? dayjs(task.dueDate) : '';
 
   editingTask.value = {
     ...task,
-    dueDate: dueDate
+    dueDate: dueDate,
   };
   editModalVisible.value = true;
 };
@@ -308,7 +325,7 @@ const editingColumn = ref({
   bgColor: '#fff'
 });
 
-const openEditColumnModal = (column) => {
+const openEditColumnModal = (column: { id: null; title: string; bgColor: string; } | { id: null; title: string; bgColor: string; }) => {
   editingColumn.value = { ...column };
   editColumnModalVisible.value = true;
 };
