@@ -31,14 +31,21 @@
               <div class="kanban-task" @click="openEditModal(element)">
                 <div class="task-header">
                   <p>{{ element.content }}</p>
-                  <a-button 
-                    type="text" 
-                    danger 
-                    @click.stop="confirmDeleteTask(element.id)"
-                    class="delete-task-btn"
+                  <a-popconfirm
+                    title="确定要删除这个任务吗?"
+                    ok-text="确定"
+                    cancel-text="取消"
+                    @click.stop 
+                    @confirm="deleteTaskFunc(element.id)"
                   >
-                    <template #icon><delete-outlined style="color: #8c8c8c; font-size: 14px" /></template>
-                  </a-button>
+                    <a-button 
+                      type="text" 
+                      danger 
+                      class="delete-task-btn"
+                    >
+                      <template #icon><delete-outlined style="color: #8c8c8c; font-size: 14px" /></template>
+                    </a-button>
+                  </a-popconfirm>
                 </div>
                 <small v-if="element.dueDate">目标完成: {{ formatDate(element.dueDate) }}</small>
                 <br>
@@ -101,10 +108,12 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
+<script lang="ts" setup>
+import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
-import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker } from 'ant-design-vue';
+import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
+
+import { getTaskColumnList, saveColumn, deleteColumn, getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
 import dayjs from 'dayjs';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
@@ -116,15 +125,12 @@ const columns = ref([
     id: 1,
     title: '待办',
     tasks: [
-      { id: 1, content: '学习Vue 3', createdAt: new Date() },
-      { id: 2, content: '完成项目', createdAt: new Date() }
     ]
   },
   {
     id: 2,
     title: '进行中',
     tasks: [
-      { id: 3, content: '开发新功能', createdAt: new Date() }
     ]
   },
   {
@@ -134,33 +140,57 @@ const columns = ref([
   }
 ]);
 
+onMounted(async () => {
+  // 初始化列
+  const res = await getTaskColumnList({});
+  console.log('getTaskColumnList', res);
+  columns.value = res.items;
+
+  getTaskList({}).then((res) => {
+    console.log('getTaskList', res);
+    columns.value.forEach((column) => {
+      column.tasks = res.items.filter((item: { columnId: number; }) => item.columnId === column.id);
+    })
+  })
+});
+
+
 const newColumnName = ref('');
 
-const addTask = (columnId) => {
+const addTask = async (columnId: number) => {
   const column = columns.value.find(col => col.id === columnId);
   if (column) {
-    const newTask = {
-      id: Date.now(),
+    let newTask = {
+      id: 0,
       content: '新任务',
-      createdAt: new Date()
+      createdAt: new Date(),
+      columnId: columnId
     };
+    newTask = await saveTask(newTask);
     column.tasks.push(newTask);
   }
+
 };
 
-const addColumn = () => {
+// 添加列
+const addColumn = async () => {
   if (!newColumnName.value.trim()) return;
   
-  columns.value.push({
-    id: Date.now(),
+  // 生成一个随机id
+  const newColumnId = Math.floor(Math.random() * 1000000);
+  let newColumn = {
+    id: newColumnId,
     title: newColumnName.value,
     tasks: []
-  });
+  }
+
+  columns.value.push(newColumn);
+  newColumn = await saveColumn(newColumn)
   
   newColumnName.value = '';
 };
 
-const onDragEnd = (event) => {
+const onDragEnd = (event: any) => {
   console.log('任务已移动', event);
 };
 
@@ -176,6 +206,7 @@ const editModalVisible = ref(false);
 const editingTask = ref({
   id: null,
   content: '',
+  dueDate: null,
   createdAt: null
 });
 
@@ -197,11 +228,11 @@ const handleEditOk = () => {
       column.tasks[taskIndex] = { ...editingTask.value };
     }
   }
-  
+  updateTask(editingTask.value);
   editModalVisible.value = false;
 };
 
-const confirmDeleteColumn = (columnId) => {
+const confirmDeleteColumn = (columnId: number) => {
   Modal.confirm({
     title: '确认删除列',
     content: '删除列将同时删除该列下的所有任务，确定要删除吗？',
@@ -209,30 +240,20 @@ const confirmDeleteColumn = (columnId) => {
     okType: 'danger',
     cancelText: '取消',
     onOk() {
-      deleteColumn(columnId);
+      deleteColumnMethod(columnId);
     }
   });
 };
 
-const deleteColumn = (columnId) => {
+const deleteColumnMethod = (columnId: number) => {
+  deleteColumn({id: columnId});
   columns.value = columns.value.filter(col => col.id !== columnId);
 };
-const confirmDeleteTask = (taskId) => {
-  Modal.confirm({
-    title: '确认删除任务',
-    content: '确定要删除这个任务吗？',
-    okText: '确定',
-    okType: 'danger',
-    cancelText: '取消',
-    onOk() {
-      deleteTask(taskId);
-    }
-  });
-};
 
-const deleteTask = (taskId) => {
+const deleteTaskFunc = async (taskId: number) => {
+  await deleteTask({id: taskId});
   columns.value.forEach(column => {
-    column.tasks = column.tasks.filter(task => task.id !== taskId);
+    column.tasks = column.tasks.filter((task: { id: number }) => task.id !== taskId);
   });
 };
 </script>
@@ -259,7 +280,7 @@ const deleteTask = (taskId) => {
 
 /* 拖拽时的样式 */
 .kanban-column.sortable-chosen {
-  background: #e6f7ff;
+  background: #fff;
   /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
 }
 
