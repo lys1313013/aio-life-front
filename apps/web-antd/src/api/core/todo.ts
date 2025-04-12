@@ -9,11 +9,15 @@ export async function saveColumn(data: any) {
 }
 
 export async function updateColumn(data: any) {
-    return await requestClient.post('/taskColumn/update', data);
-  }
+  return await requestClient.post('/taskColumn/update', data);
+}
 
 export async function deleteColumn(data: any) {
   return await requestClient.post('/taskColumn/delete', data);
+}
+
+export async function reSortColumn(data: any) {
+  return await requestClient.post('/taskColumn/reSort', data);
 }
 
 export async function getTaskList(data: any) {

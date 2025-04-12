@@ -10,9 +10,9 @@
       <template #item="{ element: column }">
         <div class="kanban-column">
           <div class="column-header">
-            <h3 
-              @click="openEditColumnModal(column)"  
-              :style="{ 
+            <h3
+              @click="openEditColumnModal(column)"
+              :style="{
                 backgroundColor: column.bgColor || '#fff',
                 borderRadius: '6px',
                 padding: '4px 10px',
@@ -20,9 +20,9 @@
                 transition: 'all 0.3s'
               }"
             >{{ column.title }}</h3>
-            <a-button 
-              type="text" 
-              danger 
+            <a-button
+              type="text"
+              danger
               @click.stop="confirmDeleteColumn(column.id)"
               class="delete-column-btn"
             >
@@ -44,12 +44,12 @@
                     title="确定要删除这个任务吗?"
                     ok-text="确定"
                     cancel-text="取消"
-                    @click.stop 
+                    @click.stop
                     @confirm="deleteTaskFunc(element.id)"
                   >
-                    <a-button 
-                      type="text" 
-                      danger 
+                    <a-button
+                      type="text"
+                      danger
                       class="delete-task-btn"
                     >
                       <template #icon><delete-outlined style="color: #8c8c8c; font-size: 14px" /></template>
@@ -74,21 +74,21 @@
         </div>
       </template>
     </draggable>
-    
+
     <div class="floating-add-column">
-      <a-popover 
+      <a-popover
         placement="topRight"
         trigger="click"
         :autoFocus="false"
       >
         <template #content>
-          <a-input 
-            v-model:value="newColumnName" 
-            placeholder="新列名称" 
+          <a-input
+            v-model:value="newColumnName"
+            placeholder="新列名称"
             @click.stop
           />
-          <a-button 
-            type="primary" 
+          <a-button
+            type="primary"
             @click="addColumn"
             style="margin-top: 10px; width: 100%"
           >
@@ -100,37 +100,37 @@
         </a-button>
       </a-popover>
     </div>
-    
-    <a-modal 
+
+    <a-modal
       v-model:visible="editModalVisible"
       title="编辑任务"
       @ok="handleEditOk"
     >
-      <a-input 
-        v-model:value="editingTask.content" 
-        placeholder="任务内容" 
+      <a-input
+        v-model:value="editingTask.content"
+        placeholder="任务内容"
       />
-      <a-date-picker 
+      <a-date-picker
         v-model:value="editingTask.dueDate"
         placeholder="目标完成时间"
         style="margin-top: 10px; width: 100%"
       />
     </a-modal>
-    <a-modal 
+    <a-modal
       v-model:visible="editColumnModalVisible"
       title="编辑"
       @ok="handleEditColumnOk"
     >
-      <a-input 
-        v-model:value="editingColumn.title" 
-        placeholder="列名称" 
+      <a-input
+        v-model:value="editingColumn.title"
+        placeholder="列名称"
         style="margin-bottom: 10px"
       />
       <div style="display: flex; align-items: center; margin-bottom: 10px">
         <span style="margin-right: 10px">背景颜色:</span>
         <a-input :style="{ backgroundColor: editingColumn.bgColor || '#fff'}"
-          v-model:value="editingColumn.bgColor" 
-          placeholder="输入颜色代码" 
+          v-model:value="editingColumn.bgColor"
+          placeholder="输入颜色代码"
           style="width: 120px; margin-right: 10px"
         />
       </div>
@@ -143,7 +143,8 @@ import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
 import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
 
-import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
+import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn,
+   getTaskList, saveTask, updateTask, deleteTask } from '#/api/core/todo';
 import dayjs from 'dayjs';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
@@ -205,7 +206,7 @@ const addTask = async (columnId: number) => {
 // 添加列
 const addColumn = async () => {
   if (!newColumnName.value.trim()) return;
-  
+
   // 生成一个随机id
   const newColumnId = Math.floor(Math.random() * 1000000);
   let newColumn = {
@@ -216,7 +217,7 @@ const addColumn = async () => {
 
   columns.value.push(newColumn);
   newColumn = await saveColumn(newColumn)
-  
+
   newColumnName.value = '';
 };
 
@@ -224,8 +225,14 @@ const onDragEnd = (event: any) => {
   console.log('任务已移动', event);
 };
 
-const onColumnDragEnd = (event) => {
+const onColumnDragEnd = (event: any) => {
   console.log('列已移动', event);
+  // 只传输id和sortOrder
+  const sortedData = columns.value.map((col, index) => ({
+    id: col.id,
+    sortOrder: index + 1,
+  }));
+  reSortColumn(sortedData);
 };
 
 const formatDate = (date) => {
@@ -243,8 +250,8 @@ const editingTask = ref({
 // 打开编辑模态框
 const openEditModal = (task) => {
   let dueDate = task.dueDate ? dayjs(task.dueDate) : '';
-  
-  editingTask.value = { 
+
+  editingTask.value = {
     ...task,
     dueDate: dueDate
   };
@@ -253,10 +260,10 @@ const openEditModal = (task) => {
 
 // 编辑任务
 const handleEditOk = () => {
-  const column = columns.value.find(col => 
+  const column = columns.value.find(col =>
     col.tasks.some(task => task.id === editingTask.value.id)
   );
-  
+
   if (column) {
     const taskIndex = column.tasks.findIndex(
       task => task.id === editingTask.value.id
