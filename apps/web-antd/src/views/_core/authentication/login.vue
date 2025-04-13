@@ -81,9 +81,9 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: markRaw(SliderCaptcha),
       fieldName: 'captcha',
-      rules: z.boolean().refine((value) => value, {
-        message: $t('authentication.verifyRequiredTip'),
-      }),
+      // rules: z.boolean().refine((value) => value, {
+      //   message: $t('authentication.verifyRequiredTip'),
+      // }),
     },
   ];
 });
