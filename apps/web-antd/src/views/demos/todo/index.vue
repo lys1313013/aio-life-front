@@ -109,8 +109,19 @@
     >
       <a-input
         v-model:value="editingTask.content"
-        placeholder="任务内容"
+        placeholder="任务标题"
+        size="large"
+        :bordered="false"
+        :style="{
+          padding: '15px 0px',
+        }"
       />
+      <a-textarea
+        v-model:value="editingTask.detail"
+        placeholder="任务明细"
+        :rows="4"
+      />
+
       <a-date-picker
         v-model:value="editingTask.dueDate"
         placeholder="目标完成时间"
@@ -142,7 +153,7 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
-import { Button as AButton, Input as AInput, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
+import { Button as AButton, Input as AInput, Textarea as ATextarea, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
 
 import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn} from '#/api/core/todo';
 
@@ -160,6 +171,7 @@ const columns = ref<Array<{
   tasks: Array<{
     id: number;
     content: string;
+    detail?: string;
   }>;
   bgColor?: string;
 }>>([]);
@@ -187,6 +199,7 @@ const addTask = async (columnId: number) => {
     let newTask = {
       id: 0,
       content: '新任务',
+      detail: '',
       createdAt: new Date(),
       columnId: columnId
     };
@@ -260,8 +273,9 @@ const editModalVisible = ref(false);
 const editingTask = ref({
   id: null,
   content: '',
+  detail: '',
   dueDate: null,
-  createdAt: null
+  createdAt: null,
 });
 
 // 打开编辑模态框
