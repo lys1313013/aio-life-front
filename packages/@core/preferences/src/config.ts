@@ -19,7 +19,7 @@ const defaultPreferences: Preferences = {
     layout: 'sidebar-nav',
     locale: 'zh-CN',
     loginExpiredMode: 'modal',
-    name: 'Vben Admin',
+    name: 'aio-life',
     preferencesButtonPosition: 'auto',
     watermark: false,
   },
