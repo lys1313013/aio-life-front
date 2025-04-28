@@ -239,9 +239,9 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
       :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
     >
       <template #title>
-        早安, {{ userStore.userInfo?.realName }}, 开始您一天的工作吧！
+          {{ userStore.userInfo?.realName }}, 相信相信的力量
       </template>
-      <template #description> 今日晴，20℃ - 32℃！ </template>
+      <template #description> 日拱一卒 </template>
     </WorkbenchHeader>
 
     <div class="mt-5 flex flex-col lg:flex-row">

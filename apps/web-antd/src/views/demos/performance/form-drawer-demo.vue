@@ -66,7 +66,7 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '请选择',
         options: dictOptions,
-        style: { width: '100%' }  // 设置为100%宽度
+        style: { width: '100%' },
       },
       fieldName: 'performanceType',
       label: '演出类型',
@@ -86,6 +86,7 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'venue',
       label: '演出地点',
+      rules: 'required',
     },
     {
       component: 'Input',
