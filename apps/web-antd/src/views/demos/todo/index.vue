@@ -359,7 +359,6 @@ const handleEditColumnOk = async () => {
 .kanban-board {
   padding: 20px;
   height: calc(100vh - 40px);
-  background: #fff;
 }
 
 .columns-container {
@@ -377,20 +376,17 @@ const handleEditColumnOk = async () => {
 
 /* 拖拽时的样式 */
 .kanban-column.sortable-chosen {
-  background: #fff;
   /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
 }
 
 .kanban-column.sortable-ghost {
   opacity: 0.5;
-  background: #fff;
 }
 
 .kanban-column {
   flex: 1;
   min-width: 300px;
   max-width: 400px;
-  background: #fff;
   border-radius: 8px;
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -443,14 +439,12 @@ const handleEditColumnOk = async () => {
 .task-list {
   flex: 1;
   min-height: 100px;
-  background: #fff;
   border-radius: 4px;
   padding: 10px;
   overflow-y: auto;
 }
 
 .kanban-task {
-  background: #fff;
   border: 1px solid #e8e8e8;
   border-radius: 4px;
   padding: 12px;
