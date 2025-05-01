@@ -33,7 +33,18 @@
         </a-form>
       </a-modal>
 
-      <!-- 原有电子设备列表 -->
+     <div class="total-static">
+      <a-card>
+        <span>总资产: {{ totalAmt }} 元</span>
+        <br>
+        <span>资产数量： {{ totakCount }} 个</span>
+        <br>
+        <span>每日成本： {{ totalDailyCost }}</span>
+        <br>
+      </a-card>
+     </div>
+      <br>
+      <!-- 设备列表 -->
       <div class="electronics-grid">
         <div v-for="(item, index) in electronics" :key="index" class="electronics-card" @click="showEditModal(item)">
           <div class="card-image">
@@ -52,8 +63,8 @@
             <h3>{{ item.name }}</h3>
             <p class="price">价格: {{ item.purchasePrice }}</p>
             <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
-            <p class="usage-days">已使用: {{ getUsageDays(item.purchaseDate) }} 天</p>
-            <p class="avg-cost">日均费用: {{ calculateAvgCost(item.purchasePrice, item.purchaseDate) }} 元/天</p>
+            <p class="usage-days">已使用: {{ item.usaDay }} 天</p>
+            <p class="avg-cost">日均费用: {{ item.dailyCost }} 元/天</p>
             <div class="status-badge" :class="getStatusClass(item.status)">
               {{ getStatusText(item.status) }}
             </div>
@@ -85,6 +96,7 @@ import { getByDictType } from '#/api/core/common';
 import { DeleteOutlined } from '@ant-design/icons-vue';
 
 import { PlusOutlined } from '@ant-design/icons-vue';
+import { to } from '@vben/utils';
 
 export default {
   components: {
@@ -102,6 +114,9 @@ export default {
   },
   data() {
     return {
+      totalAmt: 0,
+      totakCount: 0,
+      totalDailyCost: 0.00,
       visible: false,
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
@@ -130,6 +145,16 @@ export default {
         }
       });
       this.electronics = res.items
+      this.totalDailyCost = 0.00;
+      this.electronics.forEach(item => {
+        item.usaDay = this.getUsageDays(item.purchaseDate)
+        item.dailyCost = this.calculateAvgCost(item.purchasePrice, item.purchaseDate)
+        this.totalDailyCost += parseFloat(item.dailyCost)
+      })
+      this.totalDailyCost = this.totalDailyCost.toFixed(2)
+
+      this.totalAmt = res.items.reduce((sum, item) => sum + item.purchasePrice, 0).toFixed(2);
+      this.totakCount = res.items.length;
       console.log('查询设备:', res);
     },
 
@@ -454,5 +479,22 @@ export default {
   background-color: #d9d9d9;
   /* 灰色 */
   color: #666;
+}
+.total-static {
+  margin-bottom: 20px;
+}
+
+.total-static .ant-card {
+}
+
+.total-static .ant-card span {
+  display: block;
+  font-size: 16px;
+  line-height: 2;
+}
+
+.total-static .ant-card span:first-child {
+  font-weight: bold;
+  font-size: 18px;
 }
 </style>
