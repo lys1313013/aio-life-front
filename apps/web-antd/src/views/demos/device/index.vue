@@ -276,7 +276,6 @@ export default {
 
 .electronics-container {
   padding: 10px;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
