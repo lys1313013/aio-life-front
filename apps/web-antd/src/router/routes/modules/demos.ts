@@ -53,6 +53,38 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '支出',
+        },
+        name: 'sysDictType',
+        path: '/demos/sysDictType',
+        component: () => import('#/views/demos/sysDictType/index.vue'),
+      },
+      {
+        meta: {
+          title: '收入',
+        },
+        name: 'sysDictType',
+        path: '/demos/sysDictType',
+        component: () => import('#/views/demos/sysDictType/index.vue'),
+      },
+      {
+        meta: {
+          title: '运动',
+        },
+        name: 'sysDictType',
+        path: '/demos/sysDictType',
+        component: () => import('#/views/demos/sysDictType/index.vue'),
+      },
+      {
+        meta: {
+          title: '学习',
+        },
+        name: 'sysDictType',
+        path: '/demos/sysDictType',
+        component: () => import('#/views/demos/sysDictType/index.vue'),
+      },
+      {
+        meta: {
           title: '测试界面',
         },
         name: 'test',
@@ -61,6 +93,7 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
+
 ];
 
 export default routes;
