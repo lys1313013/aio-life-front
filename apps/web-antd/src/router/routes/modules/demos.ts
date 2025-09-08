@@ -55,9 +55,9 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '支出',
         },
-        name: 'sysDictType',
-        path: '/demos/sysDictType',
-        component: () => import('#/views/demos/sysDictType/index.vue'),
+        name: 'exp',
+        path: '/demos/exp',
+        component: () => import('#/views/demos/exp/index.vue'),
       },
       {
         meta: {
