@@ -63,9 +63,9 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '收入',
         },
-        name: 'sysDictType',
-        path: '/demos/sysDictType',
-        component: () => import('#/views/demos/sysDictType/index.vue'),
+        name: 'income',
+        path: '/demos/income',
+        component: () => import('#/views/demos/income/index.vue'),
       },
       {
         meta: {
@@ -93,7 +93,6 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
 ];
 
 export default routes;

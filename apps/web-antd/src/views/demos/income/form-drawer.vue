@@ -5,7 +5,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
-import { insertOrUpdate } from '#/api/core/performance';
+import { insertOrUpdate } from '#/api/core/income';
 
 defineOptions({
   name: 'FormDrawerDemo',
@@ -20,7 +20,7 @@ const dictOptions = ref<Array<{ label: string; value: string }>>([]);
 
 async function loadDictOptions() {
   try {
-    const res = await getByDictType('performance_type');
+    const res = await getByDictType('income_type');
     dictOptions.value = res.dictDetailList;
   } catch (error) {
     console.error('加载字典选项失败:', error);
@@ -38,7 +38,7 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '【自动生成】',
       },
-      fieldName: 'id',
+      fieldName: 'incomeId',
       label: '主键',
       disabled: true,
     },
@@ -47,18 +47,8 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'performanceName',
-      label: '演出名称',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入',
-      },
-      fieldName: 'performer',
-      label: '演员名称',
-      rules: 'required',
+      fieldName: 'amt',
+      label: '金额',
     },
     {
       component: 'Select',
@@ -67,51 +57,26 @@ const [Form, formApi] = useVbenForm({
         options: dictOptions,
         style: { width: '100%' },
       },
-      fieldName: 'performanceType',
-      label: '演出类型',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入',
-      },
-      fieldName: 'city',
-      label: '演出城市',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入',
-      },
-      fieldName: 'venue',
-      label: '演出地点',
-      rules: 'required',
-    },
-    {
-      component: 'Input',
-      componentProps: {
-        placeholder: '请输入',
-      },
-      fieldName: 'ticketPrice',
-      label: '票价',
+      fieldName: 'incTypeId',
+      label: '收入类型',
     },
     {
       component: 'DatePicker',
       componentProps: {
-        placeholder: '请选择演出日期',
+        placeholder: '请选择日期',
         format: 'YYYY-MM-DD',
         valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'performanceDate',
-      label: '演出日期',
+      fieldName: 'incDate',
+      label: '收入日期',
     },
     {
       component: 'Input',
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'imageUrl',
-      label: '封面地址',
+      fieldName: 'remark',
+      label: '备注',
     },
   ],
   showDefaultActions: false,
