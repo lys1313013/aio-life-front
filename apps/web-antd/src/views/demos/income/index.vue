@@ -40,7 +40,7 @@ const loadIncomeTypes = async () => {
 };
 
 // 添加一个计算属性或方法来查找标签
-const getIncomeTypeLabel = (value: string | number) => {
+const getIncomeTypeLabel = (value: number | string) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
   const option = dictOptions.value.find((item) => item.value === String(value));
   return option ? option.label : String(value);

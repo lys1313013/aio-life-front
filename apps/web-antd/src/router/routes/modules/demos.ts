@@ -69,6 +69,14 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '收入看板',
+        },
+        name: 'incomeDashboard',
+        path: '/demos/incomeDashboard',
+        component: () => import('#/views/demos/income/dashboard.vue'),
+      },
+      {
+        meta: {
           title: '运动',
         },
         name: 'sysDictType',

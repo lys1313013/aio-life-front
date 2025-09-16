@@ -1,122 +1,40 @@
-<template>
-  <a-card style="width: 100%" :tab-list="tabList" :active-tab-key="tabKey"
-    @tabChange="(key) => onTabChange(key, 'tabKey')">
-    <div class="electronics-container">
-
-      <!-- 维护设备弹窗 -->
-      <a-modal v-model:visible="visible" title="新增设备" @ok="handleOk" @cancel="handleCancel">
-        <a-form :model="newDevice" layout="vertical">
-          <a-form-item label="设备名称">
-            <a-input v-model:value="newDevice.name" />
-          </a-form-item>
-          <a-form-item label="价格">
-            <a-input-number v-model:value="newDevice.purchasePrice" style="width: 100%" />
-          </a-form-item>
-          <a-form-item label="购买日期">
-            <a-date-picker format="YYYY-MM-DD" v-model:value="newDevice.purchaseDate" style="width: 100%" />
-          </a-form-item>
-          <a-form-item label="设备类型">
-            <a-select v-model:value="newDevice.type" style="width: 100%" :options="typeOptions"/>
-          </a-form-item>
-          <a-form-item label="设备状态">
-            <a-select v-model:value="newDevice.status" style="width: 100%" :options="statusOptions"/>
-          </a-form-item>
-          <a-form-item label="图片链接">
-            <a-input v-model:value="newDevice.image" />
-          </a-form-item>
-          <a-form-item label="购买平台">
-            <a-input v-model:value="newDevice.purchasePlace" />
-          </a-form-item>
-          <a-form-item label="订单号">
-            <a-input v-model:value="newDevice.orderNumber" />
-          </a-form-item>
-        </a-form>
-      </a-modal>
-
-     <div class="total-static">
-      <a-card>
-        <span>总资产: {{ totalAmt }} 元</span>
-        <br>
-        <span>资产数量： {{ totakCount }} 个</span>
-        <br>
-        <span>每日成本： {{ totalDailyCost }}</span>
-        <br>
-      </a-card>
-     </div>
-      <br>
-      <!-- 设备列表 -->
-      <div class="electronics-grid">
-        <div v-for="(item, index) in electronics" :key="index" class="electronics-card" @click="showEditModal(item)">
-          <div class="card-image">
-            <img v-if="item.image" :src="item.image" :alt="item.name" />
-            <div v-else class="default-icon">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
-                  stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-          </div>
-          <div class="card-content">
-            <a-button class="delete-btn" type="text" danger @click.stop="handleDelete(item, index)">
-            </a-button>
-            <h3>{{ item.name }}</h3>
-            <p class="price">价格: {{ item.purchasePrice }}</p>
-            <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
-            <p class="usage-days">已使用: {{ item.usaDay }} 天</p>
-            <p class="avg-cost">日均费用: {{ item.dailyCost }} 元/天</p>
-            <div class="status-badge" :class="getStatusClass(item.status)">
-              {{ getStatusText(item.status) }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- 新增可拖动悬浮球 -->
-      <div class="floating-btn" ref="floatingBtn" @mousedown="startDrag" @click="showModal">
-        <plus-outlined style="font-size: 24px; color: white" />
-      </div>
-    </div>
-  </a-card>
-
-</template>
-
-<script >
-import { Button, Modal, Form, Input, InputNumber, DatePicker, Select, Card } from 'ant-design-vue';
-
-import moment from 'moment'; // 添加moment导入
-
+<script>
+// 添加moment导入
+import { PlusOutlined } from '@ant-design/icons-vue';
+import {
+  Button,
+  Card,
+  DatePicker,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { query } from '#/api/core/device';
-
-import { insertOrUpdate } from '#/api/core/device';
-
 import { getByDictType } from '#/api/core/common';
-
-import { DeleteOutlined } from '@ant-design/icons-vue';
-
-import { PlusOutlined } from '@ant-design/icons-vue';
-import { to } from '@vben/utils';
+import { insertOrUpdate, query } from '#/api/core/device';
 
 export default {
   components: {
-    'a-button': Button,
-    'a-modal': Modal,
-    'a-form': Form,
-    'a-form-item': Form.Item,
-    'a-input': Input,
-    'a-input-number': InputNumber,
-    'a-date-picker': DatePicker,
-    'a-select': Select,
-    'a-select-option': Select.Option,
-    'a-card': Card,
-    'plus-outlined': PlusOutlined,
+    AButton: Button,
+    AModal: Modal,
+    AForm: Form,
+    AFormItem: Form.Item,
+    AInput: Input,
+    AInputNumber: InputNumber,
+    ADatePicker: DatePicker,
+    ASelect: Select,
+    ASelectOption: Select.Option,
+    ACard: Card,
+    PlusOutlined,
   },
   data() {
     return {
       totalAmt: 0,
       totakCount: 0,
-      totalDailyCost: 0.00,
+      totalDailyCost: 0,
       visible: false,
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
@@ -127,13 +45,18 @@ export default {
         image: '',
         status: '1', // 默认状态为"使用中"
         purchasePlace: '',
-        orderNumber: ''
+        orderNumber: '',
       },
-      electronics: [
-      ],
+      electronics: [],
       tabList: [], // 页签列表
       tabKey: '', // 当前选中的页签
-    }
+    };
+  },
+  async mounted() {
+    await this.query();
+    await this.getDeviceStatusOptions();
+    // 获取状态枚举值
+    await this.getDeviceTypeOptions();
   },
   methods: {
     async query() {
@@ -142,18 +65,23 @@ export default {
         pageSize: 50,
         condition: {
           type: this.tabKey,
-        }
+        },
       });
-      this.electronics = res.items
-      this.totalDailyCost = 0.00;
-      this.electronics.forEach(item => {
-        item.usaDay = this.getUsageDays(item.purchaseDate)
-        item.dailyCost = this.calculateAvgCost(item.purchasePrice, item.purchaseDate)
-        this.totalDailyCost += parseFloat(item.dailyCost)
-      })
-      this.totalDailyCost = this.totalDailyCost.toFixed(2)
+      this.electronics = res.items;
+      this.totalDailyCost = 0;
+      this.electronics.forEach((item) => {
+        item.usaDay = this.getUsageDays(item.purchaseDate);
+        item.dailyCost = this.calculateAvgCost(
+          item.purchasePrice,
+          item.purchaseDate,
+        );
+        this.totalDailyCost += Number.parseFloat(item.dailyCost);
+      });
+      this.totalDailyCost = this.totalDailyCost.toFixed(2);
 
-      this.totalAmt = res.items.reduce((sum, item) => sum + item.purchasePrice, 0).toFixed(2);
+      this.totalAmt = res.items
+        .reduce((sum, item) => sum + item.purchasePrice, 0)
+        .toFixed(2);
       this.totakCount = res.items.length;
       console.log('查询设备:', res);
     },
@@ -173,7 +101,7 @@ export default {
       this.newDevice = {
         ...item,
         // 确保日期类型一致
-        purchaseDate: dayjs(item.purchaseDate)
+        purchaseDate: dayjs(item.purchaseDate),
       };
       this.visible = true;
     },
@@ -184,20 +112,21 @@ export default {
       let formattedDate = '';
       if (this.newDevice.purchaseDate) {
         // 如果是字符串直接使用，如果是moment对象则格式化
-        formattedDate = typeof this.newDevice.purchaseDate === 'string'
-          ? this.newDevice.purchaseDate
-          : this.newDevice.purchaseDate.format('YYYY-MM-DD');
+        formattedDate =
+          typeof this.newDevice.purchaseDate === 'string'
+            ? this.newDevice.purchaseDate
+            : this.newDevice.purchaseDate.format('YYYY-MM-DD');
       }
 
       console.log('格式化后的日期:', formattedDate);
 
       const deviceData = {
         ...this.newDevice,
-        purchaseDate: formattedDate
+        purchaseDate: formattedDate,
       };
 
       // 调用API新增设备
-      await insertOrUpdate(deviceData)
+      await insertOrUpdate(deviceData);
 
       this.query();
       this.visible = false;
@@ -212,7 +141,7 @@ export default {
         name: '',
         purchasePrice: 0,
         purchaseDate: '',
-        image: ''
+        image: '',
       };
     },
     calculateAvgCost(price, purchaseDate) {
@@ -230,21 +159,25 @@ export default {
     },
 
     getStatusClass(status) {
-      return {
-        '1': 'status-using',
-        '2': 'status-damaged',
-        '3': 'status-processed',
-        '4': 'status-idle'
-      }[status] || 'status-using';
+      return (
+        {
+          1: 'status-using',
+          2: 'status-damaged',
+          3: 'status-processed',
+          4: 'status-idle',
+        }[status] || 'status-using'
+      );
     },
 
     getStatusText(status) {
-      return {
-        '1': '使用中',
-        '2': '已损坏',
-        '3': '已送人',
-        '4': '吃灰中'
-      }[status] || '使用中';
+      return (
+        {
+          1: '使用中',
+          2: '已损坏',
+          3: '已送人',
+          4: '吃灰中',
+        }[status] || '使用中'
+      );
     },
     // 切换页签
     onTabChange(value, type) {
@@ -267,12 +200,11 @@ export default {
           key: '',
           tab: '全部',
         },
-        ...this.typeOptions.map(item => ({
+        ...this.typeOptions.map((item) => ({
           key: item.value,
           tab: item.label,
         })),
-      ]
-
+      ];
     },
     async getDeviceStatusOptions() {
       // 获取设备状态字典
@@ -282,14 +214,134 @@ export default {
       }
     },
   },
-  async mounted() {
-    await this.query();
-    await this.getDeviceStatusOptions();
-    // 获取状态枚举值
-    await this.getDeviceTypeOptions();
-  }
-}
+};
 </script>
+
+<template>
+  <ACard
+    style="width: 100%"
+    :tab-list="tabList"
+    :active-tab-key="tabKey"
+    @tab-change="(key) => onTabChange(key, 'tabKey')"
+  >
+    <div class="electronics-container">
+      <!-- 维护设备弹窗 -->
+      <AModal
+        v-model:visible="visible"
+        title="新增设备"
+        @ok="handleOk"
+        @cancel="handleCancel"
+      >
+        <AForm :model="newDevice" layout="vertical">
+          <AFormItem label="设备名称">
+            <AInput v-model:value="newDevice.name" />
+          </AFormItem>
+          <AFormItem label="价格">
+            <AInputNumber
+              v-model:value="newDevice.purchasePrice"
+              style="width: 100%"
+            />
+          </AFormItem>
+          <AFormItem label="购买日期">
+            <ADatePicker
+              format="YYYY-MM-DD"
+              v-model:value="newDevice.purchaseDate"
+              style="width: 100%"
+            />
+          </AFormItem>
+          <AFormItem label="设备类型">
+            <ASelect
+              v-model:value="newDevice.type"
+              style="width: 100%"
+              :options="typeOptions"
+            />
+          </AFormItem>
+          <AFormItem label="设备状态">
+            <ASelect
+              v-model:value="newDevice.status"
+              style="width: 100%"
+              :options="statusOptions"
+            />
+          </AFormItem>
+          <AFormItem label="图片链接">
+            <AInput v-model:value="newDevice.image" />
+          </AFormItem>
+          <AFormItem label="购买平台">
+            <AInput v-model:value="newDevice.purchasePlace" />
+          </AFormItem>
+          <AFormItem label="订单号">
+            <AInput v-model:value="newDevice.orderNumber" />
+          </AFormItem>
+        </AForm>
+      </AModal>
+
+      <div class="total-static">
+        <ACard>
+          <span>总资产: {{ totalAmt }} 元</span>
+          <br />
+          <span>资产数量： {{ totakCount }} 个</span>
+          <br />
+          <span>每日成本： {{ totalDailyCost }}</span>
+          <br />
+        </ACard>
+      </div>
+      <br />
+      <!-- 设备列表 -->
+      <div class="electronics-grid">
+        <div
+          v-for="(item, index) in electronics"
+          :key="index"
+          class="electronics-card"
+          @click="showEditModal(item)"
+        >
+          <div class="card-image">
+            <img v-if="item.image" :src="item.image" :alt="item.name" />
+            <div v-else class="default-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
+                  stroke="#888"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div class="card-content">
+            <AButton
+              class="delete-btn"
+              type="text"
+              danger
+              @click.stop="handleDelete(item, index)"
+            />
+            <h3>{{ item.name }}</h3>
+            <p class="price">价格: {{ item.purchasePrice }}</p>
+            <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
+            <p class="usage-days">已使用: {{ item.usaDay }} 天</p>
+            <p class="avg-cost">日均费用: {{ item.dailyCost }} 元/天</p>
+            <div class="status-badge" :class="getStatusClass(item.status)">
+              {{ getStatusText(item.status) }}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 新增可拖动悬浮球 -->
+      <div
+        class="floating-btn"
+        ref="floatingBtn"
+        @mousedown="startDrag"
+        @click="showModal"
+      >
+        <PlusOutlined style="font-size: 24px; color: white" />
+      </div>
+    </div>
+  </ACard>
+</template>
 
 <style scoped>
 .header {
