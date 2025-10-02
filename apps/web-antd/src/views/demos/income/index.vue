@@ -64,6 +64,7 @@ const formOptions: VbenFormProps = {
       componentProps: {
         placeholder: '请选择收入类型',
         options: dictOptions, // 绑定收入类型选项
+        allowClear: true, // 添加清除选项功能
       },
       fieldName: 'incTypeId', // 修改为按收入类型查询
       label: '收入类型',

@@ -15,57 +15,25 @@ import {
   Statistic,
 } from 'ant-design-vue';
 
+import { statistics } from '#/api/core/income';
+
+// 定义数据类型
+interface YearData {
+  labels: string[];
+  values: number[];
+  total: number;
+  avg: number;
+  max: number;
+  min: number;
+}
+
+interface MockData {
+  year: Record<string, YearData>;
+}
+
 // 模拟数据
-const mockData = {
+let mockData: MockData = {
   year: {
-    '2023': {
-      labels: [
-        '2023-01',
-        '2023-02',
-        '2023-03',
-        '2023-04',
-        '2023-05',
-        '2023-06',
-        '2023-07',
-        '2023-08',
-        '2023-09',
-        '2023-10',
-        '2023-11',
-        '2023-12',
-      ],
-      values: [
-        8000, 11_000, 14_000, 17_000, 20_000, 23_000, 25_000, 27_000, 29_000,
-        31_000, 33_000, 35_000,
-      ],
-      total: 296_000,
-      avg: 24_667,
-      max: 35_000,
-      min: 8000,
-    },
-    '2024': {
-      labels: [
-        '2024-01',
-        '2024-02',
-        '2024-03',
-        '2024-04',
-        '2024-05',
-        '2024-06',
-        '2024-07',
-        '2024-08',
-        '2024-09',
-        '2024-10',
-        '2024-11',
-        '2024-12',
-      ],
-      values: [
-        10_000, 13_000, 16_000, 19_000, 22_000, 25_000, 27_000, 29_000, 31_000,
-        33_000, 35_000, 37_000,
-      ],
-      total: 317_000,
-      avg: 26_417,
-      max: 37_000,
-      min: 10_000,
-    },
     '2025': {
       labels: [
         '2025-01',
@@ -81,16 +49,13 @@ const mockData = {
         '2025-11',
         '2025-12',
       ],
-      values: [
-        12_000, 15_000, 18_000, 21_000, 25_000, 28_000, 30_000, 32_000, 35_000,
-        38_000, 40_000, 42_000,
-      ],
-      total: 345_000,
+      values: [12, 15, 18, 21, 25, 28, 30, 32, 35, 38, 40, 42],
+      total: 345,
       avg: 28_750,
-      max: 42_000,
-      min: 12_000,
+      max: 42,
+      min: 12,
     },
-  },
+  } as Record<string, YearData>,
 };
 
 const timeDimension = ref<'all-years' | 'year'>('year');
@@ -99,11 +64,13 @@ const selectedEndYear = ref('2025');
 
 // 获取所有可用的年份
 const availableYears = computed(() => {
-  return Object.keys(mockData.year).sort();
+  return mockData.year ? Object.keys(mockData.year).sort() : [];
 });
 
 // 获取所有年度数据
 const allYearsData = computed(() => {
+  if (!mockData.year) return [];
+
   return Object.entries(mockData.year)
     .map(([year, data]) => ({
       year,
@@ -118,6 +85,18 @@ const allYearsData = computed(() => {
 // 获取当前选中的数据
 const chartData = computed(() => {
   if (timeDimension.value === 'year') {
+    // 确保有数据再处理
+    if (!mockData.year) {
+      return {
+        labels: [],
+        values: [],
+        total: 0,
+        avg: 0,
+        max: 0,
+        min: 0,
+      };
+    }
+
     const startYear = selectedStartYear.value;
     const endYear = selectedEndYear.value;
 
@@ -127,7 +106,21 @@ const chartData = computed(() => {
       .sort();
 
     if (yearsInRange.length === 0) {
-      return mockData.year['2025'];
+      // 返回默认年份数据而不是硬编码的2025年
+      const defaultYear =
+        availableYears.value.length > 0
+          ? availableYears.value[availableYears.value.length - 1]
+          : '2025';
+      return (
+        mockData.year[defaultYear] || {
+          labels: [],
+          values: [],
+          total: 0,
+          avg: 0,
+          max: 0,
+          min: 0,
+        }
+      );
     }
 
     // 合并多个年份的数据
@@ -139,14 +132,21 @@ const chartData = computed(() => {
 
     yearsInRange.forEach((year) => {
       const yearData = mockData.year[year];
-      allLabels.push(...yearData.labels);
-      allValues.push(...yearData.values);
-      total += yearData.total;
-      max = Math.max(max, yearData.max);
-      min = Math.min(min, yearData.min);
+      if (yearData) {
+        allLabels.push(...yearData.labels);
+        allValues.push(...yearData.values);
+        total += yearData.total;
+        max = Math.max(max, yearData.max);
+        min = Math.min(min, yearData.min);
+      }
     });
 
-    const avg = total / yearsInRange.length;
+    // 防止min保持为Infinity
+    if (min === Infinity) {
+      min = 0;
+    }
+
+    const avg = yearsInRange.length > 0 ? total / yearsInRange.length : 0;
 
     return {
       labels: allLabels,
@@ -158,15 +158,34 @@ const chartData = computed(() => {
     };
   } else {
     // 全部年度模式
+    if (!mockData.year) {
+      return {
+        labels: [],
+        values: [],
+        total: 0,
+        avg: 0,
+        max: 0,
+        min: 0,
+      };
+    }
+
     return {
       labels: allYearsData.value.map((item) => `${item.year}年`),
       values: allYearsData.value.map((item) => item.total),
       total: allYearsData.value.reduce((sum, item) => sum + item.total, 0),
       avg:
-        allYearsData.value.reduce((sum, item) => sum + item.avg, 0) /
-        allYearsData.value.length,
-      max: Math.max(...allYearsData.value.map((item) => item.max)),
-      min: Math.min(...allYearsData.value.map((item) => item.min)),
+        allYearsData.value.length > 0
+          ? allYearsData.value.reduce((sum, item) => sum + item.avg, 0) /
+            allYearsData.value.length
+          : 0,
+      max:
+        allYearsData.value.length > 0
+          ? Math.max(...allYearsData.value.map((item) => item.max))
+          : 0,
+      min:
+        allYearsData.value.length > 0
+          ? Math.min(...allYearsData.value.map((item) => item.min))
+          : 0,
     };
   }
 });
@@ -284,7 +303,11 @@ const updateChart = () => {
 };
 
 onMounted(() => {
-  updateChart();
+  statistics({}).then((res) => {
+    mockData = res;
+    console.log(mockData);
+    updateChart();
+  });
 });
 
 // 监听维度变化
@@ -339,12 +362,60 @@ watch(
       </div>
     </Card>
 
-    <!-- 统计卡片区域 -->
-    <Row :gutter="16" class="mb-6">
+    <!-- 统计卡片区域 月 -->
+    <Row :gutter="16" class="mb-6" v-if="timeDimension === 'year'">
       <Col :span="6">
         <Card>
           <Statistic
-            :title="timeDimension === 'all-years' ? '所有年度总收入' : '总收入'"
+            title="总收入"
+            :value="chartData.total"
+            :precision="2"
+            prefix="¥"
+            :value-style="{ color: '#3f8600' }"
+          />
+        </Card>
+      </Col>
+      <Col :span="6">
+        <Card>
+          <Statistic
+            title="平均月收入"
+            :value="chartData.avg"
+            :precision="2"
+            prefix="¥"
+            :value-style="{ color: '#1890ff' }"
+          />
+        </Card>
+      </Col>
+      <Col :span="6">
+        <Card>
+          <Statistic
+            title="最高月收入"
+            :value="chartData.max"
+            :precision="2"
+            prefix="¥"
+            :value-style="{ color: '#cf1322' }"
+          />
+        </Card>
+      </Col>
+      <Col :span="6">
+        <Card>
+          <Statistic
+            title="最低月收入"
+            :value="chartData.min"
+            :precision="2"
+            prefix="¥"
+            :value-style="{ color: '#faad14' }"
+          />
+        </Card>
+      </Col>
+    </Row>
+
+    <!-- 统计卡片区域 年 -->
+    <Row :gutter="16" class="mb-6" v-if="timeDimension === 'all-years'">
+      <Col :span="6">
+        <Card>
+          <Statistic
+            title="总收入"
             :value="chartData.total"
             :precision="2"
             prefix="¥"
