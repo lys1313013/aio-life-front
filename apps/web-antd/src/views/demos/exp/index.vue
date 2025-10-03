@@ -2,12 +2,15 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
+import { onMounted, ref } from 'vue';
+
 import { useVbenDrawer } from '@vben/common-ui';
 
 import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteData, query } from '#/api/core/sysDictType';
+import { getByDictType } from '#/api/core/common';
+import { deleteData, query } from '#/api/core/expense';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -20,6 +23,33 @@ interface RowType {
   releaseDate: string;
 }
 
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+  [],
+);
+
+const loadExpTypes = async () => {
+  try {
+    const res = await getByDictType('exp_type');
+    dictOptions.value = res.dictDetailList;
+    console.log('加载字典选项成功');
+    console.log(dictOptions.value);
+  } catch (error) {
+    console.error('加载收入类型失败:', error);
+  }
+};
+
+// 添加一个计算属性或方法来查找标签
+const getIncomeTypeLabel = (value: number) => {
+  // 将 value 转换为字符串以匹配 dictOptions 中的值
+  const option = dictOptions.value.find((item) => item.id === value);
+  return option ? option.label : String(value);
+};
+
+// 在组件挂载时加载值集数据
+onMounted(() => {
+  loadExpTypes();
+});
+
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: FormDrawerDemo,
 });
@@ -28,13 +58,17 @@ const formOptions: VbenFormProps = {
   // 默认展开
   collapsed: false,
   schema: [
+    // 搜索
     {
-      component: 'Input',
+      component: 'Select',
       componentProps: {
-        placeholder: '',
+        placeholder: '请选择支出类型',
+        options: dictOptions, // 绑定类型选项
+        allowClear: true, // 添加清除选项功能
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'dictName',
-      label: '字典名称',
+      fieldName: 'expTypeId', // 修改为按类型查询
+      label: '支出类型',
     },
   ],
   // 控制表单是否显示折叠按钮
@@ -58,11 +92,28 @@ const gridOptions: VxeGridProps<RowType> = {
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
-    { field: 'dictName', title: '字典名称', sortable: true },
-    { field: 'dictType', title: '字典标识', sortable: true },
-    { field: 'remark', title: '备注', sortable: true },
+    {
+      field: 'amt',
+      cellType: 'number',
+      title: '金额',
+      sortable: true,
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        return cellValue.toFixed(2);
+      },
+    },
+    {
+      field: 'expTypeId',
+      title: '收入类型',
+      sortable: true,
+      formatter: ({ cellValue }) => {
+        return getIncomeTypeLabel(cellValue);
+      },
+    },
+    { field: 'remark', title: '备注', sortable: true},
+    { field: 'expDate', title: '时间', sortable: true },
+    { field: 'createTime', title: '创建时间', sortable: true },
     { field: 'updateTime', title: '修改时间', sortable: true },
-
     {
       field: 'action',
       slots: { default: 'action' },
@@ -71,18 +122,41 @@ const gridOptions: VxeGridProps<RowType> = {
       width: 120,
     },
   ],
+  showFooter: true, // 显示底部合计行
+  footerMethod: ({ columns, data }) => {
+    const footerData = [];
+    const sums = {};
+    columns.forEach((column) => {
+      const field = column.field;
+      if (field === 'amt') {
+        const total = data.reduce((prev, row) => {
+          const value = row[field];
+          return prev + (Number(value) || 0);
+        }, 0);
+        sums[field] = `${total.toFixed(2)}`;
+      } else {
+        sums[field] = '';
+      }
+    });
+    footerData.push(sums);
+    return footerData;
+  },
   keepSource: true,
-  pagerConfig: { pageSize: 50 },
+  pagerConfig: {
+    pageSize: 200,
+  },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        return await query({
+        await loadExpTypes();
+        const newVar = await query({
           page: page.currentPage,
           pageSize: page.pageSize,
           condition: {
             ...formValues,
           },
         });
+        return newVar;
       },
     },
   },
@@ -116,7 +190,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      dictId: row.dictId,
+      incomeId: row.incomeId,
     });
     gridApi.reload();
   } catch (error) {
