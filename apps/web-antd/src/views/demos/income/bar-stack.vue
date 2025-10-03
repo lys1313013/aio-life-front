@@ -10,8 +10,10 @@ import { statistics } from '#/api/core/income';
 
 const chartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
+const yearPieChartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
+const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
 
 interface IncomeDetail {
   incTypeName: string; // 收入类型名称
@@ -108,6 +110,30 @@ const getPieChartData = () => {
   };
 };
 
+// 获取按年份汇总的饼图数据
+const getYearPieChartData = () => {
+  const yearTotals: Record<string, number> = {};
+
+  filteredData.value.forEach((item) => {
+    const yearTotal = item.detail.reduce((total, current) => total + current.incAmt, 0);
+    yearTotals[item.year] = (yearTotals[item.year] || 0) + yearTotal;
+  });
+
+  const data = Object.entries(yearTotals)
+    .map(([year, value]) => ({
+      name: `${year}年`,
+      value: Number(value.toFixed(2))
+    }))
+    .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    data,
+    total: Number(total.toFixed(2)),
+  };
+};
+
 const getSeriesData = () => {
   const incomeTypes = getIncomeTypes();
   const years = getYears().map((year) => year);
@@ -167,6 +193,7 @@ const getSeriesData = () => {
 // 更新图表
 const updateCharts = () => {
   const pieData = getPieChartData();
+  const yearPieData = getYearPieChartData();
   totalAmount.value = pieData.total;
 
   // 渲染柱状图
@@ -219,8 +246,7 @@ const updateCharts = () => {
     series: getSeriesData(),
   });
 
-  // 渲染环形图
-  // 渲染环形图
+  // 渲染收入类型环形图
   renderPieEcharts({
     tooltip: {
       trigger: 'item',
@@ -235,12 +261,12 @@ const updateCharts = () => {
       {
         name: '收入类型分布',
         type: 'pie',
-        radius: ['40%', '70%'],
+        radius: ['0%', '80%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
-          borderWidth: 2
+          borderWidth: 2,
         },
         label: {
           show: true,
@@ -263,6 +289,51 @@ const updateCharts = () => {
           length2: 10
         },
         data: pieData.data
+      }
+    ]
+  });
+
+  // 渲染按时间分布饼图
+  renderYearPieEcharts({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)',
+    },
+    legend: {
+      orient: 'vertical',
+      left: 10,
+      top: 'center'
+    },
+    series: [
+      {
+        name: '年份收入分布',
+        type: 'pie',
+        radius: '80%',
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: (params) => {
+            return `${params.name}\n${params.value} (${params.percent}%)`;
+          },
+          fontSize: 12
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: true
+        },
+        data: yearPieData.data
       }
     ]
   });
@@ -333,6 +404,10 @@ watch(selectedYear, () => {
         <h3>收入类型分布</h3>
         <EchartsUI ref="pieChartRef" />
       </div>
+      <div class="chart-item">
+        <h3>收入时间分布</h3>
+        <EchartsUI ref="yearPieChartRef" />
+      </div>
     </div>
   </div>
 </template>
@@ -398,13 +473,13 @@ watch(selectedYear, () => {
 }
 
 .chart-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   height: 600px;
 }
 
 .chart-item {
-  flex: 1;
   background: #fff;
   border-radius: 8px;
   padding: 20px;
@@ -426,9 +501,21 @@ watch(selectedYear, () => {
   min-height: 0;
 }
 
+@media (max-width: 1400px) {
+  .chart-container {
+    grid-template-columns: repeat(2, 1fr);
+    height: auto;
+  }
+
+  .chart-item:nth-child(3) {
+    grid-column: 1 / -1;
+    height: 400px;
+  }
+}
+
 @media (max-width: 1200px) {
   .chart-container {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     height: auto;
   }
 
