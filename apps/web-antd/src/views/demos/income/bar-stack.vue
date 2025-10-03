@@ -8,7 +8,9 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { statistics } from '#/api/core/income';
 
 const chartRef = ref<EchartsUIType>();
+const pieChartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
+const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 
 interface IncomeDetail {
   incTypeName: string; // 收入类型名称
@@ -47,6 +49,36 @@ const getTotalIncome = () => {
     );
     return total.toFixed(2);
   });
+};
+
+// 获取所有收入类型的总额（用于环形图）
+const getIncomeTypeTotals = () => {
+  const typeTotals: Record<string, number> = {};
+
+  incData.forEach((item) => {
+    item.detail.forEach((detail) => {
+      if (!typeTotals[detail.incTypeName]) {
+        typeTotals[detail.incTypeName] = 0;
+      }
+      typeTotals[detail.incTypeName] += detail.incAmt;
+    });
+  });
+
+  return Object.entries(typeTotals).map(([name, value]) => ({
+    name,
+    value: Number(value.toFixed(2))
+  }));
+};
+
+// 获取环形图数据
+const getPieChartData = () => {
+  const data = getIncomeTypeTotals();
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    data,
+    total: Number(total.toFixed(2))
+  };
 };
 
 const getSeriesData = () => {
@@ -114,6 +146,7 @@ onMounted(
     console.error('获取收入统计数据失败:', error);
   }
 
+  // 渲染柱状图
   renderEcharts({
     tooltip: {
       trigger: 'axis',
@@ -162,11 +195,109 @@ onMounted(
     ],
     series: getSeriesData(),
   });
+
+  // 渲染环形图
+  const pieData = getPieChartData();
+  renderPieEcharts({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'center'
+    },
+    series: [
+      {
+        name: '收入类型分布',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: (params) => {
+            return `${params.name}\n${params.value} (${params.percent}%)`;
+          },
+          fontSize: 12
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: true,
+          length: 10,
+          length2: 10
+        },
+        data: pieData.data
+      }
+    ]
+  });
 });
 </script>
 
 <template>
-  <EchartsUI ref="chartRef" />
+  <div class="chart-container">
+    <div class="chart-item">
+      <h3>收入趋势</h3>
+      <EchartsUI ref="chartRef" />
+    </div>
+    <div class="chart-item">
+      <h3>收入类型分布</h3>
+      <EchartsUI ref="pieChartRef" />
+    </div>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.chart-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  height: 600px;
+}
+
+.chart-item {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-item h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.chart-item :deep(.echarts-ui) {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1200px) {
+  .chart-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .chart-item {
+    height: 400px;
+  }
+}
+</style>
