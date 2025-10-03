@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
+import { Card, Select } from 'ant-design-vue';
 
 import { statistics } from '#/api/core/income';
 
@@ -24,15 +25,41 @@ interface IncomeData {
 
 let incData: IncomeData[] = [];
 
+// 计算总收入
+const totalAmount = ref(0);
+
+// 选中的年份
+const selectedYear = ref<number | 'all'>('all');
+
+// 年份选项
+const yearOptions = ref([{ value: 'all', label: '全部' }]);
+
+// 格式化金额显示
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('zh-CN', {
+    style: 'currency',
+    currency: 'CNY',
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+// 根据选中的年份过滤数据
+const filteredData = computed(() => {
+  if (selectedYear.value === 'all') {
+    return incData;
+  }
+  return incData.filter((item) => item.year === selectedYear.value);
+});
+
 // 从incData中解析数据
 const getYears = () => {
-  return incData.map((item) => item.year);
+  return filteredData.value.map((item) => item.year);
 };
 
 const getIncomeTypes = () => {
   // 获取所有唯一的收入类型
   const types = new Set<string>();
-  incData.forEach((item) => {
+  filteredData.value.forEach((item) => {
     item.detail.forEach((detail) => {
       types.add(detail.incTypeName);
     });
@@ -42,7 +69,7 @@ const getIncomeTypes = () => {
 
 // 计算每年的总收入
 const getTotalIncome = () => {
-  return incData.map((item) => {
+  return filteredData.value.map((item) => {
     const total = item.detail.reduce(
       (total, current) => total + current.incAmt,
       0,
@@ -55,7 +82,7 @@ const getTotalIncome = () => {
 const getIncomeTypeTotals = () => {
   const typeTotals: Record<string, number> = {};
 
-  incData.forEach((item) => {
+  filteredData.value.forEach((item) => {
     item.detail.forEach((detail) => {
       if (!typeTotals[detail.incTypeName]) {
         typeTotals[detail.incTypeName] = 0;
@@ -77,7 +104,7 @@ const getPieChartData = () => {
 
   return {
     data,
-    total: Number(total.toFixed(2))
+    total: Number(total.toFixed(2)),
   };
 };
 
@@ -87,7 +114,7 @@ const getSeriesData = () => {
 
   const series = incomeTypes.map((type) => {
     const data = years.map((year) => {
-      const yearData = incData.find((item) => item.year === year);
+      const yearData = filteredData.value.find((item) => item.year === year);
       if (yearData) {
         const detail = yearData.detail.find((d) => d.incTypeName == type);
         return detail ? detail.incAmt : null;
@@ -137,14 +164,10 @@ const getSeriesData = () => {
   return series;
 };
 
-onMounted(
-  async () => {
-  try {
-    const res = await statistics({});
-    incData = res;
-  } catch (error) {
-    console.error('获取收入统计数据失败:', error);
-  }
+// 更新图表
+const updateCharts = () => {
+  const pieData = getPieChartData();
+  totalAmount.value = pieData.total;
 
   // 渲染柱状图
   renderEcharts({
@@ -197,7 +220,7 @@ onMounted(
   });
 
   // 渲染环形图
-  const pieData = getPieChartData();
+  // 渲染环形图
   renderPieEcharts({
     tooltip: {
       trigger: 'item',
@@ -243,27 +266,140 @@ onMounted(
       }
     ]
   });
+};
+
+onMounted(
+  async () => {
+  try {
+    const res = await statistics({});
+    incData = res;
+
+    // 根据incData生成年份选项
+    const years = [...new Set(incData.map((item) => item.year))].sort(
+      (a, b) => b - a,
+    );
+    yearOptions.value = [
+      { value: 'all', label: '全部' },
+      ...years.map(year => ({ value: year, label: year }))
+    ];
+
+    // 设置默认选中为全部年份
+    selectedYear.value = 'all';
+
+    updateCharts();
+  } catch (error) {
+    console.error('获取收入统计数据失败:', error);
+  }
+});
+
+// 监听年份选择变化
+watch(selectedYear, () => {
+  updateCharts();
 });
 </script>
 
 <template>
-  <div class="chart-container">
-    <div class="chart-item">
-      <h3>收入趋势</h3>
-      <EchartsUI ref="chartRef" />
+  <div class="page-container">
+    <!-- 年份选择器 -->
+    <Card class="year-selector-card">
+      <div class="year-selector-content">
+        <span class="year-label">选择年份：</span>
+        <Select
+          v-model:value="selectedYear"
+          :options="yearOptions"
+          style="width: 200px"
+          placeholder="请选择年份"
+        />
+      </div>
+    </Card>
+
+    <!-- 总金额卡片 -->
+    <div class="total-card">
+      <div class="total-content">
+        <div class="total-icon">💰</div>
+        <div class="total-info">
+          <div class="total-label">总收入</div>
+          <div class="total-amount">{{ formatCurrency(totalAmount) }}</div>
+        </div>
+      </div>
     </div>
-    <div class="chart-item">
-      <h3>收入类型分布</h3>
-      <EchartsUI ref="pieChartRef" />
+
+    <div class="chart-container">
+      <div class="chart-item">
+        <h3>收入趋势</h3>
+        <EchartsUI ref="chartRef" />
+      </div>
+      <div class="chart-item">
+        <h3>收入类型分布</h3>
+        <EchartsUI ref="pieChartRef" />
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.page-container {
+  padding: 20px;
+}
+
+.year-selector-card {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.year-selector-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.year-label {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.total-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  color: white;
+}
+
+.total-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.total-icon {
+  font-size: 48px;
+  opacity: 0.9;
+}
+
+.total-info {
+  flex: 1;
+}
+
+.total-label {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.total-amount {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
 .chart-container {
   display: flex;
   gap: 20px;
-  padding: 20px;
   height: 600px;
 }
 
@@ -298,6 +434,32 @@ onMounted(
 
   .chart-item {
     height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .year-selector-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .year-selector-content :deep(.ant-select) {
+    width: 100% !important;
+  }
+
+  .total-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .total-icon {
+    font-size: 36px;
+  }
+
+  .total-amount {
+    font-size: 24px;
   }
 }
 </style>
