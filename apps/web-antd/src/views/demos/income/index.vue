@@ -23,26 +23,24 @@ interface RowType {
   releaseDate: string;
 }
 
-const dictOptions = ref<Array<{ label: string; value: string }>>([]);
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>([]);
 
 const loadIncomeTypes = async () => {
-  // const res = await getByDictType('income_type');
-  // dictOptions.value = res.dictDetailList;
-  // console.log('加载字典选项成功');
-  // console.log(dictOptions.value);
-  // 模拟数据
-  dictOptions.value = [
-    { label: '工资', value: '1' },
-    { label: '公积金', value: '2' },
-    { label: '年终奖', value: '3' },
-    { label: '理财', value: '4' },
-  ];
+  try {
+    const res = await getByDictType('income_type');
+    dictOptions.value = res.dictDetailList;
+    console.log('加载字典选项成功');
+    console.log(dictOptions.value);
+  } catch (error) {
+    console.error('加载收入类型失败:', error);
+  }
 };
 
 // 添加一个计算属性或方法来查找标签
-const getIncomeTypeLabel = (value: number | string) => {
+const getIncomeTypeLabel = (value: number) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
-  const option = dictOptions.value.find((item) => item.value === String(value));
+  const option = dictOptions.value.find((item) => item.id === value);
+  console.log(dictOptions.value)
   return option ? option.label : String(value);
 };
 
