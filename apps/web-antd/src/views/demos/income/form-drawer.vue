@@ -16,7 +16,9 @@ const tableReload = () => {
   emit('tableReload');
 };
 
-const dictOptions = ref<Array<{ label: string; value: string }>>([]);
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+  [],
+);
 
 async function loadDictOptions() {
   try {
@@ -56,6 +58,7 @@ const [Form, formApi] = useVbenForm({
         placeholder: '请选择',
         options: dictOptions,
         style: { width: '100%' },
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
       fieldName: 'incTypeId',
       label: '收入类型',

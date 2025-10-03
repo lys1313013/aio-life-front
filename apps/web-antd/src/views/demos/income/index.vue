@@ -57,12 +57,14 @@ const formOptions: VbenFormProps = {
   // 默认展开
   collapsed: false,
   schema: [
+    // 搜索
     {
       component: 'Select',
       componentProps: {
         placeholder: '请选择收入类型',
         options: dictOptions, // 绑定收入类型选项
         allowClear: true, // 添加清除选项功能
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
       fieldName: 'incTypeId', // 修改为按收入类型查询
       label: '收入类型',
@@ -89,8 +91,17 @@ const gridOptions: VxeGridProps<RowType> = {
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
-    { field: 'amt', title: '金额', sortable: true },
-    { field: 'remark', title: '备注', sortable: true },
+    {
+      field: 'amt',
+      cellType: 'number',
+      title: '金额',
+      sortable: true,
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        return cellValue.toFixed(2);
+      },
+    },
+    { field: 'remark', title: '备注', sortable: true},
     {
       field: 'incTypeId',
       title: '收入类型',
