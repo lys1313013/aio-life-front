@@ -1,6 +1,18 @@
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { onMounted, ref } from 'vue';
+
+import { useVbenDrawer } from '@vben/common-ui';
+
+import { Button, Popconfirm } from 'ant-design-vue';
 import JSZip from 'jszip';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import { getByDictType } from '#/api/core/common';
+
+import FormDrawerDemo from './form-drawer.vue';
 
 interface Transaction {
   transactionId: string;
@@ -26,7 +38,10 @@ const fileInputRef = ref<HTMLInputElement>();
 const loading = ref(false);
 const resultsVisible = ref(false);
 const transactions = ref<Transaction[]>([]);
-const sortConfig = ref<{ key: string; ascending: boolean }>({ key: '', ascending: true });
+const sortConfig = ref<{ ascending: boolean; key: string }>({
+  key: '',
+  ascending: true,
+});
 
 // 统计信息
 const stats = ref({
@@ -90,7 +105,9 @@ const handleFile = async (file: File) => {
     const zip = await JSZip.loadAsync(arrayBuffer);
 
     // 查找ZIP中的CSV文件
-    const csvFilename = Object.keys(zip.files).find(name => name.endsWith('.csv'));
+    const csvFilename = Object.keys(zip.files).find((name) =>
+      name.endsWith('.csv'),
+    );
 
     if (!csvFilename) {
       throw new Error('ZIP文件中未找到CSV文件');
@@ -105,7 +122,7 @@ const handleFile = async (file: File) => {
       // 尝试使用GBK解码
       const decoder = new TextDecoder('gbk');
       csvText = decoder.decode(csvArrayBuffer);
-    } catch (e) {
+    } catch {
       // 如果GBK解码失败，尝试使用UTF-8
       const decoder = new TextDecoder('utf-8');
       csvText = decoder.decode(csvArrayBuffer);
@@ -116,11 +133,18 @@ const handleFile = async (file: File) => {
     transactions.value = parsedTransactions;
     updateStats(parsedTransactions);
 
+    // 更新表格数据
+    gridApi.setState({
+      gridOptions: {
+        data: parsedTransactions,
+      },
+    });
+
     loading.value = false;
     resultsVisible.value = true;
   } catch (error) {
     console.error('Error:', error);
-    alert('处理文件时出错: ' + (error as Error).message);
+    alert(`处理文件时出错: ${(error as Error).message}`);
     loading.value = false;
   }
 };
@@ -129,7 +153,9 @@ const handleFile = async (file: File) => {
 const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as ArrayBuffer);
+    reader.addEventListener('load', (e) =>
+      resolve(e.target?.result as ArrayBuffer),
+    );
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
@@ -142,8 +168,8 @@ const parseCSV = (csvText: string): Transaction[] => {
 
   // 查找数据行开始位置（跳过标题和元数据）
   let dataStartIndex = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].includes('交易号') || lines[i].includes('交易号')) {
+  for (const [i, line] of lines.entries()) {
+    if (line.includes('交易号') || line.includes('交易号')) {
       dataStartIndex = i + 1;
       break;
     }
@@ -154,15 +180,20 @@ const parseCSV = (csvText: string): Transaction[] => {
     const line = lines[i].trim();
 
     // 跳过空行和汇总行
-    if (!line || line.includes('共') || line.includes('导出时间') || line.includes('----')) {
+    if (
+      !line ||
+      line.includes('共') ||
+      line.includes('导出时间') ||
+      line.includes('----')
+    ) {
       continue;
     }
 
     // 简单的CSV解析
-    const columns = line.split(',').map(col => col.trim());
+    const columns = line.split(',').map((col) => col.trim());
 
     if (columns.length >= 15) {
-      transactions.push({
+      const transaction = {
         transactionId: columns[0],
         merchantOrderId: columns[1],
         createdTime: columns[2],
@@ -172,14 +203,20 @@ const parseCSV = (csvText: string): Transaction[] => {
         type: columns[6],
         counterparty: columns[7],
         productName: columns[8],
-        amount: parseFloat(columns[9]) || 0,
-        flow: columns[10],
+        amount: Number.parseFloat(columns[9]) || 0,
+        flow: columns[10], // 收支方向
         status: columns[11],
-        serviceFee: parseFloat(columns[12]) || 0,
-        successfulRefund: parseFloat(columns[13]) || 0,
+        serviceFee: Number.parseFloat(columns[12]) || 0,
+        successfulRefund: Number.parseFloat(columns[13]) || 0,
         remark: columns[14],
-        fundStatus: columns[15] || ''
-      });
+        fundStatus: columns[15] || '',
+      };
+
+      // 只保留“支出”的数据，收入数据不处理（“不计收支”，“收入”不处理）
+      //
+      if (transaction.flow === '支出') {
+        transactions.push(transaction);
+      }
     }
   }
 
@@ -193,7 +230,7 @@ const updateStats = (transactions: Transaction[]) => {
   let incomeCount = 0;
   let expenseCount = 0;
 
-  transactions.forEach(transaction => {
+  transactions.forEach((transaction) => {
     if (transaction.flow === '收入') {
       totalIncome += transaction.amount;
       incomeCount++;
@@ -214,7 +251,8 @@ const updateStats = (transactions: Transaction[]) => {
 
 // 表格排序
 const sortTable = (key: string) => {
-  const isAscending = sortConfig.value.key === key ? !sortConfig.value.ascending : true;
+  const isAscending =
+    sortConfig.value.key === key ? !sortConfig.value.ascending : true;
   sortConfig.value = { key, ascending: isAscending };
 
   transactions.value.sort((a, b) => {
@@ -223,8 +261,8 @@ const sortTable = (key: string) => {
 
     // 处理数值排序
     if (key === 'amount') {
-      valueA = parseFloat(valueA as string);
-      valueB = parseFloat(valueB as string);
+      valueA = Number.parseFloat(valueA as string);
+      valueB = Number.parseFloat(valueB as string);
     }
 
     // 处理日期排序
@@ -243,15 +281,205 @@ const sortTable = (key: string) => {
   });
 };
 
-// 获取排序指示器类名
-const getSortClass = (key: string) => {
-  if (sortConfig.value.key !== key) return '';
-  return sortConfig.value.ascending ? 'asc' : 'desc';
-};
-
 onMounted(() => {
   // 确保DOM元素已挂载
 });
+
+interface RowType {
+  transactionId: string;
+  merchantOrderId: string;
+  createdTime: string;
+  paymentTime: string;
+  lastModifiedTime: string;
+  source: string;
+  type: string;
+  counterparty: string;
+  productName: string;
+  amount: number;
+  flow: string;
+  status: string;
+  serviceFee: number;
+  successfulRefund: number;
+  remark: string;
+  fundStatus: string;
+  incomeId: any;
+  category: string;
+  color: string;
+  price: string;
+  releaseDate: string;
+}
+
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+  [],
+);
+
+const loadExpTypes = async () => {
+  try {
+    const res = await getByDictType('exp_type');
+    dictOptions.value = res.dictDetailList;
+    console.log('加载字典选项成功');
+    console.log(dictOptions.value);
+  } catch (error) {
+    console.error('加载收入类型失败:', error);
+  }
+};
+
+// 添加一个计算属性或方法来查找标签
+const getIncomeTypeLabel = (value: number) => {
+  // 将 value 转换为字符串以匹配 dictOptions 中的值
+  const option = dictOptions.value.find((item) => item.id === value);
+  return option ? option.label : String(value);
+};
+
+// 在组件挂载时加载值集数据
+onMounted(() => {
+  loadExpTypes();
+});
+
+const [FormDrawer, formDrawerApi] = useVbenDrawer({
+  connectedComponent: FormDrawerDemo,
+});
+
+const formOptions: VbenFormProps = {
+  // 默认展开
+  collapsed: false,
+  schema: [
+    // 搜索
+    {
+      component: 'Select',
+      componentProps: {
+        placeholder: '请选择支出类型',
+        options: dictOptions, // 绑定类型选项
+        allowClear: true, // 添加清除选项功能
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
+      },
+      fieldName: 'expTypeId', // 修改为按类型查询
+      label: '支出类型',
+    },
+  ],
+  // 控制表单是否显示折叠按钮
+  showCollapseButton: true,
+  submitButtonOptions: {
+    content: '查询',
+  },
+  // 是否在字段值改变时提交表单
+  submitOnChange: false,
+  // 按下回车时是否提交表单
+  submitOnEnter: true,
+};
+
+const gridOptions: VxeGridProps<RowType> = {
+  checkboxConfig: {
+    highlight: true,
+    labelField: 'name',
+  },
+  border: true, // 表格是否显示边框
+  stripe: true, // 是否显示斑马纹
+  columns: [
+    { title: '序号', type: 'seq', width: 50 },
+    { title: '主键', visible: false },
+    {
+      field: 'amount',
+      title: '金额',
+      sortable: true,
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        return cellValue.toFixed(2);
+      },
+    },
+    {
+      field: 'flow',
+      title: '收支类型',
+      sortable: true,
+    },
+    {
+      field: 'counterparty',
+      title: '交易对方',
+      sortable: true,
+    },
+    {
+      field: 'productName',
+      title: '商品名称',
+      sortable: true,
+    },
+    {
+      field: 'type',
+      title: '交易类型',
+      sortable: true,
+    },
+    {
+      field: 'paymentTime',
+      title: '交易时间',
+      sortable: true,
+    },
+    {
+      field: 'remark',
+      title: '备注',
+      sortable: true,
+    },
+    {
+      field: 'action',
+      slots: { default: 'action' },
+      fixed: 'right',
+      title: '操作',
+      width: 120,
+    },
+  ],
+  showFooter: true, // 显示底部合计行
+  footerMethod: ({ columns, data }) => {
+    const footerData = [];
+    const sums = {};
+    columns.forEach((column) => {
+      const field = column.field;
+      if (field === 'amount') {
+        const total = data.reduce((prev, row) => {
+          const value = row[field];
+          return prev + (Number(value) || 0);
+        }, 0);
+        sums[field] = `${total.toFixed(2)}`;
+      } else {
+        sums[field] = '';
+      }
+    });
+    footerData.push(sums);
+    return footerData;
+  },
+  keepSource: true,
+  pagerConfig: {
+    pageSize: 1000,
+  },
+  toolbarConfig: {
+    // 是否显示搜索表单控制按钮
+    // @ts-ignore 正式环境时有完整的类型声明
+    search: true,
+  },
+};
+
+function openFormDrawer(row: RowType) {
+  formDrawerApi
+    .setData({
+      // 表单值
+      values: row,
+    })
+    .open();
+}
+
+function openAddFormDrawer() {
+  formDrawerApi
+    .setData({
+      // 表单值
+      values: { modelname: '' },
+    })
+    .open();
+}
+
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const deleteRow = async (row: RowType) => {};
+
+const tableReload = () => {
+  gridApi.reload();
+};
 </script>
 
 <template>
@@ -272,12 +500,10 @@ onMounted(() => {
         type="file"
         accept=".zip"
         @change="handleFileChange"
-      >
+      />
     </div>
 
-    <div v-if="loading" class="loading">
-      正在处理文件，请稍候...
-    </div>
+    <div v-if="loading" class="loading">正在处理文件，请稍候...</div>
 
     <div v-if="resultsVisible" class="results">
       <h2>交易记录概览</h2>
@@ -287,96 +513,39 @@ onMounted(() => {
           <div class="stat-value">{{ stats.totalTransactions }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">收入笔数</div>
-          <div class="stat-value income">{{ stats.incomeCount }}</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-label">支出笔数</div>
           <div class="stat-value expense">{{ stats.expenseCount }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">总收入</div>
-          <div class="stat-value income">{{ stats.totalIncome.toFixed(2) }}</div>
-        </div>
-        <div class="stat-card">
           <div class="stat-label">总支出</div>
-          <div class="stat-value expense">{{ stats.totalExpense.toFixed(2) }}</div>
+          <div class="stat-value expense">
+            {{ stats.totalExpense.toFixed(2) }}
+          </div>
         </div>
       </div>
+    </div>
 
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th
-                :class="getSortClass('transactionId')"
-                @click="sortTable('transactionId')"
-              >
-                交易号
-              </th>
-              <th
-                :class="getSortClass('createdTime')"
-                @click="sortTable('createdTime')"
-              >
-                交易创建时间
-              </th>
-              <th
-                :class="getSortClass('type')"
-                @click="sortTable('type')"
-              >
-                类型
-              </th>
-              <th
-                :class="getSortClass('counterparty')"
-                @click="sortTable('counterparty')"
-              >
-                交易对方
-              </th>
-              <th
-                :class="getSortClass('productName')"
-                @click="sortTable('productName')"
-              >
-                商品名称
-              </th>
-              <th
-                :class="getSortClass('amount')"
-                @click="sortTable('amount')"
-              >
-                金额 (元)
-              </th>
-              <th
-                :class="getSortClass('flow')"
-                @click="sortTable('flow')"
-              >
-                收/支
-              </th>
-              <th
-                :class="getSortClass('status')"
-                @click="sortTable('status')"
-              >
-                交易状态
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="transactions.length === 0">
-              <td colspan="8" class="no-data">未找到交易记录</td>
-            </tr>
-            <tr v-for="transaction in transactions" :key="transaction.transactionId">
-              <td>{{ transaction.transactionId }}</td>
-              <td>{{ transaction.createdTime }}</td>
-              <td>{{ transaction.type }}</td>
-              <td>{{ transaction.counterparty }}</td>
-              <td>{{ transaction.productName }}</td>
-              <td :class="{ 'income': transaction.flow === '收入', 'expense': transaction.flow === '支出' }">
-                {{ transaction.amount.toFixed(2) }}
-              </td>
-              <td>{{ transaction.flow }}</td>
-              <td>{{ transaction.status }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="w-full">
+      <FormDrawer @table-reload="tableReload" />
+      <Grid>
+        <template #toolbar-tools>
+          <Button class="mr-2" type="primary" @click="openAddFormDrawer">
+            新增
+          </Button>
+        </template>
+        <template #action="{ row }">
+          <a href="#" @click="openFormDrawer(row)">编辑</a>
+          &nbsp;&nbsp;
+          <Popconfirm
+            title="是否确认删除?"
+            ok-text="是"
+            cancel-text="否"
+            @confirm="deleteRow(row)"
+          >
+            <a href="#">删除</a>
+          </Popconfirm>
+        </template>
+      </Grid>
     </div>
   </div>
 </template>
@@ -405,12 +574,6 @@ h1 {
   font-weight: 600;
 }
 
-.description {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #666;
-}
-
 .upload-area {
   border: 2px dashed #1677ff;
   border-radius: 8px;
@@ -422,7 +585,8 @@ h1 {
   cursor: pointer;
 }
 
-.upload-area:hover, .upload-area.dragover {
+.upload-area:hover,
+.upload-area.dragover {
   background-color: #e0efff;
   transform: translateY(-2px);
 }
@@ -452,7 +616,7 @@ h1 {
   background: #0e5fd0;
 }
 
-input[type="file"] {
+input[type='file'] {
   display: none;
 }
 
@@ -489,83 +653,14 @@ input[type="file"] {
   font-size: 14px;
 }
 
-.income {
-  color: #52c41a;
-}
-
 .expense {
   color: #ff4d4f;
-}
-
-.table-container {
-  overflow-x: auto;
-  margin-top: 20px;
-  border-radius: 8px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #eaeaea;
-}
-
-th {
-  background-color: #f0f7ff;
-  color: #1677ff;
-  font-weight: 600;
-  cursor: pointer;
-  position: relative;
-}
-
-th:hover {
-  background-color: #e0efff;
-}
-
-th::after {
-  content: '↕';
-  position: absolute;
-  right: 8px;
-  opacity: 0.5;
-}
-
-th.asc::after {
-  content: '↑';
-  opacity: 1;
-}
-
-th.desc::after {
-  content: '↓';
-  opacity: 1;
-}
-
-tr:hover {
-  background-color: #f9fbfd;
-}
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #999;
 }
 
 .loading {
   text-align: center;
   padding: 20px;
   color: #1677ff;
-}
-
-.encoding-info {
-  background-color: #fffbf0;
-  border-left: 4px solid #ffc53d;
-  padding: 15px;
-  margin: 20px 0;
-  border-radius: 4px;
 }
 
 @media (max-width: 768px) {
@@ -580,11 +675,6 @@ tr:hover {
   .stat-card {
     min-width: 140px;
     padding: 15px;
-  }
-
-  th, td {
-    padding: 8px 10px;
-    font-size: 14px;
   }
 }
 </style>

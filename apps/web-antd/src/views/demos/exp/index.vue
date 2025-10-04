@@ -15,7 +15,7 @@ import { deleteData, query } from '#/api/core/expense';
 import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
-  dictId: any;
+  incomeId: any;
   category: string;
   color: string;
   price: string;
