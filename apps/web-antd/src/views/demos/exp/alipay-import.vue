@@ -435,10 +435,11 @@ const gridOptions: VxeGridProps<RowType> = {
 };
 
 function submitData() {
-  // 获取表格数据
-  const tableData = gridApi.grid.getTableData().tableData;
-  if (!tableData) {
+  // 获取所有表格数据（包括懒加载的数据）
+  const tableData = gridApi.grid.getFullData();
+  if (!tableData || tableData.length === 0) {
     alert('没有数据可提交')
+    return;
   }
   console.log('提交数据:', tableData);
   saveBatch(tableData);
