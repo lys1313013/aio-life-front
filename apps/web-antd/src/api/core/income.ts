@@ -25,5 +25,5 @@ export async function deleteData(data: any) {
  * 统计
  */
 export async function statistics(data: any) {
-  return await requestClient.get('/income/statistics', data);
+  return await requestClient.post('/income/static', data);
 }

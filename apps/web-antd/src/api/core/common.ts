@@ -12,6 +12,7 @@ interface SysDictTypeEntity {
 }
 
 interface SysDictDataEntity {
+  id: number;
   label: string;
   value: string;
 }

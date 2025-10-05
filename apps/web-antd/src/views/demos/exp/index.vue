@@ -10,12 +10,12 @@ import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
-import { deleteData, query } from '#/api/core/expense';
+import { deleteData, query, deleteBatch } from '#/api/core/expense';
 
 import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
-  incomeId: any;
+  id: any;
   category: string;
   color: string;
   price: string;
@@ -81,13 +81,13 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions: VxeGridProps<RowType> = {
-  checkboxConfig: {
-    highlight: true,
-    labelField: 'name',
-  },
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
+  checkboxConfig: {
+    isShiftKey: true,
+  },
   columns: [
+    { type: 'checkbox', title: '', width: 60 },
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
@@ -110,7 +110,10 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     { field: 'remark', title: '备注', sortable: true },
-    { field: 'expDate', title: '时间', sortable: true },
+    { field: 'expTime', title: '时间', sortable: true },
+    { field: 'expDesc', title: '交易描述', sortable: true },
+    { field: 'counterparty', title: '交易对方', sortable: true },
+    { field: 'transactionId', title: '交易号', sortable: true },
     { field: 'createTime', title: '创建时间', sortable: true },
     { field: 'updateTime', title: '修改时间', sortable: true },
     {
@@ -142,7 +145,7 @@ const gridOptions: VxeGridProps<RowType> = {
   },
   keepSource: true,
   pagerConfig: {
-    pageSize: 200,
+    pageSize: 50,
   },
   proxyConfig: {
     ajax: {
@@ -184,14 +187,21 @@ function openAddFormDrawer() {
     .open();
 }
 
+function submitDeleteData() {
+  let checkboxRecords = gridApi.grid.getCheckboxRecords();
+  console.log('checkboxRecords:', checkboxRecords);
+  deleteBatch({
+    idList: checkboxRecords.map((item) => item.id),
+  }).then(() => gridApi.reload());
+}
+
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      incomeId: row.incomeId,
-    });
-    gridApi.reload();
+      id: row.id,
+    }).then(() => gridApi.reload());
   } catch (error) {
     console.error('捕获异常：', error);
   }
@@ -209,6 +219,9 @@ const tableReload = () => {
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormDrawer">
           新增
+        </Button>
+        <Button class="mr-2" type="primary" @click="submitDeleteData">
+          删除
         </Button>
       </template>
       <template #action="{ row }">

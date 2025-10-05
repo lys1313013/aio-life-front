@@ -19,12 +19,12 @@ interface Transaction {
   transactionId: string;
   merchantOrderId: string;
   createdTime: string;
-  paymentTime: string;
+  expTime: string;
   lastModifiedTime: string;
   source: string;
   type: string;
   counterparty: string;
-  productName: string;
+  expDesc: string;
   amt: number;
   flow: string;
   status: string;
@@ -195,12 +195,12 @@ const parseCSV = (csvText: string): Transaction[] => {
         transactionId: columns[0],
         merchantOrderId: columns[1],
         createdTime: columns[2],
-        paymentTime: columns[3],
+        expTime: columns[3],
         lastModifiedTime: columns[4],
         source: columns[5],
         type: columns[6],
         counterparty: columns[7],
-        productName: columns[8],
+        expDesc: columns[8],
         amt: Number.parseFloat(columns[9]) || 0,
         flow: columns[10], // 收支方向
         status: columns[11],
@@ -256,12 +256,12 @@ interface RowType {
   transactionId: string;
   merchantOrderId: string;
   createdTime: string;
-  paymentTime: string;
+  expTime: string;
   lastModifiedTime: string;
   source: string;
   type: string;
   counterparty: string;
-  productName: string;
+  expDesc: string;
   amt: number;
   flow: string;
   status: string;
@@ -278,7 +278,7 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
 // 添加一个计算属性来确保数据格式正确
 const selectOptions = computed(() => {
   return dictOptions.value.map((item) => ({
-    id: item.id,
+    value: item.id,
     label: item.label,
   }));
 });
@@ -334,10 +334,6 @@ const formOptions: VbenFormProps = {
 };
 
 const gridOptions: VxeGridProps<RowType> = {
-  checkboxConfig: {
-    highlight: true,
-    labelField: 'name',
-  },
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
   showFooter: true, // 显示底部合计行
@@ -345,14 +341,16 @@ const gridOptions: VxeGridProps<RowType> = {
   maxHeight: 700,
   minHeight: 700,
   showOverflow: true,
-  editConfig: {
+  editConfig: { // 启用单元格编辑
     mode: 'cell',
     trigger: 'click',
+  },
+  checkboxConfig: {
+    isShiftKey: true,
   },
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
-    { title: '交易号', field: 'transactionId' },
     {
       field: 'amt',
       title: '金额',
@@ -364,22 +362,17 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
-      field: 'flow',
-      title: '收支类型',
-      sortable: true,
-    },
-    {
       field: 'counterparty',
       title: '交易对方',
       sortable: true,
     },
     {
-      field: 'productName',
-      title: '商品名称',
+      field: 'expDesc',
+      title: '商品描述',
       sortable: true,
     },
     {
-      field: 'paymentTime',
+      field: 'expTime',
       title: '交易时间',
       sortable: true,
     },
@@ -387,28 +380,25 @@ const gridOptions: VxeGridProps<RowType> = {
       field: 'remark',
       title: '备注',
       sortable: true,
+      editRender: {
+        name: 'input',
+      },
     },
-    // 添加可编辑的支出类型列
     {
       field: 'expTypeId',
       title: '支出类型',
       sortable: true,
       editRender: {
-        name: 'select',
+        name: 'select', // 可编辑组件
         options: selectOptions,
-        props: {
-          valueField: 'id',
-          labelField: 'label',
-        },
-        optionProps: {
-          valueField: 'id',
-          labelField: 'label',
-        },
       },
-      // formatter: ({ cellValue }) => {
-      //   return getIncomeTypeLabel(cellValue);
-      // },
     },
+    {
+      field: 'status',
+      title: '状态',
+      sortable: true,
+    },
+    { title: '交易号', field: 'transactionId' },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -454,17 +444,19 @@ function openFormDrawer(row: RowType) {
 
 function submitData() {
   // 获取表格数据
-  const tableData = gridApi.grid.getTableData();
+  const tableData = gridApi.grid.getTableData().tableData;
   if (!tableData) {
     alert('没有数据可提交')
   }
-  console.log('提交数据:', tableData.tableData);
+  console.log('提交数据:', tableData);
   saveBatch(tableData);
 }
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
-const deleteRow = async (row: RowType) => {};
+const deleteRow = async (row: RowType) => {
+  gridApi.grid.removeCurrentRow();
+};
 
 const tableReload = () => {
   gridApi.reload();
@@ -522,8 +514,8 @@ const tableReload = () => {
           </Button>
         </template>
         <template #action="{ row }">
-          <a href="#" @click="openFormDrawer(row)">编辑</a>
-          &nbsp;&nbsp;
+<!--          <a href="#" @click="openFormDrawer(row)">编辑</a>-->
+<!--          &nbsp;&nbsp;-->
           <Popconfirm
             title="是否确认删除?"
             ok-text="是"

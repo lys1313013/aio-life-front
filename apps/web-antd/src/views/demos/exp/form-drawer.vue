@@ -70,7 +70,7 @@ const [Form, formApi] = useVbenForm({
         format: 'YYYY-MM-DD',
         valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'expDate',
+      fieldName: 'expTime',
       label: '支出日期',
     },
     {

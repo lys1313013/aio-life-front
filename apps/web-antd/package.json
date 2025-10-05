@@ -45,6 +45,7 @@
     "@vueuse/core": "catalog:",
     "ant-design-vue": "catalog:",
     "dayjs": "catalog:",
+    "jszip": "^3.10.1",
     "moment": "^2.30.1",
     "pinia": "catalog:",
     "vue": "catalog:",

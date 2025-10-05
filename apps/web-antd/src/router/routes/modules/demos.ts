@@ -73,7 +73,7 @@ const routes: RouteRecordRaw[] = [
         },
         name: 'incomeDashboard',
         path: '/demos/incomeDashboard',
-        component: () => import('#/views/demos/income/dashboard.vue'),
+        component: () => import('#/views/demos/income/bar-stack.vue'),
       },
       {
         meta: {
@@ -98,6 +98,14 @@ const routes: RouteRecordRaw[] = [
         name: 'test',
         path: '/demos/test',
         component: () => import('#/views/demos/test/index.vue'),
+      },
+      {
+        meta: {
+          title: '支付宝导入',
+        },
+        name: 'alipayImport',
+        path: '/demos/alipay-import',
+        component: () => import('#/views/demos/exp/alipay-import.vue'),
       },
     ],
   },

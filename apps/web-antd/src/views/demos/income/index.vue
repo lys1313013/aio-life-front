@@ -15,7 +15,7 @@ import { deleteData, query } from '#/api/core/income';
 import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
-  dictId: any;
+  incomeId: any;
   category: string;
   color: string;
   price: string;
@@ -146,6 +146,7 @@ const gridOptions: VxeGridProps<RowType> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
+        await loadIncomeTypes()
         return await query({
           page: page.currentPage,
           pageSize: page.pageSize,
