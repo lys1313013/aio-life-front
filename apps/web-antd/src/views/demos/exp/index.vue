@@ -31,10 +31,8 @@ const loadExpTypes = async () => {
   try {
     const res = await getByDictType('exp_type');
     dictOptions.value = res.dictDetailList;
-    console.log('加载字典选项成功');
-    console.log(dictOptions.value);
   } catch (error) {
-    console.error('加载收入类型失败:', error);
+    console.error('加载类型失败:', error);
   }
 };
 
@@ -97,6 +95,7 @@ const gridOptions: VxeGridProps<RowType> = {
       cellType: 'number',
       title: '金额',
       sortable: true,
+      headerAlign: 'center',
       align: 'right',
       formatter: ({ cellValue }) => {
         return cellValue.toFixed(2);
@@ -104,13 +103,13 @@ const gridOptions: VxeGridProps<RowType> = {
     },
     {
       field: 'expTypeId',
-      title: '收入类型',
+      title: '支出类型',
       sortable: true,
       formatter: ({ cellValue }) => {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'remark', title: '备注', sortable: true},
+    { field: 'remark', title: '备注', sortable: true },
     { field: 'expDate', title: '时间', sortable: true },
     { field: 'createTime', title: '创建时间', sortable: true },
     { field: 'updateTime', title: '修改时间', sortable: true },

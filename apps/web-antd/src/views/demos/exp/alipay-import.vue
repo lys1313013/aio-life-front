@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
@@ -11,6 +11,7 @@ import JSZip from 'jszip';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
+import { saveBatch } from '#/api/core/expense';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -24,13 +25,14 @@ interface Transaction {
   type: string;
   counterparty: string;
   productName: string;
-  amount: number;
+  amt: number;
   flow: string;
   status: string;
   serviceFee: number;
   successfulRefund: number;
   remark: string;
   fundStatus: string;
+  expTypeId?: number; // 添加支出类型字段
 }
 
 const uploadAreaRef = ref<HTMLElement>();
@@ -38,10 +40,6 @@ const fileInputRef = ref<HTMLInputElement>();
 const loading = ref(false);
 const resultsVisible = ref(false);
 const transactions = ref<Transaction[]>([]);
-const sortConfig = ref<{ ascending: boolean; key: string }>({
-  key: '',
-  ascending: true,
-});
 
 // 统计信息
 const stats = ref({
@@ -203,16 +201,17 @@ const parseCSV = (csvText: string): Transaction[] => {
         type: columns[6],
         counterparty: columns[7],
         productName: columns[8],
-        amount: Number.parseFloat(columns[9]) || 0,
+        amt: Number.parseFloat(columns[9]) || 0,
         flow: columns[10], // 收支方向
         status: columns[11],
         serviceFee: Number.parseFloat(columns[12]) || 0,
         successfulRefund: Number.parseFloat(columns[13]) || 0,
         remark: columns[14],
         fundStatus: columns[15] || '',
+        expTypeId: 119, // 初始化支出类型字段
       };
 
-      // 只保留“支出”的数据，收入数据不处理（“不计收支”，“收入”不处理）
+      // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
       //
       if (transaction.flow === '支出') {
         transactions.push(transaction);
@@ -232,10 +231,10 @@ const updateStats = (transactions: Transaction[]) => {
 
   transactions.forEach((transaction) => {
     if (transaction.flow === '收入') {
-      totalIncome += transaction.amount;
+      totalIncome += transaction.amt;
       incomeCount++;
     } else if (transaction.flow === '支出') {
-      totalExpense += transaction.amount;
+      totalExpense += transaction.amt;
       expenseCount++;
     }
   });
@@ -247,38 +246,6 @@ const updateStats = (transactions: Transaction[]) => {
     totalIncome,
     totalExpense,
   };
-};
-
-// 表格排序
-const sortTable = (key: string) => {
-  const isAscending =
-    sortConfig.value.key === key ? !sortConfig.value.ascending : true;
-  sortConfig.value = { key, ascending: isAscending };
-
-  transactions.value.sort((a, b) => {
-    let valueA = a[key as keyof Transaction];
-    let valueB = b[key as keyof Transaction];
-
-    // 处理数值排序
-    if (key === 'amount') {
-      valueA = Number.parseFloat(valueA as string);
-      valueB = Number.parseFloat(valueB as string);
-    }
-
-    // 处理日期排序
-    if (key.includes('Time')) {
-      valueA = new Date(valueA as string).getTime();
-      valueB = new Date(valueB as string).getTime();
-    }
-
-    if (valueA < valueB) {
-      return isAscending ? -1 : 1;
-    }
-    if (valueA > valueB) {
-      return isAscending ? 1 : -1;
-    }
-    return 0;
-  });
 };
 
 onMounted(() => {
@@ -295,30 +262,31 @@ interface RowType {
   type: string;
   counterparty: string;
   productName: string;
-  amount: number;
+  amt: number;
   flow: string;
   status: string;
   serviceFee: number;
   successfulRefund: number;
   remark: string;
-  fundStatus: string;
-  incomeId: any;
-  category: string;
-  color: string;
-  price: string;
-  releaseDate: string;
+  expTypeId?: number; // 添加支出类型字段
 }
 
+// 支出类型
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
+// 添加一个计算属性来确保数据格式正确
+const selectOptions = computed(() => {
+  return dictOptions.value.map((item) => ({
+    id: item.id,
+    label: item.label,
+  }));
+});
 
 const loadExpTypes = async () => {
   try {
     const res = await getByDictType('exp_type');
     dictOptions.value = res.dictDetailList;
-    console.log('加载字典选项成功');
-    console.log(dictOptions.value);
   } catch (error) {
     console.error('加载收入类型失败:', error);
   }
@@ -341,8 +309,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 });
 
 const formOptions: VbenFormProps = {
-  // 默认展开
-  collapsed: false,
+  collapsed: false, // 默认展开
   schema: [
     // 搜索
     {
@@ -362,10 +329,8 @@ const formOptions: VbenFormProps = {
   submitButtonOptions: {
     content: '查询',
   },
-  // 是否在字段值改变时提交表单
-  submitOnChange: false,
-  // 按下回车时是否提交表单
-  submitOnEnter: true,
+  submitOnChange: false, // 是否在字段值改变时提交表单
+  submitOnEnter: true, // 按下回车时是否提交表单
 };
 
 const gridOptions: VxeGridProps<RowType> = {
@@ -375,13 +340,24 @@ const gridOptions: VxeGridProps<RowType> = {
   },
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
+  showFooter: true, // 显示底部合计行
+  pagerConfig: {enabled: false}, // 关闭分页
+  maxHeight: 700,
+  minHeight: 700,
+  showOverflow: true,
+  editConfig: {
+    mode: 'cell',
+    trigger: 'click',
+  },
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
+    { title: '交易号', field: 'transactionId' },
     {
-      field: 'amount',
+      field: 'amt',
       title: '金额',
       sortable: true,
+      headerAlign: 'center',
       align: 'right',
       formatter: ({ cellValue }) => {
         return cellValue.toFixed(2);
@@ -403,11 +379,6 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
     },
     {
-      field: 'type',
-      title: '交易类型',
-      sortable: true,
-    },
-    {
       field: 'paymentTime',
       title: '交易时间',
       sortable: true,
@@ -417,6 +388,27 @@ const gridOptions: VxeGridProps<RowType> = {
       title: '备注',
       sortable: true,
     },
+    // 添加可编辑的支出类型列
+    {
+      field: 'expTypeId',
+      title: '支出类型',
+      sortable: true,
+      editRender: {
+        name: 'select',
+        options: selectOptions,
+        props: {
+          valueField: 'id',
+          labelField: 'label',
+        },
+        optionProps: {
+          valueField: 'id',
+          labelField: 'label',
+        },
+      },
+      // formatter: ({ cellValue }) => {
+      //   return getIncomeTypeLabel(cellValue);
+      // },
+    },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -425,13 +417,12 @@ const gridOptions: VxeGridProps<RowType> = {
       width: 120,
     },
   ],
-  showFooter: true, // 显示底部合计行
   footerMethod: ({ columns, data }) => {
     const footerData = [];
     const sums = {};
     columns.forEach((column) => {
       const field = column.field;
-      if (field === 'amount') {
+      if (field === 'amt') {
         const total = data.reduce((prev, row) => {
           const value = row[field];
           return prev + (Number(value) || 0);
@@ -445,9 +436,6 @@ const gridOptions: VxeGridProps<RowType> = {
     return footerData;
   },
   keepSource: true,
-  pagerConfig: {
-    pageSize: 1000,
-  },
   toolbarConfig: {
     // 是否显示搜索表单控制按钮
     // @ts-ignore 正式环境时有完整的类型声明
@@ -464,13 +452,14 @@ function openFormDrawer(row: RowType) {
     .open();
 }
 
-function openAddFormDrawer() {
-  formDrawerApi
-    .setData({
-      // 表单值
-      values: { modelname: '' },
-    })
-    .open();
+function submitData() {
+  // 获取表格数据
+  const tableData = gridApi.grid.getTableData();
+  if (!tableData) {
+    alert('没有数据可提交')
+  }
+  console.log('提交数据:', tableData.tableData);
+  saveBatch(tableData);
 }
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
@@ -492,7 +481,6 @@ const tableReload = () => {
       @drop="handleDrop"
       @click="handleUploadAreaClick"
     >
-      <div class="upload-icon">📁</div>
       <p class="upload-text">拖放ZIP文件到此处，或点击上传</p>
       <div class="browse-btn" @click="handleBrowseClick">选择文件</div>
       <input
@@ -529,8 +517,8 @@ const tableReload = () => {
       <FormDrawer @table-reload="tableReload" />
       <Grid>
         <template #toolbar-tools>
-          <Button class="mr-2" type="primary" @click="openAddFormDrawer">
-            新增
+          <Button class="mr-2" type="primary" @click="submitData">
+            提交
           </Button>
         </template>
         <template #action="{ row }">
@@ -577,7 +565,7 @@ h1 {
 .upload-area {
   border: 2px dashed #1677ff;
   border-radius: 8px;
-  padding: 40px;
+  padding: 20px;
   text-align: center;
   margin-bottom: 30px;
   background-color: #f0f7ff;
@@ -591,14 +579,8 @@ h1 {
   transform: translateY(-2px);
 }
 
-.upload-icon {
-  font-size: 48px;
-  color: #1677ff;
-  margin-bottom: 15px;
-}
-
 .upload-text {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
   font-weight: 500;
 }
 
@@ -606,7 +588,7 @@ h1 {
   display: inline-block;
   background: #1677ff;
   color: white;
-  padding: 10px 20px;
+  padding: 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.3s;
