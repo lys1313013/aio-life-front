@@ -65,8 +65,13 @@ const formOptions: VbenFormProps = {
         allowClear: true, // 添加清除选项功能
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'expTypeId', // 修改为按类型查询
+      fieldName: 'expTypeId',
       label: '支出类型',
+    },
+    {
+      component: 'Input',
+      fieldName: 'remark',
+      label: '备注',
     },
   ],
   // 控制表单是否显示折叠按钮
