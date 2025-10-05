@@ -349,6 +349,7 @@ const gridOptions: VxeGridProps<RowType> = {
     isShiftKey: true,
   },
   columns: [
+    { type: 'checkbox', title: '', width: 60 },
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
@@ -433,15 +434,6 @@ const gridOptions: VxeGridProps<RowType> = {
   },
 };
 
-function openFormDrawer(row: RowType) {
-  formDrawerApi
-    .setData({
-      // 表单值
-      values: row,
-    })
-    .open();
-}
-
 function submitData() {
   // 获取表格数据
   const tableData = gridApi.grid.getTableData().tableData;
@@ -454,8 +446,50 @@ function submitData() {
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
+// 批量删除选中的行
+const deleteSelectedRows = async () => {
+  // 获取选中的行
+  const selectedRows = gridApi.grid.getCheckboxRecords();
+
+  if (selectedRows.length === 0) {
+    alert('请先选择要删除的行');
+    return;
+  }
+
+  // 获取当前表格数据
+  const tableData = gridApi.grid.getTableData().tableData;
+
+  // 获取选中行的transactionId集合
+  const selectedIds = new Set(selectedRows.map(row => row.transactionId));
+
+  // 过滤掉选中的行
+  const newData = tableData.filter(item => !selectedIds.has(item.transactionId));
+
+  // 更新表格数据
+  gridApi.setState({
+    gridOptions: {
+      data: newData,
+    },
+  });
+
+  // 更新统计信息
+  updateStats(newData);
+};
+
 const deleteRow = async (row: RowType) => {
-  gridApi.grid.removeCurrentRow();
+  // 从表格数据中删除指定行
+  const tableData = gridApi.grid.getTableData().tableData;
+  const newData = tableData.filter(item => item.transactionId !== row.transactionId);
+
+  // 更新表格数据
+  gridApi.setState({
+    gridOptions: {
+      data: newData,
+    },
+  });
+
+  // 更新统计信息
+  updateStats(newData);
 };
 
 const tableReload = () => {
@@ -511,11 +545,19 @@ const tableReload = () => {
         <template #toolbar-tools>
           <Button class="mr-2" type="primary" @click="submitData">
             提交
-          </Button>
+          </Button> &nbsp;
+          <Popconfirm
+            title="确定要删除选中的记录吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="deleteSelectedRows"
+          >
+            <Button class="mr-2" type="primary">
+              删除
+            </Button>
+          </Popconfirm>
         </template>
         <template #action="{ row }">
-<!--          <a href="#" @click="openFormDrawer(row)">编辑</a>-->
-<!--          &nbsp;&nbsp;-->
           <Popconfirm
             title="是否确认删除?"
             ok-text="是"
