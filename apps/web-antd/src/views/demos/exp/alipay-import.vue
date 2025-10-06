@@ -26,7 +26,7 @@ interface Transaction {
   source: string;
   type: string;
   counterparty: string;
-  counterpartyAccount: string; // 对方账号字段
+  counterpartyAcct: string; // 对方账号字段
   expDesc: string;
   amt: number;
   flow: string;
@@ -38,24 +38,31 @@ interface Transaction {
   expTypeId?: number; // 支出类型字段
 }
 
+// 定义RowType接口，用于表格数据
+interface RowType extends Transaction {
+  // 可以添加额外的表格字段
+}
+
 const uploadAreaRef = ref<HTMLElement>();
 const fileInputRef = ref<HTMLInputElement>();
 const loading = ref(false);
 const resultsVisible = ref(false);
 const transactions = ref<Transaction[]>([]);
 
+// 添加选中的类型过滤
+const selectedCategory = ref<string | null>(null);
+
 // 图表引用
 const monthlyChartRef = ref<EchartsUIType>();
 const categoryChartRef = ref<EchartsUIType>();
-const { renderEcharts: renderMonthlyChart } = useEcharts(monthlyChartRef);
-const { renderEcharts: renderCategoryChart } = useEcharts(categoryChartRef);
+const { renderEcharts: renderMonthlyChart, getChartInstance: getMonthlyChartInstance } = useEcharts(monthlyChartRef);
+const { renderEcharts: renderCategoryChart, getChartInstance: getCategoryChartInstance } = useEcharts(categoryChartRef);
 
 // 统计信息
 const stats = ref({
-  totalTransactions: 0,
-  incomeCount: 0,
+  startTime: '',
+  endTime: '',
   expenseCount: 0,
-  totalIncome: 0,
   totalExpense: 0,
 });
 
@@ -229,7 +236,7 @@ const parseCSV = (csvText: string): Transaction[] => {
         source: columns[5],
         type: columns[6],
         counterparty: columns[7],
-        counterpartyAccount: '', // 电脑端CSV没有对方账号字段，设为空
+        counterpartyAcct: '', // 电脑端CSV没有对方账号字段，设为空
         expDesc: columns[8],
         amt: Number.parseFloat(columns[9]) || 0,
         flow: columns[10], // 收支方向
@@ -242,8 +249,8 @@ const parseCSV = (csvText: string): Transaction[] => {
       };
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
-      //
-      if (transaction.flow === '支出') {
+      // 过滤出状态为"成功"的支出记录
+      if (transaction.flow === '支出' && transaction.status === '交易成功') {
         transactions.push(transaction);
       }
     }
@@ -345,7 +352,7 @@ const parseMobileCSV = (csvText: string): Transaction[] => {
         source: '支付宝手机端',
         transactionType: transactionType, // 交易分类
         counterparty: columns[2] || '', // 交易对方
-        counterpartyAccount: columns[3] || '', // 对方账号
+        counterpartyAcct: columns[3] || '', // 对方账号
         expDesc: columns[4] || '', // 商品说明
         transactionAmt: Number.parseFloat(columns[6]), //交易金额
         amt: Number.parseFloat(columns[6]), // 金额
@@ -405,11 +412,32 @@ const getCategoryStats = (transactions: Transaction[]) => {
 
 // 更新统计信息
 const updateStats = (transactions: Transaction[]) => {
-  let totalIncome = 0;
   let totalExpense = 0;
-  let incomeCount = 0;
   let expenseCount = 0;
-
+  
+  // 计算开始时间和结束时间
+  let startTime = '';
+  let endTime = '';
+  
+  if (transactions.length > 0) {
+    // 提取所有有效的时间
+    const validTimes = transactions
+      .map(t => t.expTime || t.createdTime)
+      .filter(time => time && time.trim() !== '')
+      .map(time => new Date(time))
+      .filter(date => !isNaN(date.getTime()));
+    
+    if (validTimes.length > 0) {
+      // 找到最早和最晚的时间
+      const earliest = new Date(Math.min(...validTimes.map(d => d.getTime())));
+      const latest = new Date(Math.max(...validTimes.map(d => d.getTime())));
+      
+      // 格式化时间显示
+      startTime = formatDate(earliest);
+      endTime = formatDate(latest);
+    }
+  }
+  
   transactions.forEach((transaction) => {
     if (transaction.flow === '支出') {
       totalExpense += transaction.amt;
@@ -418,15 +446,19 @@ const updateStats = (transactions: Transaction[]) => {
   });
 
   stats.value = {
-    totalTransactions: transactions.length,
-    incomeCount,
+    startTime,
+    endTime,
     expenseCount,
-    totalIncome,
     totalExpense,
   };
 
   // 更新图表
   updateCharts(transactions);
+};
+
+// 格式化日期函数
+const formatDate = (date: Date) => {
+  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 };
 
 // 更新图表
@@ -524,36 +556,52 @@ const updateCharts = (transactions: Transaction[]) => {
       data: pieData
     }]
   });
+
+  // 添加饼图点击事件
+  setTimeout(() => {
+    const chartInstance = getCategoryChartInstance();
+    if (chartInstance) {
+      chartInstance.off('click'); // 移除之前的事件监听器
+      chartInstance.on('click', (params: any) => {
+        if (params.componentType === 'series' && params.data) {
+          // 点击饼图扇区时过滤数据
+          selectedCategory.value = params.data.name;
+          
+          // 更新表格数据
+          gridApi.setState({
+            gridOptions: {
+              data: filteredTransactions.value,
+            },
+          });
+        }
+      });
+    }
+  }, 100);
 };
 
-onMounted(() => {
-  // 确保DOM元素已挂载
+// 添加重置过滤的方法
+const resetFilter = () => {
+  selectedCategory.value = null;
+  gridApi.setState({
+    gridOptions: {
+      data: transactions.value,
+    },
+  });
+};
+
+// 计算过滤后的交易数据
+const filteredTransactions = computed(() => {
+  if (!selectedCategory.value) {
+    return transactions.value;
+  }
+  return transactions.value.filter(transaction => 
+    transaction.transactionType === selectedCategory.value
+  );
 });
 
-interface RowType {
-  transactionId: string;
-  merchantOrderNo: string;
-  createdTime: string;
-  expTime: string;
-  lastModifiedTime: string;
-  source: string;
-  type: string;
-  counterparty: string;
-  counterpartyAccount: string; // 对方账号字段
-  expDesc: string;
-  amt: number;
-  flow: string;
-  status: string;
-  serviceFee: number;
-  successfulRefund: number;
-  remark: string;
-  expTypeId?: number; // 支出类型字段
-}
-
 // 支出类型
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>([]);
+
 // 添加一个计算属性来确保数据格式正确
 const selectOptions = computed(() => {
   return dictOptions.value.map((item) => ({
@@ -567,7 +615,7 @@ const loadExpTypes = async () => {
     const res = await getByDictType('exp_type');
     dictOptions.value = res.dictDetailList;
   } catch (error) {
-    console.error('加载收入类型失败:', error);
+    console.error('加载支出类型失败:', error);
   }
 };
 
@@ -674,11 +722,11 @@ const gridOptions: VxeGridProps<RowType> = {
     },
     {
       field: 'status',
-      title: '状态',
+      title: '交易状态',
       sortable: true,
     },
     {
-      field: 'counterpartyAccount',
+      field: 'counterpartyAcct',
       title: '对方账号',
       sortable: true,
     },
@@ -727,6 +775,53 @@ function submitData() {
   saveBatch(tableData);
 }
 
+// 添加删除选中的行函数
+const deleteSelectedRows = () => {
+  const selectedRows = gridApi.grid.getCheckboxRecords();
+  if (selectedRows.length === 0) {
+    alert('请先选择要删除的记录');
+    return;
+  }
+  
+  // 从transactions中移除选中的行
+  const selectedIds = selectedRows.map(row => row.transactionId);
+  transactions.value = transactions.value.filter(
+    transaction => !selectedIds.includes(transaction.transactionId)
+  );
+  
+  // 更新表格数据
+  gridApi.setState({
+    gridOptions: {
+      data: transactions.value,
+    },
+  });
+  
+  // 更新统计信息
+  updateStats(transactions.value);
+  
+  alert(`成功删除 ${selectedRows.length} 条记录`);
+};
+
+// 添加删除单行函数
+const deleteRow = (row: RowType) => {
+  // 从transactions中移除该行
+  transactions.value = transactions.value.filter(
+    transaction => transaction.transactionId !== row.transactionId
+  );
+  
+  // 更新表格数据
+  gridApi.setState({
+    gridOptions: {
+      data: transactions.value,
+    },
+  });
+  
+  // 更新统计信息
+  updateStats(transactions.value);
+
+  alert('提交成功');
+};
+
 const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 </script>
@@ -758,8 +853,12 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
       <h2>交易记录概览</h2>
       <div class="stats">
         <div class="stat-card">
-          <div class="stat-label">交易总数</div>
-          <div class="stat-value">{{ stats.totalTransactions }}</div>
+          <div class="stat-label">开始时间</div>
+          <div class="stat-value">{{ stats.startTime || '暂无数据' }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">结束时间</div>
+          <div class="stat-value">{{ stats.endTime || '暂无数据' }}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">支出笔数</div>
@@ -798,7 +897,10 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
           >
             <Button class="mr-2" type="primary">
               删除
-            </Button>
+            </Button>&nbsp;
+             <Button class="mr-2" type="default" @click="resetFilter" v-if="selectedCategory">
+            重置过滤
+          </Button> 
           </Popconfirm>
         </template>
         <template #action="{ row }">
