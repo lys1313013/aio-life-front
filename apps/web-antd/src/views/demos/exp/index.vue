@@ -151,6 +151,7 @@ const gridOptions: VxeGridProps<RowType> = {
   keepSource: true,
   pagerConfig: {
     pageSize: 50,
+    pageSizes: [10, 20, 30, 50, 100, 200, 1000],
   },
   proxyConfig: {
     ajax: {

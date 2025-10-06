@@ -24,6 +24,7 @@ interface Transaction {
   source: string;
   type: string;
   counterparty: string;
+  counterpartyAccount: string; // 对方账号字段
   expDesc: string;
   amt: number;
   flow: string;
@@ -32,7 +33,7 @@ interface Transaction {
   successfulRefund: number;
   remark: string;
   fundStatus: string;
-  expTypeId?: number; // 添加支出类型字段
+  expTypeId?: number; // 支出类型字段
 }
 
 const uploadAreaRef = ref<HTMLElement>();
@@ -147,7 +148,6 @@ const handleFile = async (file: File) => {
 
     // 检测文件类型并解析CSV内容
     const isMobileCSV = file.name.includes('支付宝交易明细');
-    debugger
     const parsedTransactions = isMobileCSV ? parseMobileCSV(csvText) : parseCSV(csvText);
     transactions.value = parsedTransactions;
     updateStats(parsedTransactions);
@@ -221,6 +221,7 @@ const parseCSV = (csvText: string): Transaction[] => {
         source: columns[5],
         type: columns[6],
         counterparty: columns[7],
+        counterpartyAccount: '', // 电脑端CSV没有对方账号字段，设为空
         expDesc: columns[8],
         amt: Number.parseFloat(columns[9]) || 0,
         flow: columns[10], // 收支方向
@@ -313,6 +314,20 @@ const parseMobileCSV = (csvText: string): Transaction[] => {
 
     // 手机端CSV格式：交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注
     if (columns.length >= 12) {
+      // 获取交易分类
+      const transactionType = columns[1] || '';
+
+      // 根据交易分类匹配dictOptions的label，获取对应的id
+      let matchedExpTypeId = 119; // 默认值
+      if (transactionType && dictOptions.value.length > 0) {
+        const matchedOption = dictOptions.value.find(option =>
+          option.label === transactionType
+        );
+        if (matchedOption) {
+          matchedExpTypeId = matchedOption.id;
+        }
+      }
+
       const transaction = {
         transactionId: columns[9] || '', // 交易订单号
         merchantOrderNo: columns[10] || '', // 商家订单号
@@ -320,17 +335,19 @@ const parseMobileCSV = (csvText: string): Transaction[] => {
         expTime: columns[0] || '', // 交易时间作为支出时间
         lastModifiedTime: columns[0] || '', // 交易时间作为最后修改时间
         source: '支付宝手机端',
-        type: columns[1] || '', // 交易分类
+        transactionType: transactionType, // 交易分类
         counterparty: columns[2] || '', // 交易对方
+        counterpartyAccount: columns[3] || '', // 对方账号
         expDesc: columns[4] || '', // 商品说明
-        amt: Number.parseFloat(columns[6]), // 金额（取绝对值）
+        transactionAmt: Number.parseFloat(columns[6]), //交易金额
+        amt: Number.parseFloat(columns[6]), // 金额
         flow: columns[5] || '', // 收/支
         status: columns[8] || '', // 交易状态
         serviceFee: 0, // 手机端没有服务费字段
         successfulRefund: 0, // 手机端没有退款字段
         remark: columns[11] || '', // 备注
         fundStatus: columns[7] || '', // 收/付款方式作为资金状态
-        expTypeId: 119, // 初始化支出类型字段
+        expTypeId: matchedExpTypeId, // 根据交易分类匹配的支出类型ID
       };
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
@@ -351,10 +368,7 @@ const updateStats = (transactions: Transaction[]) => {
   let expenseCount = 0;
 
   transactions.forEach((transaction) => {
-    if (transaction.flow === '收入') {
-      totalIncome += transaction.amt;
-      incomeCount++;
-    } else if (transaction.flow === '支出') {
+    if (transaction.flow === '支出') {
       totalExpense += transaction.amt;
       expenseCount++;
     }
@@ -382,6 +396,7 @@ interface RowType {
   source: string;
   type: string;
   counterparty: string;
+  counterpartyAccount: string; // 对方账号字段
   expDesc: string;
   amt: number;
   flow: string;
@@ -389,7 +404,7 @@ interface RowType {
   serviceFee: number;
   successfulRefund: number;
   remark: string;
-  expTypeId?: number; // 添加支出类型字段
+  expTypeId?: number; // 支出类型字段
 }
 
 // 支出类型
@@ -429,31 +444,6 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: FormDrawerDemo,
 });
 
-const formOptions: VbenFormProps = {
-  collapsed: false, // 默认展开
-  schema: [
-    // 搜索
-    {
-      component: 'Select',
-      componentProps: {
-        placeholder: '请选择支出类型',
-        options: dictOptions, // 绑定类型选项
-        allowClear: true, // 添加清除选项功能
-        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
-      },
-      fieldName: 'expTypeId', // 修改为按类型查询
-      label: '支出类型',
-    },
-  ],
-  // 控制表单是否显示折叠按钮
-  showCollapseButton: true,
-  submitButtonOptions: {
-    content: '查询',
-  },
-  submitOnChange: false, // 是否在字段值改变时提交表单
-  submitOnEnter: true, // 按下回车时是否提交表单
-};
-
 const gridOptions: VxeGridProps<RowType> = {
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
@@ -474,13 +464,32 @@ const gridOptions: VxeGridProps<RowType> = {
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
-      field: 'amt',
-      title: '金额',
+      field: 'transactionAmt',
+      title: '交易金额',
       sortable: true,
       headerAlign: 'center',
       align: 'right',
       formatter: ({ cellValue }) => {
-        return cellValue.toFixed(2);
+        const value = Number(cellValue);
+        return isNaN(value) ? '' : value.toFixed(2);
+      },
+    },
+    {
+      field: 'amt',
+      title: '记账金额',
+      sortable: true,
+      headerAlign: 'center',
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        const value = Number(cellValue);
+        return isNaN(value) ? '' : value.toFixed(2);
+      },
+      editRender: {
+        name: 'input',
+        props: {
+          type: 'number',
+          placeholder: '请输入金额',
+        },
       },
     },
     {
@@ -507,17 +516,28 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
+      field: 'transactionType',
+      title: '原交易分类',
+      sortable: true,
+      filters: ["value"],
+    },
+    {
       field: 'expTypeId',
       title: '支出类型',
       sortable: true,
       editRender: {
-        name: 'select', // 可编辑组件
+        name: 'select',
         options: selectOptions,
       },
     },
     {
       field: 'status',
       title: '状态',
+      sortable: true,
+    },
+    {
+      field: 'counterpartyAccount',
+      title: '对方账号',
       sortable: true,
     },
     { title: '交易号', field: 'transactionId' },
@@ -566,57 +586,8 @@ function submitData() {
   saveBatch(tableData);
 }
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
-// 批量删除选中的行
-const deleteSelectedRows = async () => {
-  // 获取选中的行
-  const selectedRows = gridApi.grid.getCheckboxRecords();
-
-  if (selectedRows.length === 0) {
-    alert('请先选择要删除的行');
-    return;
-  }
-
-  // 获取当前表格数据
-  const tableData = gridApi.grid.getTableData().tableData;
-
-  // 获取选中行的transactionId集合
-  const selectedIds = new Set(selectedRows.map(row => row.transactionId));
-
-  // 过滤掉选中的行
-  const newData = tableData.filter(item => !selectedIds.has(item.transactionId));
-
-  // 更新表格数据
-  gridApi.setState({
-    gridOptions: {
-      data: newData,
-    },
-  });
-
-  // 更新统计信息
-  updateStats(newData);
-};
-
-const deleteRow = async (row: RowType) => {
-  // 从表格数据中删除指定行
-  const tableData = gridApi.grid.getTableData().tableData;
-  const newData = tableData.filter(item => item.transactionId !== row.transactionId);
-
-  // 更新表格数据
-  gridApi.setState({
-    gridOptions: {
-      data: newData,
-    },
-  });
-
-  // 更新统计信息
-  updateStats(newData);
-};
-
-const tableReload = () => {
-  gridApi.reload();
-};
 </script>
 
 <template>
@@ -704,7 +675,6 @@ const tableReload = () => {
 }
 
 .container {
-  max-width: 1200px;
   margin: 0 auto;
   background: white;
   border-radius: 12px;
