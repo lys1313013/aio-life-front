@@ -28,3 +28,14 @@ export async function deleteData(data: any) {
 export async function deleteBatch(data: any) {
   return await requestClient.post('/expense/deleteBatch', data);
 }
+
+/**
+ * 统计
+ */
+export async function statisticsByYear(data: any) {
+  return await requestClient.post('/expense/statisticsByYear', data);
+}
+
+export async function statisticsByMonth(data: any) {
+  return await requestClient.post('/expense/statisticsByMonth', data);
+}

@@ -24,6 +24,10 @@ export async function deleteData(data: any) {
 /**
  * 统计
  */
-export async function statistics(data: any) {
-  return await requestClient.post('/income/static', data);
+export async function statisticsByYear(data: any) {
+  return await requestClient.post('/income/statisticsByYear', data);
+}
+
+export async function statisticsByMonth(data: any) {
+  return await requestClient.post('/income/statisticsByMonth', data);
 }
