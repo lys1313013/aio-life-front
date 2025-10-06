@@ -17,7 +17,7 @@ import FormDrawerDemo from './form-drawer.vue';
 
 interface Transaction {
   transactionId: string;
-  merchantOrderId: string;
+  merchantOrderNo: string;
   createdTime: string;
   expTime: string;
   lastModifiedTime: string;
@@ -88,10 +88,11 @@ const handleFileChange = (e: Event) => {
   }
 };
 
-// 处理上传的ZIP文件
+// 处理上传的文件
 const handleFile = async (file: File) => {
-  if (!file.name.endsWith('.zip')) {
-    alert('请上传ZIP文件');
+  // 检查文件类型
+  if (!file.name.endsWith('.zip') && !file.name.endsWith('.csv')) {
+    alert('请上传ZIP文件或CSV文件');
     return;
   }
 
@@ -99,35 +100,55 @@ const handleFile = async (file: File) => {
   resultsVisible.value = false;
 
   try {
-    const arrayBuffer = await readFileAsArrayBuffer(file);
-    const zip = await JSZip.loadAsync(arrayBuffer);
-
-    // 查找ZIP中的CSV文件
-    const csvFilename = Object.keys(zip.files).find((name) =>
-      name.endsWith('.csv'),
-    );
-
-    if (!csvFilename) {
-      throw new Error('ZIP文件中未找到CSV文件');
-    }
-
-    // 读取CSV文件为ArrayBuffer
-    const csvArrayBuffer = await zip.file(csvFilename)!.async('arraybuffer');
-
-    // 解决中文乱码问题 - 支付宝CSV通常使用GBK编码
     let csvText: string;
-    try {
-      // 尝试使用GBK解码
-      const decoder = new TextDecoder('gbk');
-      csvText = decoder.decode(csvArrayBuffer);
-    } catch {
-      // 如果GBK解码失败，尝试使用UTF-8
-      const decoder = new TextDecoder('utf-8');
-      csvText = decoder.decode(csvArrayBuffer);
+
+    if (file.name.endsWith('.zip')) {
+      // 处理ZIP文件
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      // 查找ZIP中的CSV文件
+      const csvFilename = Object.keys(zip.files).find((name) =>
+        name.endsWith('.csv'),
+      );
+
+      if (!csvFilename) {
+        throw new Error('ZIP文件中未找到CSV文件');
+      }
+
+      // 读取CSV文件为ArrayBuffer
+      const csvArrayBuffer = await zip.file(csvFilename)!.async('arraybuffer');
+
+      // 解决中文乱码问题 - 支付宝CSV通常使用GBK编码
+      try {
+        // 尝试使用GBK解码
+        const decoder = new TextDecoder('gbk');
+        csvText = decoder.decode(csvArrayBuffer);
+      } catch {
+        // 如果GBK解码失败，尝试使用UTF-8
+        const decoder = new TextDecoder('utf-8');
+        csvText = decoder.decode(csvArrayBuffer);
+      }
+    } else {
+      // 处理CSV文件
+      const arrayBuffer = await readFileAsArrayBuffer(file);
+
+      // 解决中文乱码问题
+      try {
+        // 尝试使用GBK解码
+        const decoder = new TextDecoder('gbk');
+        csvText = decoder.decode(arrayBuffer);
+      } catch {
+        // 如果GBK解码失败，尝试使用UTF-8
+        const decoder = new TextDecoder('utf-8');
+        csvText = decoder.decode(arrayBuffer);
+      }
     }
 
-    // 解析CSV内容
-    const parsedTransactions = parseCSV(csvText);
+    // 检测文件类型并解析CSV内容
+    const isMobileCSV = file.name.includes('支付宝交易明细');
+    debugger
+    const parsedTransactions = isMobileCSV ? parseMobileCSV(csvText) : parseCSV(csvText);
     transactions.value = parsedTransactions;
     updateStats(parsedTransactions);
 
@@ -192,8 +213,8 @@ const parseCSV = (csvText: string): Transaction[] => {
 
     if (columns.length >= 15) {
       const transaction = {
-        transactionId: columns[0],
-        merchantOrderId: columns[1],
+        transactionId: columns[0], // 交易号
+        merchantOrderNo: columns[1], // 商户订单号
         createdTime: columns[2],
         expTime: columns[3],
         lastModifiedTime: columns[4],
@@ -213,6 +234,106 @@ const parseCSV = (csvText: string): Transaction[] => {
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
       //
+      if (transaction.flow === '支出') {
+        transactions.push(transaction);
+      }
+    }
+  }
+
+  return transactions;
+};
+
+// 解析手机端CSV内容
+const parseMobileCSV = (csvText: string): Transaction[] => {
+  const lines = csvText.split('\n');
+  const transactions: Transaction[] = [];
+
+  // 查找数据行开始位置（跳过标题和元数据）
+  let dataStartIndex = 0;
+  let headerFound = false;
+
+  for (const [i, line] of lines.entries()) {
+    // 查找数据表头行
+    if (line.includes('交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注')) {
+      dataStartIndex = i + 1;
+      headerFound = true;
+      break;
+    }
+  }
+
+  // 如果没有找到标准表头，尝试查找其他可能的表头格式
+  if (!headerFound) {
+    for (const [i, line] of lines.entries()) {
+      if (line.includes('交易时间') && line.includes('交易分类') && line.includes('交易对方')) {
+        dataStartIndex = i + 1;
+        headerFound = true;
+        break;
+      }
+    }
+  }
+
+  // 解析数据行
+  for (let i = dataStartIndex; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // 跳过空行和汇总行
+    if (
+      !line ||
+      line.includes('共') ||
+      line.includes('导出时间') ||
+      line.includes('----') ||
+      line.includes('支付宝支付科技有限公司') ||
+      line.includes('特别提示')
+    ) {
+      continue;
+    }
+
+    // 手机端CSV解析 - 处理可能的引号包含逗号的情况
+    const columns: string[] = [];
+    let currentColumn = '';
+    let inQuotes = false;
+
+    for (let j = 0; j < line.length; j++) {
+      const char = line[j];
+
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        columns.push(currentColumn.trim());
+        currentColumn = '';
+      } else {
+        currentColumn += char;
+      }
+    }
+
+    // 添加最后一个列
+    if (currentColumn.trim()) {
+      columns.push(currentColumn.trim());
+    }
+
+    // 手机端CSV格式：交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注
+    if (columns.length >= 12) {
+      const transaction = {
+        transactionId: columns[9] || '', // 交易订单号
+        merchantOrderNo: columns[10] || '', // 商家订单号
+        createdTime: columns[0] || '', // 交易时间
+        expTime: columns[0] || '', // 交易时间作为支出时间
+        lastModifiedTime: columns[0] || '', // 交易时间作为最后修改时间
+        source: '支付宝手机端',
+        type: columns[1] || '', // 交易分类
+        counterparty: columns[2] || '', // 交易对方
+        expDesc: columns[4] || '', // 商品说明
+        amt: Number.parseFloat(columns[6]), // 金额（取绝对值）
+        flow: columns[5] || '', // 收/支
+        status: columns[8] || '', // 交易状态
+        serviceFee: 0, // 手机端没有服务费字段
+        successfulRefund: 0, // 手机端没有退款字段
+        remark: columns[11] || '', // 备注
+        fundStatus: columns[7] || '', // 收/付款方式作为资金状态
+        expTypeId: 119, // 初始化支出类型字段
+      };
+
+      // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
       if (transaction.flow === '支出') {
         transactions.push(transaction);
       }
@@ -254,7 +375,7 @@ onMounted(() => {
 
 interface RowType {
   transactionId: string;
-  merchantOrderId: string;
+  merchantOrderNo: string;
   createdTime: string;
   expTime: string;
   lastModifiedTime: string;
@@ -508,12 +629,13 @@ const tableReload = () => {
       @drop="handleDrop"
       @click="handleUploadAreaClick"
     >
-      <p class="upload-text">拖放ZIP文件到此处，或点击上传</p>
+      <p class="upload-text">拖放ZIP或CSV文件到此处，或点击上传</p>
+      <p class="upload-hint">支持支付宝电脑端ZIP文件或手机端CSV文件</p>
       <div class="browse-btn" @click="handleBrowseClick">选择文件</div>
       <input
         ref="fileInputRef"
         type="file"
-        accept=".zip"
+        accept=".zip,.csv"
         @change="handleFileChange"
       />
     </div>
@@ -617,6 +739,12 @@ h1 {
 .upload-text {
   margin-bottom: 5px;
   font-weight: 500;
+}
+
+.upload-hint {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #666;
 }
 
 .browse-btn {
