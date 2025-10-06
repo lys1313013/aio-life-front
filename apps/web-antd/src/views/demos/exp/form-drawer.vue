@@ -40,7 +40,7 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '【自动生成】',
       },
-      fieldName: 'incomeId',
+      fieldName: 'id',
       label: '主键',
       disabled: true,
     },
