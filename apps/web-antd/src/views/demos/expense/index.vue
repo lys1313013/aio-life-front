@@ -254,6 +254,17 @@ const formOptions: VbenFormProps = {
       label: '支出类型',
     },
     {
+      component: 'RangePicker',
+      componentProps: {
+        placeholder: ['开始日期', '结束日期'],
+        format: 'YYYY-MM-DD',
+        valueFormat: 'YYYY-MM-DD',
+        style: { width: '100%' },
+      },
+      fieldName: 'expTimeRange',
+      label: '日期区间',
+    },
+    {
       component: 'Input',
       fieldName: 'remark',
       label: '备注',
@@ -343,12 +354,12 @@ const gridOptions: VxeGridProps<RowType> = {
     ajax: {
       query: async ({ page }, formValues) => {
         await loadExpTypes();
+        // 处理查询条件
+        const processedCondition = processQueryCondition(formValues);
         const result = await query({
           page: page.currentPage,
           pageSize: page.pageSize,
-          condition: {
-            ...formValues,
-          },
+          condition: processedCondition,
         });
 
         // 确保数据格式正确 - 使用items字段而不是records
@@ -420,6 +431,24 @@ const deleteRow = async (row: RowType) => {
   } catch (error) {
     console.error('捕获异常：', error);
   }
+};
+
+// 处理查询条件，将日期区间转换为开始时间和结束时间
+const processQueryCondition = (formValues: any) => {
+  const condition = { ...formValues };
+  // 处理日期区间
+  if (condition.expTimeRange && Array.isArray(condition.expTimeRange)) {
+    const [startTime, endTime] = condition.expTimeRange;
+    if (startTime) {
+      condition.startTime = startTime;
+    }
+    if (endTime) {
+      condition.endTime = endTime;
+    }
+    // 删除原始的日期区间字段
+    delete condition.expTimeRange;
+  }
+  return condition;
 };
 
 const tableReload = () => {

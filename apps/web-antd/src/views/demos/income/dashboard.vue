@@ -4,483 +4,549 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
+import { Card, Select } from 'ant-design-vue';
 
-import {
-  Card,
-  Col,
-  Radio,
-  RadioGroup,
-  Row,
-  Select,
-  Statistic,
-} from 'ant-design-vue';
-
-import { statistics } from '#/api/core/income';
-
-// 定义数据类型
-interface YearData {
-  labels: string[];
-  values: number[];
-  total: number;
-  avg: number;
-  max: number;
-  min: number;
-}
-
-interface MockData {
-  year: Record<string, YearData>;
-}
-
-// 模拟数据
-let mockData: MockData = {
-  year: {
-    '2025': {
-      labels: [
-        '2025-01',
-        '2025-02',
-        '2025-03',
-        '2025-04',
-        '2025-05',
-        '2025-06',
-        '2025-07',
-        '2025-08',
-        '2025-09',
-        '2025-10',
-        '2025-11',
-        '2025-12',
-      ],
-      values: [12, 15, 18, 21, 25, 28, 30, 32, 35, 38, 40, 42],
-      total: 345,
-      avg: 28_750,
-      max: 42,
-      min: 12,
-    },
-  } as Record<string, YearData>,
-};
-
-const timeDimension = ref<'all-years' | 'year'>('year');
-const selectedStartYear = ref('2023');
-const selectedEndYear = ref('2025');
-
-// 获取所有可用的年份
-const availableYears = computed(() => {
-  return mockData.year ? Object.keys(mockData.year).sort() : [];
-});
-
-// 获取所有年度数据
-const allYearsData = computed(() => {
-  if (!mockData.year) return [];
-
-  return Object.entries(mockData.year)
-    .map(([year, data]) => ({
-      year,
-      total: data.total,
-      avg: data.avg,
-      max: data.max,
-      min: data.min,
-    }))
-    .sort((a, b) => a.year.localeCompare(b.year));
-});
-
-// 获取当前选中的数据
-const chartData = computed(() => {
-  if (timeDimension.value === 'year') {
-    // 确保有数据再处理
-    if (!mockData.year) {
-      return {
-        labels: [],
-        values: [],
-        total: 0,
-        avg: 0,
-        max: 0,
-        min: 0,
-      };
-    }
-
-    const startYear = selectedStartYear.value;
-    const endYear = selectedEndYear.value;
-
-    // 获取范围内的所有年份数据
-    const yearsInRange = availableYears.value
-      .filter((year) => year >= startYear && year <= endYear)
-      .sort();
-
-    if (yearsInRange.length === 0) {
-      // 返回默认年份数据而不是硬编码的2025年
-      const defaultYear =
-        availableYears.value.length > 0
-          ? availableYears.value[availableYears.value.length - 1]
-          : '2025';
-      return (
-        mockData.year[defaultYear] || {
-          labels: [],
-          values: [],
-          total: 0,
-          avg: 0,
-          max: 0,
-          min: 0,
-        }
-      );
-    }
-
-    // 合并多个年份的数据
-    const allLabels: string[] = [];
-    const allValues: number[] = [];
-    let total = 0;
-    let max = 0;
-    let min = Infinity;
-
-    yearsInRange.forEach((year) => {
-      const yearData = mockData.year[year];
-      if (yearData) {
-        allLabels.push(...yearData.labels);
-        allValues.push(...yearData.values);
-        total += yearData.total;
-        max = Math.max(max, yearData.max);
-        min = Math.min(min, yearData.min);
-      }
-    });
-
-    // 防止min保持为Infinity
-    if (min === Infinity) {
-      min = 0;
-    }
-
-    const avg = yearsInRange.length > 0 ? total / yearsInRange.length : 0;
-
-    return {
-      labels: allLabels,
-      values: allValues,
-      total,
-      avg,
-      max,
-      min,
-    };
-  } else {
-    // 全部年度模式
-    if (!mockData.year) {
-      return {
-        labels: [],
-        values: [],
-        total: 0,
-        avg: 0,
-        max: 0,
-        min: 0,
-      };
-    }
-
-    return {
-      labels: allYearsData.value.map((item) => `${item.year}年`),
-      values: allYearsData.value.map((item) => item.total),
-      total: allYearsData.value.reduce((sum, item) => sum + item.total, 0),
-      avg:
-        allYearsData.value.length > 0
-          ? allYearsData.value.reduce((sum, item) => sum + item.avg, 0) /
-            allYearsData.value.length
-          : 0,
-      max:
-        allYearsData.value.length > 0
-          ? Math.max(...allYearsData.value.map((item) => item.max))
-          : 0,
-      min:
-        allYearsData.value.length > 0
-          ? Math.min(...allYearsData.value.map((item) => item.min))
-          : 0,
-    };
-  }
-});
+import { statisticsByYear } from '#/api/core/income';
 
 const chartRef = ref<EchartsUIType>();
+const pieChartRef = ref<EchartsUIType>();
+const yearPieChartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
+const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
+const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
+
+interface IncomeDetail {
+  typeName: string; // 收入类型名称
+  amt: number; // 收入金额
+}
+
+interface IncomeData {
+  year: number; // 年份
+  detail: IncomeDetail[]; // 该年份下的收入详情列表
+}
+
+let incData: IncomeData[] = [];
+
+// 计算总收入
+const totalAmount = ref(0);
+
+// 选中的年份
+const selectedYear = ref<number | 'all'>('all');
+
+// 年份选项
+const yearOptions = ref([{ value: 'all', label: '全部' }]);
+
+// 格式化金额显示
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('zh-CN', {
+    style: 'currency',
+    currency: 'CNY',
+    minimumFractionDigits: 2,
+  }).format(amount);
+};
+
+// 根据选中的年份过滤数据
+const filteredData = computed(() => {
+  if (selectedYear.value === 'all') {
+    return incData;
+  }
+  return incData.filter((item) => item.year === selectedYear.value);
+});
+
+// 从incData中解析数据
+const getYears = () => {
+  return filteredData.value.map((item) => item.year);
+};
+
+const getIncomeTypes = () => {
+  // 获取所有唯一的收入类型
+  const types = new Set<string>();
+  filteredData.value.forEach((item) => {
+    item.detail.forEach((detail) => {
+      types.add(detail.typeName);
+    });
+  });
+  return [...types];
+};
+
+// 计算每年的总收入
+const getTotalIncome = () => {
+  return filteredData.value.map((item) => {
+    const total = item.detail.reduce(
+      (total, current) => total + current.amt,
+      0,
+    );
+    return total.toFixed(2);
+  });
+};
+
+// 获取所有收入类型的总额（用于环形图）
+const getIncomeTypeTotals = () => {
+  const typeTotals: Record<string, number> = {};
+
+  filteredData.value.forEach((item) => {
+    item.detail.forEach((detail) => {
+      if (!typeTotals[detail.typeName]) {
+        typeTotals[detail.typeName] = 0;
+      }
+      typeTotals[detail.typeName] += detail.amt;
+    });
+  });
+
+  return Object.entries(typeTotals).map(([name, value]) => ({
+    name,
+    value: Number(value.toFixed(2))
+  }));
+};
+
+// 获取环形图数据
+const getPieChartData = () => {
+  const data = getIncomeTypeTotals();
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    data,
+    total: Number(total.toFixed(2)),
+  };
+};
+
+// 获取按年份汇总的饼图数据
+const getYearPieChartData = () => {
+  const yearTotals: Record<string, number> = {};
+
+  filteredData.value.forEach((item) => {
+    const yearTotal = item.detail.reduce((total, current) => total + current.amt, 0);
+    yearTotals[item.year] = (yearTotals[item.year] || 0) + yearTotal;
+  });
+
+  const data = Object.entries(yearTotals)
+    .map(([year, value]) => ({
+      name: `${year}年`,
+      value: Number(value.toFixed(2))
+    }))
+    .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    data,
+    total: Number(total.toFixed(2)),
+  };
+};
+
+const getSeriesData = () => {
+  const incomeTypes = getIncomeTypes();
+  const years = getYears().map((year) => year);
+
+  const series = incomeTypes.map((type) => {
+    const data = years.map((year) => {
+      const yearData = filteredData.value.find((item) => item.year === year);
+      if (yearData) {
+        const detail = yearData.detail.find((d) => d.typeName == type);
+        return detail ? detail.amt : null;
+      }
+      return 0;
+    });
+
+    return {
+      name: type,
+      type: 'bar',
+      stack: 'income',
+      barWidth: 10,
+      barGap: '0%', // 柱子之间的间距
+      emphasis: {
+        focus: 'series',
+      },
+      label: {
+        show: true,
+        position: 'right',
+        formatter: (params) => {
+          // 计算百分比
+          const yearIndex = params.dataIndex;
+          const total = getTotalIncome()[yearIndex];
+          const value = params.value || 0;
+          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+          return `${percentage}%`;
+        }
+      },
+      data,
+    };
+  });
+
+  // 添加总收入在最前面
+  series.unshift({
+    name: '总收入',
+    type: 'bar',
+    label: {
+      show: true,
+      position: 'top', // 字显示在上方
+    },
+    emphasis: {
+      focus: 'series',
+    },
+    data: getTotalIncome(),
+  });
+
+  return series;
+};
 
 // 更新图表
-const updateChart = () => {
-  const data = chartData.value;
-  let titleText = '';
+const updateCharts = () => {
+  const pieData = getPieChartData();
+  const yearPieData = getYearPieChartData();
+  totalAmount.value = pieData.total;
 
-  if (timeDimension.value === 'year') {
-    titleText =
-      selectedStartYear.value === selectedEndYear.value
-        ? `${selectedStartYear.value}年收入趋势`
-        : `${selectedStartYear.value}-${selectedEndYear.value}年收入趋势`;
-  } else {
-    titleText = '年度总收入对比';
-  }
-
-  const isAllYears = timeDimension.value === 'all-years';
-
+  // 渲染柱状图
   renderEcharts({
-    title: {
-      text: titleText,
-      left: 'center',
-      textStyle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-      },
-    },
     tooltip: {
       trigger: 'axis',
-      formatter: (params: any) => {
-        const data = params[0];
-        return isAllYears
-          ? `${data.name}<br/>年度总收入: ¥${data.value.toLocaleString()}`
-          : `${data.name}<br/>收入: ¥${data.value.toLocaleString()}`;
+      axisPointer: {
+        type: 'shadow',
+      },
+      formatter: (params) => {
+        let tooltip = `${params[0].name}<br/>`;
+        let total = 0;
+
+        // 计算该年份的总收入
+        params.forEach((item) => {
+          if (item.seriesName !== '总收入') {
+            total += item.value || 0;
+          }
+        });
+
+        // 显示各项的金额和百分比
+        params.forEach((item) => {
+          if (item.seriesName !== '总收入' && item.value > 0) {
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
+          }
+        });
+
+        tooltip += `总计: ${total.toFixed(2)}`;
+        return tooltip;
       },
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true,
-    },
-    xAxis: {
-      type: 'category',
-      data: data.labels,
-      axisLine: {
-        lineStyle: {
-          color: '#ddd',
-        },
-      },
-    },
-    yAxis: {
-      type: 'value',
-      axisLine: {
-        show: false,
-      },
-      axisTick: {
-        show: false,
-      },
-      splitLine: {
-        lineStyle: {
-          type: 'dashed',
-          color: '#eee',
-        },
-      },
-    },
-    series: [
+    legend: {},
+    xAxis: [
       {
-        name: isAllYears ? '年度总收入' : '收入',
-        type: isAllYears ? 'bar' : 'line',
-        data: data.values,
-        smooth: !isAllYears,
-        symbol: isAllYears ? 'none' : 'circle',
-        symbolSize: 8,
-        itemStyle: {
-          color: isAllYears ? '#722ed1' : '#1890ff',
-        },
-        lineStyle: {
-          width: 3,
-          color: '#1890ff',
-        },
-        areaStyle: isAllYears
-          ? undefined
-          : {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: 0,
-                x2: 0,
-                y2: 1,
-                colorStops: [
-                  { offset: 0, color: 'rgba(24, 144, 255, 0.4)' },
-                  { offset: 1, color: 'rgba(24, 144, 255, 0.1)' },
-                ],
-              },
-            },
-        label: {
-          show: true,
-          position: isAllYears ? 'top' : 'top',
-          formatter: (params: any) => {
-            return `${params.value.toLocaleString()}`;
-          },
-          fontSize: 12,
-          fontWeight: 'bold',
-          color: isAllYears ? '#722ed1' : '#1890ff',
+        type: 'category',
+        data: getYears(),
+        // 移除柱子之间的间距
+        axisTick: {
+          alignWithLabel: true,
         },
       },
     ],
+    yAxis: [
+      {
+        type: 'value',
+      },
+    ],
+    series: getSeriesData(),
+  });
+
+  // 渲染收入类型环形图
+  renderPieEcharts({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'center'
+    },
+    series: [
+      {
+        name: '收入类型分布',
+        type: 'pie',
+        radius: ['0%', '80%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2,
+        },
+        label: {
+          show: true,
+          position: 'outside',
+          formatter: (params) => {
+            return `${params.name}\n${params.value} (${params.percent}%)`;
+          },
+          fontSize: 12
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: true,
+          length: 10,
+          length2: 10
+        },
+        data: pieData.data
+      }
+    ]
+  });
+
+  // 渲染按时间分布饼图
+  renderYearPieEcharts({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)',
+    },
+    legend: {
+      orient: 'vertical',
+      left: 10,
+      top: 'center'
+    },
+    series: [
+      {
+        name: '年份收入分布',
+        type: 'pie',
+        radius: '80%',
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: (params) => {
+            return `${params.name}\n${params.value} (${params.percent}%)`;
+          },
+          fontSize: 12
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: true
+        },
+        data: yearPieData.data
+      }
+    ]
   });
 };
 
-onMounted(() => {
-  statistics({}).then((res) => {
-    mockData = res;
-    console.log(mockData);
-    updateChart();
-  });
+onMounted(
+  async () => {
+  try {
+    const res = await statisticsByYear({});
+    incData = res;
+
+    // 根据incData生成年份选项
+    const years = [...new Set(incData.map((item) => item.year))].sort(
+      (a, b) => b - a,
+    );
+    yearOptions.value = [
+      { value: 'all', label: '全部' },
+      ...years.map(year => ({ value: year, label: year }))
+    ];
+
+    // 设置默认选中为全部年份
+    selectedYear.value = 'all';
+
+    updateCharts();
+  } catch (error) {
+    console.error('获取收入统计数据失败:', error);
+  }
 });
 
-// 监听维度变化
-watch(
-  [timeDimension, selectedStartYear, selectedEndYear],
-  () => {
-    updateChart();
-  },
-  { deep: true },
-);
+// 监听年份选择变化
+watch(selectedYear, () => {
+  updateCharts();
+});
 </script>
 
 <template>
-  <div class="income-dashboard">
-    <!-- 头部控制区域 -->
-    <Card class="mb-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-4">
-          <RadioGroup v-model:value="timeDimension">
-            <Radio value="year">按月度</Radio>
-            <Radio value="all-years">按年度</Radio>
-          </RadioGroup>
-
-          <!-- 年份选择器 -->
-          <div v-if="timeDimension === 'year'" class="flex items-center gap-2">
-            <Select
-              v-model:value="selectedStartYear"
-              :options="
-                availableYears.map((year) => ({
-                  value: year,
-                  label: `${year}年`,
-                }))
-              "
-              style="width: 100px"
-              placeholder="开始年份"
-            />
-            <span class="text-gray-400">至</span>
-            <Select
-              v-model:value="selectedEndYear"
-              :options="
-                availableYears.map((year) => ({
-                  value: year,
-                  label: `${year}年`,
-                }))
-              "
-              style="width: 100px"
-              placeholder="结束年份"
-            />
-          </div>
-          <div v-else :style="{ height: '32px' }"></div>
-        </div>
+  <div class="page-container">
+    <!-- 年份选择器 -->
+    <Card class="year-selector-card">
+      <div class="year-selector-content">
+        <span class="year-label">选择年份：</span>
+        <Select
+          v-model:value="selectedYear"
+          :options="yearOptions"
+          style="width: 200px"
+          placeholder="请选择年份"
+        />
       </div>
     </Card>
 
-    <!-- 统计卡片区域 月 -->
-    <Row :gutter="16" class="mb-6" v-if="timeDimension === 'year'">
-      <Col :span="6">
-        <Card>
-          <Statistic
-            title="总收入"
-            :value="chartData.total"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#3f8600' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            title="平均月收入"
-            :value="chartData.avg"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#1890ff' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            title="最高月收入"
-            :value="chartData.max"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#cf1322' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            title="最低月收入"
-            :value="chartData.min"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#faad14' }"
-          />
-        </Card>
-      </Col>
-    </Row>
+    <!-- 总金额卡片 -->
+    <div class="total-card">
+      <div class="total-content">
+        <div class="total-icon">💰</div>
+        <div class="total-info">
+          <div class="total-label">总收入</div>
+          <div class="total-amount">{{ formatCurrency(totalAmount) }}</div>
+        </div>
+      </div>
+    </div>
 
-    <!-- 统计卡片区域 年 -->
-    <Row :gutter="16" class="mb-6" v-if="timeDimension === 'all-years'">
-      <Col :span="6">
-        <Card>
-          <Statistic
-            title="总收入"
-            :value="chartData.total"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#3f8600' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            :title="timeDimension === 'all-years' ? '平均年度收入' : '平均收入'"
-            :value="chartData.avg"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#1890ff' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            :title="timeDimension === 'all-years' ? '最高年度收入' : '最高收入'"
-            :value="chartData.max"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#cf1322' }"
-          />
-        </Card>
-      </Col>
-      <Col :span="6">
-        <Card>
-          <Statistic
-            :title="timeDimension === 'all-years' ? '最低年度收入' : '最低收入'"
-            :value="chartData.min"
-            :precision="2"
-            prefix="¥"
-            :value-style="{ color: '#faad14' }"
-          />
-        </Card>
-      </Col>
-    </Row>
-
-    <!-- 图表区域 -->
-    <Card>
-      <EchartsUI ref="chartRef" style="height: 400px; width: 100%" />
-    </Card>
+    <div class="chart-container">
+      <div class="chart-item">
+        <h3>收入趋势</h3>
+        <EchartsUI ref="chartRef" />
+      </div>
+      <div class="chart-item">
+        <h3>收入类型分布</h3>
+        <EchartsUI ref="pieChartRef" />
+      </div>
+      <div class="chart-item">
+        <h3>收入时间分布</h3>
+        <EchartsUI ref="yearPieChartRef" />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.income-dashboard {
+.page-container {
+  padding: 20px;
+}
+
+.year-selector-card {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.year-selector-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 16px;
 }
 
-:deep(.ant-statistic-content) {
-  font-size: 24px;
-  font-weight: bold;
+.year-label {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
 }
 
-:deep(.ant-card) {
+.total-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  color: white;
+}
+
+.total-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.total-icon {
+  font-size: 48px;
+  opacity: 0.9;
+}
+
+.total-info {
+  flex: 1;
+}
+
+.total-label {
+  font-size: 16px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.total-amount {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.chart-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  height: 600px;
+}
+
+.chart-item {
+  background: #fff;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
-:deep(.ant-card-head) {
-  border-bottom: 1px solid #f0f0f0;
+.chart-item h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.chart-item :deep(.echarts-ui) {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1400px) {
+  .chart-container {
+    grid-template-columns: repeat(2, 1fr);
+    height: auto;
+  }
+
+  .chart-item:nth-child(3) {
+    grid-column: 1 / -1;
+    height: 400px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .chart-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .chart-item {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .year-selector-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .year-selector-content :deep(.ant-select) {
+    width: 100% !important;
+  }
+
+  .total-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .total-icon {
+    font-size: 36px;
+  }
+
+  .total-amount {
+    font-size: 24px;
+  }
 }
 </style>

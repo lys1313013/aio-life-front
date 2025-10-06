@@ -6,7 +6,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card, Select } from 'ant-design-vue';
 
-import { statistics } from '#/api/core/income';
+import { statisticsByYear } from '#/api/core/expense';
 
 const chartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
@@ -15,19 +15,19 @@ const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
 
-interface IncomeDetail {
-  incTypeName: string; // 收入类型名称
-  incAmt: number; // 收入金额
+interface ExpenseDetail {
+  typeName: string; // 支出类型名称
+  amt: number; // 支出金额
 }
 
-interface IncomeData {
+interface ExpenseData {
   year: number; // 年份
-  detail: IncomeDetail[]; // 该年份下的收入详情列表
+  detail: ExpenseDetail[]; // 该年份下的支出详情列表
 }
 
-let incData: IncomeData[] = [];
+let expData: ExpenseData[] = [];
 
-// 计算总收入
+// 计算总支出
 const totalAmount = ref(0);
 
 // 选中的年份
@@ -48,48 +48,48 @@ const formatCurrency = (amount: number) => {
 // 根据选中的年份过滤数据
 const filteredData = computed(() => {
   if (selectedYear.value === 'all') {
-    return incData;
+    return expData;
   }
-  return incData.filter((item) => item.year === selectedYear.value);
+  return expData.filter((item) => item.year === selectedYear.value);
 });
 
-// 从incData中解析数据
+// 从expData中解析数据
 const getYears = () => {
   return filteredData.value.map((item) => item.year);
 };
 
-const getIncomeTypes = () => {
-  // 获取所有唯一的收入类型
+const getExpenseTypes = () => {
+  // 获取所有唯一的支出类型
   const types = new Set<string>();
   filteredData.value.forEach((item) => {
     item.detail.forEach((detail) => {
-      types.add(detail.incTypeName);
+      types.add(detail.typeName);
     });
   });
   return [...types];
 };
 
-// 计算每年的总收入
-const getTotalIncome = () => {
+// 计算每年的总支出
+const getTotalExpense = () => {
   return filteredData.value.map((item) => {
     const total = item.detail.reduce(
-      (total, current) => total + current.incAmt,
+      (total, current) => total + current.amt,
       0,
     );
     return total.toFixed(2);
   });
 };
 
-// 获取所有收入类型的总额（用于环形图）
-const getIncomeTypeTotals = () => {
+// 获取所有支出类型的总额（用于环形图）
+const getExpenseTypeTotals = () => {
   const typeTotals: Record<string, number> = {};
 
   filteredData.value.forEach((item) => {
     item.detail.forEach((detail) => {
-      if (!typeTotals[detail.incTypeName]) {
-        typeTotals[detail.incTypeName] = 0;
+      if (!typeTotals[detail.typeName]) {
+        typeTotals[detail.typeName] = 0;
       }
-      typeTotals[detail.incTypeName] += detail.incAmt;
+      typeTotals[detail.typeName] += detail.amt;
     });
   });
 
@@ -101,7 +101,7 @@ const getIncomeTypeTotals = () => {
 
 // 获取环形图数据
 const getPieChartData = () => {
-  const data = getIncomeTypeTotals();
+  const data = getExpenseTypeTotals();
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return {
@@ -115,7 +115,7 @@ const getYearPieChartData = () => {
   const yearTotals: Record<string, number> = {};
 
   filteredData.value.forEach((item) => {
-    const yearTotal = item.detail.reduce((total, current) => total + current.incAmt, 0);
+    const yearTotal = item.detail.reduce((total, current) => total + current.amt, 0);
     yearTotals[item.year] = (yearTotals[item.year] || 0) + yearTotal;
   });
 
@@ -135,15 +135,15 @@ const getYearPieChartData = () => {
 };
 
 const getSeriesData = () => {
-  const incomeTypes = getIncomeTypes();
+  const expenseTypes = getExpenseTypes();
   const years = getYears().map((year) => year);
 
-  const series = incomeTypes.map((type) => {
+  const series = expenseTypes.map((type) => {
     const data = years.map((year) => {
       const yearData = filteredData.value.find((item) => item.year === year);
       if (yearData) {
-        const detail = yearData.detail.find((d) => d.incTypeName == type);
-        return detail ? detail.incAmt : null;
+        const detail = yearData.detail.find((d) => d.typeName == type);
+        return detail ? detail.amt : null;
       }
       return 0;
     });
@@ -151,7 +151,7 @@ const getSeriesData = () => {
     return {
       name: type,
       type: 'bar',
-      stack: 'income',
+      stack: 'expense',
       barWidth: 10,
       barGap: '0%', // 柱子之间的间距
       emphasis: {
@@ -163,7 +163,7 @@ const getSeriesData = () => {
         formatter: (params) => {
           // 计算百分比
           const yearIndex = params.dataIndex;
-          const total = getTotalIncome()[yearIndex];
+          const total = getTotalExpense()[yearIndex];
           const value = params.value || 0;
           const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
           return `${percentage}%`;
@@ -173,9 +173,9 @@ const getSeriesData = () => {
     };
   });
 
-  // 添加总收入在最前面
+  // 添加总支出在最前面
   series.unshift({
-    name: '总收入',
+    name: '总支出',
     type: 'bar',
     label: {
       show: true,
@@ -184,7 +184,7 @@ const getSeriesData = () => {
     emphasis: {
       focus: 'series',
     },
-    data: getTotalIncome(),
+    data: getTotalExpense(),
   });
 
   return series;
@@ -207,16 +207,16 @@ const updateCharts = () => {
         let tooltip = `${params[0].name}<br/>`;
         let total = 0;
 
-        // 计算该年份的总收入
+        // 计算该年份的总支出
         params.forEach((item) => {
-          if (item.seriesName !== '总收入') {
+          if (item.seriesName !== '总支出') {
             total += item.value || 0;
           }
         });
 
         // 显示各项的金额和百分比
         params.forEach((item) => {
-          if (item.seriesName !== '总收入' && item.value > 0) {
+          if (item.seriesName !== '总支出' && item.value > 0) {
             const percentage =
               total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
@@ -246,7 +246,7 @@ const updateCharts = () => {
     series: getSeriesData(),
   });
 
-  // 渲染收入类型环形图
+  // 渲染支出类型环形图
   renderPieEcharts({
     tooltip: {
       trigger: 'item',
@@ -259,7 +259,7 @@ const updateCharts = () => {
     },
     series: [
       {
-        name: '收入类型分布',
+        name: '支出类型分布',
         type: 'pie',
         radius: ['0%', '80%'],
         avoidLabelOverlap: false,
@@ -306,7 +306,7 @@ const updateCharts = () => {
     },
     series: [
       {
-        name: '年份收入分布',
+        name: '年份支出分布',
         type: 'pie',
         radius: '80%',
         center: ['50%', '50%'],
@@ -342,11 +342,11 @@ const updateCharts = () => {
 onMounted(
   async () => {
   try {
-    const res = await statistics({});
-    incData = res;
+    const res = await statisticsByYear({});
+    expData = res;
 
-    // 根据incData生成年份选项
-    const years = [...new Set(incData.map((item) => item.year))].sort(
+    // 根据expData生成年份选项
+    const years = [...new Set(expData.map((item) => item.year))].sort(
       (a, b) => b - a,
     );
     yearOptions.value = [
@@ -359,7 +359,7 @@ onMounted(
 
     updateCharts();
   } catch (error) {
-    console.error('获取收入统计数据失败:', error);
+    console.error('获取支出统计数据失败:', error);
   }
 });
 
@@ -387,9 +387,9 @@ watch(selectedYear, () => {
     <!-- 总金额卡片 -->
     <div class="total-card">
       <div class="total-content">
-        <div class="total-icon">💰</div>
+        <div class="total-icon">💸</div>
         <div class="total-info">
-          <div class="total-label">总收入</div>
+          <div class="total-label">总支出</div>
           <div class="total-amount">{{ formatCurrency(totalAmount) }}</div>
         </div>
       </div>
@@ -397,15 +397,15 @@ watch(selectedYear, () => {
 
     <div class="chart-container">
       <div class="chart-item">
-        <h3>收入趋势</h3>
+        <h3>支出趋势</h3>
         <EchartsUI ref="chartRef" />
       </div>
       <div class="chart-item">
-        <h3>收入类型分布</h3>
+        <h3>支出类型分布</h3>
         <EchartsUI ref="pieChartRef" />
       </div>
       <div class="chart-item">
-        <h3>收入时间分布</h3>
+        <h3>支出时间分布</h3>
         <EchartsUI ref="yearPieChartRef" />
       </div>
     </div>
@@ -437,11 +437,11 @@ watch(selectedYear, () => {
 }
 
 .total-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
   color: white;
 }
 

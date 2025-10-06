@@ -53,30 +53,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '支出',
-        },
-        name: 'exp',
-        path: '/demos/exp',
-        component: () => import('#/views/demos/exp/index.vue'),
-      },
-      {
-        meta: {
-          title: '收入',
-        },
-        name: 'income',
-        path: '/demos/income',
-        component: () => import('#/views/demos/income/index.vue'),
-      },
-      {
-        meta: {
-          title: '收入看板',
-        },
-        name: 'incomeDashboard',
-        path: '/demos/incomeDashboard',
-        component: () => import('#/views/demos/income/bar-stack.vue'),
-      },
-      {
-        meta: {
           title: '运动',
         },
         name: 'sysDictType',
@@ -99,13 +75,65 @@ const routes: RouteRecordRaw[] = [
         path: '/demos/test',
         component: () => import('#/views/demos/test/index.vue'),
       },
+    ],
+  },
+  {
+    meta: {
+      icon: 'ri:money-cny-circle-line',
+      keepAlive: true,
+      order: 999,
+      title: '收支管理',
+    },
+    name: 'finance',
+    path: '/finance',
+    children: [
+      {
+        meta: {
+          title: '收入',
+        },
+        name: 'income',
+        path: '/finance/income',
+        component: () => import('#/views/demos/income/index.vue'),
+      },
+      {
+        meta: {
+          title: '收入看板',
+        },
+        name: 'incomeDashboard',
+        path: '/finance/incomeDashboard',
+        component: () => import('#/views/demos/income/dashboard.vue'),
+      },
+      {
+        meta: {
+          title: '支出',
+        },
+        name: 'exp',
+        path: '/finance/expense',
+        component: () => import('#/views/demos/expense/index.vue'),
+      },
       {
         meta: {
           title: '支付宝导入',
         },
         name: 'alipayImport',
-        path: '/demos/alipay-import',
-        component: () => import('#/views/demos/exp/alipay-import.vue'),
+        path: '/finance/alipay-import',
+        component: () => import('#/views/demos/expense/alipay-import.vue'),
+      },
+      {
+        meta: {
+          title: '支出看板',
+        },
+        name: 'expenseDashboard',
+        path: '/finance/expenseDashboard',
+        component: () => import('#/views/demos/expense/dashboard.vue'),
+      },
+      {
+        meta: {
+          title: '收支综合看板',
+        },
+        name: 'financeDashboard',
+        path: '/finance/finance-dashboard',
+        component: () => import('#/views/demos/finance-dashboard/index.vue'),
       },
     ],
   },
