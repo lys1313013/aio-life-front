@@ -83,12 +83,13 @@ const {
 watch(
   () => showLoading.value,
   (v) => {
-    if (v && wrapperRef.value) {
-      wrapperRef.value.scrollTo({
-        // behavior: 'smooth',
-        top: 0,
-      });
-    }
+    // 移除自动滚动到顶部的行为，防止抽屉打开时页面滚动
+    // if (v && wrapperRef.value) {
+    //   wrapperRef.value.scrollTo({
+    //     // behavior: 'smooth',
+    //     top: 0,
+    //   });
+    // }
   },
 );
 
