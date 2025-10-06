@@ -1,13 +1,15 @@
 <script lang="ts" setup>
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
-import { Button, Popconfirm } from 'ant-design-vue';
+import { Button, Popconfirm, Card } from 'ant-design-vue';
 import JSZip from 'jszip';
+import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -41,6 +43,12 @@ const fileInputRef = ref<HTMLInputElement>();
 const loading = ref(false);
 const resultsVisible = ref(false);
 const transactions = ref<Transaction[]>([]);
+
+// 图表引用
+const monthlyChartRef = ref<EchartsUIType>();
+const categoryChartRef = ref<EchartsUIType>();
+const { renderEcharts: renderMonthlyChart } = useEcharts(monthlyChartRef);
+const { renderEcharts: renderCategoryChart } = useEcharts(categoryChartRef);
 
 // 统计信息
 const stats = ref({
@@ -360,6 +368,41 @@ const parseMobileCSV = (csvText: string): Transaction[] => {
   return transactions;
 };
 
+// 计算月度统计数据
+const getMonthlyStats = (transactions: Transaction[]) => {
+  const monthlyData: Record<string, number> = {};
+
+  transactions.forEach((transaction) => {
+    if (transaction.flow === '支出') {
+      // 解析日期，提取年月
+      const dateStr = transaction.expTime || transaction.createdTime;
+      if (dateStr) {
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+          const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + transaction.amt;
+        }
+      }
+    }
+  });
+
+  return monthlyData;
+};
+
+// 计算类型统计数据
+const getCategoryStats = (transactions: Transaction[]) => {
+  const categoryData: Record<string, number> = {};
+
+  transactions.forEach((transaction) => {
+    if (transaction.flow === '支出') {
+      const category = transaction.transactionType || '其他';
+      categoryData[category] = (categoryData[category] || 0) + transaction.amt;
+    }
+  });
+
+  return categoryData;
+};
+
 // 更新统计信息
 const updateStats = (transactions: Transaction[]) => {
   let totalIncome = 0;
@@ -381,6 +424,106 @@ const updateStats = (transactions: Transaction[]) => {
     totalIncome,
     totalExpense,
   };
+
+  // 更新图表
+  updateCharts(transactions);
+};
+
+// 更新图表
+const updateCharts = (transactions: Transaction[]) => {
+  const monthlyData = getMonthlyStats(transactions);
+  const categoryData = getCategoryStats(transactions);
+
+  // 渲染月度柱状图
+  renderMonthlyChart({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow'
+      },
+      formatter: (params: any) => {
+        const data = params[0];
+        return `${data.name}<br/>支出金额: ¥${data.value.toFixed(2)}`;
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: Object.keys(monthlyData).sort(),
+      axisLabel: {
+        rotate: 45
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '¥{value}'
+      }
+    },
+    series: [{
+      name: '月度支出',
+      type: 'bar',
+      data: Object.keys(monthlyData).sort().map(month => monthlyData[month]),
+      itemStyle: {
+        color: '#ff4d4f'
+      }
+    }]
+  });
+
+  // 渲染类型饼图
+  const pieData = Object.entries(categoryData)
+    .map(([name, value]) => ({
+      name,
+      value: Number(value.toFixed(2))
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  renderCategoryChart({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: ¥{c} ({d}%)'
+    },
+    legend: {
+      orient: 'vertical',
+      right: 10,
+      top: 'center',
+      textStyle: {
+        fontSize: 12
+      }
+    },
+    series: [{
+      name: '支出类型分布',
+      type: 'pie',
+      radius: ['40%', '70%'],
+      center: ['40%', '50%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 10,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: {
+        show: true,
+        formatter: '{b}: {d}%'
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: 14,
+          fontWeight: 'bold'
+        }
+      },
+      labelLine: {
+        show: true
+      },
+      data: pieData
+    }]
+  });
 };
 
 onMounted(() => {
@@ -519,7 +662,6 @@ const gridOptions: VxeGridProps<RowType> = {
       field: 'transactionType',
       title: '原交易分类',
       sortable: true,
-      filters: ["value"],
     },
     {
       field: 'expTypeId',
@@ -570,7 +712,6 @@ const gridOptions: VxeGridProps<RowType> = {
   keepSource: true,
   toolbarConfig: {
     // 是否显示搜索表单控制按钮
-    // @ts-ignore 正式环境时有完整的类型声明
     search: true,
   },
 };
@@ -631,10 +772,19 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
           </div>
         </div>
       </div>
+
+      <!-- 图表区域 -->
+      <div class="charts-container">
+        <Card class="chart-card" title="月度支出统计">
+          <EchartsUI ref="monthlyChartRef" style="height: 300px;" />
+        </Card>
+        <Card class="chart-card" title="支出类型分布">
+          <EchartsUI ref="categoryChartRef" style="height: 300px;" />
+        </Card>
+      </div>
     </div>
 
     <div class="w-full">
-      <FormDrawer @table-reload="tableReload" />
       <Grid>
         <template #toolbar-tools>
           <Button class="mr-2" type="primary" @click="submitData">
@@ -776,6 +926,23 @@ input[type='file'] {
   text-align: center;
   padding: 20px;
   color: #1677ff;
+}
+
+.charts-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.chart-card {
+  height: 400px;
+}
+
+@media (max-width: 768px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
