@@ -61,11 +61,11 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '学习',
+          title: 'b站学习记录',
         },
-        name: 'sysDictType',
-        path: '/demos/sysDictType',
-        component: () => import('#/views/demos/sysDictType/index.vue'),
+        name: 'bilibiliVideo',
+        path: '/demos/bilibili-video',
+        component: () => import('#/views/demos/bilibili-video/index.vue'),
       },
       {
         meta: {
