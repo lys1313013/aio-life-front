@@ -6,11 +6,12 @@ import {
   Form,
   Input,
   InputNumber,
+  message,
   Modal,
+  Progress,
   Select,
   Tag,
-  Progress,
-  message,
+  Tabs,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -19,6 +20,7 @@ import {
   insertOrUpdateBilibiliVideo,
   parseBilibiliUrl,
   queryBilibiliVideos,
+  getStatusCount,
 } from '#/api/core/bilibili-video';
 
 export default {
@@ -34,6 +36,8 @@ export default {
     ACard: Card,
     ATag: Tag,
     AProgress: Progress,
+    ATabs: Tabs,
+    ATabPane: Tabs.TabPane,
     PlusOutlined,
   },
   data() {
@@ -49,32 +53,83 @@ export default {
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
-        status: 'in-progress',
+        status: 2,
         notes: '',
         ownerName: '',
       },
       tabList: [
         { key: 0, tab: '全部' },
-        { key: 1, tab: '待学习' },
+        { key: 1, tab: '未开始' },
         { key: 2, tab: '进行中' },
-        { key: 3, tab: '已完成' },
+        { key: 3, tab: '已暂停' },
+        { key: 4, tab: '部分完成' },
+        { key: 5, tab: '已完成' },
       ],
-      tabKey: '',
+      tabKey: 0,
+      // 视频数量统计
+      videoCounts: {
+        0: 0, // 全部
+        1: 0, // 未开始
+        2: 0, // 进行中
+        3: 0, // 已暂停
+        4: 0, // 部分完成
+        5: 0, // 已完成
+      },
+      // 学习状态选项
+      statusOptions: [
+        { value: 1, label: '未开始' },
+        { value: 2, label: '进行中' },
+        { value: 3, label: '已暂停' },
+        { value: 4, label: '部分完成' },
+        { value: 5, label: '已完成' },
+      ],
     };
   },
   async mounted() {
     await this.query();
   },
   methods: {
+    /**
+     * 生成带数量的标签标题
+     */
+    getTabTitle(tab) {
+      const count = this.videoCounts[tab.key] || 0;
+      return `${tab.tab} <span class="count-number">${count}</span>`;
+    },
+
     async query() {
       const res = await queryBilibiliVideos({
         page: 1,
         pageSize: 50,
         condition: {
-          status: this.tabKey,
+          status: this.tabKey === 0 ? undefined : this.tabKey,
         },
       });
       this.videos = res.items || [];
+
+      // 更新视频数量统计
+      await this.updateVideoCounts();
+    },
+
+    /**
+     * 更新视频数量统计
+     */
+    async updateVideoCounts() {
+      const res = await getStatusCount({});
+        if (res) {
+          let sum = 0;
+          // 将接口返回的数据合并到videoCounts对象中
+          Object.keys(this.videoCounts).forEach(key => {
+            if (this.resetForm) {
+              this.videoCounts[key] = res[key];
+              if (key !== 0 && res[key] !== undefined) {
+                sum += res[key];
+                console.log('sum:', sum);
+              }
+            }
+          });
+          this.videoCounts[0] = sum;
+        }
     },
 
     /**
@@ -82,13 +137,13 @@ export default {
      */
     getImageUrl(coverUrl) {
       if (!coverUrl) return '';
-      
+
       // 如果是B站图片，使用图片代理服务绕过防盗链
       if (coverUrl.includes('bilibili.com') || coverUrl.includes('hdslb.com')) {
         // 方案1: 使用images.weserv.nl图片代理服务（推荐）
         return `https://images.weserv.nl/?url=${encodeURIComponent(coverUrl)}&w=300&h=200&fit=cover`;
       }
-      
+
       return coverUrl;
     },
 
@@ -97,16 +152,17 @@ export default {
      */
     handleImageError(event) {
       console.warn('图片加载失败:', event.target.src);
-      
+
       // 隐藏失败的图片
       event.target.style.display = 'none';
-      
+
       // 显示默认图标
-      const defaultIcon = event.target.parentElement.querySelector('.default-icon');
+      const defaultIcon =
+        event.target.parentElement.querySelector('.default-icon');
       if (defaultIcon) {
         defaultIcon.style.display = 'flex';
       }
-      
+
       // 尝试使用备用方案重新加载
       this.retryWithAlternativeProxy(event.target, event.target.src);
     },
@@ -117,9 +173,10 @@ export default {
     handleImageLoad(event) {
       console.log('图片加载成功:', event.target.src);
       event.target.style.display = 'block';
-      
+
       // 隐藏默认图标
-      const defaultIcon = event.target.parentElement.querySelector('.default-icon');
+      const defaultIcon =
+        event.target.parentElement.querySelector('.default-icon');
       if (defaultIcon) {
         defaultIcon.style.display = 'none';
       }
@@ -133,7 +190,7 @@ export default {
       if (originalUrl.includes('images.weserv.nl')) {
         // 方案2: 使用cors.sh代理
         const corsProxyUrl = `https://cors.sh/${originalUrl.replace('https://images.weserv.nl/?url=', '')}`;
-        
+
         // 延迟重试，避免频繁请求
         setTimeout(() => {
           imgElement.src = corsProxyUrl;
@@ -158,9 +215,9 @@ export default {
     },
 
     showEditModal(video) {
-      this.newVideo = { 
+      this.newVideo = {
         ...video,
-        ownerName: video.owner?.name || video.ownerName || ''
+        ownerName: video.owner?.name || video.ownerName || '',
       };
       this.visible = true;
     },
@@ -194,7 +251,7 @@ export default {
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
-        status: 'in-progress',
+        status: 2,
         notes: '',
         ownerName: '',
       };
@@ -223,9 +280,9 @@ export default {
           };
           message.success('解析成功');
         } else {
-          message.error('解析失败：' + res.message);
+          message.error(`解析失败：${res.message}`);
         }
-      } catch (error) {
+      } catch {
         message.error('解析失败，请检查URL格式');
       } finally {
         this.isParsing = false;
@@ -238,20 +295,28 @@ export default {
       this.query();
     },
 
-    getStatusColor(status) {
-      return {
-        'completed': 'green',
-        'in-progress': 'blue',
-        'watched': 'orange',
-      }[status] || 'default';
+    getStatusText(status) {
+      // 处理数字状态值
+      const statusMap = {
+        1: '未开始',
+        2: '进行中',
+        3: '已暂停',
+        4: '部分完成',
+        5: '已完成',
+      };
+      return statusMap[status] || '未知';
     },
 
-    getStatusText(status) {
-      return {
-        'completed': '已学完',
-        'in-progress': '进行中',
-        'watched': '已学过',
-      }[status] || '未知';
+    getStatusClass(status) {
+      // 将数字状态映射到对应的CSS类名
+      const classMap = {
+        1: 'not-started',
+        2: 'in-progress',
+        3: 'paused',
+        4: 'partial-completed',
+        5: 'completed',
+      };
+      return classMap[status] || 'unknown';
     },
 
     onTabChange(key) {
@@ -272,25 +337,40 @@ export default {
     updateProgressFromEpisode() {
       // 根据当前集数和总集数自动计算学习进度
       if (this.newVideo.currentEpisode && this.newVideo.episodes) {
-        const progress = Math.max(0, Math.min(100,
-          ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * 100
-        ));
+        const progress = Math.max(
+          0,
+          Math.min(
+            100,
+            ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * 100,
+          ),
+        );
         this.newVideo.progress = Math.round(progress);
 
         // 根据进度更新状态
         if (this.newVideo.progress >= 100) {
-          this.newVideo.status = 'completed';
+          this.newVideo.status = 5; // 已完成
         } else if (this.newVideo.progress > 0) {
-          this.newVideo.status = 'in-progress';
+          this.newVideo.status = 2; // 进行中
         }
       }
     },
 
+    /**
+     * 监听状态变化，当状态变为"已完成"时自动将当前集数设置为总集数
+     */
+    handleStatusChange(newStatus) {
+      // 如果状态变为"已完成"（状态值5），自动将当前集数设置为总集数
+      if (newStatus === 5 && this.newVideo.episodes) {
+        this.newVideo.currentEpisode = this.newVideo.episodes;
+        this.newVideo.progress = 100;
+      }
+    },
+
     formatNumber(num) {
-      if (num >= 10000) {
-        return (num / 10000).toFixed(1) + '万';
+      if (num >= 10_000) {
+        return `${(num / 10_000).toFixed(1)}万`;
       } else if (num >= 1000) {
-        return (num / 1000).toFixed(1) + '千';
+        return `${(num / 1000).toFixed(1)}千`;
       }
       return num.toString();
     },
@@ -300,13 +380,15 @@ export default {
      */
     formatPublishTime(pubdate) {
       if (!pubdate) return '';
-      
+
       try {
         // 如果pubdate是时间戳格式
         if (/^\d+$/.test(pubdate)) {
-          return dayjs.unix(parseInt(pubdate)).format('YYYY-MM-DD HH:mm');
+          return dayjs
+            .unix(Number.parseInt(pubdate))
+            .format('YYYY-MM-DD HH:mm');
         }
-        
+
         // 如果是日期字符串格式
         return dayjs(pubdate).format('YYYY-MM-DD HH:mm');
       } catch (error) {
@@ -314,33 +396,40 @@ export default {
         return pubdate;
       }
     },
+
+    /**
+     * 获取实际显示的进度值
+     * 对于已完成状态的视频，进度条始终显示100%
+     */
+    getActualProgress(video) {
+      // 如果视频状态是已完成（状态值5或'completed'），则强制显示100%
+      if (video.status === 5 || video.status === 'completed') {
+        return 100;
+      }
+      // 其他状态返回实际进度值
+      return video.progress;
+    },
   },
 };
 </script>
 
 <template>
-  <ACard
-    style="width: 100%"
-    :tab-list="tabList"
-    :active-tab-key="tabKey"
-    @tab-change="onTabChange"
-  >
-    <div class="video-container">
-      <!-- 统计信息 -->
-      <div class="total-static">
-        <ACard>
-          <span>学习视频总数：{{ videos.length }} 个</span>
-          <br />
-          <span>已学完：{{ videos.filter(v => v.status === 'completed').length }} 个</span>
-          <br />
-          <span>进行中：{{ videos.filter(v => v.status === 'in-progress').length }} 个</span>
-          <br />
-          <span>已学过：{{ videos.filter(v => v.status === 'watched').length }} 个</span>
-        </ACard>
-      </div>
-
-      <!-- 视频列表 -->
-      <div class="video-grid">
+  <ACard style="width: 100%">
+    <ATabs
+      v-model:activeKey="tabKey"
+      @change="onTabChange"
+      type="card"
+    >
+      <ATabPane
+        v-for="tab in tabList"
+        :key="tab.key"
+      >
+        <template #tab>
+          <span v-html="getTabTitle(tab)"></span>
+        </template>
+        <div class="video-container">
+          <!-- 视频列表 -->
+          <div class="video-grid">
         <div
           v-for="(video, index) in videos"
           :key="index"
@@ -348,10 +437,10 @@ export default {
           @click="showEditModal(video)"
         >
           <div class="card-image">
-            <img 
-              v-if="video.cover" 
-              :src="getImageUrl(video.cover)" 
-              :alt="video.title" 
+            <img
+              v-if="video.cover"
+              :src="getImageUrl(video.cover)"
+              :alt="video.title"
               @error="handleImageError"
               @load="handleImageLoad"
             />
@@ -378,6 +467,9 @@ export default {
               </svg>
             </div>
             <div class="duration-tag">{{ video.duration || '未知' }}</div>
+            <div class="status-badge" :class="`status-${getStatusClass(video.status)}`">
+              {{ getStatusText(video.status) }}
+            </div>
           </div>
           <div class="card-content">
             <AButton
@@ -392,25 +484,33 @@ export default {
 
             <!-- 显示UP主信息 -->
             <div v-if="video.owner || video.ownerName" class="owner-info">
-              <span class="owner-name">{{ video.owner?.name || video.ownerName }}</span>
+              <span class="owner-name">{{
+                video.owner?.name || video.ownerName
+              }}</span>
             </div>
 
             <!-- 显示发布时间 -->
             <div v-if="video.pubdate" class="publish-time">
               <span class="publish-label">投稿时间:</span>
-              <span class="publish-value">{{ formatPublishTime(video.pubdate) }}</span>
+              <span class="publish-value">{{
+                formatPublishTime(video.pubdate)
+              }}</span>
             </div>
 
             <!-- 显示最后更新时间 -->
             <div v-if="video.updatedAt" class="update-time">
               <span class="update-label">最后更新:</span>
-              <span class="update-value">{{ formatPublishTime(video.updatedAt) }}</span>
+              <span class="update-value">{{
+                formatPublishTime(video.updatedAt)
+              }}</span>
             </div>
 
             <!-- 显示创建时间 -->
             <div v-if="video.createdAt" class="create-time">
               <span class="create-label">添加时间:</span>
-              <span class="create-value">{{ formatPublishTime(video.createdAt) }}</span>
+              <span class="create-value">{{
+                formatPublishTime(video.createdAt)
+              }}</span>
             </div>
 
             <!-- 显示分区信息 -->
@@ -418,7 +518,9 @@ export default {
               <ATag color="blue" size="small">{{ video.tname_v2 }}</ATag>
             </div>
 
-            <p class="episodes">集数：{{ video.currentEpisode }}/{{ video.episodes }}</p>
+            <p class="episodes">
+              集数：{{ video.currentEpisode }}/{{ video.episodes }}
+            </p>
 
             <!-- 显示视频时长 -->
             <div v-if="video.duration" class="duration-info">
@@ -430,27 +532,39 @@ export default {
             <div v-if="video.stat" class="stat-info">
               <div class="stat-item">
                 <span class="stat-label">播放:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.view) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.view)
+                }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">点赞:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.like) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.like)
+                }}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-label">收藏:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.favorite) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.favorite)
+                }}</span>
               </div>
               <div v-if="video.stat.danmaku" class="stat-item">
                 <span class="stat-label">弹幕:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.danmaku) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.danmaku)
+                }}</span>
               </div>
               <div v-if="video.stat.reply" class="stat-item">
                 <span class="stat-label">评论:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.reply) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.reply)
+                }}</span>
               </div>
               <div v-if="video.stat.share" class="stat-item">
                 <span class="stat-label">分享:</span>
-                <span class="stat-value">{{ formatNumber(video.stat.share) }}</span>
+                <span class="stat-value">{{
+                  formatNumber(video.stat.share)
+                }}</span>
               </div>
             </div>
 
@@ -462,17 +576,14 @@ export default {
 
             <div class="progress-section">
               <AProgress
-                :percent="video.progress"
+                :percent="getActualProgress(video)"
                 size="small"
                 :stroke-color="{
                   '0%': '#108ee9',
                   '100%': '#87d068',
                 }"
-                :format="percent => `${percent}%`"
+                :format="(percent) => `${percent}%`"
               />
-            </div>
-            <div class="status-badge" :class="`status-${video.status}`">
-              {{ getStatusText(video.status) }}
             </div>
           </div>
         </div>
@@ -494,10 +605,7 @@ export default {
                 placeholder="请输入B站视频链接，如：https://www.bilibili.com/video/BV1xxx"
                 style="flex: 1"
               />
-              <AButton
-                :loading="isParsing"
-                @click="parseBilibiliUrl"
-              >
+              <AButton :loading="isParsing" @click="parseBilibiliUrl">
                 解析
               </AButton>
             </div>
@@ -517,7 +625,10 @@ export default {
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
             <AFormItem label="视频时长">
-              <AInput v-model:value="newVideo.duration" placeholder="如：30:15" />
+              <AInput
+                v-model:value="newVideo.duration"
+                placeholder="如：30:15"
+              />
             </AFormItem>
 
             <AFormItem label="总集数">
@@ -544,7 +655,7 @@ export default {
               <AInput
                 v-model:value="newVideo.progress"
                 readonly
-                :formatter="value => `${value}%`"
+                :formatter="(value) => `${value}%`"
                 style="width: 100%"
                 placeholder="自动计算"
               />
@@ -552,15 +663,19 @@ export default {
           </div>
 
           <AFormItem label="学习状态">
-            <ASelect v-model:value="newVideo.status">
-              <ASelectOption value="in-progress">进行中</ASelectOption>
-              <ASelectOption value="completed">已学完</ASelectOption>
-              <ASelectOption value="watched">已学过</ASelectOption>
+            <ASelect v-model:value="newVideo.status" @change="handleStatusChange">
+              <ASelectOption
+                v-for="option in statusOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </ASelectOption>
             </ASelect>
           </AFormItem>
 
-          <AFormItem label="学习笔记">
-            <AInput
+              <AFormItem label="学习笔记">
+                <AInput
               v-model:value="newVideo.notes"
               type="textarea"
               :rows="3"
@@ -574,7 +689,9 @@ export default {
       <div class="floating-btn" @click="showModal">
         <PlusOutlined style="font-size: 24px; color: white" />
       </div>
-    </div>
+        </div>
+      </ATabPane>
+    </ATabs>
   </ACard>
 </template>
 
@@ -866,14 +983,17 @@ export default {
 
 .status-badge {
   position: absolute;
-  bottom: 6px;
+  top: 6px;
   right: 6px;
   padding: 2px 5px;
   border-radius: 8px;
   font-size: 10px;
   color: white;
-  z-index: 1;
+  z-index: 2;
   font-weight: 500;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
 }
 
 .status-completed {
@@ -886,6 +1006,27 @@ export default {
 
 .status-watched {
   background: linear-gradient(135deg, #fa8c16 0%, #ffa940 100%);
+}
+
+.status-not-started {
+  background: linear-gradient(135deg, #8c8c8c 0%, #bfbfbf 100%);
+}
+
+.status-paused {
+  background: linear-gradient(135deg, #fa541c 0%, #ff7a45 100%);
+}
+
+.status-partial-completed {
+  background: linear-gradient(135deg, #722ed1 0%, #9254de 100%);
+}
+
+.status-unknown {
+  background: linear-gradient(135deg, #d9d9d9 0%, #f0f0f0 100%);
+}
+
+.video-card:hover .status-badge {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .floating-btn {
@@ -909,5 +1050,23 @@ export default {
   background-color: #40a9ff;
   transform: scale(1.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 标签页数字样式 */
+:deep(.ant-tabs-tab) {
+  position: relative;
+}
+
+:deep(.ant-tabs-tab)::after {
+  content: attr(data-count);
+  color: #1890ff;
+  font-weight: bold;
+  margin-left: 4px;
+  font-size: 12px;
+}
+
+:deep(.ant-tabs-tab-active)::after {
+  color: #1890ff;
+  font-weight: bold;
 }
 </style>

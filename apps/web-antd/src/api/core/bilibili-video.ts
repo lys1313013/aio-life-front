@@ -16,7 +16,7 @@ export interface BilibiliVideo {
   lastWatched?: string; // 最后观看时间
   addedAt?: string; // 添加时间
   notes?: string; // 学习笔记
-  
+
   // 从B站API获取的额外信息
   bvid?: string; // BV号
   aid?: string; // AV号
@@ -61,6 +61,13 @@ export async function queryBilibiliVideos(data: any) {
 }
 
 /**
+ * 查询各个状态的数量
+ */
+export async function getStatusCount(data: any) {
+  return await requestClient.get('/bilibili-video/getStatusCount', data);
+}
+
+/**
  * 新增或更新学习视频
  */
 export async function insertOrUpdateBilibiliVideo(data: BilibiliVideo) {
@@ -81,17 +88,17 @@ function cleanUrlParams(url: string): string {
   try {
     const urlObj = new URL(url);
     const params = new URLSearchParams(urlObj.search);
-    
+
     // 只保留p和t参数
     const allowedParams = ['p', 't'];
     const newParams = new URLSearchParams();
-    
+
     for (const key of allowedParams) {
       if (params.has(key)) {
         newParams.set(key, params.get(key) as string);
       }
     }
-    
+
     // 构建新的URL
     urlObj.search = newParams.toString();
     return urlObj.toString();
@@ -121,7 +128,7 @@ function calculateProgress(currentEpisode: number, totalEpisodes: number): numbe
   if (totalEpisodes <= 0 || currentEpisode <= 0) {
     return 0;
   }
-  
+
   if (currentEpisode >= totalEpisodes) {
     return 100;
   }
@@ -164,17 +171,17 @@ export async function parseBilibiliUrl(url: string) {
   try {
     // 方案1: 使用JSONP方式（推荐，无跨域问题）
     const videoInfo = await parseWithJsonp(bvid, aid);
-    
+
     if (videoInfo) {
       // 解析URL中的集数
       const currentEpisode = parseEpisodeFromUrl(url);
-      
+
       // 自动计算学习进度
       const progress = calculateProgress(currentEpisode, videoInfo.episodes || 1);
-      
+
       // 清理URL参数，只保留p和t参数
       const cleanedUrl = cleanUrlParams(url);
-      
+
       return {
         success: true,
         data: {
@@ -192,13 +199,13 @@ export async function parseBilibiliUrl(url: string) {
     if (corsResult.success) {
       // 解析URL中的集数
       const currentEpisode = parseEpisodeFromUrl(url);
-      
+
       // 自动计算学习进度
       const progress = calculateProgress(currentEpisode, corsResult.data.episodes || 1);
-      
+
       // 清理URL参数，只保留p和t参数
       const cleanedUrl = cleanUrlParams(url);
-      
+
       return {
         success: true,
         data: {
@@ -210,9 +217,9 @@ export async function parseBilibiliUrl(url: string) {
         message: '解析成功'
       };
     }
-    
+
     return corsResult;
-    
+
   } catch (error) {
     console.error('B站API调用失败:', error);
     return {
@@ -229,10 +236,10 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
   return new Promise((resolve) => {
     // 创建script标签进行JSONP请求
     const script = document.createElement('script');
-    
+
     // 生成回调函数名
     const callbackName = 'bilibiliCallback_' + Date.now();
-    
+
     // 构建JSONP URL
     let jsonpUrl = '';
     if (bvid) {
@@ -240,34 +247,34 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
     } else if (aid) {
       jsonpUrl = `https://api.bilibili.com/x/web-interface/view?aid=${aid}&callback=${callbackName}&jsonp=jsonp`;
     }
-    
+
     // 设置全局回调函数
     (window as any)[callbackName] = (data: any) => {
       // 清理script标签
       document.head.removeChild(script);
       delete (window as any)[callbackName];
-      
+
       if (data && data.code === 0) {
         resolve(formatVideoInfo(data.data));
       } else {
         resolve(null);
       }
     };
-    
+
     // 设置超时处理
     const timeout = setTimeout(() => {
       document.head.removeChild(script);
       delete (window as any)[callbackName];
       resolve(null);
     }, 10000);
-    
+
     // 修改回调函数以清除超时
     const originalCallback = (window as any)[callbackName];
     (window as any)[callbackName] = (data: any) => {
       clearTimeout(timeout);
       originalCallback(data);
     };
-    
+
     script.src = jsonpUrl;
     document.head.appendChild(script);
   });
@@ -284,10 +291,10 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
   } else if (aid) {
     apiUrl = `https://api.bilibili.com/x/web-interface/view?aid=${aid}`;
   }
-  
+
   // 使用cors.sh代理
   const proxyUrl = `https://cors.sh/${apiUrl}`;
-  
+
   const response = await fetch(proxyUrl, {
     method: 'GET',
     headers: {
@@ -301,7 +308,7 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
   }
 
   const result = await response.json();
-  
+
   if (result.code !== 0) {
     throw new Error(`B站API错误: ${result.message}`);
   }
@@ -322,7 +329,7 @@ function formatVideoInfo(data: any) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     if (hours > 0) {
       return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     } else {

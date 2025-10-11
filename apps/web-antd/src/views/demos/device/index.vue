@@ -33,7 +33,7 @@ export default {
   data() {
     return {
       totalAmt: 0,
-      totakCount: 0,
+      totalCount: 0,
       totalDailyCost: 0,
       visible: false,
       typeOptions: [], // 设备类型选项
@@ -82,7 +82,7 @@ export default {
       this.totalAmt = res.items
         .reduce((sum, item) => sum + item.purchasePrice, 0)
         .toFixed(2);
-      this.totakCount = res.items.length;
+      this.totalCount = res.items.length;
       console.log('查询设备:', res);
     },
 
@@ -279,7 +279,7 @@ export default {
         <ACard>
           <span>总资产: {{ totalAmt }} 元</span>
           <br />
-          <span>资产数量： {{ totakCount }} 个</span>
+          <span>资产数量： {{ totalCount }} 个</span>
           <br />
           <span>每日成本： {{ totalDailyCost }}</span>
           <br />
