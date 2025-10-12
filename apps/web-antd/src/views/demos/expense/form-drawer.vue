@@ -7,6 +7,9 @@ import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
 import { insertOrUpdate } from '#/api/core/expense';
 
+// 连续录入模式开关
+const continuousMode = ref(false);
+
 defineOptions({
   name: 'FormDrawerDemo',
 });
@@ -47,10 +50,18 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'Input',
       componentProps: {
+        placeholder: '【自动显示】',
+      },
+      fieldName: 'transactionAmt',
+      label: '交易金额',
+    },
+    {
+      component: 'Input',
+      componentProps: {
         placeholder: '请输入',
       },
       fieldName: 'amt',
-      label: '金额',
+      label: '记账金额',
     },
     {
       component: 'Select',
@@ -86,6 +97,20 @@ const [Form, formApi] = useVbenForm({
   showDefaultActions: false,
   submitOnEnter: true,
 });
+
+// 重置表单数据
+const resetForm = () => {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  formApi.setValues({
+    // id: '',
+    amt: '',
+    // expTypeId: '',
+    // expTime: `${today} 00:00:00`,
+    // remark: '',
+  });
+};
+
 const [Drawer, drawerApi] = useVbenDrawer({
   onCancel() {
     drawerApi.close();
@@ -103,7 +128,16 @@ const [Drawer, drawerApi] = useVbenDrawer({
     }
 
     await insertOrUpdate(processedData);
-    drawerApi.close();
+    
+    // 根据连续录入模式决定是否关闭弹窗
+    if (continuousMode.value) {
+      // 连续录入模式：重置表单，保持弹窗打开
+      resetForm();
+    } else {
+      // 普通模式：关闭弹窗
+      drawerApi.close();
+    }
+    
     tableReload();
   },
   onOpenChange(isOpen: boolean) {
@@ -130,6 +164,9 @@ const [Drawer, drawerApi] = useVbenDrawer({
           formApi.setValues(processedValues);
         }
       });
+    } else {
+      // 弹窗关闭时重置连续录入模式
+      continuousMode.value = false;
     }
   },
   title: '',
@@ -138,5 +175,34 @@ const [Drawer, drawerApi] = useVbenDrawer({
 <template>
   <Drawer>
     <Form />
+    
+    <!-- 连续录入模式开关 -->
+    <div class="continuous-mode-switch">
+      <div class="flex items-center gap-2">
+        <span class="text-sm text-gray-600">连续录入:</span>
+        <div 
+          class="relative inline-block w-10 h-6 cursor-pointer"
+          @click="continuousMode = !continuousMode"
+        >
+          <div 
+            class="absolute top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-300"
+            :class="continuousMode ? 'bg-blue-500' : 'bg-gray-300'"
+          ></div>
+          <div 
+            class="absolute top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300"
+            :class="continuousMode ? 'translate-x-5' : 'translate-x-1'"
+          ></div>
+        </div>
+      </div>
+    </div>
   </Drawer>
 </template>
+
+<style scoped>
+.continuous-mode-switch {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10;
+}
+</style>

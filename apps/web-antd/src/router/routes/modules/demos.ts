@@ -113,14 +113,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '支付宝导入',
-        },
-        name: 'alipayImport',
-        path: '/finance/alipay-import',
-        component: () => import('#/views/demos/expense/alipay-import.vue'),
-      },
-      {
-        meta: {
           title: '支出看板',
         },
         name: 'expenseDashboard',
@@ -134,6 +126,14 @@ const routes: RouteRecordRaw[] = [
         name: 'financeDashboard',
         path: '/finance/finance-dashboard',
         component: () => import('#/views/demos/finance-dashboard/index.vue'),
+      },
+      {
+        meta: {
+          title: '外部账单导入',
+        },
+        name: 'alipayImport',
+        path: '/finance/alipay-import',
+        component: () => import('#/views/demos/expense/alipay-import.vue'),
       },
     ],
   },
