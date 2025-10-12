@@ -277,6 +277,9 @@ export default {
             currentEpisode: res.data.currentEpisode || 1,
             progress: res.data.progress || 0,
             ownerName: res.data.owner?.name || '',
+            watchedDurationSeconds: res.data.watchedDurationSeconds || 0,
+            watchedDurationFormatted: res.data.watchedDurationFormatted || '00:00',
+            pages: res.data.pages || [], // 保存分P时长数据
           };
           message.success('解析成功');
         } else {
@@ -351,6 +354,58 @@ export default {
           this.newVideo.status = 5; // 已完成
         } else if (this.newVideo.progress > 0) {
           this.newVideo.status = 2; // 进行中
+        }
+
+        // 计算已观看视频时长
+        this.calculateWatchedDuration();
+      }
+    },
+
+    /**
+     * 计算已观看视频时长
+     */
+    calculateWatchedDuration() {
+      if (this.newVideo.currentEpisode && this.newVideo.episodes && this.newVideo.duration) {
+        // 解析视频总时长（格式如：30:15 或 01:30:15）
+        const durationParts = this.newVideo.duration.split(':').map(part => parseInt(part) || 0);
+        let totalSeconds = 0;
+        
+        if (durationParts.length === 3) {
+          // 格式：时:分:秒
+          totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
+        } else if (durationParts.length === 2) {
+          // 格式：分:秒
+          totalSeconds = durationParts[0] * 60 + durationParts[1];
+        }
+
+        if (totalSeconds > 0) {
+          let watchedSeconds = 0;
+          
+          // 如果有分P时长数据，基于实际分P时长计算
+          if (this.newVideo.pages && this.newVideo.pages.length > 0) {
+            // 累加当前集数之前的所有分P时长
+            for (let i = 0; i < Math.min(this.newVideo.currentEpisode - 1, this.newVideo.pages.length); i++) {
+              watchedSeconds += this.newVideo.pages[i].duration;
+            }
+            watchedSeconds = Math.max(0, Math.min(totalSeconds, watchedSeconds));
+          } else {
+            // 如果没有分P时长数据，假设每集时长相等
+            watchedSeconds = Math.max(0, Math.min(totalSeconds, 
+              ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * totalSeconds));
+          }
+          
+          // 格式化已观看时长
+          const hours = Math.floor(watchedSeconds / 3600);
+          const minutes = Math.floor((watchedSeconds % 3600) / 60);
+          const seconds = Math.floor(watchedSeconds % 60);
+          
+          if (hours > 0) {
+            this.newVideo.watchedDurationFormatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            this.newVideo.watchedDurationFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          }
+          
+          this.newVideo.watchedDurationSeconds = Math.round(watchedSeconds);
         }
       }
     },
@@ -693,6 +748,26 @@ export default {
                 v-model:value="newVideo.progress"
                 readonly
                 :formatter="(value) => `${value}%`"
+                style="width: 100%"
+                placeholder="自动计算"
+              />
+            </AFormItem>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+            <AFormItem label="视频总时长">
+              <AInput
+                v-model:value="newVideo.duration"
+                readonly
+                style="width: 100%"
+                placeholder="自动解析"
+              />
+            </AFormItem>
+
+            <AFormItem label="已观看时长">
+              <AInput
+                v-model:value="newVideo.watchedDurationFormatted"
+                readonly
                 style="width: 100%"
                 placeholder="自动计算"
               />

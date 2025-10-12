@@ -8,7 +8,7 @@ export interface BilibiliVideo {
   title: string; // 视频标题
   url: string; // B站视频URL
   cover?: string; // 视频封面
-  duration?: string; // 视频时长
+  duration?: number; // 视频时长
   episodes?: number; // 集数
   currentEpisode?: number; // 当前观看集数
   progress?: number; // 观看进度（百分比）
@@ -140,6 +140,48 @@ function calculateProgress(currentEpisode: number, totalEpisodes: number): numbe
 }
 
 /**
+ * 计算已观看视频时长（秒）
+ */
+function calculateWatchedDuration(currentEpisode: number, totalEpisodes: number, totalDurationSeconds: number, pages?: Array<{page: number, duration: number}>): number {
+  if (totalEpisodes <= 0 || currentEpisode <= 0 || totalDurationSeconds <= 0) {
+    return 0;
+  }
+
+  if (currentEpisode >= totalEpisodes) {
+    return totalDurationSeconds; // 已观看全部时长
+  }
+
+  // 如果有分P时长数据，基于实际分P时长计算
+  if (pages && pages.length > 0) {
+    let watchedSeconds = 0;
+    // 累加当前集数之前的所有分P时长
+    for (let i = 0; i < Math.min(currentEpisode - 1, pages.length); i++) {
+      watchedSeconds += pages[i].duration;
+    }
+    return Math.max(0, Math.min(totalDurationSeconds, watchedSeconds));
+  }
+
+  // 如果没有分P时长数据，假设每集时长相等
+  const watchedSeconds = Math.max(0, Math.min(totalDurationSeconds, ((currentEpisode - 1) / totalEpisodes) * totalDurationSeconds));
+  return Math.round(watchedSeconds);
+}
+
+/**
+ * 格式化时长（秒转时分秒）
+ */
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+}
+
+/**
  * 解析B站视频URL，获取视频信息（前端跨域解决方案）
  */
 export async function parseBilibiliUrl(url: string) {
@@ -179,6 +221,11 @@ export async function parseBilibiliUrl(url: string) {
       // 自动计算学习进度
       const progress = calculateProgress(currentEpisode, videoInfo.episodes || 1);
 
+      // 计算已观看视频时长（秒）
+      const totalDurationSeconds = videoInfo.durationSeconds || 0;
+      const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, videoInfo.episodes || 1, totalDurationSeconds, videoInfo.pages);
+      const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
+
       // 清理URL参数，只保留p和t参数
       const cleanedUrl = cleanUrlParams(url);
 
@@ -188,7 +235,9 @@ export async function parseBilibiliUrl(url: string) {
           ...videoInfo,
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
-          progress
+          progress,
+          watchedDurationSeconds,
+          watchedDurationFormatted,
         },
         message: '解析成功'
       };
@@ -203,6 +252,11 @@ export async function parseBilibiliUrl(url: string) {
       // 自动计算学习进度
       const progress = calculateProgress(currentEpisode, corsResult.data.episodes || 1);
 
+      // 计算已观看视频时长（秒）
+      const totalDurationSeconds = corsResult.data.durationSeconds || 0;
+      const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, corsResult.data.episodes || 1, totalDurationSeconds, corsResult.data.pages);
+      const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
+
       // 清理URL参数，只保留p和t参数
       const cleanedUrl = cleanUrlParams(url);
 
@@ -212,7 +266,9 @@ export async function parseBilibiliUrl(url: string) {
           ...corsResult.data,
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
-          progress
+          progress,
+          watchedDurationSeconds,
+          watchedDurationFormatted
         },
         message: '解析成功'
       };
@@ -324,23 +380,11 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
  * 格式化视频信息
  */
 function formatVideoInfo(data: any) {
-  // 格式化时长（秒转时分秒）
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    } else {
-      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-  };
-
   return {
     title: data.title || '',
     cover: data.pic || 'https://via.placeholder.com/300x200?text=B站视频封面',
     duration: formatDuration(data.duration) || '00:00',
+    durationSeconds: data.duration || 0, // 保存原始秒数用于计算
     episodes: data.videos || 1,
     // 添加更多API返回的信息
     bvid: data.bvid || '',
