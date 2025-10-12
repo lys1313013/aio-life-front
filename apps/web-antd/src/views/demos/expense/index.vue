@@ -68,16 +68,33 @@ const monthlyStats = computed(() => {
 
   tableData.value.forEach((row) => {
     if (row.expTime) {
-      // 解析日期，提取年月
-      const date = new Date(row.expTime);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+      try {
+        // 解析日期，提取年月 - 支持多种日期格式
+        let date: Date;
+        if (typeof row.expTime === 'string' && row.expTime.includes('T')) {
+          // ISO 格式：2025-10-12T00:00:00
+          date = new Date(row.expTime);
+        } else if (typeof row.expTime === 'string' && row.expTime.includes(' ')) {
+          // 日期时间格式：2025-10-12 00:00:00
+          date = new Date(row.expTime.replace(' ', 'T'));
+        } else {
+          // 纯日期格式：2025-10-12
+          date = new Date(row.expTime + 'T00:00:00');
+        }
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = 0;
+        if (!isNaN(date.getTime())) {
+          const year = date.getFullYear();
+          const month = date.getMonth() + 1;
+          const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
+
+          if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = 0;
+          }
+          monthlyData[monthKey] += row.amt || 0;
+        }
+      } catch (error) {
+        console.warn('日期解析失败:', row.expTime, error);
       }
-      monthlyData[monthKey] += row.amt || 0;
     }
   });
   return monthlyData;
@@ -257,8 +274,9 @@ const formOptions: VbenFormProps = {
       component: 'RangePicker',
       componentProps: {
         placeholder: ['开始日期', '结束日期'],
-        format: 'YYYY-MM-DD',
-        valueFormat: 'YYYY-MM-DD',
+        format: 'YYYY-MM-DD HH:mm:ss',
+        valueFormat: 'YYYY-MM-DD HH:mm:ss',
+        showTime: { format: 'HH:mm:ss' },
         style: { width: '100%' },
       },
       fieldName: 'expTimeRange',
@@ -293,9 +311,20 @@ const gridOptions: VxeGridProps<RowType> = {
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
+      field: 'transactionAmt',
+      cellType: 'number',
+      title: '交易金额',
+      sortable: true,
+      headerAlign: 'center',
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        return cellValue.toFixed(2);
+      },
+    },
+    {
       field: 'amt',
       cellType: 'number',
-      title: '金额',
+      title: '记账金额',
       sortable: true,
       headerAlign: 'center',
       align: 'right',
@@ -440,10 +469,12 @@ const processQueryCondition = (formValues: any) => {
   if (condition.expTimeRange && Array.isArray(condition.expTimeRange)) {
     const [startTime, endTime] = condition.expTimeRange;
     if (startTime) {
-      condition.startTime = startTime;
+      // 确保开始时间包含完整的时间部分
+      condition.startTime = startTime.includes(' ') ? startTime : `${startTime} 00:00:00`;
     }
     if (endTime) {
-      condition.endTime = endTime;
+      // 确保结束时间包含完整的时间部分
+      condition.endTime = endTime.includes(' ') ? endTime : `${endTime} 23:59:59`;
     }
     // 删除原始的日期区间字段
     delete condition.expTimeRange;
