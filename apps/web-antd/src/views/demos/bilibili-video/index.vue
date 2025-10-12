@@ -409,6 +409,41 @@ export default {
       // 其他状态返回实际进度值
       return video.progress;
     },
+
+    /**
+     * 跳转到B站视频页面
+     * 拼接对应的集数参数
+     */
+    goToBilibiliVideo(video) {
+      if (!video.url) {
+        message.error('视频链接不存在');
+        return;
+      }
+
+      try {
+        // 解析原始URL
+        const urlObj = new URL(video.url);
+        const params = new URLSearchParams(urlObj.search);
+        
+        // 获取当前集数（如果没有当前集数，默认为1）
+        const currentEpisode = video.currentEpisode || 1;
+        
+        // 设置p参数为当前集数（B站的集数参数是p）
+        params.set('p', currentEpisode.toString());
+        
+        // 构建新的URL
+        urlObj.search = params.toString();
+        const finalUrl = urlObj.toString();
+        
+        // 在新标签页打开B站视频
+        window.open(finalUrl, '_blank');
+        
+        console.log('跳转到B站视频:', finalUrl);
+      } catch (error) {
+        console.error('跳转失败:', error);
+        message.error('跳转失败，请检查视频链接格式');
+      }
+    },
   },
 };
 </script>
@@ -443,8 +478,10 @@ export default {
               :alt="video.title"
               @error="handleImageError"
               @load="handleImageLoad"
+              @click.stop="goToBilibiliVideo(video)"
+              style="cursor: pointer;"
             />
-            <div v-else class="default-icon">
+            <div v-else class="default-icon" @click.stop="goToBilibiliVideo(video)" style="cursor: pointer;">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
