@@ -293,16 +293,16 @@ function openMenu(path: string, parentPaths: string[]) {
   if (openedMenus.value.includes(path)) {
     return;
   }
-  // 手风琴模式菜单
-  if (props.accordion) {
-    const activeParentPaths = getActivePaths();
-    if (activeParentPaths.includes(path)) {
-      parentPaths = activeParentPaths;
-    }
-    openedMenus.value = openedMenus.value.filter((path: string) =>
-      parentPaths.includes(path),
-    );
-  }
+  // 手风琴模式菜单 (关闭）
+  // if (props.accordion) {
+  //   const activeParentPaths = getActivePaths();
+  //   if (activeParentPaths.includes(path)) {
+  //     parentPaths = activeParentPaths;
+  //   }
+  //   openedMenus.value = openedMenus.value.filter((path: string) =>
+  //     parentPaths.includes(path),
+  //   );
+  // }
   openedMenus.value.push(path);
   emit('open', path, parentPaths);
 }
