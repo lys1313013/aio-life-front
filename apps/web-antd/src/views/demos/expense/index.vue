@@ -318,7 +318,10 @@ const gridOptions: VxeGridProps<RowType> = {
       headerAlign: 'center',
       align: 'right',
       formatter: ({ cellValue }) => {
-        return cellValue.toFixed(2);
+        if (cellValue === null || cellValue === undefined) {
+          return '';
+        }
+        return Number(cellValue).toFixed(2);
       },
     },
     {
@@ -329,7 +332,10 @@ const gridOptions: VxeGridProps<RowType> = {
       headerAlign: 'center',
       align: 'right',
       formatter: ({ cellValue }) => {
-        return cellValue.toFixed(2);
+        if (cellValue === null || cellValue === undefined) {
+          return '';
+        }
+        return Number(cellValue).toFixed(2);
       },
     },
     {

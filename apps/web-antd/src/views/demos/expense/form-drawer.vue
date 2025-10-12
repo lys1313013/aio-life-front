@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref, toRaw } from 'vue';
+import { onMounted, ref, toRaw, nextTick } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
@@ -93,7 +93,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
   onConfirm: async () => {
     const formData = await formApi.submitForm();
     const processedData = { ...toRaw(formData) };
-    
+
     // 处理日期字段，确保格式正确
     if (processedData.expTime) {
       // 如果只有日期部分，添加时间部分
@@ -101,32 +101,35 @@ const [Drawer, drawerApi] = useVbenDrawer({
         processedData.expTime = `${processedData.expTime} 00:00:00`;
       }
     }
-    
+
     await insertOrUpdate(processedData);
     drawerApi.close();
     tableReload();
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
-      const { values } = drawerApi.getData<Record<string, any>>();
-      if (values) {
-        // 处理日期字段显示
-        const processedValues = { ...values };
-        if (processedValues.expTime) {
-          // 确保日期格式正确，直接使用后端返回的日期时间格式
-          // DatePicker 会自动根据 format 和 valueFormat 进行显示
-          if (typeof processedValues.expTime === 'string' && processedValues.expTime.includes('T')) {
-            // 如果是 ISO 格式，转换为本地格式
-            processedValues.expTime = processedValues.expTime.replace('T', ' ');
+      // 使用 nextTick 确保 DOM 已经渲染完成
+      nextTick(() => {
+        const { values } = drawerApi.getData<Record<string, any>>();
+        if (values) {
+          // 处理日期字段显示
+          const processedValues = { ...values };
+          if (processedValues.expTime) {
+            // 确保日期格式正确，直接使用后端返回的日期时间格式
+            // DatePicker 会自动根据 format 和 valueFormat 进行显示
+            if (typeof processedValues.expTime === 'string' && processedValues.expTime.includes('T')) {
+              // 如果是 ISO 格式，转换为本地格式
+              processedValues.expTime = processedValues.expTime.replace('T', ' ');
+            }
+          } else {
+            // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            processedValues.expTime = `${today} 00:00:00`;
           }
-        } else {
-          // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
-          const now = new Date();
-          const today = now.toISOString().split('T')[0];
-          processedValues.expTime = `${today} 00:00:00`;
+          formApi.setValues(processedValues);
         }
-        formApi.setValues(processedValues);
-      }
+      });
     }
   },
   title: '',
