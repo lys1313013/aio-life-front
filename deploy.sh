@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pnpm run build
+
 # 设置严格模式
 set -euo pipefail
 
