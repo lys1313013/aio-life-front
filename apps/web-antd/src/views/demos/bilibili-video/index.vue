@@ -49,7 +49,7 @@ export default {
         title: '',
         url: '',
         cover: '',
-        duration: '',
+        duration: 0, // 秒数
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
@@ -204,7 +204,7 @@ export default {
         title: '',
         url: '',
         cover: '',
-        duration: '',
+        duration: 0, // 秒数
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
@@ -272,7 +272,7 @@ export default {
             url: res.data.url || this.newVideo.url, // 用清理后的URL覆盖原始URL
             title: res.data.title || '',
             cover: res.data.cover || '',
-            duration: res.data.duration || '',
+            duration: res.data.duration || 0, // 秒数
             episodes: res.data.episodes || 1,
             currentEpisode: res.data.currentEpisode || 1,
             progress: res.data.progress || 0,
@@ -366,17 +366,8 @@ export default {
      */
     calculateWatchedDuration() {
       if (this.newVideo.currentEpisode && this.newVideo.episodes && this.newVideo.duration) {
-        // 解析视频总时长（格式如：30:15 或 01:30:15）
-        const durationParts = this.newVideo.duration.split(':').map(part => parseInt(part) || 0);
-        let totalSeconds = 0;
-        
-        if (durationParts.length === 3) {
-          // 格式：时:分:秒
-          totalSeconds = durationParts[0] * 3600 + durationParts[1] * 60 + durationParts[2];
-        } else if (durationParts.length === 2) {
-          // 格式：分:秒
-          totalSeconds = durationParts[0] * 60 + durationParts[1];
-        }
+        // duration已经是秒数，直接使用
+        const totalSeconds = this.newVideo.duration;
 
         if (totalSeconds > 0) {
           let watchedSeconds = 0;
@@ -449,6 +440,25 @@ export default {
       } catch (error) {
         console.warn('格式化发布时间失败:', error);
         return pubdate;
+      }
+    },
+
+    /**
+     * 格式化视频时长（秒数转时分秒）
+     */
+    formatDuration(seconds) {
+      if (!seconds || seconds <= 0) {
+        return '00:00';
+      }
+      
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+
+      if (hours > 0) {
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      } else {
+        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
       }
     },
 
@@ -558,7 +568,7 @@ export default {
                 />
               </svg>
             </div>
-            <div class="duration-tag">{{ video.duration || '未知' }}</div>
+            <div class="duration-tag">{{ formatDuration(video.duration) || '未知' }}</div>
             <div class="status-badge" :class="`status-${getStatusClass(video.status)}`">
               {{ getStatusText(video.status) }}
             </div>
@@ -617,7 +627,7 @@ export default {
             <!-- 显示视频时长 -->
             <div v-if="video.duration" class="duration-info">
               <span class="duration-label">时长:</span>
-              <span class="duration-value">{{ video.duration }}</span>
+              <span class="duration-value">{{ formatDuration(video.duration) }}</span>
             </div>
 
             <!-- 显示统计数据 -->
@@ -716,10 +726,12 @@ export default {
           </AFormItem>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-            <AFormItem label="视频时长">
-              <AInput
+            <AFormItem label="视频时长（秒）">
+              <AInputNumber
                 v-model:value="newVideo.duration"
-                placeholder="如：30:15"
+                :min="0"
+                placeholder="如：3600（代表1小时）"
+                style="width: 100%"
               />
             </AFormItem>
 
@@ -757,7 +769,7 @@ export default {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
             <AFormItem label="视频总时长">
               <AInput
-                v-model:value="newVideo.duration"
+                :value="formatDuration(newVideo.duration)"
                 readonly
                 style="width: 100%"
                 placeholder="自动解析"
