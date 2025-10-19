@@ -317,6 +317,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       headerAlign: 'center',
       align: 'right',
+      width: 100,
       formatter: ({ cellValue }) => {
         if (cellValue === null || cellValue === undefined) {
           return '';
@@ -331,6 +332,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       headerAlign: 'center',
       align: 'right',
+      width: 100,
       formatter: ({ cellValue }) => {
         if (cellValue === null || cellValue === undefined) {
           return '';
@@ -342,17 +344,18 @@ const gridOptions: VxeGridProps<RowType> = {
       field: 'expTypeId',
       title: '支出类型',
       sortable: true,
+      width: 100,
       formatter: ({ cellValue }) => {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'remark', title: '备注', sortable: true },
-    { field: 'expTime', title: '时间', sortable: true },
-    { field: 'expDesc', title: '交易描述', sortable: true },
-    { field: 'counterparty', title: '交易对方', sortable: true },
-    { field: 'transactionId', title: '交易号', sortable: true },
-    { field: 'createTime', title: '创建时间', sortable: true },
-    { field: 'updateTime', title: '修改时间', sortable: true },
+    { field: 'remark', title: '备注', sortable: true, width: 100 },
+    { field: 'expTime', title: '时间', sortable: true, width: 180 },
+    { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
+    { field: 'counterparty', title: '交易对方', sortable: true, width: 150 },
+    { field: 'transactionId', title: '交易号', sortable: true, width: 200 },
+    { field: 'createTime', title: '创建时间', sortable: true, width: 180 },
+    { field: 'updateTime', title: '修改时间', sortable: true, width: 180 },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -550,6 +553,19 @@ const tableReload = () => {
 <style scoped>
 .charts-section {
   padding: 0;
+}
+
+/* 表格容器样式 */
+:deep(.vxe-grid) {
+  overflow: auto;
+}
+
+:deep(.vxe-table--body-wrapper) {
+  overflow-x: auto;
+}
+
+:deep(.vxe-table--header-wrapper) {
+  overflow-x: hidden;
 }
 
 .total-card {

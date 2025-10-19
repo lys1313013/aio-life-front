@@ -21,6 +21,7 @@ import {
   parseBilibiliUrl,
   queryBilibiliVideos,
   getStatusCount,
+  statistics,
 } from '#/api/core/bilibili-video';
 
 export default {
@@ -56,16 +57,17 @@ export default {
         status: 2,
         notes: '',
         ownerName: '',
+        watchedDuration: 0, // 已学习时长（秒数）
       },
       tabList: [
-        { key: 0, tab: '全部' },
         { key: 1, tab: '未开始' },
         { key: 2, tab: '进行中' },
         { key: 3, tab: '已暂停' },
         { key: 4, tab: '部分完成' },
         { key: 5, tab: '已完成' },
+        { key: 0, tab: '全部' },
       ],
-      tabKey: 0,
+      tabKey: 2, // 进页面的默认状态
       // 视频数量统计
       videoCounts: {
         0: 0, // 全部
@@ -83,6 +85,22 @@ export default {
         { value: 4, label: '部分完成' },
         { value: 5, label: '已完成' },
       ],
+      // 学习进度统计数据
+      learningStats: {
+        // 时长统计（秒）
+        studiedSeconds: 0, // 已学习时长（秒）
+        unstudiedSeconds: 0, // 未学习时长（秒）
+        totalSeconds: 0, // 总时长（秒）
+
+        // 数量统计
+        studiedCount: 0, // 已学习数量
+        unstudiedCount: 0, // 待学习数量
+        notStartedCount: 0, // 未开始数量
+        totalCount: 0, // 总数量
+
+        // 进度百分比
+        progressPercentage: 0, // 学习进度百分比
+      },
     };
   },
   async mounted() {
@@ -130,6 +148,33 @@ export default {
           });
           this.videoCounts[0] = sum;
         }
+
+      // 更新学习进度统计
+      this.calculateLearningStats();
+    },
+
+    /**
+     * 计算学习进度统计数据
+     */
+    async calculateLearningStats() {
+      // 重置统计数据
+      this.learningStats = await statistics({});
+
+      // 计算数量统计
+      this.learningStats.notStartedCount = this.videoCounts[1] || 0; // 未开始
+      this.learningStats.studiedCount = this.videoCounts[5] || 0; // 已完成
+      this.learningStats.unstudiedCount = (this.videoCounts[2] || 0) + (this.videoCounts[3] || 0) + (this.videoCounts[4] || 0); // 进行中+已暂停+部分完成
+      this.learningStats.totalCount = this.videoCounts[0] || 0;
+
+      // 计算时长统计（这里使用模拟数据，后续可以替换为实际计算逻辑）
+      // 假设每个视频平均时长为1小时（3600秒）
+      const avgVideoSeconds = 3600;
+      this.learningStats.totalSeconds = this.learningStats.totalCount * avgVideoSeconds;
+
+      // 计算进度百分比
+      if (this.learningStats.totalCount > 0) {
+        this.learningStats.progressPercentage = Math.round((this.learningStats.studiedCount / this.learningStats.totalCount) * 100);
+      }
     },
 
     /**
@@ -254,6 +299,7 @@ export default {
         status: 2,
         notes: '',
         ownerName: '',
+        watchedDuration: 0, // 已学习时长（秒数）
       };
     },
 
@@ -277,10 +323,13 @@ export default {
             currentEpisode: res.data.currentEpisode || 1,
             progress: res.data.progress || 0,
             ownerName: res.data.owner?.name || '',
-            watchedDurationSeconds: res.data.watchedDurationSeconds || 0,
-            watchedDurationFormatted: res.data.watchedDurationFormatted || '00:00',
+            watchedDuration: res.data.watchedDuration || 0,
+            watchedDurationFormatted: res.data.watchedDurationFormatted || '00:00:00',
             pages: res.data.pages || [], // 保存分P时长数据
           };
+          if (this.newVideo.currentEpisode == this.newVideo.episodes) {
+            this.newVideo.status = 5; // 已完成
+          }
           message.success('解析成功');
         } else {
           message.error(`解析失败：${res.message}`);
@@ -356,8 +405,10 @@ export default {
           this.newVideo.status = 2; // 进行中
         }
 
-        // 计算已观看视频时长
-        this.calculateWatchedDuration();
+        // 只有在没有API返回的已观看时长数据时才重新计算
+        if (!this.newVideo.watchedDuration || this.newVideo.watchedDuration === 0) {
+          this.calculateWatchedDuration();
+        }
       }
     },
 
@@ -371,7 +422,7 @@ export default {
 
         if (totalSeconds > 0) {
           let watchedSeconds = 0;
-          
+
           // 如果有分P时长数据，基于实际分P时长计算
           if (this.newVideo.pages && this.newVideo.pages.length > 0) {
             // 累加当前集数之前的所有分P时长
@@ -381,21 +432,21 @@ export default {
             watchedSeconds = Math.max(0, Math.min(totalSeconds, watchedSeconds));
           } else {
             // 如果没有分P时长数据，假设每集时长相等
-            watchedSeconds = Math.max(0, Math.min(totalSeconds, 
+            watchedSeconds = Math.max(0, Math.min(totalSeconds,
               ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * totalSeconds));
           }
-          
+
           // 格式化已观看时长
           const hours = Math.floor(watchedSeconds / 3600);
           const minutes = Math.floor((watchedSeconds % 3600) / 60);
           const seconds = Math.floor(watchedSeconds % 60);
-          
+
           if (hours > 0) {
             this.newVideo.watchedDurationFormatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
           } else {
             this.newVideo.watchedDurationFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
           }
-          
+
           this.newVideo.watchedDurationSeconds = Math.round(watchedSeconds);
         }
       }
@@ -448,17 +499,34 @@ export default {
      */
     formatDuration(seconds) {
       if (!seconds || seconds <= 0) {
-        return '00:00';
+        return '00:00:00';
       }
-      
+
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    },
+
+    /**
+     * 格式化学习时长（秒数转可读格式）
+     */
+    formatLearningTime(seconds) {
+      if (!seconds || seconds <= 0) {
+        return '0秒';
+      }
+
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = Math.floor(seconds % 60);
 
       if (hours > 0) {
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${hours}小时${minutes}分`;
+      } else if (minutes > 0) {
+        return `${minutes}分${secs}秒`;
       } else {
-        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        return `${secs}秒`;
       }
     },
 
@@ -489,20 +557,20 @@ export default {
         // 解析原始URL
         const urlObj = new URL(video.url);
         const params = new URLSearchParams(urlObj.search);
-        
+
         // 获取当前集数（如果没有当前集数，默认为1）
         const currentEpisode = video.currentEpisode || 1;
-        
+
         // 设置p参数为当前集数（B站的集数参数是p）
         params.set('p', currentEpisode.toString());
-        
+
         // 构建新的URL
         urlObj.search = params.toString();
         const finalUrl = urlObj.toString();
-        
+
         // 在新标签页打开B站视频
         window.open(finalUrl, '_blank');
-        
+
         console.log('跳转到B站视频:', finalUrl);
       } catch (error) {
         console.error('跳转失败:', error);
@@ -515,6 +583,45 @@ export default {
 
 <template>
   <ACard style="width: 100%">
+    <!-- 学习进度统计卡片 -->
+    <div class="learning-stats-container">
+      <div class="stats-grid">
+        <!-- 进度概览卡片 -->
+        <div class="stats-card progress-card">
+          <div class="stats-icon">📊</div>
+          <div class="stats-content">
+            <div class="stats-title">学习进度</div>
+            <div class="stats-value">{{ learningStats.progressPercentage }}%</div>
+            <div class="stats-subtitle">已完成 {{ learningStats.studiedCount }}/{{ learningStats.totalCount }}</div>
+          </div>
+        </div>
+
+        <!-- 时长统计卡片 -->
+        <div class="stats-card time-card">
+          <div class="stats-icon">⏱️</div>
+          <div class="stats-content">
+            <div class="stats-title">学习时长</div>
+            <div class="stats-value">{{ formatLearningTime(learningStats.studiedSeconds) }}</div>
+            <div class="stats-subtitle">剩余 {{ formatLearningTime(learningStats.unstudiedSeconds) }}</div>
+          </div>
+        </div>
+
+        <!-- 数量统计卡片 -->
+        <div class="stats-card count-card">
+          <div class="stats-icon">📚</div>
+          <div class="stats-content">
+            <div class="stats-title">学习数量</div>
+            <div class="stats-value">{{ learningStats.totalCount }}</div>
+            <div class="stats-subtitle">
+              <span class="status-item completed">{{ learningStats.studiedCount }} 已完成</span>
+              <span class="status-item in-progress">{{ learningStats.unstudiedCount }} 进行中</span>
+              <span class="status-item not-started">{{ learningStats.notStartedCount }} 未开始</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <ATabs
       v-model:activeKey="tabKey"
       @change="onTabChange"
@@ -624,6 +731,12 @@ export default {
               集数：{{ video.currentEpisode }}/{{ video.episodes }}
             </p>
 
+            <!-- 显示已观看时长 -->
+            <div v-if="video.watchedDuration" class="duration-info">
+              <span class="duration-label">已看:</span>
+              <span class="duration-value">{{ formatDuration(video.watchedDuration) }}</span>
+            </div>
+
             <!-- 显示视频时长 -->
             <div v-if="video.duration" class="duration-info">
               <span class="duration-label">时长:</span>
@@ -726,14 +839,7 @@ export default {
           </AFormItem>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-            <AFormItem label="视频时长（秒）">
-              <AInputNumber
-                v-model:value="newVideo.duration"
-                :min="0"
-                placeholder="如：3600（代表1小时）"
-                style="width: 100%"
-              />
-            </AFormItem>
+            
 
             <AFormItem label="总集数">
               <AInputNumber
@@ -742,9 +848,7 @@ export default {
                 style="width: 100%"
               />
             </AFormItem>
-          </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
             <AFormItem label="当前集数">
               <AInputNumber
                 v-model:value="newVideo.currentEpisode"
@@ -752,16 +856,6 @@ export default {
                 :max="newVideo.episodes"
                 @change="updateProgressFromEpisode"
                 style="width: 100%"
-              />
-            </AFormItem>
-
-            <AFormItem label="学习进度">
-              <AInput
-                v-model:value="newVideo.progress"
-                readonly
-                :formatter="(value) => `${value}%`"
-                style="width: 100%"
-                placeholder="自动计算"
               />
             </AFormItem>
           </div>
@@ -786,7 +880,19 @@ export default {
             </AFormItem>
           </div>
 
-          <AFormItem label="学习状态">
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+            <AFormItem label="学习进度">
+              <AInput
+                v-model:value="newVideo.progress"
+                readonly
+                :formatter="(value) => `${value}%`"
+                style="width: 100%"
+                placeholder="自动计算"
+              />
+            </AFormItem>
+
+            <AFormItem label="学习状态">
             <ASelect v-model:value="newVideo.status" @change="handleStatusChange">
               <ASelectOption
                 v-for="option in statusOptions"
@@ -797,6 +903,7 @@ export default {
               </ASelectOption>
             </ASelect>
           </AFormItem>
+          </div>
 
               <AFormItem label="学习笔记">
                 <AInput
@@ -820,6 +927,111 @@ export default {
 </template>
 
 <style scoped>
+/* 学习进度统计卡片样式 */
+.learning-stats-container {
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stats-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stats-icon {
+  font-size: 32px;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.stats-content {
+  flex: 1;
+}
+
+.stats-title {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.stats-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #262626;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+
+.stats-subtitle {
+  font-size: 12px;
+  color: #8c8c8c;
+  line-height: 1.4;
+}
+
+/* 不同卡片的颜色主题 */
+.progress-card .stats-icon {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+}
+
+.time-card .stats-icon {
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+}
+
+.count-card .stats-icon {
+  background: linear-gradient(135deg, #fa8c16 0%, #ffa940 100%);
+}
+
+/* 状态标签样式 */
+.status-item {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.status-item.completed {
+  background: rgba(82, 196, 26, 0.1);
+  color: #52c41a;
+}
+
+.status-item.in-progress {
+  background: rgba(24, 144, 255, 0.1);
+  color: #1890ff;
+}
+
+.status-item.not-started {
+  background: rgba(140, 140, 140, 0.1);
+  color: #8c8c8c;
+}
+
 .video-container {
   padding: 10px;
   margin: 0 auto;

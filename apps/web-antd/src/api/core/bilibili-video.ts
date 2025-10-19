@@ -9,6 +9,7 @@ export interface BilibiliVideo {
   url: string; // B站视频URL
   cover?: string; // 视频封面
   duration?: number; // 视频时长
+  watchedDuration?: number; // 已学习时长
   episodes?: number; // 集数
   currentEpisode?: number; // 当前观看集数
   progress?: number; // 观看进度（百分比）
@@ -79,6 +80,10 @@ export async function insertOrUpdateBilibiliVideo(data: BilibiliVideo) {
  */
 export async function deleteBilibiliVideo(data: any) {
   return await requestClient.post('/bilibili-video/delete', data);
+}
+
+export async function statistics(data: any) {
+  return await requestClient.get('/bilibili-video/statistics', data);
 }
 
 /**
@@ -222,7 +227,7 @@ export async function parseBilibiliUrl(url: string) {
       const progress = calculateProgress(currentEpisode, videoInfo.episodes || 1);
 
       // 计算已观看视频时长（秒）
-      const totalDurationSeconds = videoInfo.durationSeconds || 0;
+      const totalDurationSeconds = videoInfo.duration || 0;
       const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, videoInfo.episodes || 1, totalDurationSeconds, videoInfo.pages);
       const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
 
@@ -236,7 +241,7 @@ export async function parseBilibiliUrl(url: string) {
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
           progress,
-          watchedDurationSeconds,
+          watchedDuration: watchedDurationSeconds,
           watchedDurationFormatted,
         },
         message: '解析成功'
@@ -253,7 +258,7 @@ export async function parseBilibiliUrl(url: string) {
       const progress = calculateProgress(currentEpisode, corsResult.data.episodes || 1);
 
       // 计算已观看视频时长（秒）
-      const totalDurationSeconds = corsResult.data.durationSeconds || 0;
+      const totalDurationSeconds = corsResult.data.duration || 0;
       const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, corsResult.data.episodes || 1, totalDurationSeconds, corsResult.data.pages);
       const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
 
@@ -267,7 +272,7 @@ export async function parseBilibiliUrl(url: string) {
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
           progress,
-          watchedDurationSeconds,
+          watchedDuration: watchedDurationSeconds,
           watchedDurationFormatted
         },
         message: '解析成功'
@@ -383,8 +388,7 @@ function formatVideoInfo(data: any) {
   return {
     title: data.title || '',
     cover: data.pic || 'https://via.placeholder.com/300x200?text=B站视频封面',
-    duration: formatDuration(data.duration) || '00:00',
-    durationSeconds: data.duration || 0, // 保存原始秒数用于计算
+    duration: data.duration || 0,
     episodes: data.videos || 1,
     // 添加更多API返回的信息
     bvid: data.bvid || '',
