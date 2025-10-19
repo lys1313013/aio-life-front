@@ -743,6 +743,12 @@ export default {
               <span class="duration-value">{{ formatDuration(video.duration) }}</span>
             </div>
 
+            <!-- 显示剩余时长 -->
+            <div v-if="video.status !== 5" class="duration-info remaining-duration">
+              <span class="duration-label">剩余:</span>
+              <span class="duration-value">{{ formatDuration(video.duration - video.watchedDuration) }}</span>
+            </div>
+
             <!-- 显示统计数据 -->
             <div v-if="video.stat" class="stat-info">
               <div class="stat-item">
@@ -839,7 +845,6 @@ export default {
           </AFormItem>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
-            
 
             <AFormItem label="总集数">
               <AInputNumber
@@ -1233,6 +1238,17 @@ export default {
   color: #8c8c8c;
   font-size: 9px;
   font-weight: 500;
+}
+
+/* 剩余时长特殊样式 */
+.remaining-duration .duration-label {
+  color: #fa541c;
+  font-weight: 600;
+}
+
+.remaining-duration .duration-value {
+  color: #fa541c;
+  font-weight: 600;
 }
 
 .stat-info {
