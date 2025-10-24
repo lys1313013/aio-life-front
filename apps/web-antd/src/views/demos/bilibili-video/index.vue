@@ -586,26 +586,6 @@ export default {
     <!-- 学习进度统计卡片 -->
     <div class="learning-stats-container">
       <div class="stats-grid">
-        <!-- 进度概览卡片 -->
-        <div class="stats-card progress-card">
-          <div class="stats-icon">📊</div>
-          <div class="stats-content">
-            <div class="stats-title">学习进度</div>
-            <div class="stats-value">{{ learningStats.progressPercentage }}%</div>
-            <div class="stats-subtitle">已完成 {{ learningStats.studiedCount }}/{{ learningStats.totalCount }}</div>
-          </div>
-        </div>
-
-        <!-- 时长统计卡片 -->
-        <div class="stats-card time-card">
-          <div class="stats-icon">⏱️</div>
-          <div class="stats-content">
-            <div class="stats-title">学习时长</div>
-            <div class="stats-value">{{ formatLearningTime(learningStats.studiedSeconds) }}</div>
-            <div class="stats-subtitle">剩余 {{ formatLearningTime(learningStats.unstudiedSeconds) }}</div>
-          </div>
-        </div>
-
         <!-- 数量统计卡片 -->
         <div class="stats-card count-card">
           <div class="stats-icon">📚</div>
@@ -617,6 +597,16 @@ export default {
               <span class="status-item in-progress">{{ learningStats.unstudiedCount }} 进行中</span>
               <span class="status-item not-started">{{ learningStats.notStartedCount }} 未开始</span>
             </div>
+          </div>
+        </div>
+
+        <!-- 时长统计卡片 -->
+        <div class="stats-card time-card">
+          <div class="stats-icon">⏱️</div>
+          <div class="stats-content">
+            <div class="stats-title">学习时长</div>
+            <div class="stats-value">{{ formatLearningTime(learningStats.studiedSeconds) }}</div>
+            <div class="stats-subtitle">剩余 {{ formatLearningTime(learningStats.unstudiedSeconds) }}</div>
           </div>
         </div>
       </div>
@@ -731,6 +721,12 @@ export default {
               集数：{{ video.currentEpisode }}/{{ video.episodes }}
             </p>
 
+            <!-- 显示剩余时长 -->
+            <div v-if="video.status !== 5" class="duration-info remaining-duration">
+              <span class="duration-label">剩余:</span>
+              <span class="duration-value">{{ formatDuration(video.duration - video.watchedDuration) }}</span>
+            </div>
+
             <!-- 显示已观看时长 -->
             <div v-if="video.watchedDuration" class="duration-info">
               <span class="duration-label">已看:</span>
@@ -741,12 +737,6 @@ export default {
             <div v-if="video.duration" class="duration-info">
               <span class="duration-label">时长:</span>
               <span class="duration-value">{{ formatDuration(video.duration) }}</span>
-            </div>
-
-            <!-- 显示剩余时长 -->
-            <div v-if="video.status !== 5" class="duration-info remaining-duration">
-              <span class="duration-label">剩余:</span>
-              <span class="duration-value">{{ formatDuration(video.duration - video.watchedDuration) }}</span>
             </div>
 
             <!-- 显示统计数据 -->
