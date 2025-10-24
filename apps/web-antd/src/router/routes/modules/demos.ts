@@ -75,6 +75,14 @@ const routes: RouteRecordRaw[] = [
         path: '/demos/test',
         component: () => import('#/views/demos/test/index.vue'),
       },
+      {
+        meta: {
+          title: '时间轴记录',
+        },
+        name: 'timeTracker',
+        path: '/demos/time-tracker',
+        component: () => import('#/views/demos/time-tracker/index.vue'),
+      },
     ],
   },
   {
