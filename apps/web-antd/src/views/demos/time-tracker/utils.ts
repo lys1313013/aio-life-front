@@ -17,34 +17,60 @@ export function timeToMinutes(timeStr: string): number {
 export function hasOverlap(slots: TimeSlot[], newSlot: TimeSlot): boolean {
   return slots.some(slot => {
     if (slot.id === newSlot.id) return false; // 排除自身
-    return !(newSlot.endTime <= slot.startTime || newSlot.startTime >= slot.endTime);
+    return newSlot.startTime < slot.endTime && newSlot.endTime > slot.startTime;
   });
+}
+
+// 验证时间段是否重叠（编辑时使用，排除指定ID的时间段）
+export function hasOverlapExcluding(slots: TimeSlot[], newSlot: TimeSlot, excludeId?: string): boolean {
+  return slots.some(slot => {
+    if (slot.id === excludeId) return false; // 排除指定ID的时间段
+    return newSlot.startTime < slot.endTime && newSlot.endTime > slot.startTime;
+  });
+}
+
+// 检测指定时间段下方的第一个时间段
+// 返回下方时间段的开始时间，如果没有下方时间段则返回null
+export function getBelowSlotStartTime(slots: TimeSlot[], currentSlot: TimeSlot, excludeId?: string): number | null {
+  // 过滤掉当前时间段本身
+  const otherSlots = slots.filter(slot => slot.id !== currentSlot.id && (!excludeId || slot.id !== excludeId));
+
+  // 找到所有在当前时间段下方的时段（开始时间大于当前时间段的结束时间）
+  const belowSlots = otherSlots.filter(slot => slot.startTime >= currentSlot.endTime);
+
+  if (belowSlots.length === 0) {
+    return null; // 没有下方时间段
+  }
+
+  // 找到最接近的下方时间段（开始时间最小的下方时间段）
+  const closestBelowSlot = belowSlots.reduce((closest, slot) => {
+    return slot.startTime < closest.startTime ? slot : closest;
+  });
+
+  return closestBelowSlot.startTime;
 }
 
 // 验证时间段是否有效
 export function isValidSlot(slot: TimeSlot, config: TimeTrackerConfig): boolean {
-  const duration = slot.endTime - slot.startTime;
   return (
     slot.startTime >= 0 &&
     slot.endTime <= 1440 &&
-    slot.startTime < slot.endTime &&
-    duration >= config.minSlotDuration &&
-    duration <= config.maxSlotDuration
+    slot.startTime < slot.endTime
   );
 }
 
-// 获取时间段在时间轴上的位置和宽度
-export function getSlotPosition(slot: TimeSlot, containerWidth: number) {
+// 获取时间段在时间轴上的位置和高度
+export function getSlotPosition(slot: TimeSlot, containerHeight: number) {
   const totalMinutes = 1440; // 24小时
-  const left = (slot.startTime / totalMinutes) * containerWidth;
-  const width = ((slot.endTime - slot.startTime) / totalMinutes) * containerWidth;
-  return { left, width };
+  const top = (slot.startTime / totalMinutes) * containerHeight;
+  const height = ((slot.endTime - slot.startTime) / totalMinutes) * containerHeight;
+  return { top, height };
 }
 
 // 根据鼠标位置计算时间
-export function getTimeFromPosition(x: number, containerWidth: number): number {
+export function getTimeFromPosition(y: number, containerHeight: number): number {
   const totalMinutes = 1440;
-  return Math.round((x / containerWidth) * totalMinutes);
+  return Math.round((y / containerHeight) * totalMinutes);
 }
 
 // 对齐时间到最近的15分钟间隔

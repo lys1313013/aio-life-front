@@ -1,13 +1,13 @@
 <template>
   <div class="category-manager">
     <div class="header">
-      <a-button type="primary" @click="handleAddCategory">
+      <Button type="primary" @click="handleAddCategory">
         <template #icon><PlusOutlined /></template>
         添加分类
-      </a-button>
+      </Button>
     </div>
 
-    <a-table
+    <Table
       :data-source="categories"
       :columns="columns"
       :pagination="false"
@@ -24,11 +24,11 @@
 
         <template v-else-if="column.key === 'actions'">
           <div class="action-buttons">
-            <a-button type="link" size="small" @click="handleEdit(record)">
+            <Button type="link" size="small" @click="handleEdit(record)">
               <EditOutlined />
               编辑
-            </a-button>
-            <a-button
+            </Button>
+            <Button
               type="link"
               size="small"
               danger
@@ -37,33 +37,33 @@
             >
               <DeleteOutlined />
               删除
-            </a-button>
+            </Button>
           </div>
         </template>
       </template>
-    </a-table>
+    </Table>
 
     <!-- 分类编辑模态框 -->
-    <a-modal
+    <Modal
       v-model:open="showEditModal"
       :title="editingCategory ? '编辑分类' : '添加分类'"
       :width="500"
       @ok="handleSaveCategory"
       @cancel="handleCancelEdit"
     >
-      <a-form
+      <Form
         ref="formRef"
         :model="formState"
         :rules="rules"
         layout="vertical"
       >
-        <a-form-item label="分类名称" name="name">
-          <a-input v-model:value="formState.name" placeholder="请输入分类名称" />
-        </a-form-item>
+        <Form.Item label="分类名称" name="name">
+          <Input v-model:value="formState.name" placeholder="请输入分类名称" />
+        </Form.Item>
 
-        <a-form-item label="颜色" name="color">
+        <Form.Item label="颜色" name="color">
           <div class="color-picker-container">
-            <a-input
+            <Input
               v-model:value="formState.color"
               placeholder="请输入颜色值（如 #1890ff）"
               style="flex: 1"
@@ -79,24 +79,24 @@
               @click="formState.color = preset"
             ></div>
           </div>
-        </a-form-item>
+        </Form.Item>
 
-        <a-form-item label="描述" name="description">
-          <a-textarea
+        <Form.Item label="描述" name="description">
+          <Textarea
             v-model:value="formState.description"
             placeholder="请输入分类描述（可选）"
             :rows="3"
           />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+        </Form.Item>
+      </Form>
+    </Modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
-import { message } from 'ant-design-vue';
+import { Button, Table, Modal, Form, Input, Textarea, message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlotCategory } from '../types';
 import { generateId } from '../utils';

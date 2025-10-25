@@ -2,11 +2,12 @@
 export interface TimeSlot {
   id: string;
   startTime: number; // 开始时间（分钟，0-1440）
-  endTime: number;   // 结束时间（分钟，0-1440）
+  endTime: number; // 结束时间（分钟，0-1440）
   categoryId: string; // 分类ID
   title: string;     // 标题
   description?: string; // 描述
   color?: string;    // 颜色
+  date: string;      // 日期（YYYY-MM-DD格式）
 }
 
 // 时间段分类

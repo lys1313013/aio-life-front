@@ -1,19 +1,19 @@
 <template>
   <div class="time-slot-edit-form">
-    <a-form
+    <Form
       ref="formRef"
       :model="formState"
       :rules="rules"
       layout="vertical"
       @finish="handleSave"
     >
-      <a-form-item label="标题" name="title">
-        <a-input v-model:value="formState.title" placeholder="请输入时间段标题" />
-      </a-form-item>
+      <Form.Item label="标题" name="title">
+        <Input v-model:value="formState.title" placeholder="请输入时间段标题" />
+      </Form.Item>
 
-      <a-form-item label="分类" name="categoryId">
-        <a-select v-model:value="formState.categoryId" placeholder="请选择分类">
-          <a-select-option
+      <Form.Item label="分类" name="categoryId">
+        <Select v-model:value="formState.categoryId" placeholder="请选择分类">
+          <Select.Option
             v-for="category in categories"
             :key="category.id"
             :value="category.id"
@@ -22,70 +22,68 @@
               <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
               {{ category.name }}
             </div>
-          </a-select-option>
-        </a-select>
-      </a-form-item>
+          </Select.Option>
+        </Select>
+      </Form.Item>
 
-      <a-row :gutter="16">
-        <a-col :span="12">
-          <a-form-item label="开始时间" name="startTime">
-            <a-time-picker
+      <row :gutter="16">
+        <col :span="12">
+          <Form.Item label="开始时间" name="startTime">
+            <TimePicker
               v-model:value="formState.startTime"
               format="HH:mm"
-              :minute-step="15"
               style="width: 100%"
               placeholder="选择开始时间"
             />
-          </a-form-item>
-        </a-col>
-        <a-col :span="12">
-          <a-form-item label="结束时间" name="endTime">
-            <a-time-picker
+          </Form.Item>
+        </col>
+        <col :span="12">
+          <Form.Item label="结束时间" name="endTime">
+            <TimePicker
               v-model:value="formState.endTime"
               format="HH:mm"
-              :minute-step="15"
               style="width: 100%"
               placeholder="选择结束时间"
             />
-          </a-form-item>
-        </a-col>
-      </a-row>
+          </Form.Item>
+        </col>
+      </row>
 
-      <a-form-item label="时长">
+      <Form.Item label="时长">
         <div class="duration-display">
           {{ formatDuration(duration) }}
         </div>
-      </a-form-item>
+      </Form.Item>
 
-      <a-form-item label="描述" name="description">
-        <a-textarea
+      <Form.Item label="描述" name="description">
+        <Textarea
           v-model:value="formState.description"
           placeholder="请输入时间段描述（可选）"
           :rows="3"
         />
-      </a-form-item>
+      </Form.Item>
 
-      <a-form-item>
+      <Form.Item>
         <div class="form-actions">
-          <a-button type="primary" html-type="submit">保存</a-button>
-          <a-button @click="$emit('cancel')" style="margin-left: 8px">取消</a-button>
-          <a-button
+          <Button type="primary" html-type="submit">保存</Button>
+          <Button @click="$emit('cancel')" style="margin-left: 8px">取消</Button>
+          <Button
             danger
             @click="handleDelete"
             style="margin-left: auto"
             v-if="formState.id"
           >
             删除
-          </a-button>
+          </Button>
         </div>
-      </a-form-item>
-    </a-form>
+      </Form.Item>
+    </Form>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
+import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea} from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
 import { timeToMinutes, minutesToTime, formatDuration } from '../utils';
@@ -152,8 +150,8 @@ const rules = {
           return Promise.reject(new Error('结束时间必须晚于开始时间'));
         }
         
-        if (endMinutes - startMinutes < 15) {
-          return Promise.reject(new Error('时间段不能少于15分钟'));
+        if (endMinutes - startMinutes < 1) {
+          return Promise.reject(new Error('时间段不能少于1分钟'));
         }
         
         return Promise.resolve();
