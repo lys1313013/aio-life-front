@@ -33,6 +33,12 @@ export const defaultCategories: TimeSlotCategory[] = [
     description: '运动时间'
   },
   {
+    id: 'eat',
+    name: '吃饭',
+    color: '#f50',
+    description: '吃饭时间'
+  },
+  {
     id: 'other',
     name: '其他',
     color: '#d9d9d9',

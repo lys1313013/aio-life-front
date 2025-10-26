@@ -57,7 +57,7 @@ export interface BilibiliVideo {
 /**
  * 查询学习视频列表
  */
-export async function queryBilibiliVideos(data: any) {
+export async function query(data: any) {
   return await requestClient.post('/bilibili-video/query', data);
 }
 

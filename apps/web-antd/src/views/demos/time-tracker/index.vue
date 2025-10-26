@@ -11,15 +11,20 @@
             placeholder="选择日期"
             @change="handleDateChange"
             :disabled-date="disabledDate"
+            :disabled="loading"
           />
         </div>
       </div>
       <div class="actions">
-        <Button type="primary" @click="showCategoryModal = true">
+        <Button type="primary" @click="handleAddSlot" :disabled="loading">
+          <template #icon><PlusOutlined /></template>
+          新增
+        </Button>
+        <Button type="primary" @click="showCategoryModal = true" :disabled="loading">
           <template #icon><SettingOutlined /></template>
           分类管理
         </Button>
-        <Button @click="resetData">重置数据</Button>
+        <Button @click="resetData" :disabled="loading">重置数据</Button>
       </div>
     </div>
 
@@ -33,6 +38,7 @@
           :type="currentCategoryId === category.id ? 'primary' : 'default'"
           @click="currentCategoryId = category.id"
           :style="{ borderColor: category.color }"
+          :disabled="loading"
         >
           <div class="category-button-content">
             <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
@@ -43,57 +49,58 @@
     </div>
 
     <!-- 时间轴容器 -->
-    <div class="timeline-container">
-      <!-- 时间刻度 -->
-      <div class="time-scale">
-        <div
-          v-for="hour in 24"
-          :key="hour"
-          class="hour-marker"
-          :style="{ top: `${(hour / 24) * 100}%` }"
-        >
-          <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+    <Spin :spinning="loading" size="large">
+      <div class="timeline-container">
+        <!-- 时间刻度 -->
+        <div class="time-scale">
+          <div
+            v-for="hour in 24"
+            :key="hour"
+            class="hour-marker"
+            :style="{ top: `${(hour / 24) * 100}%` }"
+          >
+            <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+          </div>
         </div>
-      </div>
 
-      <!-- 时间轴轨道 -->
-      <div
-        ref="timelineRef"
-        class="timeline-track"
-        @mousedown="handleTrackMouseDown"
-        @mousemove="handleTrackMouseMove"
-        @mouseup="handleTrackMouseUp"
-        @mouseleave="handleTrackMouseLeave"
-      >
-        <!-- 时间段 -->
+        <!-- 时间轴轨道 -->
         <div
-          v-for="slot in timeSlots"
-          :key="slot.id"
-          class="time-slot"
-          :style="getSlotStyle(slot)"
-          @mousedown="handleSlotMouseDown($event, slot)"
-          @click="handleSlotClick(slot)"
+          ref="timelineRef"
+          class="timeline-track"
+          @mousedown="handleTrackMouseDown"
+          @mousemove="handleTrackMouseMove"
+          @mouseup="handleTrackMouseUp"
+          @mouseleave="handleTrackMouseLeave"
+          :style="{ cursor: loading ? 'not-allowed' : 'crosshair' }"
         >
-          <div class="slot-content">
-            <div class="slot-title">{{ slot.title }}</div>
-            <div class="slot-time">{{ formatSlotTime(slot) }}</div>
+          <!-- 时间段 -->
+          <div
+            v-for="slot in timeSlots"
+            :key="slot.id"
+            class="time-slot"
+            :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+            @mousedown="handleSlotMouseDown($event, slot)"
+            @click="handleSlotClick(slot)"
+          >
+            <div class="slot-content">
+              <div class="slot-title">{{ slot.title }}</div>
+              <div class="slot-time">{{ formatSlotTime(slot) }}</div>
+            </div>
+
+            <!-- 调整手柄 -->
+            <div class="resize-handle top" @mousedown="handleResizeStart($event, slot, 'top')"></div>
+            <div class="resize-handle bottom" @mousedown="handleResizeStart($event, slot, 'bottom')"></div>
           </div>
 
-          <!-- 调整手柄 -->
-          <div class="resize-handle top" @mousedown="handleResizeStart($event, slot, 'top')"></div>
-          <div class="resize-handle bottom" @mousedown="handleResizeStart($event, slot, 'bottom')"></div>
+          <!-- 拖拽预览 -->
+          <div
+            v-if="dragOperation"
+            class="drag-preview"
+            :style="getDragPreviewStyle()"
+          ></div>
         </div>
-
-        <!-- 拖拽预览 -->
-        <div
-          v-if="dragOperation"
-          class="drag-preview"
-          :style="getDragPreviewStyle()"
-        ></div>
       </div>
-
-
-    </div>
+    </Spin>
 
     <!-- 时间段统计 -->
     <div class="statistics">
@@ -118,7 +125,7 @@
     <!-- 时间段编辑模态框 -->
     <Modal
       v-model:open="showEditModal"
-      title="编辑时间段"
+      :title="editModalTitle"
       :width="600"
       :footer="null"
       @cancel="handleEditCancel"
@@ -150,8 +157,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { SettingOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, message, DatePicker } from 'ant-design-vue';
+import { SettingOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { Button, Card, Modal, message, DatePicker, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
 import { defaultConfig } from './config';
@@ -170,6 +177,7 @@ import {
 } from './utils';
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
+import { query, batchUpdate } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -182,6 +190,7 @@ const editingSlot = ref<TimeSlot | null>(null);
 const currentTime = ref(0);
 const showCurrentTime = ref(true);
 const selectedDate = ref(dayjs());
+const loading = ref(false); // 新增loading状态
 
 // 配置
 const config = ref(defaultConfig);
@@ -189,6 +198,15 @@ const config = ref(defaultConfig);
 // 计算属性
 const totalDuration = computed(() => {
   return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime), 0);
+});
+
+// 编辑模态框标题
+const editModalTitle = computed(() => {
+  if (!editingSlot.value) return '编辑时间段';
+  
+  // 判断是新增还是编辑：如果时间段ID在现有时间段中不存在，则是新增
+  const isExisting = timeSlots.value.some(slot => slot.id === editingSlot.value?.id);
+  return isExisting ? '编辑时间段' : '新增时间段';
 });
 
 // 生命周期
@@ -202,51 +220,58 @@ onUnmounted(() => {
 });
 
 // 数据管理
-const loadData = () => {
-  // 从本地存储加载数据
-  const saved = localStorage.getItem('time-tracker-data');
-  if (saved) {
-    try {
-      const data = JSON.parse(saved);
-      const currentDate = selectedDate.value.format('YYYY-MM-DD');
+const loadData = async () => {
+  try {
+    loading.value = true; // 开始加载
+    const currentDate = selectedDate.value.format('YYYY-MM-DD');
 
-      // 获取当前日期的数据，如果没有则使用空数组
-      timeSlots.value = data[currentDate] || [];
-    } catch (error) {
-      console.error('加载数据失败:', error);
+    // 从接口查询数据
+    const response = await query({condition: { date: currentDate }});
+
+    if (response.items) {
+      timeSlots.value = response.items
+    } else {
       timeSlots.value = [];
     }
-  } else {
+  } catch (error) {
+    console.error('加载数据失败:', error);
+    message.error('加载数据失败');
     timeSlots.value = [];
+  } finally {
+    loading.value = false; // 结束加载
   }
 };
 
-const saveData = () => {
-  const currentDate = selectedDate.value.format('YYYY-MM-DD');
+const saveData = async () => {
+  try {
+    const currentDate = selectedDate.value.format('YYYY-MM-DD');
 
-  // 从本地存储加载现有数据
-  const saved = localStorage.getItem('time-tracker-data');
-  let data = {};
+    // 准备要更新的数据
+    const updateData = timeSlots.value.map(slot => ({
+      id: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      categoryId: slot.categoryId,
+      title: slot.title,
+      description: slot.description || '',
+      color: slot.color,
+      date: slot.date || currentDate
+    }));
 
-  if (saved) {
-    try {
-      data = JSON.parse(saved);
-    } catch (error) {
-      console.error('解析现有数据失败:', error);
-    }
+    // 调用批量更新接口
+    await batchUpdate(updateData);
+
+    message.success('数据保存成功');
+  } catch (error) {
+    console.error('保存数据失败:', error);
+    message.error('保存数据失败');
   }
-
-  // 更新当前日期的数据
-  data[currentDate] = timeSlots.value;
-
-  // 保存回本地存储
-  localStorage.setItem('time-tracker-data', JSON.stringify(data));
 };
 
-const resetData = () => {
+const resetData = async () => {
   console.log('重置数据按钮被点击');
   timeSlots.value = [];
-  saveData();
+  await saveData();
   message.success('数据已重置');
 };
 
@@ -468,7 +493,6 @@ const handleTrackMouseUp = () => {
   } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
     // 时间段移动或调整大小完成，保存数据
     saveData();
-    message.success(dragOperation.value.type === 'move' ? '时间段移动成功' : '时间段调整成功');
   }
 
   dragOperation.value = null;
@@ -521,10 +545,27 @@ const handleSlotClick = (slot: TimeSlot) => {
   showEditModal.value = true;
 };
 
+const handleAddSlot = () => {
+  // 创建新的时间段对象
+  const newSlot: TimeSlot = {
+    id: generateId(),
+    startTime: 540, // 默认开始时间：09:00
+    endTime: 600,  // 默认结束时间：10:00
+    categoryId: currentCategoryId.value,
+    title: getCategoryName(currentCategoryId.value, config.value.categories),
+    description: '',
+    date: selectedDate.value.format('YYYY-MM-DD')
+  };
+
+  editingSlot.value = newSlot;
+  showEditModal.value = true;
+};
+
 const handleSaveSlot = (formData: any) => {
   const index = timeSlots.value.findIndex(slot => slot.id === formData.id);
 
   if (index !== -1) {
+    // 编辑现有时间段
     const updatedSlot = { ...timeSlots.value[index], ...formData };
 
     // 如果用户没有修改标题，自动更新为分类名称
@@ -535,7 +576,30 @@ const handleSaveSlot = (formData: any) => {
     if (isValidSlot(updatedSlot, config.value) && !hasOverlapExcluding(timeSlots.value, updatedSlot, formData.id)) {
       timeSlots.value[index] = updatedSlot;
       saveData();
-      message.success('时间段更新成功');
+      showEditModal.value = false;
+    } else {
+      message.error('时间段无效或重叠');
+    }
+  } else {
+    // 新增时间段
+    const newSlot: TimeSlot = {
+      id: formData.id,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      categoryId: formData.categoryId,
+      title: formData.title,
+      description: formData.description || '',
+      date: selectedDate.value.format('YYYY-MM-DD')
+    };
+
+    // 如果用户没有修改标题，自动设置为分类名称
+    if (!newSlot.title || newSlot.title === '') {
+      newSlot.title = getCategoryName(newSlot.categoryId, config.value.categories);
+    }
+
+    if (isValidSlot(newSlot, config.value) && !hasOverlap(timeSlots.value, newSlot)) {
+      timeSlots.value.push(newSlot);
+      saveData();
       showEditModal.value = false;
     } else {
       message.error('时间段无效或重叠');
@@ -546,7 +610,6 @@ const handleSaveSlot = (formData: any) => {
 const handleDeleteSlot = (slotId: string) => {
   timeSlots.value = timeSlots.value.filter(slot => slot.id !== slotId);
   saveData();
-  message.success('时间段删除成功');
   showEditModal.value = false;
 };
 

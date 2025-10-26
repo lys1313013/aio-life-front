@@ -19,7 +19,7 @@ import {
   deleteBilibiliVideo,
   insertOrUpdateBilibiliVideo,
   parseBilibiliUrl,
-  queryBilibiliVideos,
+  query,
   getStatusCount,
   statistics,
 } from '#/api/core/bilibili-video';
@@ -116,7 +116,7 @@ export default {
     },
 
     async query() {
-      const res = await queryBilibiliVideos({
+      const res = await query({
         page: 1,
         pageSize: 50,
         condition: {
