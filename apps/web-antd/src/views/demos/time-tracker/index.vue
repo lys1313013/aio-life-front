@@ -83,8 +83,10 @@
             @click="handleSlotClick(slot)"
           >
             <div class="slot-content">
-              <div class="slot-title">{{ slot.title }}</div>
-              <div class="slot-time">{{ formatSlotTime(slot) }}</div>
+              <div class="slot-info">
+                <span class="slot-title">{{ slot.title }}</span>
+                <span class="slot-time">{{ formatSlotTime(slot) }}</span>
+              </div>
             </div>
 
             <!-- 调整手柄 -->
@@ -104,22 +106,31 @@
 
     <!-- 时间段统计 -->
     <div class="statistics">
-      <Card :title="`${selectedDate.format('YYYY年MM月DD日')} 时间段统计`" class="stats-card">
-        <div class="stats-content">
-          <div class="stat-item">
-            <span class="stat-label">总时间段数：</span>
-            <span class="stat-value">{{ timeSlots.length }}</span>
+      <div class="stats-row">
+        <Card :title="`${selectedDate.format('YYYY年MM月DD日')} 时间段统计`" class="stats-card">
+          <div class="stats-content">
+            <div class="stat-item">
+              <span class="stat-label">总时间段数：</span>
+              <span class="stat-value">{{ timeSlots.length }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">总时长：</span>
+              <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">空闲时间：</span>
+              <span class="stat-value">{{ formatDuration(1440 - totalDuration) }}</span>
+            </div>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">总时长：</span>
-            <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">空闲时间：</span>
-            <span class="stat-value">{{ formatDuration(1440 - totalDuration) }}</span>
-          </div>
-        </div>
-      </Card>
+        </Card>
+        
+        <!-- 时间分类饼图 -->
+        <TimeCategoryPieChart 
+          :time-slots="timeSlots" 
+          :categories="config.categories" 
+          :selected-date="selectedDate" 
+        />
+      </div>
     </div>
 
     <!-- 时间段编辑模态框 -->
@@ -177,6 +188,7 @@ import {
 } from './utils';
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
+import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import { query, batchUpdate } from '#/api/core/time-tracker';
 
 // 响应式数据
@@ -197,7 +209,7 @@ const config = ref(defaultConfig);
 
 // 计算属性
 const totalDuration = computed(() => {
-  return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime), 0);
+  return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
 });
 
 // 编辑模态框标题
@@ -712,7 +724,7 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
   border: 1px solid #d9d9d9;
   border-radius: 6px;
   overflow: hidden;
-  height: 600px; /* 设置固定高度 */
+  height: 800px; /* 设置固定高度 */
   display: flex;
 }
 
@@ -768,15 +780,21 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
   padding: 8px;
   height: 100%;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
   color: white;
   font-weight: 500;
 }
 
+.slot-info {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
 .slot-title {
   font-size: 14px;
-  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -785,6 +803,7 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 .slot-time {
   font-size: 12px;
   opacity: 0.9;
+  white-space: nowrap;
 }
 
 .resize-handle {
@@ -825,8 +844,15 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
   margin-top: 20px;
 }
 
+.stats-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .stats-card {
-  max-width: 400px;
+  min-width: 300px;
+  flex: 1;
 }
 
 .stats-content {
@@ -848,5 +874,10 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 .stat-value {
   font-weight: 500;
   color: #262626;
+}
+
+.pie-chart-card {
+  min-width: 400px;
+  flex: 2;
 }
 </style>
