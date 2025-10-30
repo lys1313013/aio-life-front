@@ -25,6 +25,10 @@
           分类管理
         </Button>
         <Button @click="resetData" :disabled="loading">重置数据</Button>
+        <Button @click="copyPreviousDayData" :disabled="loading" type="dashed">
+          <template #icon><CopyOutlined /></template>
+          复制上一天
+        </Button>
       </div>
     </div>
 
@@ -168,7 +172,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { SettingOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, message, DatePicker, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
@@ -272,8 +276,6 @@ const saveData = async () => {
 
     // 调用批量更新接口
     await batchUpdate(updateData);
-
-    message.success('数据保存成功');
   } catch (error) {
     console.error('保存数据失败:', error);
     message.error('保存数据失败');
@@ -640,6 +642,45 @@ const handleCategoriesUpdate = (categories: TimeSlotCategory[]) => {
 const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => {
   const category = categories.find(cat => cat.id === categoryId);
   return category?.name || '未知';
+};
+
+// 复制上一天数据
+const copyPreviousDayData = async () => {
+  try {
+    loading.value = true;
+    
+    // 获取昨天的日期
+    const yesterday = selectedDate.value.subtract(1, 'day');
+    const yesterdayDate = yesterday.format('YYYY-MM-DD');
+    
+    // 查询昨天的数据
+    const response = await query({ condition: { date: yesterdayDate } });
+    
+    if (response.items && response.items.length > 0) {
+      // 复制数据并生成新的ID，更新日期为今天
+      const todayDate = selectedDate.value.format('YYYY-MM-DD');
+      const copiedSlots = response.items.map(slot => ({
+        ...slot,
+        id: generateId(),
+        date: todayDate
+      }));
+      
+      // 设置当前数据为复制后的数据
+      timeSlots.value = copiedSlots;
+      
+      // 保存数据
+      await saveData();
+      
+      message.success(`成功复制${yesterdayDate}的数据到${todayDate}`);
+    } else {
+      message.warning(`${yesterdayDate}没有数据可复制`);
+    }
+  } catch (error) {
+    console.error('复制数据失败:', error);
+    message.error('复制数据失败');
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
