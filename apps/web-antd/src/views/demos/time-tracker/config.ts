@@ -2,59 +2,56 @@ import type { TimeTrackerConfig, TimeSlotCategory } from './types';
 
 // 默认时间段分类
 export const defaultCategories: TimeSlotCategory[] = [
-  {
-    id: 'work',
-    name: '工作',
-    color: '#1890ff',
-    description: '工作时间',
+   {
+    id: 'project',
+    name: '项目',
+    color: '#eb2f96',
   },
   {
     id: 'study',
     name: '学习',
     color: '#52c41a',
-    description: '学习时间',
+  },
+  {
+    id: 'work',
+    name: '工作',
+    color: '#1890ff',
   },
   {
     id: 'rest',
     name: '休息',
     color: '#faad14',
-    description: '休息时间',
   },
   {
     id: 'entertainment',
     name: '娱乐',
     color: '#722ed1',
-    description: '娱乐时间',
   },
   {
     id: 'exercise',
     name: '运动',
     color: '#f50',
-    description: '运动时间',
   },
   {
     id: 'eat',
     name: '吃饭',
     color: '#fa541c',
-    description: '吃饭时间',
   },
   {
     id: 'wash',
     name: '洗漱',
     color: '#13c2c2',
-    description: '洗漱时间',
   },
   {
     id: 'commuting',
     name: '通勤',
     color: '#eb2f96',
-    description: '通勤时间',
   },
+
   {
     id: 'other',
     name: '其他',
     color: '#d9d9d9',
-    description: '其他时间',
   }
 ];
 

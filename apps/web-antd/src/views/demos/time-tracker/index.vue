@@ -3,8 +3,15 @@
     <!-- 标题和操作栏 -->
     <div class="header">
       <div class="header-left">
-        <h2>时间轴</h2>
         <div class="date-picker-container">
+          <Button
+            type="default"
+            @click="goToPreviousDay"
+            :disabled="loading"
+            class="date-nav-button"
+          >
+            <template #icon><LeftOutlined /></template>
+          </Button>
           <DatePicker
             v-model:value="selectedDate"
             format="YYYY-MM-DD"
@@ -13,6 +20,14 @@
             :disabled-date="disabledDate"
             :disabled="loading"
           />
+          <Button
+            type="default"
+            @click="goToNextDay"
+            :disabled="loading"
+            class="date-nav-button"
+          >
+            <template #icon><RightOutlined /></template>
+          </Button>
         </div>
       </div>
       <div class="actions">
@@ -24,7 +39,7 @@
           <template #icon><SettingOutlined /></template>
           分类管理
         </Button>
-        <Button @click="resetData" :disabled="loading">重置数据</Button>
+        <Button @click="resetData" :disabled="loading">清除数据</Button>
         <Button @click="copyPreviousDayData" :disabled="loading" type="dashed">
           <template #icon><CopyOutlined /></template>
           复制上一天
@@ -111,7 +126,7 @@
     <!-- 时间段统计 -->
     <div class="statistics">
       <div class="stats-row">
-        <Card :title="`${selectedDate.format('YYYY年MM月DD日')} 时间段统计`" class="stats-card">
+        <Card :title="`时间段统计`" class="stats-card">
           <div class="stats-content">
             <div class="stat-item">
               <span class="stat-label">总时间段数：</span>
@@ -127,12 +142,12 @@
             </div>
           </div>
         </Card>
-        
+
         <!-- 时间分类饼图 -->
-        <TimeCategoryPieChart 
-          :time-slots="timeSlots" 
-          :categories="config.categories" 
-          :selected-date="selectedDate" 
+        <TimeCategoryPieChart
+          :time-slots="timeSlots"
+          :categories="config.categories"
+          :selected-date="selectedDate"
         />
       </div>
     </div>
@@ -172,7 +187,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { SettingOutlined, PlusOutlined, CopyOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, PlusOutlined, CopyOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, message, DatePicker, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
@@ -193,7 +208,7 @@ import {
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
-import { query, batchUpdate } from '#/api/core/time-tracker';
+import { query, batchUpdate, update, deleteByDate } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -219,7 +234,7 @@ const totalDuration = computed(() => {
 // 编辑模态框标题
 const editModalTitle = computed(() => {
   if (!editingSlot.value) return '编辑时间段';
-  
+
   // 判断是新增还是编辑：如果时间段ID在现有时间段中不存在，则是新增
   const isExisting = timeSlots.value.some(slot => slot.id === editingSlot.value?.id);
   return isExisting ? '编辑时间段' : '新增时间段';
@@ -278,19 +293,26 @@ const saveData = async () => {
     await batchUpdate(updateData);
   } catch (error) {
     console.error('保存数据失败:', error);
-    message.error('保存数据失败');
   }
 };
 
 const resetData = async () => {
-  console.log('重置数据按钮被点击');
   timeSlots.value = [];
-  await saveData();
-  message.success('数据已重置');
+  await deleteByDate({date: selectedDate.value.format('YYYY-MM-DD')});
 };
 
 // 日期处理函数
 const handleDateChange = () => {
+  loadData();
+};
+
+const goToPreviousDay = () => {
+  selectedDate.value = selectedDate.value.subtract(1, 'day');
+  loadData();
+};
+
+const goToNextDay = () => {
+  selectedDate.value = selectedDate.value.add(1, 'day');
   loadData();
 };
 
@@ -589,8 +611,12 @@ const handleSaveSlot = (formData: any) => {
 
     if (isValidSlot(updatedSlot, config.value) && !hasOverlapExcluding(timeSlots.value, updatedSlot, formData.id)) {
       timeSlots.value[index] = updatedSlot;
-      saveData();
-      showEditModal.value = false;
+      update(updatedSlot).then(() => {
+        showEditModal.value = false;
+      }).catch(err => {
+        console.error('更新失败:', err);
+        message.error('更新失败');
+      });
     } else {
       message.error('时间段无效或重叠');
     }
@@ -648,14 +674,14 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 const copyPreviousDayData = async () => {
   try {
     loading.value = true;
-    
+
     // 获取昨天的日期
     const yesterday = selectedDate.value.subtract(1, 'day');
     const yesterdayDate = yesterday.format('YYYY-MM-DD');
-    
+
     // 查询昨天的数据
     const response = await query({ condition: { date: yesterdayDate } });
-    
+
     if (response.items && response.items.length > 0) {
       // 复制数据并生成新的ID，更新日期为今天
       const todayDate = selectedDate.value.format('YYYY-MM-DD');
@@ -664,13 +690,13 @@ const copyPreviousDayData = async () => {
         id: generateId(),
         date: todayDate
       }));
-      
+
       // 设置当前数据为复制后的数据
       timeSlots.value = copiedSlots;
-      
+
       // 保存数据
       await saveData();
-      
+
       message.success(`成功复制${yesterdayDate}的数据到${todayDate}`);
     } else {
       message.warning(`${yesterdayDate}没有数据可复制`);
@@ -712,7 +738,14 @@ const copyPreviousDayData = async () => {
 .date-picker-container {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.date-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 35px;
 }
 
 .date-picker-label {
