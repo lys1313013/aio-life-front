@@ -3,10 +3,16 @@
     <!-- 标题和操作栏 -->
     <div class="header">
       <div class="header-left">
+        <!-- 统计模式切换 -->
+        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading">
+          <Radio.Button value="day">按天统计</Radio.Button>
+          <Radio.Button value="week">按周统计</Radio.Button>
+        </Radio.Group>
+        
         <div class="date-picker-container">
           <Button
             type="default"
-            @click="goToPreviousDay"
+            @click="goToPreviousPeriod"
             :disabled="loading"
             class="date-nav-button"
           >
@@ -22,7 +28,7 @@
           />
           <Button
             type="default"
-            @click="goToNextDay"
+            @click="goToNextPeriod"
             :disabled="loading"
             class="date-nav-button"
           >
@@ -40,7 +46,12 @@
           分类管理
         </Button>
         <Button @click="resetData" :disabled="loading">清除数据</Button>
-        <Button @click="copyPreviousDayData" :disabled="loading" type="dashed">
+        <Button 
+          v-if="statMode === 'day'"
+          @click="copyPreviousDayData" 
+          :disabled="loading" 
+          type="dashed"
+        >
           <template #icon><CopyOutlined /></template>
           复制上一天
         </Button>
@@ -69,29 +80,91 @@
 
     <!-- 时间轴容器 -->
     <Spin :spinning="loading" size="large">
-      <div class="timeline-container">
-        <!-- 时间刻度 -->
-        <div class="time-scale">
-          <div
-            v-for="hour in 24"
-            :key="hour"
-            class="hour-marker"
-            :style="{ top: `${(hour / 24) * 100}%` }"
-          >
-            <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+      <!-- 按周统计模式 -->
+      <template v-if="statMode === 'week'">
+        <div class="week-timeline-container">
+          <!-- 星期标题行 -->
+          <div class="week-header">
+            <div class="time-scale-header"></div>
+            <div 
+              v-for="(day, index) in weekDays" 
+              :key="index" 
+              class="week-day-header"
+              @click="selectWeekDay(index)"
+              :class="{ active: selectedWeekDayIndex === index }"
+            >
+              <div class="day-name">{{ day.weekday }}</div>
+              <div class="day-date">{{ day.date }}</div>
+            </div>
+          </div>
+          
+          <!-- 星期时间轴 -->
+          <div class="week-timeline-wrapper">
+            <!-- 时间刻度 -->
+            <div class="time-scale">
+              <div
+                v-for="hour in 24"
+                :key="hour"
+                class="hour-marker"
+                :style="{ top: `${(hour / 24) * 100}%` }"
+              >
+                <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+              </div>
+            </div>
+            
+            <!-- 每天的时间轴 -->
+            <div class="week-days-container">
+              <div 
+                v-for="(day, index) in weekDays" 
+                :key="index"
+                class="week-day-track"
+              >
+                <!-- 时间段 -->
+                <div
+                  v-for="slot in getDaySlots(day.date)"
+                  :key="slot.id"
+                  class="time-slot"
+                  :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                  @mousedown="handleSlotMouseDown($event, slot)"
+                  @click="handleSlotClick(slot)"
+                >
+                  <div class="slot-content">
+                    <div class="slot-info">
+                      <span class="slot-title">{{ slot.title }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      </template>
+      
+      <!-- 按天统计模式 -->
+      <template v-else>
+        <div class="timeline-container">
+          <!-- 时间刻度 -->
+          <div class="time-scale">
+            <div
+              v-for="hour in 24"
+              :key="hour"
+              class="hour-marker"
+              :style="{ top: `${(hour / 24) * 100}%` }"
+            >
+              <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+            </div>
+          </div>
 
-        <!-- 时间轴轨道 -->
-        <div
-          ref="timelineRef"
-          class="timeline-track"
-          @mousedown="handleTrackMouseDown"
-          @mousemove="handleTrackMouseMove"
-          @mouseup="handleTrackMouseUp"
-          @mouseleave="handleTrackMouseLeave"
-          :style="{ cursor: loading ? 'not-allowed' : 'crosshair' }"
-        >
+          <!-- 时间轴轨道 -->
+          <div
+            ref="timelineRef"
+            class="timeline-track"
+            @mousedown="handleTrackMouseDown"
+            @mousemove="handleTrackMouseMove"
+            @mouseup="handleTrackMouseUp"
+            @mouseleave="handleTrackMouseLeave"
+            :style="{ cursor: loading ? 'not-allowed' : 'crosshair' }"
+          >
           <!-- 时间段 -->
           <div
             v-for="slot in timeSlots"
@@ -121,6 +194,7 @@
           ></div>
         </div>
       </div>
+      </template>
     </Spin>
 
     <!-- 时间段统计 -->
@@ -138,7 +212,7 @@
             </div>
             <div class="stat-item">
               <span class="stat-label">空闲时间：</span>
-              <span class="stat-value">{{ formatDuration(1440 - totalDuration) }}</span>
+              <span class="stat-value">{{ formatDuration(freeTime) }}</span>
             </div>
           </div>
         </Card>
@@ -188,8 +262,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { SettingOutlined, PlusOutlined, CopyOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, message, DatePicker, Spin } from 'ant-design-vue';
+import { Button, Card, Modal, message, DatePicker, Spin, Radio } from 'ant-design-vue';
 import dayjs from 'dayjs';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
+
+// 扩展dayjs插件
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
 import { defaultConfig } from './config';
 import {
@@ -208,7 +288,7 @@ import {
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
-import { query, batchUpdate, update, deleteByDate } from '#/api/core/time-tracker';
+import { query, queryForWeek, batchUpdate, update, deleteByDate } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -222,6 +302,8 @@ const currentTime = ref(0);
 const showCurrentTime = ref(true);
 const selectedDate = ref(dayjs());
 const loading = ref(false); // 新增loading状态
+const statMode = ref<'day' | 'week'>('day'); // 统计模式：day - 按天，week - 按周
+const selectedWeekDayIndex = ref(0); // 当前选中的星期几索引
 
 // 配置
 const config = ref(defaultConfig);
@@ -230,6 +312,52 @@ const config = ref(defaultConfig);
 const totalDuration = computed(() => {
   return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
 });
+
+// 计算空闲时间
+const freeTime = computed(() => {
+  if (statMode.value === 'week') {
+    // 按周统计：一周总时间 = 7天 * 1440分钟 = 10080分钟
+    const totalWeekMinutes = 7 * 1440;
+    const freeTime = totalWeekMinutes - totalDuration.value;
+    // 确保空闲时间不为负数
+    return Math.max(0, freeTime);
+  } else {
+    // 按天统计：一天总时间 = 1440分钟
+    const freeTime = 1440 - totalDuration.value;
+    // 确保空闲时间不为负数
+    return Math.max(0, freeTime);
+  }
+});
+
+// 计算当前周的所有日期
+const weekDays = computed(() => {
+  const currentDay = selectedDate.value;
+  const startOfWeek = currentDay.startOf('isoWeek'); // 周一为一周的开始
+  const days = [];
+  
+  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  
+  for (let i = 0; i < 7; i++) {
+    const day = startOfWeek.add(i, 'day');
+    days.push({
+      date: day.format('YYYY-MM-DD'),
+      weekday: weekdays[i],
+      dayjs: day
+    });
+  }
+  
+  return days;
+});
+
+
+
+// 获取当前选中日期
+const getCurrentSelectedDate = () => {
+  if (statMode.value === 'week') {
+    return weekDays.value[selectedWeekDayIndex.value]?.date || selectedDate.value.format('YYYY-MM-DD');
+  }
+  return selectedDate.value.format('YYYY-MM-DD');
+};
 
 // 编辑模态框标题
 const editModalTitle = computed(() => {
@@ -254,16 +382,51 @@ onUnmounted(() => {
 const loadData = async () => {
   try {
     loading.value = true; // 开始加载
-    const currentDate = selectedDate.value.format('YYYY-MM-DD');
-
-    // 从接口查询数据
-    const response = await query({condition: { date: currentDate }});
-
-    if (response.items) {
-      timeSlots.value = response.items
+    
+    let response;
+    
+    if (statMode.value === 'week') {
+      // 按周查询，查询参数为时间区间
+      const weekDaysValue = weekDays.value;
+      const startDate = weekDaysValue.length > 0 ? weekDaysValue[0].date : '';
+      const endDate = weekDaysValue.length > 6 ? weekDaysValue[6].date : '';
+      const queryParams = { condition: { startDate, endDate } };
+      
+      console.log('按周查询参数:', queryParams);
+      
+      // 调用按周查询接口
+      response = await queryForWeek(queryParams);
+      console.log('按周查询返回数据:', response);
+      
+      // 确保返回的数据是数组格式
+      if (Array.isArray(response)) {
+        timeSlots.value = response;
+      } else if (response && response.items) {
+        // 如果返回的是QueryResponse格式，提取items
+        timeSlots.value = response.items;
+      } else {
+        timeSlots.value = [];
+      }
+      
+      console.log('最终设置的时间段数据:', timeSlots.value);
     } else {
-      timeSlots.value = [];
+      // 按天查询
+      const currentDate = selectedDate.value.format('YYYY-MM-DD');
+      const queryParams = { condition: { date: currentDate } };
+      
+      console.log('按天查询参数:', queryParams);
+      
+      // 调用普通查询接口
+      response = await query(queryParams);
+      console.log('按天查询返回数据:', response);
+      
+      if (response && response.items) {
+        timeSlots.value = response.items;
+      } else {
+        timeSlots.value = [];
+      }
     }
+
   } catch (error) {
     console.error('加载数据失败:', error);
     message.error('加载数据失败');
@@ -275,10 +438,14 @@ const loadData = async () => {
 
 const saveData = async () => {
   try {
-    const currentDate = selectedDate.value.format('YYYY-MM-DD');
+    const currentDate = getCurrentSelectedDate();
 
     // 准备要更新的数据
-    const updateData = timeSlots.value.map(slot => ({
+    const slotsToUpdate = statMode.value === 'week' 
+      ? timeSlots.value 
+      : timeSlots.value.filter(slot => slot.date === currentDate);
+    
+    const updateData = slotsToUpdate.map(slot => ({
       id: slot.id,
       startTime: slot.startTime,
       endTime: slot.endTime,
@@ -297,8 +464,20 @@ const saveData = async () => {
 };
 
 const resetData = async () => {
+  const currentDate = getCurrentSelectedDate();
+  
+  if (statMode.value === 'week') {
+    // 按周模式下，清除整周数据
+    const promises = weekDays.value.map(day => 
+      deleteByDate({date: day.date})
+    );
+    await Promise.all(promises);
+  } else {
+    // 按天模式下，清除当天数据
+    await deleteByDate({date: currentDate});
+  }
+  
   timeSlots.value = [];
-  await deleteByDate({date: selectedDate.value.format('YYYY-MM-DD')});
 };
 
 // 日期处理函数
@@ -306,14 +485,37 @@ const handleDateChange = () => {
   loadData();
 };
 
-const goToPreviousDay = () => {
-  selectedDate.value = selectedDate.value.subtract(1, 'day');
+const handleStatModeChange = () => {
+  // 切换统计模式时重新加载数据
+  selectedWeekDayIndex.value = 0; // 重置选中的星期几
   loadData();
 };
 
-const goToNextDay = () => {
-  selectedDate.value = selectedDate.value.add(1, 'day');
+const goToPreviousPeriod = () => {
+  if (statMode.value === 'week') {
+    // 按周模式下，往前移动一周
+    selectedDate.value = selectedDate.value.subtract(1, 'week');
+  } else {
+    // 按天模式下，往前移动一天
+    selectedDate.value = selectedDate.value.subtract(1, 'day');
+  }
   loadData();
+};
+
+const goToNextPeriod = () => {
+  if (statMode.value === 'week') {
+    // 按周模式下，往后移动一周
+    selectedDate.value = selectedDate.value.add(1, 'week');
+  } else {
+    // 按天模式下，往后移动一天
+    selectedDate.value = selectedDate.value.add(1, 'day');
+  }
+  loadData();
+};
+
+// 选择星期几
+const selectWeekDay = (index: number) => {
+  selectedWeekDayIndex.value = index;
 };
 
 const disabledDate = (current: dayjs.Dayjs) => {
@@ -330,7 +532,7 @@ const startCurrentTimeUpdater = () => {
   };
 
   updateCurrentTime();
-  timeUpdater = setInterval(updateCurrentTime, 60000); // 每分钟更新一次
+  timeUpdater = setInterval(updateCurrentTime, 60000) as unknown as number; // 每分钟更新一次
 };
 
 const stopCurrentTimeUpdater = () => {
@@ -341,9 +543,10 @@ const stopCurrentTimeUpdater = () => {
 
 // 样式计算
 const getSlotStyle = (slot: TimeSlot) => {
-  if (!timelineRef.value) return {};
+  // 在按周统计模式下，使用固定的时间轴高度（800px - 60px的头部高度 = 740px）
+  const timelineHeight = statMode.value === 'week' ? 740 : (timelineRef.value?.offsetHeight || 800);
 
-  const { top, height } = getSlotPosition(slot, timelineRef.value.offsetHeight);
+  const { top, height } = getSlotPosition(slot, timelineHeight);
   const category = config.value.categories.find(cat => cat.id === slot.categoryId);
 
   return {
@@ -437,7 +640,7 @@ const handleTrackMouseMove = (event: MouseEvent) => {
       const newTime = Math.max(0, Math.min(1440, dragOperation.value.startTime + deltaTime));
 
       if (dragOperation.value.slotId) {
-        const resizeSlot = timeSlots.value.find(s => s.id === dragOperation.value!.slotId);
+        const resizeSlot = timeSlots.value.find(s => s.id === dragOperation.value?.slotId);
         if (!resizeSlot) return;
 
         const originalStart = resizeSlot.startTime;
@@ -582,6 +785,8 @@ const handleSlotClick = (slot: TimeSlot) => {
 };
 
 const handleAddSlot = () => {
+  const currentDate = getCurrentSelectedDate();
+  
   // 创建新的时间段对象
   const newSlot: TimeSlot = {
     id: generateId(),
@@ -590,7 +795,7 @@ const handleAddSlot = () => {
     categoryId: currentCategoryId.value,
     title: getCategoryName(currentCategoryId.value, config.value.categories),
     description: '',
-    date: selectedDate.value.format('YYYY-MM-DD')
+    date: currentDate
   };
 
   editingSlot.value = newSlot;
@@ -609,7 +814,12 @@ const handleSaveSlot = (formData: any) => {
       updatedSlot.title = getCategoryName(updatedSlot.categoryId, config.value.categories);
     }
 
-    if (isValidSlot(updatedSlot, config.value) && !hasOverlapExcluding(timeSlots.value, updatedSlot, formData.id)) {
+    // 检查重叠时，只考虑同一天内的时间段
+      const sameDaySlots = timeSlots.value.filter(
+        (slot: TimeSlot) => slot.date === updatedSlot.date && slot.id !== formData.id
+      );
+    
+    if (isValidSlot(updatedSlot, config.value) && !hasOverlap(sameDaySlots, updatedSlot)) {
       timeSlots.value[index] = updatedSlot;
       update(updatedSlot).then(() => {
         showEditModal.value = false;
@@ -622,6 +832,8 @@ const handleSaveSlot = (formData: any) => {
     }
   } else {
     // 新增时间段
+    const currentDate = getCurrentSelectedDate();
+    
     const newSlot: TimeSlot = {
       id: formData.id,
       startTime: formData.startTime,
@@ -629,7 +841,7 @@ const handleSaveSlot = (formData: any) => {
       categoryId: formData.categoryId,
       title: formData.title,
       description: formData.description || '',
-      date: selectedDate.value.format('YYYY-MM-DD')
+      date: currentDate
     };
 
     // 如果用户没有修改标题，自动设置为分类名称
@@ -637,7 +849,10 @@ const handleSaveSlot = (formData: any) => {
       newSlot.title = getCategoryName(newSlot.categoryId, config.value.categories);
     }
 
-    if (isValidSlot(newSlot, config.value) && !hasOverlap(timeSlots.value, newSlot)) {
+    // 检查重叠时，只考虑同一天内的时间段
+    const sameDaySlots = timeSlots.value.filter((slot: TimeSlot) => slot.date === currentDate);
+    
+    if (isValidSlot(newSlot, config.value) && !hasOverlap(sameDaySlots, newSlot)) {
       timeSlots.value.push(newSlot);
       saveData();
       showEditModal.value = false;
@@ -668,6 +883,11 @@ const handleCategoriesUpdate = (categories: TimeSlotCategory[]) => {
 const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => {
   const category = categories.find(cat => cat.id === categoryId);
   return category?.name || '未知';
+};
+
+// 获取某天的时间段数据
+const getDaySlots = (date: string): TimeSlot[] => {
+  return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
 };
 
 // 复制上一天数据
@@ -728,6 +948,10 @@ const copyPreviousDayData = async () => {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.header-left .ant-radio-group {
+  margin-right: 10px;
 }
 
 .header h2 {
@@ -800,6 +1024,93 @@ const copyPreviousDayData = async () => {
   overflow: hidden;
   height: 800px; /* 设置固定高度 */
   display: flex;
+}
+
+/* 按周统计样式 */
+.week-timeline-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 800px;
+}
+
+.week-header {
+  display: flex;
+  height: 60px;
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+.time-scale-header {
+  width: 60px;
+  border-right: 1px solid #d9d9d9;
+  flex-shrink: 0;
+}
+
+.week-day-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-right: 1px solid #d9d9d9;
+  transition: background-color 0.2s;
+}
+
+.week-day-header:hover {
+  background: #f0f0f0;
+}
+
+.week-day-header.active {
+  background: #e6f7ff;
+  font-weight: 500;
+}
+
+.day-name {
+  font-size: 14px;
+  color: #262626;
+  margin-bottom: 4px;
+}
+
+.day-date {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.week-timeline-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.week-days-container {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+}
+
+.week-day-track {
+  flex: 1;
+  position: relative;
+  background: #f8f9fa;
+  border-right: 1px solid #d9d9d9;
+  min-width: 150px;
+}
+
+/* 调整时间槽在周视图中的样式 */
+.week-day-track .time-slot {
+  left: 5px;
+  width: calc(100% - 10px);
+}
+
+.week-day-track .slot-content {
+  padding: 4px;
+}
+
+.week-day-track .slot-title {
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .time-scale {

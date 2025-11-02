@@ -40,7 +40,8 @@ export interface TimeSlotFormData {
 export interface DragOperation {
   type: 'create' | 'resize' | 'move';
   slotId?: string;
-  startX: number;
+  startX?: number;
+  startY: number;
   startTime: number;
   currentTime: number;
 }

@@ -29,7 +29,7 @@ const { renderEcharts } = useEcharts(chartRef);
 // 计算每个分类的总时长
 const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
-  
+
   props.timeSlots.forEach(slot => {
     const duration = slot.endTime - slot.startTime + 1;
     if (durations[slot.categoryId]) {
@@ -38,7 +38,7 @@ const categoryDurations = computed(() => {
       durations[slot.categoryId] = duration;
     }
   });
-  
+
   return durations;
 });
 
@@ -70,7 +70,7 @@ const renderPieChart = () => {
         const hours = Math.floor(duration / 60);
         const minutes = duration % 60;
         const percentage = params.percent;
-        
+
         return `${params.name}<br/>
                 ${hours}小时${minutes}分钟 (${percentage}%)<br/>
                 总时长: ${duration}分钟`;
@@ -88,9 +88,9 @@ const renderPieChart = () => {
       {
         name: '时间分类',
         type: 'pie',
-        radius: ['40%', '100%'],
-        center: ['40%', '50%'],
-        avoidLabelOverlap: false,
+        radius: ['30%', '80%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
@@ -104,7 +104,7 @@ const renderPieChart = () => {
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
             const percentage = params.percent;
-            
+
             if (duration >= 60) {
               // 如果时长超过1小时，显示小时和分钟
               return `${params.name}\n${hours}h${minutes}m (${percentage}%)`;
@@ -113,9 +113,12 @@ const renderPieChart = () => {
               return `${params.name}\n${minutes}m (${percentage}%)`;
             }
           },
-          fontSize: 12,
+          fontSize: 10,
           fontWeight: 'normal',
-          color: '#333'
+          color: '#333',
+          minMargin: 5,
+          overflow: 'truncate',
+          width: 80,
         },
         labelLine: {
           show: true,

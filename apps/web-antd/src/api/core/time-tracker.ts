@@ -1,29 +1,63 @@
 import { requestClient } from '#/api/request';
 
 /**
+ * 时间记录实体接口
+ */
+export interface TimeRecordEntity {
+  userId: number;
+  categoryId: string;
+  date: string;
+  startTime: number;
+  endTime: number;
+  title: string;
+  description: string;
+  duration: number;
+  isManual: number;
+  id: string;
+  createUser: number;
+  createTime: string;
+  updateTime: string;
+}
+
+/**
+ * 查询响应数据接口
+ */
+export interface QueryResponse {
+  items: TimeRecordEntity[];
+  total: number;
+}
+
+/**
  * 查询数据
  */
-export async function query(data: any) {
+export async function query(data: any): Promise<QueryResponse> {
   return await requestClient.post('/timeRecord/query', data);
 }
 
 /**
- * 更新数据
+ * 查询数据
  */
-export async function update(data: any) {
-  return await requestClient.post('/timeRecord/update', data);
+export async function queryForWeek(data: any): Promise<TimeRecordEntity[]> {
+  return await requestClient.post('/timeRecord/queryForWeek', data);
 }
 
 /**
  * 更新数据
  */
-export async function batchUpdate(data: any) {
+export async function update(data: TimeRecordEntity): Promise<void> {
+  return await requestClient.post('/timeRecord/update', data);
+}
+
+/**
+ * 批量更新数据
+ */
+export async function batchUpdate(data: TimeRecordEntity[]): Promise<void> {
   return await requestClient.post('/timeRecord/batchUpdate', data);
 }
 
 /**
  * 删除数据
  */
-export async function deleteByDate(data: any) {
+export async function deleteByDate(data: { date: string }): Promise<void> {
   return await requestClient.post('/timeRecord/deleteByDate', data);
 }
