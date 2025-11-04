@@ -26,28 +26,44 @@
         </Select>
       </Form.Item>
 
-      <row :gutter="16">
-        <col :span="12">
+      <Row :gutter="16">
+        <Col :span="12">
           <Form.Item label="开始时间" name="startTime">
-            <TimePicker
-              v-model:value="formState.startTime"
-              format="HH:mm"
-              style="width: 100%"
-              placeholder="选择开始时间"
-            />
+            <div class="time-control-group">
+              <TimePicker
+                v-model:value="formState.startTime"
+                format="HH:mm"
+                style="width: 100%"
+                placeholder="选择开始时间"
+              />
+              <div class="time-adjust-buttons">
+                <Button size="small" @click="adjustStartTime(-1)" :disabled="!formState.startTime">-1分</Button>
+                <Button size="small" @click="adjustStartTime(1)" :disabled="!formState.startTime">+1分</Button>
+                <Button size="small" @click="roundStartTime('down')" :disabled="!formState.startTime">下整点</Button>
+                <Button size="small" @click="roundStartTime('up')" :disabled="!formState.startTime">上整点</Button>
+              </div>
+            </div>
           </Form.Item>
-        </col>
-        <col :span="12">
+        </Col>
+        <Col :span="12">
           <Form.Item label="结束时间" name="endTime">
-            <TimePicker
-              v-model:value="formState.endTime"
-              format="HH:mm"
-              style="width: 100%"
-              placeholder="选择结束时间"
-            />
+            <div class="time-control-group">
+              <TimePicker
+                v-model:value="formState.endTime"
+                format="HH:mm"
+                style="width: 100%"
+                placeholder="选择结束时间"
+              />
+              <div class="time-adjust-buttons">
+                <Button size="small" @click="adjustEndTime(-1)" :disabled="!formState.endTime">-1分</Button>
+                <Button size="small" @click="adjustEndTime(1)" :disabled="!formState.endTime">+1分</Button>
+                <Button size="small" @click="roundEndTime('down')" :disabled="!formState.endTime">下整点</Button>
+                <Button size="small" @click="roundEndTime('up')" :disabled="!formState.endTime">上整点</Button>
+              </div>
+            </div>
           </Form.Item>
-        </col>
-      </row>
+        </Col>
+      </Row>
 
       <Form.Item label="时长">
         <div class="duration-display">
@@ -83,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea} from 'ant-design-vue';
+import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
 import { timeToMinutes, minutesToTime, formatDuration } from '../utils';
@@ -116,10 +132,10 @@ const formState = ref<TimeSlotFormData>({
 // 计算时长
 const duration = computed(() => {
   if (!formState.value.startTime || !formState.value.endTime) return 0;
-  
+
   const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-  
+
   return Math.max(0, endMinutes - startMinutes);
 });
 
@@ -142,18 +158,18 @@ const rules = {
         if (!formState.value.startTime || !formState.value.endTime) {
           return Promise.resolve();
         }
-        
+
         const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
         const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-        
+
         if (endMinutes <= startMinutes) {
           return Promise.reject(new Error('结束时间必须晚于开始时间'));
         }
-        
+
         if (endMinutes - startMinutes < 1) {
           return Promise.reject(new Error('时间段不能少于1分钟'));
         }
-        
+
         return Promise.resolve();
       },
       trigger: 'change'
@@ -193,12 +209,12 @@ watch(() => props.slot, (newSlot) => {
 const handleSave = async () => {
   try {
     await formRef.value?.validate();
-    
+
     if (!formState.value.startTime || !formState.value.endTime) {
       message.error('请选择开始和结束时间');
       return;
     }
-    
+
     const saveData: TimeSlotFormData = {
       id: formState.value.id,
       startTime: timeToMinutes(formState.value.startTime.format('HH:mm')),
@@ -207,10 +223,86 @@ const handleSave = async () => {
       title: formState.value.title,
       description: formState.value.description
     };
-    
+
     emit('save', saveData);
   } catch (error) {
     console.error('表单验证失败:', error);
+  }
+};
+
+// 调整开始时间
+const adjustStartTime = (minutes: number) => {
+  if (!formState.value.startTime) return;
+
+  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+  const newMinutes = Math.max(0, Math.min(1439, currentMinutes + minutes));
+
+  formState.value.startTime = minutesToTimePickerValue(newMinutes);
+
+  // 如果结束时间早于新的开始时间，自动调整结束时间
+  if (formState.value.endTime) {
+    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+    if (endMinutes <= newMinutes) {
+      formState.value.endTime = minutesToTimePickerValue(newMinutes + 1);
+    }
+  }
+};
+
+// 调整结束时间
+const adjustEndTime = (minutes: number) => {
+  if (!formState.value.endTime) return;
+
+  const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+  const newMinutes = Math.max(1, Math.min(1440, currentMinutes + minutes));
+
+  formState.value.endTime = minutesToTimePickerValue(newMinutes);
+
+  // 如果开始时间晚于新的结束时间，自动调整开始时间
+  if (formState.value.startTime) {
+    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+    if (startMinutes >= newMinutes) {
+      formState.value.startTime = minutesToTimePickerValue(newMinutes - 1);
+    }
+  }
+};
+
+// 开始时间取整
+const roundStartTime = (direction: 'up' | 'down') => {
+  if (!formState.value.startTime) return;
+
+  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+  const roundedMinutes = direction === 'down'
+    ? Math.floor(currentMinutes / 60) * 60
+    : Math.ceil(currentMinutes / 60) * 60;
+
+  formState.value.startTime = minutesToTimePickerValue(roundedMinutes);
+
+  // 如果结束时间早于新的开始时间，自动调整结束时间
+  if (formState.value.endTime) {
+    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+    if (endMinutes <= roundedMinutes) {
+      formState.value.endTime = minutesToTimePickerValue(roundedMinutes + 60);
+    }
+  }
+};
+
+// 结束时间取整
+const roundEndTime = (direction: 'up' | 'down') => {
+  if (!formState.value.endTime) return;
+
+  const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+  const roundedMinutes = direction === 'down'
+    ? Math.floor(currentMinutes / 60) * 60
+    : Math.ceil(currentMinutes / 60) * 60;
+
+  formState.value.endTime = minutesToTimePickerValue(roundedMinutes);
+
+  // 如果开始时间晚于新的结束时间，自动调整开始时间
+  if (formState.value.startTime) {
+    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+    if (startMinutes >= roundedMinutes) {
+      formState.value.startTime = minutesToTimePickerValue(roundedMinutes - 60);
+    }
   }
 };
 
@@ -245,6 +337,27 @@ const handleDelete = () => {
   border-radius: 4px;
   font-weight: 500;
   color: #262626;
+}
+
+.time-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.time-adjust-buttons {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.time-adjust-buttons .ant-btn {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 2px 4px;
+  height: auto;
+  line-height: 1.2;
 }
 
 .form-actions {
