@@ -37,10 +37,38 @@
                 placeholder="选择开始时间"
               />
               <div class="time-adjust-buttons">
-                <Button size="small" @click="adjustStartTime(-1)" :disabled="!formState.startTime">-1分</Button>
-                <Button size="small" @click="adjustStartTime(1)" :disabled="!formState.startTime">+1分</Button>
-                <Button size="small" @click="roundStartTime('down')" :disabled="!formState.startTime">下整点</Button>
-                <Button size="small" @click="roundStartTime('up')" :disabled="!formState.startTime">上整点</Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(-1)"
+                  @mousedown="startContinuousAdjust(-1, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >-1分</Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(1)"
+                  @mousedown="startContinuousAdjust(1, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >+1分</Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(-30)"
+                  @mousedown="startContinuousAdjust(-30, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >-30分</Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(30)"
+                  @mousedown="startContinuousAdjust(30, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >+30分</Button>
               </div>
             </div>
           </Form.Item>
@@ -55,10 +83,38 @@
                 placeholder="选择结束时间"
               />
               <div class="time-adjust-buttons">
-                <Button size="small" @click="adjustEndTime(-1)" :disabled="!formState.endTime">-1分</Button>
-                <Button size="small" @click="adjustEndTime(1)" :disabled="!formState.endTime">+1分</Button>
-                <Button size="small" @click="roundEndTime('down')" :disabled="!formState.endTime">下整点</Button>
-                <Button size="small" @click="roundEndTime('up')" :disabled="!formState.endTime">上整点</Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(-1)"
+                  @mousedown="startContinuousAdjust(-1, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >-1分</Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(1)"
+                  @mousedown="startContinuousAdjust(1, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >+1分</Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(-30)"
+                  @mousedown="startContinuousAdjust(-30, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >-30分</Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(30)"
+                  @mousedown="startContinuousAdjust(30, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >+30分</Button>
               </div>
             </div>
           </Form.Item>
@@ -98,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
@@ -128,6 +184,13 @@ const formState = ref<TimeSlotFormData>({
   title: '',
   description: ''
 });
+
+// 连续调整相关变量
+const continuousAdjustInterval = ref<NodeJS.Timeout | null>(null);
+const continuousAdjustDirection = ref<number>(0);
+const continuousAdjustType = ref<'start' | 'end'>('start');
+const initialDelay = 500; // 初始延迟500ms
+const repeatInterval = 100; // 重复间隔100ms
 
 // 计算时长
 const duration = computed(() => {
@@ -286,32 +349,62 @@ const roundStartTime = (direction: 'up' | 'down') => {
   }
 };
 
-// 结束时间取整
-const roundEndTime = (direction: 'up' | 'down') => {
-  if (!formState.value.endTime) return;
-
-  const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-  const roundedMinutes = direction === 'down'
-    ? Math.floor(currentMinutes / 60) * 60
-    : Math.ceil(currentMinutes / 60) * 60;
-
-  formState.value.endTime = minutesToTimePickerValue(roundedMinutes);
-
-  // 如果开始时间晚于新的结束时间，自动调整开始时间
-  if (formState.value.startTime) {
-    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-    if (startMinutes >= roundedMinutes) {
-      formState.value.startTime = minutesToTimePickerValue(roundedMinutes - 60);
-    }
-  }
-};
-
 // 处理删除
 const handleDelete = () => {
   if (formState.value.id) {
     emit('delete', formState.value.id);
   }
 };
+
+// 开始连续调整
+const startContinuousAdjust = (direction: number, type: 'start' | 'end') => {
+  // 先执行一次调整
+  if (type === 'start') {
+    adjustStartTime(direction);
+  } else {
+    adjustEndTime(direction);
+  }
+
+  // 设置连续调整参数
+  continuousAdjustDirection.value = direction;
+  continuousAdjustType.value = type;
+
+  // 清除现有的定时器
+  if (continuousAdjustInterval.value) {
+    clearTimeout(continuousAdjustInterval.value);
+    continuousAdjustInterval.value = null;
+  }
+
+  // 设置初始延迟后的连续调整
+  continuousAdjustInterval.value = setTimeout(() => {
+    continuousAdjustInterval.value = setInterval(() => {
+      if (continuousAdjustType.value === 'start') {
+        adjustStartTime(continuousAdjustDirection.value);
+      } else {
+        adjustEndTime(continuousAdjustDirection.value);
+      }
+    }, repeatInterval);
+  }, initialDelay);
+};
+
+// 停止连续调整
+const stopContinuousAdjust = () => {
+  if (continuousAdjustInterval.value) {
+    if (typeof continuousAdjustInterval.value === 'number') {
+      clearTimeout(continuousAdjustInterval.value);
+    } else {
+      clearTimeout(continuousAdjustInterval.value);
+      clearInterval(continuousAdjustInterval.value);
+    }
+    continuousAdjustInterval.value = null;
+  }
+  continuousAdjustDirection.value = 0;
+};
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+  stopContinuousAdjust();
+});
 </script>
 
 <style scoped>
