@@ -358,13 +358,6 @@ const handleDelete = () => {
 
 // 开始连续调整
 const startContinuousAdjust = (direction: number, type: 'start' | 'end') => {
-  // 先执行一次调整
-  if (type === 'start') {
-    adjustStartTime(direction);
-  } else {
-    adjustEndTime(direction);
-  }
-
   // 设置连续调整参数
   continuousAdjustDirection.value = direction;
   continuousAdjustType.value = type;
@@ -375,8 +368,16 @@ const startContinuousAdjust = (direction: number, type: 'start' | 'end') => {
     continuousAdjustInterval.value = null;
   }
 
-  // 设置初始延迟后的连续调整
+  // 设置初始延迟后的连续调整（先不立即执行，等待延迟后再开始）
   continuousAdjustInterval.value = setTimeout(() => {
+    // 延迟结束后先执行一次调整
+    if (continuousAdjustType.value === 'start') {
+      adjustStartTime(continuousAdjustDirection.value);
+    } else {
+      adjustEndTime(continuousAdjustDirection.value);
+    }
+    
+    // 然后开始连续调整
     continuousAdjustInterval.value = setInterval(() => {
       if (continuousAdjustType.value === 'start') {
         adjustStartTime(continuousAdjustDirection.value);
