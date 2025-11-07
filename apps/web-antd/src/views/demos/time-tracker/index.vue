@@ -839,8 +839,14 @@ const handleAddSlot = () => {
   // 计算智能开始时间
   const smartStartTime = calculateSmartStartTime();
   
+  // 判断是否是今天
+  const today = dayjs().format('YYYY-MM-DD');
+  const isToday = currentDate === today;
+  
   // 智能计算结束时间：找到下一个时间段的开始时间，或者默认30分钟
-  let endTime = Math.min(smartStartTime + 30, 1439);
+  // 如果是今天，最大结束时间设为当前时间；否则设为23:59（1439分钟）
+  const maxEndTime = isToday ? currentTime.value : 1439;
+  let endTime = Math.min(smartStartTime + 30, maxEndTime)
   
   // 查找当前空隙的下一个时间段的开始时间
   const nextSlot = sameDaySlots.find(slot => slot.startTime > smartStartTime);
@@ -848,7 +854,7 @@ const handleAddSlot = () => {
     // 如果空隙不足30分钟，设置结束时间为下一个时间段的开始时间
     const availableTime = nextSlot.startTime - smartStartTime - 1;
     if (availableTime < 30) {
-      endTime = Math.min(smartStartTime + availableTime, 1439);
+      endTime = Math.min(smartStartTime + availableTime, maxEndTime);
     }
   }
   
