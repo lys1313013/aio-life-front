@@ -12,7 +12,7 @@
       </Form.Item>
 
       <Form.Item label="分类" name="categoryId">
-        <Select v-model:value="formState.categoryId" placeholder="请选择分类">
+        <Select v-model:value="formState.categoryId" placeholder="请选择分类" @change="(value) => handleCategoryChange(value as string)">
           <Select.Option
             v-for="category in categories"
             :key="category.id"
@@ -268,6 +268,14 @@ watch(() => props.slot, (newSlot) => {
   }
 }, { immediate: true });
 
+// 处理分类变化
+const handleCategoryChange = (categoryId: string) => {
+  const selectedCategory = props.categories.find(cat => cat.id === categoryId);
+    if (selectedCategory) {
+      formState.value.title = selectedCategory.name;
+    }
+};
+
 // 处理保存
 const handleSave = async () => {
   try {
@@ -316,17 +324,9 @@ const adjustEndTime = (minutes: number) => {
   if (!formState.value.endTime) return;
 
   const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-  const newMinutes = Math.max(1, Math.min(1440, currentMinutes + minutes));
+  const newMinutes = Math.max(0, Math.min(1439, currentMinutes + minutes));
 
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
-
-  // 如果开始时间晚于新的结束时间，自动调整开始时间
-  if (formState.value.startTime) {
-    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-    if (startMinutes >= newMinutes) {
-      formState.value.startTime = minutesToTimePickerValue(newMinutes - 1);
-    }
-  }
 };
 
 // 开始时间取整

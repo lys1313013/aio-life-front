@@ -273,13 +273,11 @@ dayjs.extend(isoWeek);
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
 import { defaultConfig } from './config';
 import {
-  minutesToTime,
   formatSlotTime,
   formatDuration,
   getTimeFromPosition,
   snapToGrid,
   hasOverlap,
-  hasOverlapExcluding,
   isValidSlot,
   generateId,
   getSlotPosition,
@@ -299,7 +297,6 @@ const showEditModal = ref(false);
 const showCategoryModal = ref(false);
 const editingSlot = ref<TimeSlot | null>(null);
 const currentTime = ref(0);
-const showCurrentTime = ref(true);
 const selectedDate = ref(dayjs());
 const loading = ref(false); // 新增loading状态
 const statMode = ref<'day' | 'week'>('day'); // 统计模式：day - 按天，week - 按周
@@ -703,9 +700,6 @@ const handleTrackMouseUp = () => {
       };
       // 重叠的时候，取上方的最大值和下方的最小值
       timeSlots.value.forEach(slot => {
-        console.log('判断')
-        console.log('旧', slot.startTime, slot.endTime)
-        console.log('新', newSlot.startTime, newSlot.endTime)
         // 打印slow.startTime的类型
         console.log(typeof slot.startTime);
         if (newSlot.startTime > slot.endTime || newSlot.endTime < slot.startTime) {
