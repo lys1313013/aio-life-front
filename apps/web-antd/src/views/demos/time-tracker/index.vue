@@ -8,7 +8,7 @@
           <Radio.Button value="day">按天统计</Radio.Button>
           <Radio.Button value="week">按周统计</Radio.Button>
         </Radio.Group>
-        
+
         <div class="date-picker-container">
           <Button
             type="default"
@@ -46,10 +46,10 @@
           分类管理
         </Button>
         <Button @click="resetData" :disabled="loading">清除数据</Button>
-        <Button 
+        <Button
           v-if="statMode === 'day'"
-          @click="copyPreviousDayData" 
-          :disabled="loading" 
+          @click="copyPreviousDayData"
+          :disabled="loading"
           type="dashed"
         >
           <template #icon><CopyOutlined /></template>
@@ -86,9 +86,9 @@
           <!-- 星期标题行 -->
           <div class="week-header">
             <div class="time-scale-header"></div>
-            <div 
-              v-for="(day, index) in weekDays" 
-              :key="index" 
+            <div
+              v-for="(day, index) in weekDays"
+              :key="index"
               class="week-day-header"
               @click="selectWeekDay(index)"
               :class="{ active: selectedWeekDayIndex === index }"
@@ -97,7 +97,7 @@
               <div class="day-date">{{ day.date }}</div>
             </div>
           </div>
-          
+
           <!-- 星期时间轴 -->
           <div class="week-timeline-wrapper">
             <!-- 时间刻度 -->
@@ -111,11 +111,11 @@
                 <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
               </div>
             </div>
-            
+
             <!-- 每天的时间轴 -->
             <div class="week-days-container">
-              <div 
-                v-for="(day, index) in weekDays" 
+              <div
+                v-for="(day, index) in weekDays"
                 :key="index"
                 class="week-day-track"
               >
@@ -139,7 +139,7 @@
           </div>
         </div>
       </template>
-      
+
       <!-- 按天统计模式 -->
       <template v-else>
         <div class="timeline-container">
@@ -331,9 +331,9 @@ const weekDays = computed(() => {
   const currentDay = selectedDate.value;
   const startOfWeek = currentDay.startOf('isoWeek'); // 周一为一周的开始
   const days = [];
-  
+
   const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-  
+
   for (let i = 0; i < 7; i++) {
     const day = startOfWeek.add(i, 'day');
     days.push({
@@ -342,7 +342,7 @@ const weekDays = computed(() => {
       dayjs: day
     });
   }
-  
+
   return days;
 });
 
@@ -379,22 +379,19 @@ onUnmounted(() => {
 const loadData = async () => {
   try {
     loading.value = true; // 开始加载
-    
+
     let response;
-    
+
     if (statMode.value === 'week') {
       // 按周查询，查询参数为时间区间
       const weekDaysValue = weekDays.value;
       const startDate = weekDaysValue.length > 0 ? weekDaysValue[0].date : '';
       const endDate = weekDaysValue.length > 6 ? weekDaysValue[6].date : '';
       const queryParams = { condition: { startDate, endDate } };
-      
-      console.log('按周查询参数:', queryParams);
-      
+
       // 调用按周查询接口
       response = await queryForWeek(queryParams);
-      console.log('按周查询返回数据:', response);
-      
+
       // 确保返回的数据是数组格式
       if (Array.isArray(response)) {
         timeSlots.value = response;
@@ -404,19 +401,19 @@ const loadData = async () => {
       } else {
         timeSlots.value = [];
       }
-      
+
       console.log('最终设置的时间段数据:', timeSlots.value);
     } else {
       // 按天查询
       const currentDate = selectedDate.value.format('YYYY-MM-DD');
       const queryParams = { condition: { date: currentDate } };
-      
+
       console.log('按天查询参数:', queryParams);
-      
+
       // 调用普通查询接口
       response = await query(queryParams);
       console.log('按天查询返回数据:', response);
-      
+
       if (response && response.items) {
         timeSlots.value = response.items;
       } else {
@@ -438,10 +435,10 @@ const saveData = async () => {
     const currentDate = getCurrentSelectedDate();
 
     // 准备要更新的数据
-    const slotsToUpdate = statMode.value === 'week' 
-      ? timeSlots.value 
+    const slotsToUpdate = statMode.value === 'week'
+      ? timeSlots.value
       : timeSlots.value.filter(slot => slot.date === currentDate);
-    
+
     const updateData = slotsToUpdate.map(slot => ({
       id: slot.id,
       startTime: slot.startTime,
@@ -462,10 +459,10 @@ const saveData = async () => {
 
 const resetData = async () => {
   const currentDate = getCurrentSelectedDate();
-  
+
   if (statMode.value === 'week') {
     // 按周模式下，清除整周数据
-    const promises = weekDays.value.map(day => 
+    const promises = weekDays.value.map(day =>
       deleteByDate({date: day.date})
     );
     await Promise.all(promises);
@@ -473,7 +470,7 @@ const resetData = async () => {
     // 按天模式下，清除当天数据
     await deleteByDate({date: currentDate});
   }
-  
+
   timeSlots.value = [];
 };
 
@@ -781,42 +778,42 @@ const handleSlotClick = (slot: TimeSlot) => {
 // 计算智能开始时间
 const calculateSmartStartTime = (): number => {
   const currentDate = getCurrentSelectedDate();
-  
+
   // 获取当天的时间段，按开始时间排序
   const sameDaySlots = timeSlots.value
     .filter((slot: TimeSlot) => slot.date === currentDate)
     .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
-  
+
   // 如果没有时间段，从00:00开始
   if (sameDaySlots.length === 0) {
     return 0;
   }
-  
+
   // 检查第一个时间段之前是否有足够的空间（从00:00开始）
   if (sameDaySlots[0].startTime >= 30) {
     return 0;
   }
-  
+
   // 检查时间段之间的空隙
   for (let i = 0; i < sameDaySlots.length - 1; i++) {
     const currentSlot = sameDaySlots[i];
     const nextSlot = sameDaySlots[i + 1];
-    
+
     // 计算当前时间段结束时间和下一个时间段开始时间之间的空隙大小
     const gapSize = nextSlot.startTime - currentSlot.endTime - 1;
-    
+
     // 如果空隙足够容纳30分钟的时间段，或者空隙大于0（允许插入较短时间段）
     if (gapSize >= 30 || gapSize > 0) {
       return currentSlot.endTime + 1;
     }
   }
-  
+
   // 检查最后一个时间段之后是否有足够的空间
   const lastSlot = sameDaySlots[sameDaySlots.length - 1];
   if (lastSlot.endTime + 30 <= 1440) {
     return lastSlot.endTime + 1;
   }
-  
+
   // 如果没有足够的空间，返回当天最后一个时间段的结束时间 + 1分钟
   // 但确保不超过23:59
   return Math.min(lastSlot.endTime + 1, 1439);
@@ -824,24 +821,27 @@ const calculateSmartStartTime = (): number => {
 
 const handleAddSlot = () => {
   const currentDate = getCurrentSelectedDate();
-  
+
   // 获取当天的时间段，按开始时间排序
   const sameDaySlots = timeSlots.value
     .filter((slot: TimeSlot) => slot.date === currentDate)
     .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
-  
+
   // 计算智能开始时间
   const smartStartTime = calculateSmartStartTime();
-  
+
   // 判断是否是今天
   const today = dayjs().format('YYYY-MM-DD');
   const isToday = currentDate === today;
-  
+
   // 智能计算结束时间：找到下一个时间段的开始时间，或者默认30分钟
   // 如果是今天，最大结束时间设为当前时间；否则设为23:59（1439分钟）
-  const maxEndTime = isToday ? currentTime.value : 1439;
-  let endTime = Math.min(smartStartTime + 30, maxEndTime)
-  
+  let endTime = Math.min(smartStartTime + 30, 1439);
+  if (isToday) {
+    // 当天直接取当前时间
+    endTime = currentTime.value;
+  }
+
   // 查找当前空隙的下一个时间段的开始时间
   const nextSlot = sameDaySlots.find(slot => slot.startTime > smartStartTime);
   if (nextSlot && nextSlot.startTime > smartStartTime) {
@@ -851,7 +851,7 @@ const handleAddSlot = () => {
       endTime = Math.min(smartStartTime + availableTime, maxEndTime);
     }
   }
-  
+
   // 创建新的时间段对象
   const newSlot: TimeSlot = {
     id: generateId(),
@@ -883,7 +883,7 @@ const handleSaveSlot = (formData: any) => {
       const sameDaySlots = timeSlots.value.filter(
         (slot: TimeSlot) => slot.date === updatedSlot.date && slot.id !== formData.id
       );
-    
+
     if (isValidSlot(updatedSlot, config.value) && !hasOverlap(sameDaySlots, updatedSlot)) {
       timeSlots.value[index] = updatedSlot;
       update(updatedSlot).then(() => {
@@ -898,7 +898,7 @@ const handleSaveSlot = (formData: any) => {
   } else {
     // 新增时间段
     const currentDate = getCurrentSelectedDate();
-    
+
     const newSlot: TimeSlot = {
       id: formData.id,
       startTime: formData.startTime,
@@ -916,7 +916,7 @@ const handleSaveSlot = (formData: any) => {
 
     // 检查重叠时，只考虑同一天内的时间段
     const sameDaySlots = timeSlots.value.filter((slot: TimeSlot) => slot.date === currentDate);
-    
+
     if (isValidSlot(newSlot, config.value) && !hasOverlap(sameDaySlots, newSlot)) {
       timeSlots.value.push(newSlot);
       saveData();
