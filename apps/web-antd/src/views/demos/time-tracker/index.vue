@@ -5,8 +5,8 @@
       <div class="header-left">
         <!-- 统计模式切换 -->
         <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading">
-          <Radio.Button value="day">按天统计</Radio.Button>
-          <Radio.Button value="week">按周统计</Radio.Button>
+          <Radio.Button value="day">日</Radio.Button>
+          <Radio.Button value="week">周</Radio.Button>
         </Radio.Group>
 
         <div class="date-picker-container">
@@ -39,7 +39,6 @@
       <div class="actions">
         <Button type="primary" @click="handleAddSlot" :disabled="loading">
           <template #icon><PlusOutlined /></template>
-          新增
         </Button>
         <Button type="primary" @click="showCategoryModal = true" :disabled="loading">
           <template #icon><SettingOutlined /></template>
@@ -1012,7 +1011,6 @@ const copyPreviousDayData = async () => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
 }
 
 .header-left .ant-radio-group {
@@ -1107,7 +1105,7 @@ const copyPreviousDayData = async () => {
 }
 
 .time-scale-header {
-  width: 60px;
+  width: 45px;
   border-right: 1px solid #d9d9d9;
   flex-shrink: 0;
 }
