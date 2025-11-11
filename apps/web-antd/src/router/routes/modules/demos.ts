@@ -83,6 +83,14 @@ const routes: RouteRecordRaw[] = [
         path: '/demos/time-tracker',
         component: () => import('#/views/demos/time-tracker/index.vue'),
       },
+      {
+        meta: {
+          title: '思考卡片',
+        },
+        name: 'think',
+        path: '/demos/think',
+        component: () => import('#/views/demos/think/index.vue'),
+      },
     ],
   },
   {
