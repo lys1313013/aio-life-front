@@ -217,7 +217,19 @@
     <!-- 时间段统计 -->
     <div class="statistics">
       <div class="stats-row">
-        <Card :title="`时间段统计`" class="stats-card">
+        <!-- 时间分类柱状图 -->
+        <TimeCategoryBarChart
+          :time-slots="timeSlots"
+          :categories="config.categories"
+          :selected-date="selectedDate"
+        />
+        <!-- 时间分类饼图 -->
+        <TimeCategoryPieChart
+          :time-slots="timeSlots"
+          :categories="config.categories"
+          :selected-date="selectedDate"
+        />
+        <Card title="时间段统计" class="stats-card">
           <div class="stats-content">
             <div class="stat-item">
               <span class="stat-label">总时间段数：</span>
@@ -234,12 +246,6 @@
           </div>
         </Card>
 
-        <!-- 时间分类饼图 -->
-        <TimeCategoryPieChart
-          :time-slots="timeSlots"
-          :categories="config.categories"
-          :selected-date="selectedDate"
-        />
       </div>
     </div>
 
@@ -304,6 +310,7 @@ import {
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
+import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
 
 // 响应式数据
@@ -599,7 +606,10 @@ const getSlotStyle = (slot: TimeSlot) => {
 const getDragPreviewStyle = () => {
   if (!dragOperation.value || !timelineRef.value) return {};
 
-  const startTime = Math.min(dragOperation.value.startTime, dragOperation.value.currentTime);
+  const startTime = Math.min(
+    dragOperation.value.startTime,
+    dragOperation.value.currentTime,
+  );
   const endTime = Math.max(dragOperation.value.startTime, dragOperation.value.currentTime);
   const duration = endTime - startTime;
 
