@@ -621,7 +621,7 @@ const stickStyles = computed(() => (stick: string) => {
   };
   stickStyle[
     styleMapping.y[stick[0] as 'b' | 'm' | 't'] as 'height' | 'width'
-  ] = `${stickSize.value / parentScaleX.value / -2}px`;
+  ] = `${stickSize.value / parentScaleY.value / -2}px`;
   stickStyle[
     styleMapping.x[stick[1] as 'l' | 'm' | 'r'] as 'height' | 'width'
   ] = `${stickSize.value / parentScaleX.value / -2}px`;
@@ -796,7 +796,7 @@ const domEvents = ref(
     ['touchcancel', up],
     ['touchend', up],
     ['touchmove', move],
-    ['touchstart', up],
+    ['touchstart', deselect],
   ]),
 );
 

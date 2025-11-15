@@ -33,7 +33,7 @@ export function hasOverlapExcluding(slots: TimeSlot[], newSlot: TimeSlot, exclud
 // 返回下方时间段的开始时间，如果没有下方时间段则返回null
 export function getBelowSlotStartTime(slots: TimeSlot[], currentSlot: TimeSlot, excludeId?: string): number | null {
   // 过滤掉当前时间段本身
-  const otherSlots = slots.filter(slot => slot.id !== currentSlot.id && (!excludeId || slot.id !== excludeId));
+  const otherSlots = slots.filter(slot => slot.id !== currentSlot.id && (!excludeId || slot.id !== excludeId) && slot.date === currentSlot.date);
 
   // 找到所有在当前时间段下方的时段（开始时间大于当前时间段的结束时间）
   const belowSlots = otherSlots.filter(slot => slot.startTime >= currentSlot.endTime);
@@ -50,11 +50,29 @@ export function getBelowSlotStartTime(slots: TimeSlot[], currentSlot: TimeSlot, 
   return closestBelowSlot.startTime;
 }
 
+// 检测指定时间段上方的第一个时间段
+// 返回上方时间段的结束时间，如果没有上方时间段则返回null
+export function getAboveSlotEndTime(slots: TimeSlot[], currentSlot: TimeSlot, excludeId?: string): number | null {
+  const otherSlots = slots.filter(slot => slot.id !== currentSlot.id && (!excludeId || slot.id !== excludeId) && slot.date === currentSlot.date);
+  const aboveSlots = otherSlots.filter(slot => slot.endTime <= currentSlot.startTime);
+
+  if (aboveSlots.length === 0) {
+    return null;
+  }
+
+  // 找到最接近的上方时间段（结束时间最大的上方时间段）
+  const closestAboveSlot = aboveSlots.reduce((closest, slot) => {
+    return slot.endTime > closest.endTime ? slot : closest;
+  });
+
+  return closestAboveSlot.endTime;
+}
+
 // 验证时间段是否有效
 export function isValidSlot(slot: TimeSlot, config: TimeTrackerConfig): boolean {
   return (
     slot.startTime >= 0 &&
-    slot.endTime <= 1440 &&
+    slot.endTime <= 1439 &&
     slot.startTime < slot.endTime
   );
 }
@@ -70,7 +88,7 @@ export function getSlotPosition(slot: TimeSlot, containerHeight: number) {
 // 根据鼠标位置计算时间
 export function getTimeFromPosition(y: number, containerHeight: number): number {
   const totalMinutes = 1440;
-  return Math.round((y / containerHeight) * totalMinutes);
+  return Math.min(1439, Math.round((y / containerHeight) * totalMinutes));
 }
 
 // 对齐时间到最近的15分钟间隔

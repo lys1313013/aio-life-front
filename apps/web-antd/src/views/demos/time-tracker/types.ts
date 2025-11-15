@@ -44,4 +44,5 @@ export interface DragOperation {
   startY: number;
   startTime: number;
   currentTime: number;
+  direction?: 'top' | 'bottom';
 }

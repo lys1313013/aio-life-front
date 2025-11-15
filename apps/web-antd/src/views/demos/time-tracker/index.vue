@@ -4,7 +4,7 @@
     <div class="header">
       <div class="header-left">
         <!-- 统计模式切换 -->
-        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading">
+        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <Radio.Button value="day">日</Radio.Button>
           <Radio.Button value="week">周</Radio.Button>
         </Radio.Group>
@@ -15,6 +15,7 @@
             @click="goToPreviousPeriod"
             :disabled="loading"
             class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
           >
             <template #icon><LeftOutlined /></template>
           </Button>
@@ -25,31 +26,34 @@
             @change="handleDateChange"
             :disabled-date="disabledDate"
             :disabled="loading"
+            :size="isMobile ? 'small' : 'middle'"
           />
           <Button
             type="default"
             @click="goToNextPeriod"
             :disabled="loading"
             class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
           >
             <template #icon><RightOutlined /></template>
           </Button>
         </div>
       </div>
       <div class="actions">
-        <Button type="primary" @click="handleAddSlot" :disabled="loading">
+        <Button type="primary" @click="handleAddSlot" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><PlusOutlined /></template>
         </Button>
-        <Button type="primary" @click="showCategoryModal = true" :disabled="loading">
+        <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><SettingOutlined /></template>
           分类管理
         </Button>
-        <Button @click="resetData" :disabled="loading">清除数据</Button>
+        <Button @click="resetData" :disabled="loading" :size="isMobile ? 'small' : 'middle'">清除数据</Button>
         <Button
           v-if="statMode === 'day'"
           @click="copyPreviousDayData"
           :disabled="loading"
           type="dashed"
+          :size="isMobile ? 'small' : 'middle'"
         >
           <template #icon><CopyOutlined /></template>
           复制上一天
@@ -68,6 +72,7 @@
           @click="currentCategoryId = category.id"
           :style="{ borderColor: category.color }"
           :disabled="loading"
+          :size="isMobile ? 'small' : 'middle'"
         >
           <div class="category-button-content">
             <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
@@ -78,7 +83,7 @@
     </div>
 
     <!-- 时间轴容器 -->
-    <Spin :spinning="loading" size="large">
+    <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
       <!-- 按周统计模式 -->
       <template v-if="statMode === 'week'">
         <div class="week-timeline-container">
@@ -112,7 +117,7 @@
             </div>
 
             <!-- 每天的时间轴 -->
-            <div class="week-days-container">
+            <div class="week-days-container" @touchend="handleTrackPointerUp" @touchcancel="handleTrackPointerLeave">
               <div
                 v-for="(day, index) in weekDays"
                 :key="index"
@@ -124,7 +129,8 @@
                   :key="slot.id"
                   class="time-slot"
                   :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                  @mousedown="handleSlotMouseDown($event, slot)"
+                  @mousedown="handleSlotPointerDown($event, slot)"
+                  @touchstart="handleSlotPointerDown($event, slot)"
                   @click="handleSlotClick(slot)"
                 >
                   <div class="slot-content">
@@ -158,11 +164,15 @@
           <div
             ref="timelineRef"
             class="timeline-track"
-            @mousedown="handleTrackMouseDown"
-            @mousemove="handleTrackMouseMove"
-            @mouseup="handleTrackMouseUp"
-            @mouseleave="handleTrackMouseLeave"
-            :style="{ cursor: loading ? 'not-allowed' : 'crosshair' }"
+            @mousedown="handleTrackPointerDown"
+            @mousemove="handleTrackPointerMove"
+            @mouseup="handleTrackPointerUp"
+            @mouseleave="handleTrackPointerLeave"
+            @touchstart="handleTrackPointerDown"
+            @touchmove.prevent="handleTrackPointerMove"
+            @touchend="handleTrackPointerUp"
+            @touchcancel="handleTrackPointerLeave"
+            :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
           >
           <!-- 时间段 -->
           <div
@@ -170,7 +180,8 @@
             :key="slot.id"
             class="time-slot"
             :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-            @mousedown="handleSlotMouseDown($event, slot)"
+            @mousedown="handleSlotPointerDown($event, slot)"
+            @touchstart="handleSlotPointerDown($event, slot)"
             @click="handleSlotClick(slot)"
           >
             <div class="slot-content">
@@ -181,8 +192,8 @@
             </div>
 
             <!-- 调整手柄 -->
-            <div class="resize-handle top" @mousedown="handleResizeStart($event, slot, 'top')"></div>
-            <div class="resize-handle bottom" @mousedown="handleResizeStart($event, slot, 'bottom')"></div>
+            <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
+            <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
           </div>
 
           <!-- 拖拽预览 -->
@@ -229,7 +240,7 @@
     <Modal
       v-model:open="showEditModal"
       :title="editModalTitle"
-      :width="600"
+      :width="isMobile ? '95vw' : 600"
       :footer="null"
       @cancel="handleEditCancel"
     >
@@ -247,7 +258,7 @@
     <Modal
       v-model:open="showCategoryModal"
       title="分类管理"
-      :width="800"
+      :width="isMobile ? '95vw' : 800"
       :footer="null"
     >
       <CategoryManager
@@ -280,7 +291,8 @@ import {
   isValidSlot,
   generateId,
   getSlotPosition,
-  getBelowSlotStartTime
+  getBelowSlotStartTime,
+  getAboveSlotEndTime
 } from './utils';
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
@@ -300,6 +312,7 @@ const selectedDate = ref(dayjs());
 const loading = ref(false); // 新增loading状态
 const statMode = ref<'day' | 'week'>('day'); // 统计模式：day - 按天，week - 按周
 const selectedWeekDayIndex = ref(0); // 当前选中的星期几索引
+const isMobile = ref(false);
 
 // 配置
 const config = ref(defaultConfig);
@@ -368,10 +381,13 @@ const editModalTitle = computed(() => {
 onMounted(() => {
   loadData();
   startCurrentTimeUpdater();
+  updateIsMobile();
+  window.addEventListener('resize', updateIsMobile);
 });
 
 onUnmounted(() => {
   stopCurrentTimeUpdater();
+  window.removeEventListener('resize', updateIsMobile);
 });
 
 // 数据管理
@@ -534,6 +550,10 @@ const stopCurrentTimeUpdater = () => {
   }
 };
 
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
 // 样式计算
 const getSlotStyle = (slot: TimeSlot) => {
   // 在按周统计模式下，使用固定的时间轴高度（800px - 60px的头部高度 = 740px）
@@ -570,28 +590,30 @@ const getDragPreviewStyle = () => {
 };
 
 // 事件处理函数
-const handleTrackMouseDown = (event: MouseEvent) => {
-  if (!timelineRef.value) return;
-
-  const rect = timelineRef.value.getBoundingClientRect();
-  const y = event.clientY - rect.top;
-  const startTime = snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight));
-
-  dragOperation.value = {
-    type: 'create',
-    startY: y,
-    startTime,
-    currentTime: startTime
-  };
+const getClientY = (event: MouseEvent | TouchEvent) => {
+  if ('touches' in event && event.touches.length > 0) {
+    return event.touches[0].clientY;
+  }
+  if ('changedTouches' in event && event.changedTouches.length > 0) {
+    return event.changedTouches[0].clientY;
+  }
+  return (event as MouseEvent).clientY;
 };
 
-const handleTrackMouseMove = (event: MouseEvent) => {
-  if (!dragOperation.value || !timelineRef.value) return;
-
+const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
+  if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
-  const y = event.clientY - rect.top;
-  dragOperation.value.currentTime = snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight));
+  const y = getClientY(event) - rect.top;
+  const startTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
+  dragOperation.value = { type: 'create', startY: y, startTime, currentTime: startTime };
+};
 
+const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
+  if (!dragOperation.value || !timelineRef.value) return;
+  const rect = timelineRef.value.getBoundingClientRect();
+  const y = getClientY(event) - rect.top;
+  dragOperation.value.currentTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
+  
   // 处理时间段移动和调整大小
   if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
     const deltaY = y - dragOperation.value.startY;
@@ -602,21 +624,30 @@ const handleTrackMouseMove = (event: MouseEvent) => {
 
     if (dragOperation.value.type === 'move') {
       // 移动时间段
-      const newStartTime = Math.max(0, Math.min(1440 - (slot.endTime - slot.startTime), dragOperation.value.startTime + deltaTime));
+      const newStartTime = Math.max(0, Math.min(1439 - (slot.endTime - slot.startTime), dragOperation.value.startTime + deltaTime));
       const newEndTime = newStartTime + (slot.endTime - slot.startTime);
 
       // 检查下方时间段限制
       const movedSlot = { ...slot, startTime: newStartTime, endTime: newEndTime };
       const belowSlotStartTime = getBelowSlotStartTime(timeSlots.value, movedSlot, slot.id);
 
+      // 检查上方时间段限制：必须比上方结束时间大1分钟
+      const aboveSlotEndTime = getAboveSlotEndTime(timeSlots.value, movedSlot, slot.id);
+      if (aboveSlotEndTime !== null && movedSlot.startTime <= aboveSlotEndTime) {
+        const duration = slot.endTime - slot.startTime;
+        const minStartTime = aboveSlotEndTime + 1;
+        movedSlot.startTime = Math.max(minStartTime, movedSlot.startTime);
+        movedSlot.endTime = movedSlot.startTime + duration;
+      }
+
       // 如果下方有时间段，确保当前时间段不会与下方时间段重叠
-      if (belowSlotStartTime !== null && newEndTime > belowSlotStartTime) {
+      if (belowSlotStartTime !== null && movedSlot.endTime > belowSlotStartTime) {
         // 限制当前时间段的结束时间不能超过下方时间段的开始时间
         const maxEndTime = belowSlotStartTime;
         const maxStartTime = maxEndTime - (slot.endTime - slot.startTime);
 
         // 如果新的开始时间会导致重叠，则调整到最大允许位置
-        if (newStartTime > maxStartTime) {
+        if (movedSlot.startTime > maxStartTime) {
           movedSlot.startTime = maxStartTime;
           movedSlot.endTime = maxEndTime;
         }
@@ -629,8 +660,7 @@ const handleTrackMouseMove = (event: MouseEvent) => {
         slot.endTime = movedSlot.endTime;
       }
     } else if (dragOperation.value.type === 'resize') {
-      // 调整时间段大小
-      const newTime = Math.max(0, Math.min(1440, dragOperation.value.startTime + deltaTime));
+      const newTime = Math.max(0, Math.min(1439, dragOperation.value.startTime + deltaTime));
 
       if (dragOperation.value.slotId) {
         const resizeSlot = timeSlots.value.find(s => s.id === dragOperation.value?.slotId);
@@ -639,31 +669,29 @@ const handleTrackMouseMove = (event: MouseEvent) => {
         const originalStart = resizeSlot.startTime;
         const originalEnd = resizeSlot.endTime;
 
-        if (dragOperation.value.startTime === originalStart) {
-          // 调整顶部（开始时间）
-          const minEndTime = originalStart + config.value.minSlotDuration;
+        if (dragOperation.value.direction === 'top') {
           const newStartTime = Math.min(newTime, originalEnd - config.value.minSlotDuration);
           resizeSlot.startTime = Math.max(0, newStartTime);
+          const aboveSlots = timeSlots.value
+            .filter(s => s.id !== resizeSlot.id && s.date === resizeSlot.date && s.endTime <= originalStart)
+            .sort((a, b) => b.endTime - a.endTime);
+          if (aboveSlots.length > 0 && resizeSlot.startTime <= aboveSlots[0].endTime) {
+            resizeSlot.startTime = aboveSlots[0].endTime + 1;
+          }
         } else {
-          // 调整底部（结束时间）
-          const maxStartTime = originalEnd - config.value.minSlotDuration;
           const newEndTime = Math.max(newTime, originalStart + config.value.minSlotDuration);
-          resizeSlot.endTime = Math.min(1440, newEndTime);
+          resizeSlot.endTime = Math.min(1439, newEndTime);
         }
 
-        // 检查下方时间段限制（仅对调整底部有效）
-        if (dragOperation.value.startTime === originalEnd) {
+        if (dragOperation.value.direction === 'bottom') {
           const belowSlotStartTime = getBelowSlotStartTime(timeSlots.value, resizeSlot, resizeSlot.id);
           if (belowSlotStartTime !== null && resizeSlot.endTime > belowSlotStartTime) {
-            // 限制当前时间段的结束时间不能超过下方时间段的开始时间
             resizeSlot.endTime = belowSlotStartTime;
           }
         }
 
-        // 检查是否重叠（排除自身）
         const otherSlots = timeSlots.value.filter(s => s.id !== resizeSlot.id);
         if (hasOverlap(otherSlots, resizeSlot)) {
-          // 如果重叠，恢复原值
           resizeSlot.startTime = originalStart;
           resizeSlot.endTime = originalEnd;
         }
@@ -672,7 +700,7 @@ const handleTrackMouseMove = (event: MouseEvent) => {
   }
 };
 
-const handleTrackMouseUp = () => {
+const handleTrackPointerUp = () => {
   if (!dragOperation.value) {
     dragOperation.value = null;
     return;
@@ -727,19 +755,19 @@ const handleTrackMouseUp = () => {
   dragOperation.value = null;
 };
 
-const handleTrackMouseLeave = () => {
+const handleTrackPointerLeave = () => {
   if (dragOperation.value?.type === 'create') {
     dragOperation.value = null;
   }
 };
 
-const handleSlotMouseDown = (event: MouseEvent, slot: TimeSlot) => {
+const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) => {
   event.stopPropagation();
 
   if (!timelineRef.value) return;
 
   const rect = timelineRef.value.getBoundingClientRect();
-  const y = event.clientY - rect.top;
+  const y = getClientY(event) - rect.top;
 
   dragOperation.value = {
     type: 'move',
@@ -750,20 +778,21 @@ const handleSlotMouseDown = (event: MouseEvent, slot: TimeSlot) => {
   };
 };
 
-const handleResizeStart = (event: MouseEvent, slot: TimeSlot, direction: 'top' | 'bottom') => {
+const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot, direction: 'top' | 'bottom') => {
   event.stopPropagation();
 
   if (!timelineRef.value) return;
 
   const rect = timelineRef.value.getBoundingClientRect();
-  const y = event.clientY - rect.top;
+  const y = getClientY(event) - rect.top;
 
   dragOperation.value = {
     type: 'resize',
     slotId: slot.id,
     startY: y,
     startTime: direction === 'top' ? slot.startTime : slot.endTime,
-    currentTime: direction === 'top' ? slot.startTime : slot.endTime
+    currentTime: direction === 'top' ? slot.startTime : slot.endTime,
+    direction
   };
 };
 
@@ -809,7 +838,7 @@ const calculateSmartStartTime = (): number => {
 
   // 检查最后一个时间段之后是否有足够的空间
   const lastSlot = sameDaySlots[sameDaySlots.length - 1];
-  if (lastSlot.endTime + 30 <= 1440) {
+  if (lastSlot.endTime + 30 <= 1439) {
     return lastSlot.endTime + 1;
   }
 
@@ -847,7 +876,7 @@ const handleAddSlot = () => {
     // 如果空隙不足30分钟，设置结束时间为下一个时间段的开始时间
     const availableTime = nextSlot.startTime - smartStartTime - 1;
     if (availableTime < 30) {
-      endTime = Math.min(smartStartTime + availableTime, maxEndTime);
+      endTime = Math.min(smartStartTime + availableTime, isToday ? currentTime.value : 1439);
     }
   }
 
@@ -1098,14 +1127,15 @@ const copyPreviousDayData = async () => {
 }
 
 .week-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
   height: 60px;
   border-bottom: 1px solid #d9d9d9;
   background: #fafafa;
 }
 
 .time-scale-header {
-  width: 45px;
+  width: 60px;
   border-right: 1px solid #d9d9d9;
   flex-shrink: 0;
 }
@@ -1149,16 +1179,15 @@ const copyPreviousDayData = async () => {
 
 .week-days-container {
   flex: 1;
-  display: flex;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .week-day-track {
-  flex: 1;
   position: relative;
   background: #f8f9fa;
   border-right: 1px solid #d9d9d9;
-  min-width: 150px;
+  min-width: 0;
 }
 
 /* 调整时间槽在周视图中的样式 */
@@ -1327,5 +1356,54 @@ const copyPreviousDayData = async () => {
 .pie-chart-card {
   min-width: 400px;
   flex: 2;
+}
+
+@media (max-width: 768px) {
+  .time-tracker {
+    padding: 10px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .header-left {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .actions {
+    flex-wrap: wrap;
+  }
+  .category-selector {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .timeline-container {
+    height: calc(100vh - 320px);
+  }
+  .week-timeline-container {
+    height: calc(100vh - 320px);
+  }
+  .week-header {
+    grid-template-columns: 45px repeat(7, 1fr);
+  }
+  .time-scale {
+    width: 45px;
+  }
+  .hour-label {
+    font-size: 10px;
+  }
+  .slot-content {
+    padding: 6px;
+  }
+  .slot-title {
+    font-size: 12px;
+  }
+  .slot-time {
+    font-size: 11px;
+  }
+  .week-day-track {
+    min-width: 0;
+  }
 }
 </style>
