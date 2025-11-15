@@ -58,6 +58,13 @@ export async function batchUpdate(data: TimeRecordEntity[]): Promise<void> {
 /**
  * 删除数据
  */
+export async function deleteData(data: { id: string }): Promise<void> {
+  return await requestClient.post('/timeRecord/delete', data);
+}
+
+/**
+ * 删除数据
+ */
 export async function deleteByDate(data: { date: string }): Promise<void> {
   return await requestClient.post('/timeRecord/deleteByDate', data);
 }

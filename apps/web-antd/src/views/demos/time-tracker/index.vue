@@ -43,11 +43,37 @@
         <Button type="primary" @click="handleAddSlot" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><PlusOutlined /></template>
         </Button>
+        <Popover placement="bottom">
+          <template #content>
+            <div class="category-popover">
+              <div class="category-list">
+                <Button
+                  v-for="category in config.categories"
+                  :key="category.id"
+                  :type="currentCategoryId === category.id ? 'primary' : 'default'"
+                  @click="currentCategoryId = category.id"
+                  :style="{ borderColor: category.color }"
+                  :disabled="loading"
+                  :size="isMobile ? 'small' : 'middle'"
+                >
+                  <div class="category-button-content">
+                    <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
+                    {{ category.name }}
+                  </div>
+                </Button>
+              </div>
+            </div>
+          </template>
+          <Button type="default" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+            <template #icon><TagOutlined /></template>
+          </Button>
+        </Popover>
         <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><SettingOutlined /></template>
-          分类管理
         </Button>
-        <Button @click="resetData" :disabled="loading" :size="isMobile ? 'small' : 'middle'">清除数据</Button>
+        <Button type="primary" danger @click="resetData" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+          <template #icon><DeleteOutlined /></template>
+        </Button>
         <Button
           v-if="statMode === 'day'"
           @click="copyPreviousDayData"
@@ -61,32 +87,13 @@
       </div>
     </div>
 
-    <!-- 分类选择器 -->
-    <div class="category-selector">
-      <div class="category-label">当前分类：</div>
-      <div class="category-buttons">
-        <Button
-          v-for="category in config.categories"
-          :key="category.id"
-          :type="currentCategoryId === category.id ? 'primary' : 'default'"
-          @click="currentCategoryId = category.id"
-          :style="{ borderColor: category.color }"
-          :disabled="loading"
-          :size="isMobile ? 'small' : 'middle'"
-        >
-          <div class="category-button-content">
-            <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
-            {{ category.name }}
-          </div>
-        </Button>
-      </div>
-    </div>
+
 
     <!-- 时间轴容器 -->
     <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
       <!-- 按周统计模式 -->
       <template v-if="statMode === 'week'">
-        <div class="week-timeline-container">
+        <div class="week-timeline-container" ref="weekTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
           <!-- 星期标题行 -->
           <div class="week-header">
             <div class="time-scale-header"></div>
@@ -147,7 +154,7 @@
 
       <!-- 按天统计模式 -->
       <template v-else>
-        <div class="timeline-container">
+        <div class="timeline-container" ref="timelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
           <!-- 时间刻度 -->
           <div class="time-scale">
             <div
@@ -270,9 +277,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { SettingOutlined, PlusOutlined, CopyOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, message, DatePicker, Spin, Radio } from 'ant-design-vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { SettingOutlined, PlusOutlined, CopyOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
+import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -297,10 +304,13 @@ import {
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
-import { query, queryForWeek, batchUpdate, update, deleteByDate } from '#/api/core/time-tracker';
+import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
+const timelineContainerRef = ref<HTMLElement>();
+const weekTimelineContainerRef = ref<HTMLElement>();
+const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const currentCategoryId = ref(defaultConfig.defaultCategoryId);
 const dragOperation = ref<DragOperation | null>(null);
@@ -383,11 +393,14 @@ onMounted(() => {
   startCurrentTimeUpdater();
   updateIsMobile();
   window.addEventListener('resize', updateIsMobile);
+  window.addEventListener('resize', updateMobileTimelineHeight);
+  nextTick(() => updateMobileTimelineHeight());
 });
 
 onUnmounted(() => {
   stopCurrentTimeUpdater();
   window.removeEventListener('resize', updateIsMobile);
+  window.removeEventListener('resize', updateMobileTimelineHeight);
 });
 
 // 数据管理
@@ -498,6 +511,7 @@ const handleStatModeChange = () => {
   // 切换统计模式时重新加载数据
   selectedWeekDayIndex.value = 0; // 重置选中的星期几
   loadData();
+  nextTick(() => updateMobileTimelineHeight());
 };
 
 const goToPreviousPeriod = () => {
@@ -552,12 +566,25 @@ const stopCurrentTimeUpdater = () => {
 
 const updateIsMobile = () => {
   isMobile.value = window.innerWidth < 768;
+  nextTick(() => updateMobileTimelineHeight());
 };
 
+// 计算手机端可用高度
+const updateMobileTimelineHeight = () => {
+  if (!isMobile.value) return;
+  const containerEl = statMode.value === 'week' ? weekTimelineContainerRef.value : timelineContainerRef.value;
+  if (!containerEl) return;
+  const rect = containerEl.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const available = Math.max(300, viewportHeight - rect.top);
+  mobileTimelineHeight.value = available;
+};
 // 样式计算
 const getSlotStyle = (slot: TimeSlot) => {
-  // 在按周统计模式下，使用固定的时间轴高度（800px - 60px的头部高度 = 740px）
-  const timelineHeight = statMode.value === 'week' ? 740 : (timelineRef.value?.offsetHeight || 800);
+  const weekContainer = document.querySelector('.week-days-container') as HTMLElement | null;
+  const timelineHeight = statMode.value === 'week'
+    ? (weekContainer?.offsetHeight || 740)
+    : (timelineRef.value?.offsetHeight || 800);
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
   const category = config.value.categories.find(cat => cat.id === slot.categoryId);
@@ -613,7 +640,7 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
   dragOperation.value.currentTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
-  
+
   // 处理时间段移动和调整大小
   if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
     const deltaY = y - dragOperation.value.startY;
@@ -658,6 +685,9 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
       if (!hasOverlap(otherSlots, movedSlot)) {
         slot.startTime = movedSlot.startTime;
         slot.endTime = movedSlot.endTime;
+        if (dragOperation.value) {
+          dragOperation.value.changed = (dragOperation.value.originalStart !== slot.startTime) || (dragOperation.value.originalEnd !== slot.endTime);
+        }
       }
     } else if (dragOperation.value.type === 'resize') {
       const newTime = Math.max(0, Math.min(1439, dragOperation.value.startTime + deltaTime));
@@ -694,6 +724,12 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
         if (hasOverlap(otherSlots, resizeSlot)) {
           resizeSlot.startTime = originalStart;
           resizeSlot.endTime = originalEnd;
+          if (dragOperation.value) {
+            dragOperation.value.changed = false;
+          }
+        }
+        if (dragOperation.value) {
+          dragOperation.value.changed = dragOperation.value.changed || (dragOperation.value.originalStart !== resizeSlot.startTime) || (dragOperation.value.originalEnd !== resizeSlot.endTime);
         }
       }
     }
@@ -748,8 +784,9 @@ const handleTrackPointerUp = () => {
       }
     }
   } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
-    // 时间段移动或调整大小完成，保存数据
-    saveData();
+    if (dragOperation.value.changed) {
+      saveData();
+    }
   }
 
   dragOperation.value = null;
@@ -774,7 +811,10 @@ const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) =
     slotId: slot.id,
     startY: y,
     startTime: slot.startTime,
-    currentTime: slot.startTime
+    currentTime: slot.startTime,
+    originalStart: slot.startTime,
+    originalEnd: slot.endTime,
+    changed: false
   };
 };
 
@@ -792,7 +832,10 @@ const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot
     startY: y,
     startTime: direction === 'top' ? slot.startTime : slot.endTime,
     currentTime: direction === 'top' ? slot.startTime : slot.endTime,
-    direction
+    direction,
+    originalStart: slot.startTime,
+    originalEnd: slot.endTime,
+    changed: false
   };
 };
 
@@ -955,10 +998,19 @@ const handleSaveSlot = (formData: any) => {
   }
 };
 
-const handleDeleteSlot = (slotId: string) => {
-  timeSlots.value = timeSlots.value.filter(slot => slot.id !== slotId);
-  saveData();
-  showEditModal.value = false;
+const handleDeleteSlot = async (slotId: string) => {
+  try {
+    loading.value = true;
+    await deleteData({ id: slotId });
+    timeSlots.value = timeSlots.value.filter(slot => slot.id !== slotId);
+    showEditModal.value = false;
+    message.success('删除成功');
+  } catch (err) {
+    console.error('删除失败:', err);
+    message.error('删除失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
 const handleEditCancel = () => {
@@ -1054,7 +1106,6 @@ const copyPreviousDayData = async () => {
 .date-picker-container {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .date-nav-button {
@@ -1077,7 +1128,6 @@ const copyPreviousDayData = async () => {
 .category-selector {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
   padding: 15px;
   background: #f5f5f5;
   border-radius: 6px;
@@ -1093,6 +1143,16 @@ const copyPreviousDayData = async () => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.category-popover {
+  max-width: 280px;
+}
+
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .category-button-content {
@@ -1369,7 +1429,6 @@ const copyPreviousDayData = async () => {
   }
   .header-left {
     flex-wrap: wrap;
-    gap: 8px;
   }
   .actions {
     flex-wrap: wrap;
@@ -1388,7 +1447,7 @@ const copyPreviousDayData = async () => {
     grid-template-columns: 45px repeat(7, 1fr);
   }
   .time-scale {
-    width: 45px;
+    width: 40px;
   }
   .hour-label {
     font-size: 10px;

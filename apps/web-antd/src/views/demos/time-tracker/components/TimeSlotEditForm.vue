@@ -44,7 +44,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.startTime"
-                >-1分</Button>
+                >-1</Button>
                 <Button
                   size="small"
                   @click="adjustStartTime(1)"
@@ -52,7 +52,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.startTime"
-                >+1分</Button>
+                >+1</Button>
                 <Button
                   size="small"
                   @click="adjustStartTime(-30)"
@@ -60,7 +60,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.startTime"
-                >-30分</Button>
+                >-30</Button>
                 <Button
                   size="small"
                   @click="adjustStartTime(30)"
@@ -68,7 +68,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.startTime"
-                >+30分</Button>
+                >+30</Button>
               </div>
             </div>
           </Form.Item>
@@ -90,7 +90,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.endTime"
-                >-1分</Button>
+                >-1</Button>
                 <Button
                   size="small"
                   @click="adjustEndTime(1)"
@@ -98,7 +98,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.endTime"
-                >+1分</Button>
+                >+1</Button>
                 <Button
                   size="small"
                   @click="adjustEndTime(-30)"
@@ -106,7 +106,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.endTime"
-                >-30分</Button>
+                >-30</Button>
                 <Button
                   size="small"
                   @click="adjustEndTime(30)"
@@ -114,7 +114,7 @@
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
                   :disabled="!formState.endTime"
-                >+30分</Button>
+                >+30</Button>
               </div>
             </div>
           </Form.Item>
@@ -376,7 +376,7 @@ const startContinuousAdjust = (direction: number, type: 'start' | 'end') => {
     } else {
       adjustEndTime(continuousAdjustDirection.value);
     }
-    
+
     // 然后开始连续调整
     continuousAdjustInterval.value = setInterval(() => {
       if (continuousAdjustType.value === 'start') {

@@ -45,4 +45,7 @@ export interface DragOperation {
   startTime: number;
   currentTime: number;
   direction?: 'top' | 'bottom';
+  originalStart?: number;
+  originalEnd?: number;
+  changed?: boolean;
 }
