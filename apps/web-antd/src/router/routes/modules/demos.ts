@@ -77,7 +77,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '时间记录',
+          title: '时迹',
         },
         name: 'timeTracker',
         path: '/demos/time-tracker',
