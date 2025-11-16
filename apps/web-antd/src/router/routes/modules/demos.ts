@@ -86,6 +86,7 @@ const routes: RouteRecordRaw[] = [
       {
         meta: {
           title: '思考卡片',
+          icon: 'mdi:lightbulb-on-outline',
         },
         name: 'think',
         path: '/demos/think',
