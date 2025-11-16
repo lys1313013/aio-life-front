@@ -26,8 +26,12 @@
             @change="handleDateChange"
             :disabled-date="disabledDate"
             :disabled="loading"
-            :size="isMobile ? 'small' : 'middle'"
-          />
+            size="small"
+            :allowClear="false"
+            :style="{ width: isMobile ? '110px' : '120px' }"
+          >
+            <template #suffixIcon></template>
+          </DatePicker>
           <Button
             type="default"
             @click="goToNextPeriod"
@@ -1122,7 +1126,7 @@ const copyPreviousDayData = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 35px;
+  min-width: 28px;
 }
 
 .date-picker-label {
