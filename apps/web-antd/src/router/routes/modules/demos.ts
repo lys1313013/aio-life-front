@@ -61,19 +61,11 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: 'b站学习记录',
+          title: '视频学习记录',
         },
         name: 'bilibiliVideo',
         path: '/demos/bilibili-video',
         component: () => import('#/views/demos/bilibili-video/index.vue'),
-      },
-      {
-        meta: {
-          title: '测试界面',
-        },
-        name: 'test',
-        path: '/demos/test',
-        component: () => import('#/views/demos/test/index.vue'),
       },
       {
         meta: {
@@ -91,6 +83,14 @@ const routes: RouteRecordRaw[] = [
         name: 'think',
         path: '/demos/think',
         component: () => import('#/views/demos/think/index.vue'),
+      },
+      {
+        meta: {
+          title: '测试界面',
+        },
+        name: 'test',
+        path: '/demos/test',
+        component: () => import('#/views/demos/test/index.vue'),
       },
     ],
   },
