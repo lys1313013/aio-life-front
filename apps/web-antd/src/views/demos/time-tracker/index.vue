@@ -87,7 +87,7 @@
           :size="isMobile ? 'small' : 'middle'"
         >
           <template #icon><CopyOutlined /></template>
-          复制上一天
+          <span v-if="!isMobile">复制上一天</span>
         </Button>
       </div>
     </div>
@@ -283,6 +283,12 @@
           :categories="config.categories"
           :selected-date="selectedDate"
         />
+        <TimeCategoryAvgBarChart
+          v-if="statMode !== 'day'"
+          :time-slots="timeSlots"
+          :categories="config.categories"
+          :period-day-count="statMode === 'week' ? weekDays.length : monthDays.length"
+        />
         <!-- 时间分类饼图 -->
         <TimeCategoryPieChart
           :time-slots="timeSlots"
@@ -371,6 +377,7 @@ import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
+import TimeCategoryAvgBarChart from './components/TimeCategoryAvgBarChart.vue';
 import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
 
 // 响应式数据
@@ -1604,15 +1611,28 @@ const copyPreviousDayData = async () => {
     padding: 10px;
   }
   .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .header-left {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
   .actions {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .header-left .ant-radio-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+  }
+  .header-left .ant-radio-group .ant-radio-button-wrapper {
+    flex: 0 0 auto;
   }
   .category-selector {
     flex-direction: column;
@@ -1626,6 +1646,9 @@ const copyPreviousDayData = async () => {
   }
   .month-timeline-container {
     height: calc(100vh - 320px);
+  }
+  .month-header {
+    grid-template-columns: 40px repeat(var(--month-day-count, 30), 1fr);
   }
   .week-header {
     grid-template-columns: 45px repeat(7, 1fr);
