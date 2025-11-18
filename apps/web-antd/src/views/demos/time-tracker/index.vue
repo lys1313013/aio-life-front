@@ -7,6 +7,7 @@
         <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <Radio.Button value="day">日</Radio.Button>
           <Radio.Button value="week">周</Radio.Button>
+          <Radio.Button value="month">月</Radio.Button>
         </Radio.Group>
 
         <div class="date-picker-container">
@@ -26,9 +27,9 @@
             @change="handleDateChange"
             :disabled-date="disabledDate"
             :disabled="loading"
-            size="small"
+            :size="isMobile ? 'small' : 'middle'"
             :allowClear="false"
-            :style="{ width: isMobile ? '110px' : '120px' }"
+            :style="{ width: isMobile ? '100px' : '105px' }"
           >
             <template #suffixIcon></template>
           </DatePicker>
@@ -135,6 +136,61 @@
                 class="week-day-track"
               >
                 <!-- 时间段 -->
+                <div
+                  v-for="slot in getDaySlots(day.date)"
+                  :key="slot.id"
+                  class="time-slot"
+                  :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                  @mousedown="handleSlotPointerDown($event, slot)"
+                  @touchstart="handleSlotPointerDown($event, slot)"
+                  @click="handleSlotClick(slot)"
+                >
+                  <div class="slot-content">
+                    <div class="slot-info">
+                      <span class="slot-title">{{ slot.title }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="statMode === 'month'">
+        <div class="month-timeline-container" ref="monthTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px', '--month-day-count': monthDays.length } : { '--month-day-count': monthDays.length }">
+          <div class="month-header" ref="monthHeaderRef">
+            <div class="time-scale-header"></div>
+            <div
+              v-for="(day, index) in monthDays"
+              :key="index"
+              class="month-day-header"
+              @click="selectMonthDay(index)"
+              :class="{ active: selectedMonthDayIndex === index }"
+            >
+              <div class="day-name">{{ day.weekday }}</div>
+              <div class="day-date">{{ day.date }}</div>
+            </div>
+          </div>
+
+          <div class="month-timeline-wrapper">
+            <div class="time-scale">
+              <div
+                v-for="hour in 24"
+                :key="hour"
+                class="hour-marker"
+                :style="{ top: `${(hour / 24) * 100}%` }"
+              >
+                <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+              </div>
+            </div>
+
+            <div class="month-days-container" ref="monthDaysContainerRef" @scroll="syncMonthScroll">
+              <div
+                v-for="(day, index) in monthDays"
+                :key="index"
+                class="month-day-track"
+              >
                 <div
                   v-for="slot in getDaySlots(day.date)"
                   :key="slot.id"
@@ -321,6 +377,9 @@ import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } fr
 const timelineRef = ref<HTMLElement>();
 const timelineContainerRef = ref<HTMLElement>();
 const weekTimelineContainerRef = ref<HTMLElement>();
+const monthTimelineContainerRef = ref<HTMLElement>();
+const monthHeaderRef = ref<HTMLElement>();
+const monthDaysContainerRef = ref<HTMLElement>();
 const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const currentCategoryId = ref(defaultConfig.defaultCategoryId);
@@ -330,9 +389,10 @@ const showCategoryModal = ref(false);
 const editingSlot = ref<TimeSlot | null>(null);
 const currentTime = ref(0);
 const selectedDate = ref(dayjs());
-const loading = ref(false); // 新增loading状态
-const statMode = ref<'day' | 'week'>('day'); // 统计模式：day - 按天，week - 按周
-const selectedWeekDayIndex = ref(0); // 当前选中的星期几索引
+const loading = ref(false);
+const statMode = ref<'day' | 'week' | 'month'>('day');
+const selectedWeekDayIndex = ref(0);
+const selectedMonthDayIndex = ref(0);
 const isMobile = ref(false);
 
 // 配置
@@ -346,17 +406,18 @@ const totalDuration = computed(() => {
 // 计算空闲时间
 const freeTime = computed(() => {
   if (statMode.value === 'week') {
-    // 按周统计：一周总时间 = 7天 * 1440分钟 = 10080分钟
     const totalWeekMinutes = 7 * 1440;
-    const freeTime = totalWeekMinutes - totalDuration.value;
-    // 确保空闲时间不为负数
-    return Math.max(0, freeTime);
-  } else {
-    // 按天统计：一天总时间 = 1440分钟
-    const freeTime = 1440 - totalDuration.value;
-    // 确保空闲时间不为负数
-    return Math.max(0, freeTime);
+    const ft = totalWeekMinutes - totalDuration.value;
+    return Math.max(0, ft);
   }
+  if (statMode.value === 'month') {
+    const daysInMonth = selectedDate.value.daysInMonth();
+    const totalMonthMinutes = daysInMonth * 1440;
+    const ft = totalMonthMinutes - totalDuration.value;
+    return Math.max(0, ft);
+  }
+  const ft = 1440 - totalDuration.value;
+  return Math.max(0, ft);
 });
 
 // 计算当前周的所有日期
@@ -379,12 +440,34 @@ const weekDays = computed(() => {
   return days;
 });
 
+const monthDays = computed(() => {
+  const currentDay = selectedDate.value;
+  const startOfMonth = currentDay.startOf('month');
+  const endOfMonth = currentDay.endOf('month');
+  const days: Array<{ date: string; weekday: string; dayjs: any }> = [];
+  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  let iter = startOfMonth;
+  while (iter.isBefore(endOfMonth) || iter.isSame(endOfMonth, 'day')) {
+    const weekdayIndex = iter.isoWeekday() - 1;
+    days.push({
+      date: iter.format('YYYY-MM-DD'),
+      weekday: weekdays[weekdayIndex],
+      dayjs: iter
+    });
+    iter = iter.add(1, 'day');
+  }
+  return days;
+});
+
 
 
 // 获取当前选中日期
 const getCurrentSelectedDate = () => {
   if (statMode.value === 'week') {
     return weekDays.value[selectedWeekDayIndex.value]?.date || selectedDate.value.format('YYYY-MM-DD');
+  }
+  if (statMode.value === 'month') {
+    return monthDays.value[selectedMonthDayIndex.value]?.date || selectedDate.value.format('YYYY-MM-DD');
   }
   return selectedDate.value.format('YYYY-MM-DD');
 };
@@ -421,14 +504,12 @@ const loadData = async () => {
 
     let response;
 
-    if (statMode.value === 'week') {
-      // 按周查询，查询参数为时间区间
-      const weekDaysValue = weekDays.value;
-      const startDate = weekDaysValue.length > 0 ? weekDaysValue[0].date : '';
-      const endDate = weekDaysValue.length > 6 ? weekDaysValue[6].date : '';
+    if (statMode.value === 'week' || statMode.value === 'month') {
+      const daysValue = statMode.value === 'week' ? weekDays.value : monthDays.value;
+      const startDate = daysValue.length > 0 ? daysValue[0].date : '';
+      const endDate = daysValue.length > 0 ? daysValue[daysValue.length - 1].date : '';
       const queryParams = { condition: { startDate, endDate } };
 
-      // 调用按周查询接口
       response = await queryForWeek(queryParams);
 
       // 确保返回的数据是数组格式
@@ -520,17 +601,18 @@ const handleDateChange = () => {
 
 const handleStatModeChange = () => {
   // 切换统计模式时重新加载数据
-  selectedWeekDayIndex.value = 0; // 重置选中的星期几
+  selectedWeekDayIndex.value = 0;
+  selectedMonthDayIndex.value = 0;
   loadData();
   nextTick(() => updateMobileTimelineHeight());
 };
 
 const goToPreviousPeriod = () => {
   if (statMode.value === 'week') {
-    // 按周模式下，往前移动一周
     selectedDate.value = selectedDate.value.subtract(1, 'week');
+  } else if (statMode.value === 'month') {
+    selectedDate.value = selectedDate.value.subtract(1, 'month');
   } else {
-    // 按天模式下，往前移动一天
     selectedDate.value = selectedDate.value.subtract(1, 'day');
   }
   loadData();
@@ -538,10 +620,10 @@ const goToPreviousPeriod = () => {
 
 const goToNextPeriod = () => {
   if (statMode.value === 'week') {
-    // 按周模式下，往后移动一周
     selectedDate.value = selectedDate.value.add(1, 'week');
+  } else if (statMode.value === 'month') {
+    selectedDate.value = selectedDate.value.add(1, 'month');
   } else {
-    // 按天模式下，往后移动一天
     selectedDate.value = selectedDate.value.add(1, 'day');
   }
   loadData();
@@ -550,6 +632,10 @@ const goToNextPeriod = () => {
 // 选择星期几
 const selectWeekDay = (index: number) => {
   selectedWeekDayIndex.value = index;
+};
+
+const selectMonthDay = (index: number) => {
+  selectedMonthDayIndex.value = index;
 };
 
 const disabledDate = (current: dayjs.Dayjs) => {
@@ -580,10 +666,16 @@ const updateIsMobile = () => {
   nextTick(() => updateMobileTimelineHeight());
 };
 
+const syncMonthScroll = () => {
+  if (monthHeaderRef.value && monthDaysContainerRef.value) {
+    monthHeaderRef.value.scrollLeft = monthDaysContainerRef.value.scrollLeft;
+  }
+};
+
 // 计算手机端可用高度
 const updateMobileTimelineHeight = () => {
   if (!isMobile.value) return;
-  const containerEl = statMode.value === 'week' ? weekTimelineContainerRef.value : timelineContainerRef.value;
+  const containerEl = statMode.value === 'week' ? weekTimelineContainerRef.value : (statMode.value === 'month' ? monthTimelineContainerRef.value : timelineContainerRef.value);
   if (!containerEl) return;
   const rect = containerEl.getBoundingClientRect();
   const viewportHeight = window.innerHeight;
@@ -593,8 +685,11 @@ const updateMobileTimelineHeight = () => {
 // 样式计算
 const getSlotStyle = (slot: TimeSlot) => {
   const weekContainer = document.querySelector('.week-days-container') as HTMLElement | null;
+  const monthContainer = document.querySelector('.month-days-container') as HTMLElement | null;
   const timelineHeight = statMode.value === 'week'
     ? (weekContainer?.offsetHeight || 740)
+    : statMode.value === 'month'
+    ? (monthContainer?.offsetHeight || 740)
     : (timelineRef.value?.offsetHeight || 800);
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
@@ -1120,6 +1215,7 @@ const copyPreviousDayData = async () => {
 .date-picker-container {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .date-nav-button {
@@ -1198,6 +1294,77 @@ const copyPreviousDayData = async () => {
   display: flex;
   flex-direction: column;
   height: 800px;
+}
+
+.month-timeline-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 800px;
+}
+
+.month-header {
+  display: grid;
+  grid-template-columns: 60px repeat(var(--month-day-count, 30), 1fr);
+  height: 60px;
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+.month-day-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-right: 1px solid #d9d9d9;
+  transition: background-color 0.2s;
+  min-width: 80px;
+}
+
+.month-day-header:hover {
+  background: #f0f0f0;
+}
+
+.month-day-header.active {
+  background: #e6f7ff;
+  font-weight: 500;
+}
+
+.month-timeline-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.month-days-container {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--month-day-count, 30), minmax(80px, 1fr));
+  overflow-x: auto;
+}
+
+.month-day-track {
+  position: relative;
+  background: #f8f9fa;
+  border-right: 1px solid #d9d9d9;
+  min-width: 80px;
+}
+
+.month-day-track .time-slot {
+  left: 2px;
+  width: calc(100% - 4px);
+}
+
+.month-day-track .slot-content {
+  padding: 3px;
+}
+
+.month-day-track .slot-title {
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .week-header {
@@ -1457,8 +1624,17 @@ const copyPreviousDayData = async () => {
   .week-timeline-container {
     height: calc(100vh - 320px);
   }
+  .month-timeline-container {
+    height: calc(100vh - 320px);
+  }
   .week-header {
     grid-template-columns: 45px repeat(7, 1fr);
+  }
+  .month-day-header {
+    min-width: 60px;
+  }
+  .month-days-container {
+    grid-template-columns: repeat(var(--month-day-count, 30), minmax(60px, 1fr));
   }
   .time-scale {
     width: 40px;
