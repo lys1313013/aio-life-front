@@ -278,16 +278,16 @@
     <div class="statistics">
       <div class="stats-row">
         <!-- 时间分类柱状图 -->
-        <TimeCategoryBarChart
-          :time-slots="timeSlots"
-          :categories="config.categories"
-          :selected-date="selectedDate"
-        />
         <TimeCategoryAvgBarChart
           v-if="statMode !== 'day'"
           :time-slots="timeSlots"
           :categories="config.categories"
           :period-day-count="statMode === 'week' ? weekDays.length : monthDays.length"
+        />
+        <TimeCategoryBarChart
+          :time-slots="timeSlots"
+          :categories="config.categories"
+          :selected-date="selectedDate"
         />
         <!-- 时间分类饼图 -->
         <TimeCategoryPieChart
@@ -433,7 +433,7 @@ const weekDays = computed(() => {
   const startOfWeek = currentDay.startOf('isoWeek'); // 周一为一周的开始
   const days = [];
 
-  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
 
   for (let i = 0; i < 7; i++) {
     const day = startOfWeek.add(i, 'day');
@@ -452,7 +452,7 @@ const monthDays = computed(() => {
   const startOfMonth = currentDay.startOf('month');
   const endOfMonth = currentDay.endOf('month');
   const days: Array<{ date: string; weekday: string; dayjs: any }> = [];
-  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
   let iter = startOfMonth;
   while (iter.isBefore(endOfMonth) || iter.isSame(endOfMonth, 'day')) {
     const weekdayIndex = iter.isoWeekday() - 1;
@@ -1415,7 +1415,7 @@ const copyPreviousDayData = async () => {
 }
 
 .day-date {
-  font-size: 12px;
+  font-size: 9px;
   color: #8c8c8c;
 }
 
@@ -1562,8 +1562,6 @@ const copyPreviousDayData = async () => {
   border-radius: 4px;
   pointer-events: none;
 }
-
-
 
 .statistics {
   margin-top: 20px;

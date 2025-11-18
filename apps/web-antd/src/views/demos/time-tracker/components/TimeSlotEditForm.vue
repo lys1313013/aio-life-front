@@ -43,6 +43,9 @@
                   @mousedown="startContinuousAdjust(-1, 'start')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-1, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.startTime"
                 >-1</Button>
                 <Button
@@ -51,6 +54,9 @@
                   @mousedown="startContinuousAdjust(1, 'start')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(1, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.startTime"
                 >+1</Button>
                 <Button
@@ -59,6 +65,9 @@
                   @mousedown="startContinuousAdjust(-30, 'start')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-30, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.startTime"
                 >-30</Button>
                 <Button
@@ -67,6 +76,9 @@
                   @mousedown="startContinuousAdjust(30, 'start')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(30, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.startTime"
                 >+30</Button>
               </div>
@@ -89,6 +101,9 @@
                   @mousedown="startContinuousAdjust(-1, 'end')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-1, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.endTime"
                 >-1</Button>
                 <Button
@@ -97,6 +112,9 @@
                   @mousedown="startContinuousAdjust(1, 'end')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(1, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.endTime"
                 >+1</Button>
                 <Button
@@ -105,6 +123,9 @@
                   @mousedown="startContinuousAdjust(-30, 'end')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-30, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.endTime"
                 >-30</Button>
                 <Button
@@ -113,6 +134,9 @@
                   @mousedown="startContinuousAdjust(30, 'end')"
                   @mouseup="stopContinuousAdjust"
                   @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(30, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
                   :disabled="!formState.endTime"
                 >+30</Button>
               </div>

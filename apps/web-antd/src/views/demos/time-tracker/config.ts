@@ -58,9 +58,9 @@ export const defaultCategories: TimeSlotCategory[] = [
 // 默认配置
 export const defaultConfig: TimeTrackerConfig = {
   categories: defaultCategories,
-  defaultCategoryId: 'work',
+  defaultCategoryId: 'study',
   minSlotDuration: 15, // 15分钟
-  maxSlotDuration: 480 // 8小时
+  maxSlotDuration: 480, // 8小时
 };
 
 // 获取分类颜色
