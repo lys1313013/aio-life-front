@@ -76,12 +76,12 @@
         <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><SettingOutlined /></template>
         </Button>
-        <Button type="primary" danger @click="resetData" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+        <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><DeleteOutlined /></template>
         </Button>
         <Button
           v-if="statMode === 'day'"
-          @click="copyPreviousDayData"
+          @click="openCopyConfirmModal"
           :disabled="loading"
           type="dashed"
           :size="isMobile ? 'small' : 'middle'"
@@ -345,6 +345,48 @@
         @update="handleCategoriesUpdate"
       />
     </Modal>
+
+    <!-- 删除确认弹窗 -->
+    <Modal
+      v-model:open="showDeleteConfirmModal"
+      title="确认删除"
+      :width="isMobile ? '95vw' : 400"
+      :mask-closable="false"
+      @ok="confirmResetData"
+      @cancel="cancelDelete"
+    >
+      <div style="text-align: center; padding: 20px 0;">
+        <p style="font-size: 16px; margin-bottom: 10px;">确定要删除当前数据吗？</p>
+        <p style="color: #ff4d4f; font-size: 14px;">此操作不可恢复，请谨慎操作！</p>
+      </div>
+      <template #footer>
+        <div style="text-align: center;">
+          <Button @click="cancelDelete" :disabled="loading">取消</Button>
+          <Button type="primary" danger @click="confirmResetData" :loading="loading">确认删除</Button>
+        </div>
+      </template>
+    </Modal>
+
+    <!-- 复制确认弹窗 -->
+    <Modal
+      v-model:open="showCopyConfirmModal"
+      title="确认复制"
+      :width="isMobile ? '95vw' : 400"
+      :mask-closable="false"
+      @ok="confirmCopyPreviousDayData"
+      @cancel="cancelCopy"
+    >
+      <div style="text-align: center; padding: 20px 0;">
+        <p style="font-size: 16px; margin-bottom: 10px;">确定要复制上一天的数据吗？</p>
+        <p style="color: #faad14; font-size: 14px;">当前数据将被覆盖，请谨慎操作！</p>
+      </div>
+      <template #footer>
+        <div style="text-align: center;">
+          <Button @click="cancelCopy" :disabled="loading">取消</Button>
+          <Button type="primary" @click="confirmCopyPreviousDayData" :loading="loading">确认复制</Button>
+        </div>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -401,6 +443,10 @@ const statMode = ref<'day' | 'week' | 'month'>('day');
 const selectedWeekDayIndex = ref(0);
 const selectedMonthDayIndex = ref(0);
 const isMobile = ref(false);
+
+// 确认弹窗状态
+const showDeleteConfirmModal = ref(false);
+const showCopyConfirmModal = ref(false);
 
 // 配置
 const config = ref(defaultConfig);
@@ -584,21 +630,42 @@ const saveData = async () => {
   }
 };
 
-const resetData = async () => {
-  const currentDate = getCurrentSelectedDate();
+// 打开删除确认弹窗
+const openDeleteConfirmModal = () => {
+  showDeleteConfirmModal.value = true;
+};
 
-  if (statMode.value === 'week') {
-    // 按周模式下，清除整周数据
-    const promises = weekDays.value.map(day =>
-      deleteByDate({date: day.date})
-    );
-    await Promise.all(promises);
-  } else {
-    // 按天模式下，清除当天数据
-    await deleteByDate({date: currentDate});
+// 确认删除数据
+const confirmResetData = async () => {
+  try {
+    loading.value = true;
+    const currentDate = getCurrentSelectedDate();
+
+    if (statMode.value === 'week') {
+      // 按周模式下，清除整周数据
+      const promises = weekDays.value.map(day =>
+        deleteByDate({date: day.date})
+      );
+      await Promise.all(promises);
+    } else {
+      // 按天模式下，清除当天数据
+      await deleteByDate({date: currentDate});
+    }
+
+    timeSlots.value = [];
+    message.success('数据删除成功');
+  } catch (error) {
+    console.error('删除数据失败:', error);
+    message.error('删除数据失败');
+  } finally {
+    loading.value = false;
+    showDeleteConfirmModal.value = false;
   }
+};
 
-  timeSlots.value = [];
+// 取消删除
+const cancelDelete = () => {
+  showDeleteConfirmModal.value = false;
 };
 
 // 日期处理函数
@@ -1151,8 +1218,13 @@ const getDaySlots = (date: string): TimeSlot[] => {
   return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
 };
 
-// 复制上一天数据
-const copyPreviousDayData = async () => {
+// 打开复制确认弹窗
+const openCopyConfirmModal = () => {
+  showCopyConfirmModal.value = true;
+};
+
+// 确认复制上一天数据
+const confirmCopyPreviousDayData = async () => {
   try {
     loading.value = true;
 
@@ -1187,7 +1259,13 @@ const copyPreviousDayData = async () => {
     message.error('复制数据失败');
   } finally {
     loading.value = false;
+    showCopyConfirmModal.value = false;
   }
+};
+
+// 取消复制
+const cancelCopy = () => {
+  showCopyConfirmModal.value = false;
 };
 </script>
 
@@ -1202,7 +1280,7 @@ const copyPreviousDayData = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 
 .header-left {
@@ -1222,7 +1300,7 @@ const copyPreviousDayData = async () => {
 .date-picker-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 1px;
 }
 
 .date-nav-button {
