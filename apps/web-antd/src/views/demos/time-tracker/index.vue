@@ -45,9 +45,6 @@
         </div>
       </div>
       <div class="actions">
-        <Button type="primary" @click="handleAddSlot" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-          <template #icon><PlusOutlined /></template>
-        </Button>
         <Popover placement="bottom">
           <template #content>
             <div class="category-popover">
@@ -92,7 +89,19 @@
       </div>
     </div>
 
-
+    <!-- 右下角浮动添加按钮 -->
+    <div class="floating-add-button" :class="{ 'mobile': isMobile }">
+      <Button
+        type="primary"
+        shape="circle"
+        @click="handleAddSlot"
+        :disabled="loading"
+        :size="isMobile ? 'large' : 'large'"
+        class="add-button"
+      >
+        <template #icon><PlusOutlined /></template>
+      </Button>
+    </div>
 
     <!-- 时间轴容器 -->
     <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
@@ -1315,11 +1324,6 @@ const cancelCopy = () => {
   color: #595959;
 }
 
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
 .category-selector {
   display: flex;
   align-items: center;
@@ -1682,6 +1686,28 @@ const cancelCopy = () => {
   flex: 2;
 }
 
+/* 浮动添加按钮样式 */
+.floating-add-button {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+}
+
+.floating-add-button .add-button {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.floating-add-button .add-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.floating-add-button .add-button:active {
+  transform: scale(0.95);
+}
+
 @media (max-width: 768px) {
   .time-tracker {
     padding: 10px;
@@ -1699,8 +1725,9 @@ const cancelCopy = () => {
     flex-shrink: 0;
   }
   .actions {
+    display: flex;
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: 3px;
     flex-shrink: 0;
   }
   .header-left .ant-radio-group {
@@ -1752,6 +1779,18 @@ const cancelCopy = () => {
   }
   .week-day-track {
     min-width: 0;
+  }
+
+  /* 手机端浮动按钮样式 */
+  .floating-add-button {
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .floating-add-button .add-button {
+    width: 43px;
+    height: 43px;
+    font-size: 18px;
   }
 }
 </style>
