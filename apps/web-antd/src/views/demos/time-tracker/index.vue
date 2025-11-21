@@ -286,13 +286,6 @@
     <!-- 时间段统计 -->
     <div class="statistics">
       <div class="stats-row">
-        <!-- 时间分类柱状图 -->
-        <TimeCategoryAvgBarChart
-          v-if="statMode !== 'day'"
-          :time-slots="timeSlots"
-          :categories="config.categories"
-          :period-day-count="statMode === 'week' ? weekDays.length : monthDays.length"
-        />
         <TimeCategoryBarChart
           :time-slots="timeSlots"
           :categories="config.categories"
@@ -428,7 +421,6 @@ import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
-import TimeCategoryAvgBarChart from './components/TimeCategoryAvgBarChart.vue';
 import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
 
 // 响应式数据
@@ -1786,7 +1778,7 @@ const cancelCopy = () => {
     bottom: 16px;
     right: 16px;
   }
-  
+
   .floating-add-button .add-button {
     width: 43px;
     height: 43px;

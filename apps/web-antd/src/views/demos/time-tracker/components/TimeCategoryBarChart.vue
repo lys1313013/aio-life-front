@@ -30,17 +30,31 @@ const categoryDurations = computed(() => {
   return durations;
 });
 
+// 统计有数据的有效天数（按周/月用于平均）
+const activeDaysCount = computed(() => {
+  const dates = new Set<string>();
+  props.timeSlots.forEach(s => {
+    if (s && s.date) {
+      dates.add(s.date);
+    }
+  });
+  return dates.size;
+});
+
 const barChartData = computed(() => {
+  const divisor = Math.max(activeDaysCount.value, 1);
   const items = props.categories
     .map(category => {
-      const value = categoryDurations.value[category.id] || 0;
+      const total = categoryDurations.value[category.id] || 0;
+      const avg = Math.round(total / divisor);
       return {
         name: category.name,
-        value,
+        value: avg,
+        total,
         itemStyle: { color: category.color }
       };
     })
-    .filter(item => item.value > 0)
+    .filter(item => item.total > 0)
     .sort((a, b) => b.value - a.value);
 
   return items;
@@ -50,7 +64,6 @@ const renderBarChart = () => {
   if (!chartRef.value) return;
 
   const names = barChartData.value.map(i => i.name);
-  const values = barChartData.value.map(i => i.value);
 
   const options = {
     tooltip: {
@@ -58,10 +71,16 @@ const renderBarChart = () => {
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const p = Array.isArray(params) ? params[0] : params;
-        const duration = p.value;
-        const hours = Math.floor(duration / 60);
-        const minutes = duration % 60;
-        return `${p.name}<br/>${hours}小时${minutes}分钟\n总时长: ${duration}分钟`;
+        const avg = p.value as number;
+        const total = (p.data && typeof p.data.total === 'number') ? p.data.total : avg;
+        const avgHours = Math.floor(avg / 60);
+        const avgMinutes = avg % 60;
+        const totalHours = Math.floor(total / 60);
+        const totalMinutes = total % 60;
+        if (activeDaysCount.value > 1) {
+          return `${p.name}<br/>日均: ${avgHours}h${avgMinutes}m\n总: ${totalHours}h${totalMinutes}m\n`;
+        }
+        return `${p.name}<br/>${avgHours}小时${avgMinutes}分钟\n总时长: ${total}分钟`;
       }
     },
     grid: { left: 40, right: 20, top: 20, bottom: 40 },
@@ -72,7 +91,7 @@ const renderBarChart = () => {
     },
     yAxis: {
       type: 'value',
-      name: '分钟',
+      name: activeDaysCount.value > 1 ? '分钟/天' : '分钟',
       splitLine: { show: true }
     },
     series: [
@@ -86,7 +105,8 @@ const renderBarChart = () => {
             const duration = params.value;
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            return duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
+            const text = duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
+            return activeDaysCount.value > 1 ? `均 ${text}` : text;
           },
           fontSize: 10
         },
@@ -97,7 +117,7 @@ const renderBarChart = () => {
     ]
   };
 
-  renderEcharts(options);
+  renderEcharts(options as any);
 };
 
 watch([barChartData, props.selectedDate], () => {
