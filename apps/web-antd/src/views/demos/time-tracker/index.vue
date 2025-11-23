@@ -84,12 +84,211 @@
           :size="isMobile ? 'small' : 'middle'"
         >
           <template #icon><CopyOutlined /></template>
-          <span v-if="!isMobile">复制上一天</span>
         </Button>
       </div>
     </div>
 
-    <!-- 右下角浮动添加按钮 -->
+    <div class="content-layout">
+      <div class="left-panel">
+        <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
+          <template v-if="statMode === 'week'">
+            <div class="week-timeline-container" ref="weekTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
+              <div class="week-header">
+                <div class="time-scale-header"></div>
+                <div
+                  v-for="(day, index) in weekDays"
+                  :key="index"
+                  class="week-day-header"
+                  @click="selectWeekDay(index)"
+                  :class="{ active: selectedWeekDayIndex === index }"
+                >
+                  <div class="day-name">{{ day.weekday }}</div>
+                  <div class="day-date">{{ day.date }}</div>
+                </div>
+              </div>
+
+              <div class="week-timeline-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  </div>
+                </div>
+
+                <div class="week-days-container" @touchend="handleTrackPointerUp" @touchcancel="handleTrackPointerLeave">
+                  <div
+                    v-for="(day, index) in weekDays"
+                    :key="index"
+                    class="week-day-track"
+                  >
+                    <div
+                      v-for="slot in getDaySlots(day.date)"
+                      :key="slot.id"
+                      class="time-slot"
+                      :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                      @mousedown="handleSlotPointerDown($event, slot)"
+                      @touchstart="handleSlotPointerDown($event, slot)"
+                      @click="handleSlotClick(slot)"
+                    >
+                      <div class="slot-content">
+                        <div class="slot-info">
+                          <span class="slot-title">{{ slot.title }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="statMode === 'month'">
+            <div class="month-timeline-container" ref="monthTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px', '--month-day-count': monthDays.length } : { '--month-day-count': monthDays.length }">
+              <div class="month-header" ref="monthHeaderRef">
+                <div class="time-scale-header"></div>
+                <div
+                  v-for="(day, index) in monthDays"
+                  :key="index"
+                  class="month-day-header"
+                  @click="selectMonthDay(index)"
+                  :class="{ active: selectedMonthDayIndex === index }"
+                >
+                  <div class="day-name">{{ day.weekday }}</div>
+                  <div class="day-date">{{ day.date }}</div>
+                </div>
+              </div>
+
+              <div class="month-timeline-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  </div>
+                </div>
+
+                <div class="month-days-container" ref="monthDaysContainerRef" @scroll="syncMonthScroll">
+                  <div
+                    v-for="(day, index) in monthDays"
+                    :key="index"
+                    class="month-day-track"
+                  >
+                    <div
+                      v-for="slot in getDaySlots(day.date)"
+                      :key="slot.id"
+                      class="time-slot"
+                      :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                      @mousedown="handleSlotPointerDown($event, slot)"
+                      @touchstart="handleSlotPointerDown($event, slot)"
+                      @click="handleSlotClick(slot)"
+                    >
+                      <div class="slot-content">
+                        <div class="slot-info">
+                          <span class="slot-title">{{ slot.title }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <div class="timeline-container" ref="timelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
+              <div class="time-scale">
+                <div
+                  v-for="hour in 24"
+                  :key="hour"
+                  class="hour-marker"
+                  :style="{ top: `${(hour / 24) * 100}%` }"
+                >
+                  <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                </div>
+              </div>
+
+              <div
+                ref="timelineRef"
+                class="timeline-track"
+                @mousedown="handleTrackPointerDown"
+                @mousemove="handleTrackPointerMove"
+                @mouseup="handleTrackPointerUp"
+                @mouseleave="handleTrackPointerLeave"
+                @touchstart="handleTrackPointerDown"
+                @touchmove.prevent="handleTrackPointerMove"
+                @touchend="handleTrackPointerUp"
+                @touchcancel="handleTrackPointerLeave"
+                :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
+              >
+              <div
+                v-for="slot in timeSlots"
+                :key="slot.id"
+                class="time-slot"
+                :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                @mousedown="handleSlotPointerDown($event, slot)"
+                @touchstart="handleSlotPointerDown($event, slot)"
+                @click="handleSlotClick(slot)"
+              >
+                <div class="slot-content">
+                  <div class="slot-info">
+                    <span class="slot-title">{{ slot.title }}</span>
+                    <span class="slot-time">{{ formatSlotTime(slot) }}</span>
+                  </div>
+                </div>
+                <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
+                <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
+              </div>
+              <div
+                v-if="dragOperation"
+                class="drag-preview"
+                :style="getDragPreviewStyle()"
+              ></div>
+            </div>
+          </div>
+          </template>
+        </Spin>
+      </div>
+      <div class="right-panel">
+        <div>
+          <div class="stats-row">
+            <TimeCategoryBarChart
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <TimeCategoryPieChart
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <Card title="时间段统计" class="stats-card">
+              <div class="stats-content">
+                <div class="stat-item">
+                  <span class="stat-label">总时间段数：</span>
+                  <span class="stat-value">{{ timeSlots.length }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">总时长：</span>
+                  <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">空闲时间：</span>
+                  <span class="stat-value">{{ formatDuration(freeTime) }}</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="floating-add-button" :class="{ 'mobile': isMobile }">
       <Button
         type="primary"
@@ -101,220 +300,6 @@
       >
         <template #icon><PlusOutlined /></template>
       </Button>
-    </div>
-
-    <!-- 时间轴容器 -->
-    <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
-      <!-- 按周统计模式 -->
-      <template v-if="statMode === 'week'">
-        <div class="week-timeline-container" ref="weekTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
-          <!-- 星期标题行 -->
-          <div class="week-header">
-            <div class="time-scale-header"></div>
-            <div
-              v-for="(day, index) in weekDays"
-              :key="index"
-              class="week-day-header"
-              @click="selectWeekDay(index)"
-              :class="{ active: selectedWeekDayIndex === index }"
-            >
-              <div class="day-name">{{ day.weekday }}</div>
-              <div class="day-date">{{ day.date }}</div>
-            </div>
-          </div>
-
-          <!-- 星期时间轴 -->
-          <div class="week-timeline-wrapper">
-            <!-- 时间刻度 -->
-            <div class="time-scale">
-              <div
-                v-for="hour in 24"
-                :key="hour"
-                class="hour-marker"
-                :style="{ top: `${(hour / 24) * 100}%` }"
-              >
-                <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
-              </div>
-            </div>
-
-            <!-- 每天的时间轴 -->
-            <div class="week-days-container" @touchend="handleTrackPointerUp" @touchcancel="handleTrackPointerLeave">
-              <div
-                v-for="(day, index) in weekDays"
-                :key="index"
-                class="week-day-track"
-              >
-                <!-- 时间段 -->
-                <div
-                  v-for="slot in getDaySlots(day.date)"
-                  :key="slot.id"
-                  class="time-slot"
-                  :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                  @mousedown="handleSlotPointerDown($event, slot)"
-                  @touchstart="handleSlotPointerDown($event, slot)"
-                  @click="handleSlotClick(slot)"
-                >
-                  <div class="slot-content">
-                    <div class="slot-info">
-                      <span class="slot-title">{{ slot.title }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <template v-else-if="statMode === 'month'">
-        <div class="month-timeline-container" ref="monthTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px', '--month-day-count': monthDays.length } : { '--month-day-count': monthDays.length }">
-          <div class="month-header" ref="monthHeaderRef">
-            <div class="time-scale-header"></div>
-            <div
-              v-for="(day, index) in monthDays"
-              :key="index"
-              class="month-day-header"
-              @click="selectMonthDay(index)"
-              :class="{ active: selectedMonthDayIndex === index }"
-            >
-              <div class="day-name">{{ day.weekday }}</div>
-              <div class="day-date">{{ day.date }}</div>
-            </div>
-          </div>
-
-          <div class="month-timeline-wrapper">
-            <div class="time-scale">
-              <div
-                v-for="hour in 24"
-                :key="hour"
-                class="hour-marker"
-                :style="{ top: `${(hour / 24) * 100}%` }"
-              >
-                <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
-              </div>
-            </div>
-
-            <div class="month-days-container" ref="monthDaysContainerRef" @scroll="syncMonthScroll">
-              <div
-                v-for="(day, index) in monthDays"
-                :key="index"
-                class="month-day-track"
-              >
-                <div
-                  v-for="slot in getDaySlots(day.date)"
-                  :key="slot.id"
-                  class="time-slot"
-                  :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                  @mousedown="handleSlotPointerDown($event, slot)"
-                  @touchstart="handleSlotPointerDown($event, slot)"
-                  @click="handleSlotClick(slot)"
-                >
-                  <div class="slot-content">
-                    <div class="slot-info">
-                      <span class="slot-title">{{ slot.title }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- 按天统计模式 -->
-      <template v-else>
-        <div class="timeline-container" ref="timelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
-          <!-- 时间刻度 -->
-          <div class="time-scale">
-            <div
-              v-for="hour in 24"
-              :key="hour"
-              class="hour-marker"
-              :style="{ top: `${(hour / 24) * 100}%` }"
-            >
-              <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
-            </div>
-          </div>
-
-          <!-- 时间轴轨道 -->
-          <div
-            ref="timelineRef"
-            class="timeline-track"
-            @mousedown="handleTrackPointerDown"
-            @mousemove="handleTrackPointerMove"
-            @mouseup="handleTrackPointerUp"
-            @mouseleave="handleTrackPointerLeave"
-            @touchstart="handleTrackPointerDown"
-            @touchmove.prevent="handleTrackPointerMove"
-            @touchend="handleTrackPointerUp"
-            @touchcancel="handleTrackPointerLeave"
-            :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
-          >
-          <!-- 时间段 -->
-          <div
-            v-for="slot in timeSlots"
-            :key="slot.id"
-            class="time-slot"
-            :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-            @mousedown="handleSlotPointerDown($event, slot)"
-            @touchstart="handleSlotPointerDown($event, slot)"
-            @click="handleSlotClick(slot)"
-          >
-            <div class="slot-content">
-              <div class="slot-info">
-                <span class="slot-title">{{ slot.title }}</span>
-                <span class="slot-time">{{ formatSlotTime(slot) }}</span>
-              </div>
-            </div>
-
-            <!-- 调整手柄 -->
-            <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
-            <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
-          </div>
-
-          <!-- 拖拽预览 -->
-          <div
-            v-if="dragOperation"
-            class="drag-preview"
-            :style="getDragPreviewStyle()"
-          ></div>
-        </div>
-      </div>
-      </template>
-    </Spin>
-
-    <!-- 时间段统计 -->
-    <div class="statistics">
-      <div class="stats-row">
-        <TimeCategoryBarChart
-          :time-slots="timeSlots"
-          :categories="config.categories"
-          :selected-date="selectedDate"
-        />
-        <!-- 时间分类饼图 -->
-        <TimeCategoryPieChart
-          :time-slots="timeSlots"
-          :categories="config.categories"
-          :selected-date="selectedDate"
-        />
-        <Card title="时间段统计" class="stats-card">
-          <div class="stats-content">
-            <div class="stat-item">
-              <span class="stat-label">总时间段数：</span>
-              <span class="stat-value">{{ timeSlots.length }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">总时长：</span>
-              <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">空闲时间：</span>
-              <span class="stat-value">{{ formatDuration(freeTime) }}</span>
-            </div>
-          </div>
-        </Card>
-
-      </div>
     </div>
 
     <!-- 时间段编辑模态框 -->
@@ -1268,8 +1253,8 @@ const cancelCopy = () => {
 <style scoped>
 .time-tracker {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 .header {
@@ -1277,6 +1262,25 @@ const cancelCopy = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.content-layout {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.left-panel {
+  flex: 3;
+  min-width: 600px;
+}
+
+.right-panel {
+  flex: 2;
+  min-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .header-left {
@@ -1355,7 +1359,6 @@ const cancelCopy = () => {
 
 .timeline-container {
   position: relative;
-  margin-bottom: 30px;
   background: #fff;
   border: 1px solid #d9d9d9;
   border-radius: 6px;
@@ -1632,10 +1635,6 @@ const cancelCopy = () => {
   pointer-events: none;
 }
 
-.statistics {
-  margin-top: 20px;
-}
-
 .stats-row {
   display: flex;
   gap: 20px;
@@ -1698,6 +1697,13 @@ const cancelCopy = () => {
 @media (max-width: 768px) {
   .time-tracker {
     padding: 10px;
+  }
+  .content-layout {
+    flex-direction: column;
+  }
+  .left-panel, .right-panel {
+    min-width: 0;
+    width: 100%;
   }
   .header {
     flex-direction: row;
