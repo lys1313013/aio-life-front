@@ -1441,7 +1441,7 @@ const cancelCopy = () => {
 }
 
 .month-day-track .slot-content {
-  padding: 3px;
+  padding: 1px;
 }
 
 .month-day-track .slot-title {
@@ -1490,7 +1490,7 @@ const cancelCopy = () => {
 }
 
 .day-date {
-  font-size: 9px;
+  font-size: 8px;
   color: #8c8c8c;
 }
 
@@ -1577,7 +1577,7 @@ const cancelCopy = () => {
 }
 
 .slot-content {
-  padding: 8px;
+  padding: 1px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -1804,9 +1804,6 @@ const cancelCopy = () => {
   }
   .hour-label {
     font-size: 10px;
-  }
-  .slot-content {
-    padding: 6px;
   }
   .slot-title {
     font-size: 12px;
