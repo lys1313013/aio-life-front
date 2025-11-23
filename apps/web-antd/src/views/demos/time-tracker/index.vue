@@ -289,17 +289,20 @@
       </div>
     </div>
 
-    <div class="floating-add-button" :class="{ 'mobile': isMobile }">
+    <div v-if="isMobile" class="floating-add-button mobile">
       <Button
         type="primary"
         shape="circle"
         @click="handleAddSlot"
         :disabled="loading"
-        :size="isMobile ? 'large' : 'large'"
+        :size="'large'"
         class="add-button"
       >
         <template #icon><PlusOutlined /></template>
       </Button>
+    </div>
+    <div v-else class="floating-btn" @click="handleAddSlot">
+      <PlusOutlined style="font-size: 24px; color: white" />
     </div>
 
     <!-- 时间段编辑模态框 -->
@@ -1692,6 +1695,47 @@ const cancelCopy = () => {
 
 .floating-add-button .add-button:active {
   transform: scale(0.95);
+}
+
+.floating-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  background-color: #1890ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 10000;
+  user-select: none;
+}
+
+.floating-btn:hover {
+  background-color: #40a9ff;
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.floating-btn::before,
+.floating-btn::after {
+  content: '';
+  position: absolute;
+  background-color: white;
+}
+
+.floating-btn::before {
+  width: 24px;
+  height: 2px;
+}
+
+.floating-btn::after {
+  width: 2px;
+  height: 24px;
 }
 
 @media (max-width: 768px) {
