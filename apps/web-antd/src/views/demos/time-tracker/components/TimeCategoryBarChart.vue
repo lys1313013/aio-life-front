@@ -91,7 +91,7 @@ const renderBarChart = () => {
     },
     yAxis: {
       type: 'value',
-      name: activeDaysCount.value > 1 ? '分钟/天' : '分钟',
+      name: '',
       splitLine: { show: true }
     },
     series: [
@@ -130,7 +130,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card title="时间分类柱状图" class="bar-chart-card">
+  <Card class="bar-chart-card">
     <div class="bar-chart-container">
       <EchartsUI ref="chartRef" />
     </div>

@@ -1,5 +1,5 @@
 <template>
-  <Card :title="`时间分类统计`" class="pie-chart-card">
+  <Card class="pie-chart-card">
     <div class="pie-chart-container">
       <EchartsUI ref="chartRef" />
     </div>
