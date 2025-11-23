@@ -2,48 +2,6 @@
   <div class="time-tracker">
     <!-- 标题和操作栏 -->
     <div class="header">
-      <div class="header-left">
-        <!-- 统计模式切换 -->
-        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-          <Radio.Button value="day">日</Radio.Button>
-          <Radio.Button value="week">周</Radio.Button>
-          <Radio.Button value="month">月</Radio.Button>
-        </Radio.Group>
-
-        <div class="date-picker-container">
-          <Button
-            type="default"
-            @click="goToPreviousPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><LeftOutlined /></template>
-          </Button>
-          <DatePicker
-            v-model:value="selectedDate"
-            format="YYYY-MM-DD"
-            placeholder="选择日期"
-            @change="handleDateChange"
-            :disabled-date="disabledDate"
-            :disabled="loading"
-            :size="isMobile ? 'small' : 'middle'"
-            :allowClear="false"
-            :style="{ width: isMobile ? '100px' : '105px' }"
-          >
-            <template #suffixIcon></template>
-          </DatePicker>
-          <Button
-            type="default"
-            @click="goToNextPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><RightOutlined /></template>
-          </Button>
-        </div>
-      </div>
       <div class="actions">
         <Popover placement="bottom">
           <template #content>
@@ -85,6 +43,47 @@
         >
           <template #icon><CopyOutlined /></template>
         </Button>
+      </div>
+      <div class="header-left">
+        <div class="date-picker-container">
+          <Button
+            type="default"
+            @click="goToPreviousPeriod"
+            :disabled="loading"
+            class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><LeftOutlined /></template>
+          </Button>
+          <DatePicker
+            v-model:value="selectedDate"
+            format="YYYY-MM-DD"
+            placeholder="选择日期"
+            @change="handleDateChange"
+            :disabled-date="disabledDate"
+            :disabled="loading"
+            :size="isMobile ? 'small' : 'middle'"
+            :allowClear="false"
+            :style="{ width: isMobile ? '100px' : '105px' }"
+          >
+            <template #suffixIcon></template>
+          </DatePicker>
+          <Button
+            type="default"
+            @click="goToNextPeriod"
+            :disabled="loading"
+            class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><RightOutlined /></template>
+          </Button>
+        </div>
+        <!-- 统计模式切换 -->
+        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+          <Radio.Button value="day">日</Radio.Button>
+          <Radio.Button value="week">周</Radio.Button>
+          <Radio.Button value="month">月</Radio.Button>
+        </Radio.Group>
       </div>
     </div>
 
@@ -1289,6 +1288,7 @@ const cancelCopy = () => {
 .header-left {
   display: flex;
   align-items: center;
+  margin-left: auto;
 }
 
 .header-left .ant-radio-group {
@@ -1304,6 +1304,7 @@ const cancelCopy = () => {
   display: flex;
   align-items: center;
   gap: 1px;
+  padding-right: 2px;
 }
 
 .date-nav-button {
