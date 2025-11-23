@@ -1129,11 +1129,6 @@ const handleSaveSlot = (formData: any) => {
     // 编辑现有时间段
     const updatedSlot = { ...timeSlots.value[index], ...formData };
 
-    // 如果用户没有修改标题，自动更新为分类名称
-    if (updatedSlot.title === timeSlots.value[index].title) {
-      updatedSlot.title = getCategoryName(updatedSlot.categoryId, config.value.categories);
-    }
-
     // 检查重叠时，只考虑同一天内的时间段
       const sameDaySlots = timeSlots.value.filter(
         (slot: TimeSlot) => slot.date === updatedSlot.date && slot.id !== formData.id
