@@ -1441,7 +1441,7 @@ const cancelCopy = () => {
 }
 
 .month-day-track .slot-content {
-  padding: 1px;
+  padding: 3px;
 }
 
 .month-day-track .slot-title {
@@ -1577,7 +1577,7 @@ const cancelCopy = () => {
 }
 
 .slot-content {
-  padding: 1px;
+  padding: 8px;
   height: 100%;
   display: flex;
   align-items: center;
