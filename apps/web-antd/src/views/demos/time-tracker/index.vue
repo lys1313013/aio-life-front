@@ -79,7 +79,7 @@
           </Button>
         </div>
         <!-- 统计模式切换 -->
-        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'default'">
           <Radio.Button value="day">日</Radio.Button>
           <Radio.Button value="week">周</Radio.Button>
           <Radio.Button value="month">月</Radio.Button>
@@ -492,7 +492,7 @@ const monthDays = computed(() => {
     const weekdayIndex = iter.isoWeekday() - 1;
     days.push({
       date: iter.format('YYYY-MM-DD'),
-      weekday: weekdays[weekdayIndex],
+      weekday: weekdays[weekdayIndex] || '',
       dayjs: iter
     });
     iter = iter.add(1, 'day');
@@ -547,8 +547,8 @@ const loadData = async () => {
 
     if (statMode.value === 'week' || statMode.value === 'month') {
       const daysValue = statMode.value === 'week' ? weekDays.value : monthDays.value;
-      const startDate = daysValue.length > 0 ? daysValue[0].date : '';
-      const endDate = daysValue.length > 0 ? daysValue[daysValue.length - 1].date : '';
+      const startDate = daysValue.length > 0 ? daysValue[0]?.date || '' : '';
+      const endDate = daysValue.length > 0 ? daysValue[daysValue.length - 1]?.date || '' : '';
       const queryParams = { condition: { startDate, endDate } };
 
       response = await queryForWeek(queryParams);
@@ -556,9 +556,9 @@ const loadData = async () => {
       // 确保返回的数据是数组格式
       if (Array.isArray(response)) {
         timeSlots.value = response;
-      } else if (response && response.items) {
+      } else if (response && (response as any).items) {
         // 如果返回的是QueryResponse格式，提取items
-        timeSlots.value = response.items;
+        timeSlots.value = (response as any).items || [];
       } else {
         timeSlots.value = [];
       }
@@ -700,7 +700,7 @@ const selectMonthDay = (index: number) => {
   selectedMonthDayIndex.value = index;
 };
 
-const disabledDate = (current: dayjs.Dayjs) => {
+const disabledDate = (_current: dayjs.Dayjs) => {
   // 可以禁用未来的日期，这里暂时不禁用任何日期
   return false;
 };
@@ -790,12 +790,12 @@ const getDragPreviewStyle = () => {
 // 事件处理函数
 const getClientY = (event: MouseEvent | TouchEvent) => {
   if ('touches' in event && event.touches.length > 0) {
-    return event.touches[0].clientY;
+    return event.touches[0]?.clientY || 0;
   }
   if ('changedTouches' in event && event.changedTouches.length > 0) {
-    return event.changedTouches[0].clientY;
+    return event.changedTouches[0]?.clientY || 0;
   }
-  return (event as MouseEvent).clientY;
+  return (event as MouseEvent).clientY || 0;
 };
 
 const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
@@ -876,7 +876,7 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
           const aboveSlots = timeSlots.value
             .filter(s => s.id !== resizeSlot.id && s.date === resizeSlot.date && s.endTime <= originalStart)
             .sort((a, b) => b.endTime - a.endTime);
-          if (aboveSlots.length > 0 && resizeSlot.startTime <= aboveSlots[0].endTime) {
+          if (aboveSlots.length > 0 && aboveSlots[0] && resizeSlot.startTime <= aboveSlots[0].endTime) {
             resizeSlot.startTime = aboveSlots[0].endTime + 1;
           }
         } else {
@@ -1032,7 +1032,7 @@ const calculateSmartStartTime = (): number => {
   }
 
   // 检查第一个时间段之前是否有足够的空间（从00:00开始）
-  if (sameDaySlots[0].startTime >= 30) {
+  if (sameDaySlots[0]?.startTime && sameDaySlots[0].startTime >= 30) {
     return 0;
   }
 
@@ -1042,23 +1042,23 @@ const calculateSmartStartTime = (): number => {
     const nextSlot = sameDaySlots[i + 1];
 
     // 计算当前时间段结束时间和下一个时间段开始时间之间的空隙大小
-    const gapSize = nextSlot.startTime - currentSlot.endTime - 1;
+    const gapSize = nextSlot!.startTime - currentSlot!.endTime - 1;
 
     // 如果空隙足够容纳30分钟的时间段，或者空隙大于0（允许插入较短时间段）
     if (gapSize >= 30 || gapSize > 0) {
-      return currentSlot.endTime + 1;
+      return currentSlot!.endTime + 1;
     }
   }
 
   // 检查最后一个时间段之后是否有足够的空间
   const lastSlot = sameDaySlots[sameDaySlots.length - 1];
-  if (lastSlot.endTime + 30 <= 1439) {
+  if (lastSlot?.endTime && lastSlot.endTime + 30 <= 1439) {
     return lastSlot.endTime + 1;
   }
 
   // 如果没有足够的空间，返回当天最后一个时间段的结束时间 + 1分钟
   // 但确保不超过23:59
-  return Math.min(lastSlot.endTime + 1, 1439);
+  return Math.min((lastSlot?.endTime || 0) + 1, 1439);
 };
 
 const handleAddSlot = () => {
