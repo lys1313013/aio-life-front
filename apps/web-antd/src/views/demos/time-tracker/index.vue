@@ -34,7 +34,12 @@
         <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
           <template #icon><DeleteOutlined /></template>
         </Button>
-
+        <CategoryFilter
+          :categories="config.categories"
+          :loading="loading"
+          :size="isMobile ? 'small' : 'middle'"
+          @filterChange="handleFilterChange"
+        />
       </div>
       <div class="header-left">
         <div class="date-picker-container">
@@ -106,7 +111,7 @@
                     class="hour-marker"
                     :style="{ top: `${(hour / 24) * 100}%` }"
                   >
-                    <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
                   </div>
                 </div>
 
@@ -161,7 +166,7 @@
                     class="hour-marker"
                     :style="{ top: `${(hour / 24) * 100}%` }"
                   >
-                    <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
                   </div>
                 </div>
 
@@ -201,7 +206,7 @@
                   class="hour-marker"
                   :style="{ top: `${(hour / 24) * 100}%` }"
                 >
-                  <span class="hour-label">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
                 </div>
               </div>
 
@@ -249,7 +254,18 @@
       <div class="right-panel">
         <div>
           <div class="stats-row">
+            <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
+            <DailyCategoryBarChart
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
+            <!-- 默认显示分类柱状图 -->
             <TimeCategoryBarChart
+              v-if="!selectedFilterCategoryId || statMode === 'day'"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
@@ -354,7 +370,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined, FilterOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -381,6 +397,8 @@ import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
+import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
+import CategoryFilter from './components/CategoryFilter.vue';
 import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
 
 // 响应式数据
@@ -394,6 +412,7 @@ const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const currentCategoryId = ref(defaultConfig.defaultCategoryId);
 const dragOperation = ref<DragOperation | null>(null);
+const selectedFilterCategoryId = ref<string | null>(null);
 const showEditModal = ref(false);
 const showCategoryModal = ref(false);
 const editingSlot = ref<TimeSlot | null>(null);
@@ -414,6 +433,14 @@ const config = ref(defaultConfig);
 // 计算属性
 const totalDuration = computed(() => {
   return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
+});
+
+// 筛选后的时间槽
+const filteredTimeSlots = computed(() => {
+  if (!selectedFilterCategoryId.value) {
+    return timeSlots.value;
+  }
+  return timeSlots.value.filter(slot => slot.categoryId === selectedFilterCategoryId.value);
 });
 
 // 计算空闲时间
@@ -629,6 +656,10 @@ const cancelDelete = () => {
 };
 
 // 日期处理函数
+const handleFilterChange = (categoryId: string | null) => {
+  selectedFilterCategoryId.value = categoryId;
+};
+
 const handleDateChange = () => {
   loadData();
 };
@@ -728,11 +759,20 @@ const getSlotStyle = (slot: TimeSlot) => {
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
   const category = config.value.categories.find(cat => cat.id === slot.categoryId);
+  
+  // 高亮显示选中的分类
+  const isHighlighted = selectedFilterCategoryId.value 
+    ? slot.categoryId === selectedFilterCategoryId.value
+    : false;
 
   return {
     top: `${top}px`,
     height: `${height}px`,
-    backgroundColor: category?.color || '#d9d9d9'
+    backgroundColor: category?.color || '#d9d9d9',
+    opacity: selectedFilterCategoryId.value && !isHighlighted ? 0.3 : 1,
+    border: isHighlighted ? '2px solid #1890ff' : 'none',
+    boxShadow: isHighlighted ? '0 0 8px rgba(24, 144, 255, 0.5)' : 'none',
+    zIndex: isHighlighted ? 10 : 1
   };
 };
 
@@ -1170,7 +1210,11 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 
 // 获取某天的时间段数据
 const getDaySlots = (date: string): TimeSlot[] => {
-  return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
+  const slots = timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
+  if (!selectedFilterCategoryId.value) {
+    return slots;
+  }
+  return slots.filter(slot => slot.categoryId === selectedFilterCategoryId.value);
 };
 
 
