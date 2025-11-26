@@ -47,7 +47,11 @@ export const defaultCategories: TimeSlotCategory[] = [
     name: '通勤',
     color: '#eb2f96',
   },
-
+  {
+    id: 'finance-investment',
+    name: '理财',
+    color: '#fa8c16',
+  },
   {
     id: 'other',
     name: '其他',

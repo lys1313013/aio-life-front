@@ -1,33 +1,19 @@
-<template>
-  <Card class="daily-bar-chart-card">
-    <template #title>
-      <div class="chart-header">
-        <span>{{ chartTitle }}</span>
-        <div v-if="selectedFilterCategory" class="filter-indicator">
-          <div class="color-indicator" :style="{ backgroundColor: selectedFilterCategory.color }"></div>
-          <span>{{ selectedFilterCategory.name }}</span>
-        </div>
-      </div>
-    </template>
-    <div class="daily-bar-chart-container">
-      <EchartsUI ref="chartRef" />
-    </div>
-  </Card>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { Card } from 'ant-design-vue';
-import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import dayjs from 'dayjs';
 import type { TimeSlot, TimeSlotCategory } from '../types';
+
+import { computed, onMounted, ref, watch } from 'vue';
+
+import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
+
+import { Card } from 'ant-design-vue';
+import dayjs from 'dayjs';
 
 interface Props {
   timeSlots: TimeSlot[];
   categories: TimeSlotCategory[];
   selectedDate: dayjs.Dayjs;
-  statMode: 'week' | 'month';
-  selectedFilterCategoryId: string | null;
+  statMode: 'month' | 'week';
+  selectedFilterCategoryId: null | string;
 }
 
 const props = defineProps<Props>();
@@ -37,7 +23,10 @@ const { renderEcharts } = useEcharts(chartRef);
 
 const selectedFilterCategory = computed(() => {
   if (!props.selectedFilterCategoryId) return null;
-  return props.categories.find(cat => cat.id === props.selectedFilterCategoryId) || null;
+  return (
+    props.categories.find((cat) => cat.id === props.selectedFilterCategoryId) ||
+    null
+  );
 });
 
 const chartTitle = computed(() => {
@@ -69,19 +58,22 @@ const dailyCategoryData = computed(() => {
   }
 
   // 统计每个分类的时长
-  props.timeSlots.forEach(slot => {
-    if (props.selectedFilterCategoryId && slot.categoryId !== props.selectedFilterCategoryId) {
+  props.timeSlots.forEach((slot) => {
+    if (
+      props.selectedFilterCategoryId &&
+      slot.categoryId !== props.selectedFilterCategoryId
+    ) {
       return;
     }
-    
+
     if (data[slot.date] !== undefined) {
-      data[slot.date] += (slot.endTime - slot.startTime + 1);
+      data[slot.date] += slot.endTime - slot.startTime + 1;
     }
   });
 
   return {
     days,
-    data: days.map(date => data[date] || 0)
+    data: days.map((date) => data[date] || 0),
   };
 });
 
@@ -89,13 +81,13 @@ const renderChart = () => {
   if (!chartRef.value) return;
 
   const { days, data } = dailyCategoryData.value;
-  
-  // 格式化日期显示
-  const formattedDays = days.map(date => {
+
+  // 格式化日期显示 - 只显示日期数字
+  const formattedDays = days.map((date) => {
     const day = dayjs(date);
-    return props.statMode === 'week' 
-      ? `${day.format('MM-DD')}(${['日', '一', '二', '三', '四', '五', '六'][day.day()]})`
-      : day.format('MM-DD');
+    return props.statMode === 'week'
+      ? `${day.date()}(${['日', '一', '二', '三', '四', '五', '六'][day.day()]})`
+      : day.date().toString();
   });
 
   const options = {
@@ -108,16 +100,16 @@ const renderChart = () => {
         const duration = param.value as number;
         const hours = Math.floor(duration / 60);
         const minutes = duration % 60;
-        
+
         return `${dayjs(date).format('YYYY年MM月DD日')}<br/>
                 ${param.seriesName}: ${hours}小时${minutes}分钟`;
-      }
+      },
     },
-    grid: { 
-      left: 40, 
-      right: 20, 
-      top: 60, 
-      bottom: props.statMode === 'month' ? 80 : 40 
+    grid: {
+      left: 40,
+      right: 20,
+      top: 60,
+      bottom: props.statMode === 'month' ? 80 : 40,
     },
     xAxis: {
       type: 'category',
@@ -125,23 +117,27 @@ const renderChart = () => {
       axisLabel: {
         interval: 0,
         rotate: props.statMode === 'month' ? 45 : 0,
-        fontSize: 10
-      }
+        fontSize: 10,
+      },
     },
     yAxis: {
       type: 'value',
       name: '分钟',
-      splitLine: { show: true }
+      splitLine: { show: true },
     },
     series: [
       {
-        name: props.selectedFilterCategoryId && selectedFilterCategory.value ? selectedFilterCategory.value.name : '总时长',
+        name:
+          props.selectedFilterCategoryId && selectedFilterCategory.value
+            ? selectedFilterCategory.value.name
+            : '总时长',
         type: 'bar',
-        data: data,
+        data,
         itemStyle: {
-          color: props.selectedFilterCategoryId && selectedFilterCategory.value 
-            ? selectedFilterCategory.value.color 
-            : '#1890ff'
+          color:
+            props.selectedFilterCategoryId && selectedFilterCategory.value
+              ? selectedFilterCategory.value.color
+              : '#1890ff',
         },
         label: {
           show: true,
@@ -153,23 +149,47 @@ const renderChart = () => {
             const minutes = duration % 60;
             return hours > 0 ? `${hours}h` : `${minutes}m`;
           },
-          fontSize: 10
-        }
-      }
-    ]
+          fontSize: 10,
+        },
+      },
+    ],
   };
 
   renderEcharts(options as any);
 };
 
-watch([dailyCategoryData, props.selectedFilterCategoryId], () => {
-  renderChart();
-}, { immediate: true });
+watch(
+  [dailyCategoryData, props.selectedFilterCategoryId],
+  () => {
+    renderChart();
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   renderChart();
 });
 </script>
+
+<template>
+  <Card class="daily-bar-chart-card">
+    <template #title>
+      <div class="chart-header">
+        <span>{{ chartTitle }}</span>
+        <div v-if="selectedFilterCategory" class="filter-indicator">
+          <div
+            class="color-indicator"
+            :style="{ backgroundColor: selectedFilterCategory.color }"
+          ></div>
+          <span>{{ selectedFilterCategory.name }}</span>
+        </div>
+      </div>
+    </template>
+    <div class="daily-bar-chart-container">
+      <EchartsUI ref="chartRef" />
+    </div>
+  </Card>
+</template>
 
 <style scoped>
 .daily-bar-chart-card {

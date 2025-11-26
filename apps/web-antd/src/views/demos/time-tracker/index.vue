@@ -2,46 +2,48 @@
   <div class="time-tracker">
     <!-- 标题和操作栏 -->
     <div class="header">
-      <div class="actions">
-        <Popover placement="bottom">
-          <template #content>
-            <div class="category-popover">
-              <div class="category-list">
-                <Button
-                  v-for="category in config.categories"
-                  :key="category.id"
-                  :type="currentCategoryId === category.id ? 'primary' : 'default'"
-                  @click="currentCategoryId = category.id"
-                  :style="{ borderColor: category.color }"
-                  :disabled="loading"
-                  :size="isMobile ? 'small' : 'middle'"
-                >
-                  <div class="category-button-content">
-                    <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
-                    {{ category.name }}
-                  </div>
-                </Button>
+      <div class="header-right">
+        <!-- 按钮区 -->
+        <div class="actions">
+          <Popover placement="bottom">
+            <template #content>
+              <div class="category-popover">
+                <div class="category-list">
+                  <Button
+                    v-for="category in config.categories"
+                    :key="category.id"
+                    :type="currentCategoryId === category.id ? 'primary' : 'default'"
+                    @click="currentCategoryId = category.id"
+                    :style="{ borderColor: category.color }"
+                    :disabled="loading"
+                    :size="isMobile ? 'small' : 'middle'"
+                  >
+                    <div class="category-button-content">
+                      <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
+                      {{ category.name }}
+                    </div>
+                  </Button>
+                </div>
               </div>
-            </div>
-          </template>
-          <Button type="default" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-            <template #icon><TagOutlined /></template>
+            </template>
+            <Button type="default" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+              <template #icon><TagOutlined /></template>
+            </Button>
+          </Popover>
+          <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+            <template #icon><SettingOutlined /></template>
           </Button>
-        </Popover>
-        <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-          <template #icon><SettingOutlined /></template>
-        </Button>
-        <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-          <template #icon><DeleteOutlined /></template>
-        </Button>
-        <CategoryFilter
-          :categories="config.categories"
-          :loading="loading"
-          :size="isMobile ? 'small' : 'middle'"
-          @filterChange="handleFilterChange"
-        />
-      </div>
-      <div class="header-left">
+          <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+            <template #icon><DeleteOutlined /></template>
+          </Button>
+          <CategoryFilter
+            :categories="config.categories"
+            :loading="loading"
+            :size="isMobile ? 'small' : 'middle'"
+            @filterChange="handleFilterChange"
+          />
+        </div>
+        <!-- 日期切换区 -->
         <div class="date-picker-container">
           <Button
             type="default"
@@ -52,19 +54,21 @@
           >
             <template #icon><LeftOutlined /></template>
           </Button>
-          <DatePicker
-            v-model:value="selectedDate"
-            format="YYYY-MM-DD"
-            placeholder="选择日期"
-            @change="handleDateChange"
-            :disabled-date="disabledDate"
-            :disabled="loading"
-            :size="isMobile ? 'small' : 'middle'"
-            :allowClear="false"
-            :style="{ width: isMobile ? '100px' : '105px' }"
-          >
-            <template #suffixIcon></template>
-          </DatePicker>
+          <div class="date-picker-wrapper">
+            <span class="date-text">{{ selectedDate.format('YYYY-MM-DD') }}</span>
+            <DatePicker
+              class="hidden-date-picker"
+              v-model:value="selectedDate"
+              format="YYYY-MM-DD"
+              :allowClear="false"
+              @change="handleDateChange"
+              :disabled-date="disabledDate"
+              :disabled="loading"
+              :size="isMobile ? 'small' : 'middle'"
+            >
+              <template #suffixIcon></template>
+            </DatePicker>
+          </div>
           <Button
             type="default"
             @click="goToNextPeriod"
@@ -75,7 +79,7 @@
             <template #icon><RightOutlined /></template>
           </Button>
         </div>
-        <!-- 统计模式切换 -->
+        <!-- 日周月切换区 -->
         <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'default'">
           <Radio.Button value="day">日</Radio.Button>
           <Radio.Button value="week">周</Radio.Button>
@@ -759,9 +763,9 @@ const getSlotStyle = (slot: TimeSlot) => {
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
   const category = config.value.categories.find(cat => cat.id === slot.categoryId);
-  
+
   // 高亮显示选中的分类
-  const isHighlighted = selectedFilterCategoryId.value 
+  const isHighlighted = selectedFilterCategoryId.value
     ? slot.categoryId === selectedFilterCategoryId.value
     : false;
 
@@ -1225,9 +1229,21 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 3px; /* 控制三个区域之间的间距 */
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .content-layout {
@@ -1249,16 +1265,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
   gap: 16px;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-
-.header-left .ant-radio-group {
-  margin-right: 10px;
-}
-
 .header h2 {
   margin: 0;
   color: #262626;
@@ -1267,28 +1273,106 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .date-picker-container {
   display: flex;
   align-items: center;
-  gap: 1px;
-  padding-right: 2px;
+  gap: 0;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background-color: #fff;
+  transition: all 0.2s;
 }
 
-.date-nav-button {
+.date-nav-button.ant-btn {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  height: 30px !important;
+  width: 32px !important;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
+  color: rgba(0, 0, 0, 0.65);
 }
 
-.date-picker-label {
-  font-weight: 500;
-  color: #595959;
+.date-nav-button.ant-btn:hover {
+  color: #4096ff;
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
-.category-selector {
-  display: flex;
+.date-nav-button:first-child {
+  border-right: 1px solid #f0f0f0 !important;
+}
+
+.date-nav-button:last-child {
+  border-left: 1px solid #f0f0f0 !important;
+}
+
+.date-picker-wrapper {
+  position: relative;
+  display: inline-flex;
   align-items: center;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 6px;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 4px;
+  height: 30px;
+}
+
+.date-picker-wrapper:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.date-text {
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+.hidden-date-picker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 1;
+  min-width: 0 !important;
+  visibility: visible;
+}
+
+/* 覆盖之前的样式，避免冲突 */
+.date-picker-container .ant-picker {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  width: auto !important;
+}
+
+.date-picker-container .ant-picker::before,
+.date-picker-container .ant-picker::after {
+  display: none;
+}
+
+/* 手机端样式 */
+@media (max-width: 768px) {
+  .date-picker-container {
+    border-radius: 5px;
+  }
+  
+  .date-nav-button.ant-btn {
+    height: 24px !important;
+    width: 24px !important;
+  }
+
+  .date-picker-container .ant-picker {
+    height: 24px !important;
+  }
+
+  .date-picker-wrapper {
+    height: 24px;
+  }
 }
 
 .category-label {
@@ -1322,7 +1406,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .color-indicator {
   width: 12px;
   height: 12px;
-  border-radius: 50%;
 }
 
 .timeline-container {
@@ -1353,7 +1436,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .month-header {
   display: grid;
   grid-template-columns: 60px repeat(var(--month-day-count, 30), 1fr);
-  height: 60px;
+  height: 45px;
   border-bottom: 1px solid #d9d9d9;
   background: #fafafa;
   overflow: hidden;
@@ -1417,7 +1500,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .week-header {
   display: grid;
   grid-template-columns: 60px repeat(7, 1fr);
-  height: 60px;
+  height: 45px;
   border-bottom: 1px solid #d9d9d9;
   background: #fafafa;
 }
@@ -1722,9 +1805,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .header-left {
+  .header-right {
     flex-wrap: nowrap;
     flex-shrink: 0;
+    gap: 8px;
   }
   .actions {
     display: flex;
@@ -1732,11 +1816,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
     gap: 3px;
     flex-shrink: 0;
   }
-  .header-left .ant-radio-group {
+  .header-right .ant-radio-group {
     display: inline-flex;
     flex-wrap: nowrap;
   }
-  .header-left .ant-radio-group .ant-radio-button-wrapper {
+  .header-right .ant-radio-group .ant-radio-button-wrapper {
     flex: 0 0 auto;
   }
   .category-selector {
@@ -1753,31 +1837,63 @@ const getDaySlots = (date: string): TimeSlot[] => {
     height: calc(100vh - 320px);
   }
   .month-header {
-    grid-template-columns: 40px repeat(var(--month-day-count, 30), 1fr);
+    grid-template-columns: 35px repeat(var(--month-day-count, 30), minmax(45px, 1fr));
   }
   .week-header {
-    grid-template-columns: 45px repeat(7, 1fr);
+    grid-template-columns: 35px repeat(7, 1fr);
   }
   .month-day-header {
-    min-width: 60px;
+    min-width: 45px;
+    padding: 2px;
   }
   .month-days-container {
-    grid-template-columns: repeat(var(--month-day-count, 30), minmax(60px, 1fr));
+    grid-template-columns: repeat(var(--month-day-count, 30), minmax(45px, 1fr));
+  }
+  .month-day-track {
+    min-width: 45px;
+    overflow: hidden;
   }
   .time-scale {
-    width: 40px;
+    width: 35px;
   }
   .hour-label {
-    font-size: 10px;
+    font-size: 9px;
+    left: 2px;
   }
   .slot-title {
-    font-size: 12px;
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .slot-time {
-    font-size: 11px;
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .week-day-track {
     min-width: 0;
+  }
+  /* 修复月视图时间槽溢出问题 */
+  .month-day-track .time-slot {
+    left: 1px;
+    width: calc(100% - 2px);
+    min-height: 20px;
+  }
+  .month-day-track .slot-content {
+    padding: 2px 1px;
+    overflow: hidden;
+  }
+  .month-day-track .slot-info {
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .day-name {
+    font-size: 12px;
+  }
+  .day-date {
+    font-size: 7px;
   }
 
   /* 手机端浮动按钮样式 */
