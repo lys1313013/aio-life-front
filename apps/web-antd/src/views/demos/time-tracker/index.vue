@@ -370,7 +370,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined, FilterOutlined } from '@ant-design/icons-vue';
+import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
@@ -1210,11 +1210,7 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 
 // 获取某天的时间段数据
 const getDaySlots = (date: string): TimeSlot[] => {
-  const slots = timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
-  if (!selectedFilterCategoryId.value) {
-    return slots;
-  }
-  return slots.filter(slot => slot.categoryId === selectedFilterCategoryId.value);
+  return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
 };
 
 
