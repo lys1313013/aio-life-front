@@ -13,6 +13,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:book-settings-outline',
           title: '字典管理',
         },
         name: 'sysDictType',
@@ -21,6 +22,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:database-search-outline',
           title: '字典数据',
         },
         name: 'sysDictData',
@@ -29,6 +31,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:clipboard-text-clock-outline',
           title: '待办看板',
         },
         name: 'todo',
@@ -37,6 +40,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:monitor-dashboard',
           title: '设备墙',
         },
         name: 'device',
@@ -45,6 +49,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:chart-line-variant',
           title: '演出数据',
         },
         name: 'performance',
@@ -53,6 +58,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:run-fast',
           title: '运动',
         },
         name: 'sysDictType',
@@ -61,6 +67,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:video-vintage',
           title: '视频学习记录',
         },
         name: 'bilibiliVideo',
@@ -69,6 +76,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:timeline-clock-outline',
           title: '时迹',
           backTop: false,
         },
@@ -87,6 +95,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:flask-outline',
           title: '测试界面',
         },
         name: 'test',
@@ -107,6 +116,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:cash-plus',
           title: '收入',
         },
         name: 'income',
@@ -115,6 +125,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:chart-bar',
           title: '收入看板',
         },
         name: 'incomeDashboard',
@@ -123,6 +134,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:cash-minus',
           title: '支出',
         },
         name: 'exp',
@@ -131,6 +143,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:chart-bell-curve',
           title: '支出看板',
         },
         name: 'expenseDashboard',
@@ -139,6 +152,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:finance',
           title: '收支综合看板',
         },
         name: 'financeDashboard',
@@ -147,6 +161,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          icon: 'mdi:import',
           title: '外部账单导入',
         },
         name: 'alipayImport',
