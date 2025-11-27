@@ -68,3 +68,10 @@ export async function deleteData(data: { id: string }): Promise<void> {
 export async function deleteByDate(data: { date: string }): Promise<void> {
   return await requestClient.post('/timeRecord/deleteByDate', data);
 }
+
+/**
+ * 获取推荐分类
+ */
+export async function recommendType(params: { date: string; time: number }): Promise<string> {
+  return await requestClient.get('/timeRecord/recommendType', { params });
+}

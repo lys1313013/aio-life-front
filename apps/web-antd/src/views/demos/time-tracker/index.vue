@@ -403,7 +403,7 @@ import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
 import CategoryFilter from './components/CategoryFilter.vue';
-import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData } from '#/api/core/time-tracker';
+import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData, recommendType } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -615,7 +615,7 @@ const saveData = async () => {
     }));
 
     // 调用批量更新接口
-    await batchUpdate(updateData);
+    await batchUpdate(updateData as any);
   } catch (error) {
     console.error('保存数据失败:', error);
   }
@@ -923,7 +923,7 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   }
 };
 
-const handleTrackPointerUp = () => {
+const handleTrackPointerUp = async () => {
   if (!dragOperation.value) {
     dragOperation.value = null;
     return;
@@ -937,12 +937,23 @@ const handleTrackPointerUp = () => {
     const duration = endTime - startTime;
 
     if (duration >= config.value.minSlotDuration) {
+      let recommendedCategoryId = currentCategoryId.value;
+      try {
+        const middleTime = Math.floor((startTime + endTime) / 2);
+        const result = await recommendType({ date: selectedDate.value.format('YYYY-MM-DD'), time: middleTime });
+        if (result) {
+          recommendedCategoryId = result;
+        }
+      } catch (error) {
+        console.error('获取推荐分类失败', error);
+      }
+
       const newSlot: TimeSlot = {
         id: generateId(),
         startTime,
         endTime,
-        categoryId: currentCategoryId.value,
-        title: getCategoryName(currentCategoryId.value, config.value.categories),
+        categoryId: recommendedCategoryId,
+        title: getCategoryName(recommendedCategoryId, config.value.categories),
         date: selectedDate.value.format('YYYY-MM-DD')
       };
       // 重叠的时候，取上方的最大值和下方的最小值
@@ -1077,7 +1088,7 @@ const calculateSmartStartTime = (): number => {
   return Math.min((lastSlot?.endTime || 0) + 1, 1439);
 };
 
-const handleAddSlot = () => {
+const handleAddSlot = async () => {
   const currentDate = getCurrentSelectedDate();
 
   // 获取当天的时间段，按开始时间排序
@@ -1110,13 +1121,25 @@ const handleAddSlot = () => {
     }
   }
 
+  // 获取推荐分类
+  let recommendedCategoryId = currentCategoryId.value;
+  try {
+    const middleTime = Math.floor((smartStartTime + endTime) / 2);
+    const result = await recommendType({ date: currentDate, time: middleTime });
+    if (result) {
+      recommendedCategoryId = result;
+    }
+  } catch (error) {
+    console.error('获取推荐分类失败', error);
+  }
+
   // 创建新的时间段对象
   const newSlot: TimeSlot = {
     id: generateId(),
     startTime: smartStartTime,
     endTime: endTime,
-    categoryId: currentCategoryId.value,
-    title: getCategoryName(currentCategoryId.value, config.value.categories),
+    categoryId: recommendedCategoryId,
+    title: getCategoryName(recommendedCategoryId, config.value.categories),
     description: '',
     date: currentDate
   };
