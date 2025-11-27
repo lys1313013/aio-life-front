@@ -86,7 +86,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          title: '思考卡片',
+          title: '闪念',
           icon: 'mdi:lightbulb-on-outline',
         },
         name: 'think',
@@ -109,7 +109,7 @@ const routes: RouteRecordRaw[] = [
       icon: 'ri:money-cny-circle-line',
       keepAlive: true,
       order: 999,
-      title: '收支管理',
+      title: '财务中心',
     },
     name: 'finance',
     path: '/finance',
