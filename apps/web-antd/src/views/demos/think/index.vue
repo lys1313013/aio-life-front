@@ -15,7 +15,7 @@ interface Thought {
   content: string;
   events: Event[];
   likes: number;
-  date: string;
+  createTime: string;
 }
 
 const thoughts = ref<Thought[]>([]);
@@ -216,7 +216,7 @@ onMounted(async () => {
       >
         <div class="card-content">{{ thought.content }}</div>
         <div class="card-footer">
-          <span class="card-date">{{ formatDate(thought.date) }}</span>
+          <span class="card-date">{{ formatDate(thought.createTime) }}</span>
           <Tag color="blue">事件 {{ (thought.events || []).length }}</Tag>
         </div>
       </Card>
