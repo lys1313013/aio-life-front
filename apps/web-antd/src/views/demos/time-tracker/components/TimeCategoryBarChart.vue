@@ -120,7 +120,7 @@ const renderBarChart = () => {
   renderEcharts(options as any);
 };
 
-watch([barChartData, props.selectedDate], () => {
+watch([barChartData, () => props.selectedDate], () => {
   renderBarChart();
 }, { immediate: true });
 

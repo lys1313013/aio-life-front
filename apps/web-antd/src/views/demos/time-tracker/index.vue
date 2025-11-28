@@ -274,22 +274,31 @@
               :categories="config.categories"
               :selected-date="selectedDate"
             />
+            <DailyStatsPieChart
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
             <TimeCategoryPieChart
+              v-if="statMode === 'day' || !selectedFilterCategoryId"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
             />
-            <Card title="时间段统计" class="stats-card">
+            <Card class="stats-card">
               <div class="stats-content">
                 <div class="stat-item">
                   <span class="stat-label">总时间段数：</span>
-                  <span class="stat-value">{{ timeSlots.length }}</span>
+                  <span class="stat-value">{{ filteredTimeSlots.length }}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">总时长：</span>
                   <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" v-if="!selectedFilterCategoryId">
                   <span class="stat-label">空闲时间：</span>
                   <span class="stat-value">{{ formatDuration(freeTime) }}</span>
                 </div>
@@ -402,6 +411,7 @@ import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
+import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
 import CategoryFilter from './components/CategoryFilter.vue';
 import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData, recommendType } from '#/api/core/time-tracker';
 
@@ -435,16 +445,16 @@ const showDeleteConfirmModal = ref(false);
 const config = ref(defaultConfig);
 
 // 计算属性
-const totalDuration = computed(() => {
-  return timeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
-});
-
 // 筛选后的时间槽
 const filteredTimeSlots = computed(() => {
   if (!selectedFilterCategoryId.value) {
     return timeSlots.value;
   }
   return timeSlots.value.filter(slot => slot.categoryId === selectedFilterCategoryId.value);
+});
+
+const totalDuration = computed(() => {
+  return filteredTimeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
 });
 
 // 计算空闲时间

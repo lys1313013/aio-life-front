@@ -32,8 +32,8 @@ const categoryDurations = computed(() => {
 
   props.timeSlots.forEach(slot => {
     const duration = slot.endTime - slot.startTime + 1;
-    if (durations[slot.categoryId]) {
-      durations[slot.categoryId] += duration;
+    if (durations[slot.categoryId] !== undefined) {
+      durations[slot.categoryId] = (durations[slot.categoryId] || 0) + duration;
     } else {
       durations[slot.categoryId] = duration;
     }
@@ -64,7 +64,7 @@ const renderPieChart = () => {
 
   const options = {
     tooltip: {
-      trigger: 'item',
+      trigger: 'item' as const,
       formatter: (params: any) => {
         const duration = params.value;
         const hours = Math.floor(duration / 60);
@@ -77,7 +77,7 @@ const renderPieChart = () => {
       }
     },
     legend: {
-      orient: 'vertical',
+      orient: 'vertical' as const,
       right: 10,
       top: 'center',
       textStyle: {
@@ -87,7 +87,7 @@ const renderPieChart = () => {
     series: [
       {
         name: '时间分类',
-        type: 'pie',
+        type: 'pie' as const,
         radius: ['30%', '80%'],
         center: ['50%', '50%'],
         avoidLabelOverlap: true,
@@ -98,7 +98,7 @@ const renderPieChart = () => {
         },
         label: {
           show: true,
-          position: 'outside',
+          position: 'outside' as const,
           formatter: (params: any) => {
             const duration = params.value;
             const hours = Math.floor(duration / 60);
@@ -142,7 +142,7 @@ const renderPieChart = () => {
 };
 
 // 监听数据变化，重新渲染图表
-watch([pieChartData, props.selectedDate], () => {
+watch([pieChartData, () => props.selectedDate], () => {
   renderPieChart();
 }, { immediate: true });
 

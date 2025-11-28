@@ -29,11 +29,6 @@ const selectedFilterCategory = computed(() => {
   );
 });
 
-const chartTitle = computed(() => {
-  if (!props.selectedFilterCategoryId) return '每日分类统计';
-  return `每日${selectedFilterCategory.value?.name}统计`;
-});
-
 // 按天统计分类时长
 const dailyCategoryData = computed(() => {
   const days: string[] = [];
@@ -67,7 +62,7 @@ const dailyCategoryData = computed(() => {
     }
 
     if (data[slot.date] !== undefined) {
-      data[slot.date] += slot.endTime - slot.startTime + 1;
+      data[slot.date] = (data[slot.date] || 0) + (slot.endTime - slot.startTime + 1);
     }
   });
 
@@ -147,7 +142,10 @@ const renderChart = () => {
             if (duration === 0) return '';
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            return hours > 0 ? `${hours}h` : `${minutes}m`;
+            if (hours > 0) {
+              return minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
+            }
+            return `${minutes}m`;
           },
           fontSize: 10,
         },
@@ -159,7 +157,7 @@ const renderChart = () => {
 };
 
 watch(
-  [dailyCategoryData, props.selectedFilterCategoryId],
+  [dailyCategoryData, () => props.selectedFilterCategoryId],
   () => {
     renderChart();
   },
@@ -173,18 +171,6 @@ onMounted(() => {
 
 <template>
   <Card class="daily-bar-chart-card">
-    <template #title>
-      <div class="chart-header">
-        <span>{{ chartTitle }}</span>
-        <div v-if="selectedFilterCategory" class="filter-indicator">
-          <div
-            class="color-indicator"
-            :style="{ backgroundColor: selectedFilterCategory.color }"
-          ></div>
-          <span>{{ selectedFilterCategory.name }}</span>
-        </div>
-      </div>
-    </template>
     <div class="daily-bar-chart-container">
       <EchartsUI ref="chartRef" />
     </div>
