@@ -44,15 +44,15 @@ export async function queryForWeek(data: any): Promise<TimeRecordEntity[]> {
 /**
  * 更新数据
  */
-export async function update(data: TimeRecordEntity): Promise<void> {
+export async function update(data: Partial<TimeRecordEntity>): Promise<void> {
   return await requestClient.post('/timeRecord/update', data);
 }
 
 /**
- * 批量更新数据
+ * 保存数据
  */
-export async function batchUpdate(data: TimeRecordEntity[]): Promise<void> {
-  return await requestClient.post('/timeRecord/batchUpdate', data);
+export async function save(data: Partial<TimeRecordEntity>): Promise<boolean> {
+  return await requestClient.post('/timeRecord/save', data);
 }
 
 /**

@@ -413,7 +413,7 @@ import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
 import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
 import CategoryFilter from './components/CategoryFilter.vue';
-import { query, queryForWeek, batchUpdate, update, deleteByDate, deleteData, recommendType } from '#/api/core/time-tracker';
+import { query, queryForWeek, update, save, deleteByDate, deleteData, recommendType } from '#/api/core/time-tracker';
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -601,33 +601,6 @@ const loadData = async () => {
     timeSlots.value = [];
   } finally {
     loading.value = false; // 结束加载
-  }
-};
-
-const saveData = async () => {
-  try {
-    const currentDate = getCurrentSelectedDate();
-
-    // 准备要更新的数据
-    const slotsToUpdate = statMode.value === 'week'
-      ? timeSlots.value
-      : timeSlots.value.filter(slot => slot.date === currentDate);
-
-    const updateData = slotsToUpdate.map(slot => ({
-      id: slot.id,
-      startTime: slot.startTime,
-      endTime: slot.endTime,
-      categoryId: slot.categoryId,
-      title: slot.title,
-      description: slot.description || '',
-      color: slot.color,
-      date: slot.date || currentDate
-    }));
-
-    // 调用批量更新接口
-    await batchUpdate(updateData as any);
-  } catch (error) {
-    console.error('保存数据失败:', error);
   }
 };
 
@@ -984,16 +957,19 @@ const handleTrackPointerUp = async () => {
 
       if (!hasOverlap(timeSlots.value, newSlot)) {
         timeSlots.value.push(newSlot);
-        saveData();
+        save(newSlot as any);
       } else {
         // todo
         timeSlots.value.push(newSlot);
-        saveData();
+        save(newSlot as any);
       }
     }
   } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
-    if (dragOperation.value.changed) {
-      saveData();
+    if (dragOperation.value.changed && dragOperation.value.slotId) {
+      const slot = timeSlots.value.find(s => s.id === dragOperation.value?.slotId);
+      if (slot) {
+        update(slot as any);
+      }
     }
   }
 
@@ -1205,7 +1181,7 @@ const handleSaveSlot = (formData: any) => {
 
     if (isValidSlot(newSlot, config.value) && !hasOverlap(sameDaySlots, newSlot)) {
       timeSlots.value.push(newSlot);
-      saveData();
+      save(newSlot as any);
       showEditModal.value = false;
     } else {
       message.error('时间段无效或重叠');
