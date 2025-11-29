@@ -116,12 +116,9 @@ const getMonthlySeriesData = () => {
 
     return {
       name: type,
-      type: isMobile.value ? 'line' : 'bar',
+      type: 'line',
       stack: 'income',
-      areaStyle: isMobile.value ? {} : undefined,
-      barWidth: isMobile.value ? undefined : 20, // 恢复并稍微加宽柱子
-      barMaxWidth: isMobile.value ? undefined : 50, // 增加最大宽度
-      barGap: '0%', // 柱子之间的间距
+      areaStyle: {},
       emphasis: {
         focus: 'series',
       },
