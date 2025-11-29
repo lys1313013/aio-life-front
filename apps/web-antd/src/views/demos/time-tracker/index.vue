@@ -517,11 +517,18 @@ const freeTimeCardStyle = computed(() => {
     const end = Math.min(100, currentPercent + percent);
     const color = item.color.startsWith('#') ? hexToRgba(item.color, 0.6) : item.color; // 降低透明度
 
-    // 添加颜色断点，中间留出微小空隙作为分割线
-    gradientStops.push(`${color} ${start.toFixed(2)}%`);
-    gradientStops.push(`${color} ${(end - 0.5).toFixed(2)}%`);
-    gradientStops.push(`rgba(255,255,255,0.5) ${(end - 0.5).toFixed(2)}%`); // 分割线开始
-    gradientStops.push(`rgba(255,255,255,0.5) ${end.toFixed(2)}%`); // 分割线结束
+    // 只有当该段长度足够时，才显示分割线，避免渲染错误
+    const gap = 0.5;
+    if (percent > gap) {
+      gradientStops.push(`${color} ${start.toFixed(2)}%`);
+      gradientStops.push(`${color} ${(end - gap).toFixed(2)}%`);
+      gradientStops.push(`rgba(255,255,255,0.5) ${(end - gap).toFixed(2)}%`); // 分割线开始
+      gradientStops.push(`rgba(255,255,255,0.5) ${end.toFixed(2)}%`); // 分割线结束
+    } else {
+      // 长度不够，直接纯色填充
+      gradientStops.push(`${color} ${start.toFixed(2)}%`);
+      gradientStops.push(`${color} ${end.toFixed(2)}%`);
+    }
 
     currentPercent = end;
   });
@@ -533,7 +540,9 @@ const freeTimeCardStyle = computed(() => {
   }
 
   return {
-    background: `linear-gradient(to top, ${gradientStops.join(', ')})`
+    backgroundImage: `linear-gradient(to top, ${gradientStops.join(', ')})`,
+    backgroundRepeat: 'no-repeat',
+    backgroundColor: '#fff'
   };
 });
 
