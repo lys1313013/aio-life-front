@@ -13,6 +13,7 @@ import { getByDictType } from '#/api/core/common';
 import { deleteData, query } from '#/api/core/income';
 
 import FormDrawerDemo from './form-drawer.vue';
+import IncomeDashboard from './components/IncomeDashboard.vue';
 
 interface RowType {
   incomeId: any;
@@ -182,6 +183,8 @@ function openAddFormDrawer() {
     .open();
 }
 
+const dashboardRef = ref<InstanceType<typeof IncomeDashboard>>();
+
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const deleteRow = async (row: RowType) => {
@@ -189,20 +192,31 @@ const deleteRow = async (row: RowType) => {
     await deleteData({
       incomeId: row.incomeId,
     });
-    gridApi.reload();
+    await gridApi.reload();
+    // 刷新看板数据
+    if (dashboardRef.value) {
+      await dashboardRef.value.refreshData();
+    }
   } catch (error) {
     console.error('捕获异常：', error);
   }
 };
 
-const tableReload = () => {
-  gridApi.reload();
+const tableReload = async () => {
+  await gridApi.reload();
+  // 刷新看板数据
+  if (dashboardRef.value) {
+    await dashboardRef.value.refreshData();
+  }
 };
 </script>
 
 <template>
   <div class="vp-raw w-full">
     <FormDrawer @table-reload="tableReload" />
+    <!-- 收入看板 -->
+    <IncomeDashboard ref="dashboardRef" />
+    <!-- 收入列表 -->
     <Grid>
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormDrawer">
