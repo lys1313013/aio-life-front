@@ -4,6 +4,7 @@ import type { SetupContext } from 'vue';
 import type { MenuRecordRaw } from '@vben/types';
 
 import { computed, useSlots, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { useRefresh } from '@vben/hooks';
 import { $t, i18n } from '@vben/locales';
@@ -51,6 +52,11 @@ const {
 } = usePreferences();
 const lockStore = useLockStore();
 const { refresh } = useRefresh();
+const route = useRoute();
+
+const showBackTop = computed(() => {
+  return route.meta?.backTop !== false;
+});
 
 const sidebarTheme = computed(() => {
   const dark = isDark.value || preferences.theme.semiDarkSidebar;
@@ -357,7 +363,7 @@ const headerSlots = computed(() => {
           @clear-preferences-and-logout="clearPreferencesAndLogout"
         />
       </template>
-      <VbenBackTop />
+      <VbenBackTop v-if="showBackTop" />
     </template>
   </VbenAdminLayout>
 </template>
