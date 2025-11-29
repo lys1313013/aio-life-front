@@ -383,7 +383,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover } from 'ant-design-vue';
+import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -392,6 +392,10 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 dayjs.extend(weekOfYear);
 dayjs.extend(isoWeek);
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
+
+const { useToken } = theme;
+const { token } = useToken();
+
 import { defaultConfig } from './config';
 import {
   formatSlotTime,
@@ -1373,10 +1377,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: flex;
   align-items: center;
   gap: 0;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  background-color: #fff;
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 8px;
+  background-color: v-bind('token.colorBgContainer');
   transition: all 0.2s;
+  overflow: hidden;
 }
 
 .date-nav-button.ant-btn {
@@ -1384,26 +1389,26 @@ const getDaySlots = (date: string): TimeSlot[] => {
   border-radius: 0 !important;
   box-shadow: none !important;
   background: transparent !important;
-  height: 30px !important;
   width: 32px !important;
+  height: 30px !important;
   padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(0, 0, 0, 0.65);
+  color: v-bind('token.colorTextSecondary');
 }
 
 .date-nav-button.ant-btn:hover {
-  color: #4096ff;
-  background-color: rgba(0, 0, 0, 0.04) !important;
+  color: v-bind('token.colorPrimary');
+  background-color: v-bind('token.controlItemBgHover') !important;
 }
 
 .date-nav-button:first-child {
-  border-right: 1px solid #f0f0f0 !important;
+  border-right: 1px solid v-bind('token.colorSplit') !important;
 }
 
 .date-nav-button:last-child {
-  border-left: 1px solid #f0f0f0 !important;
+  border-left: 1px solid v-bind('token.colorSplit') !important;
 }
 
 .date-picker-wrapper {
@@ -1417,14 +1422,14 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 .date-picker-wrapper:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: v-bind('token.controlItemBgHover');
 }
 
 .date-text {
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   line-height: 1.5;
-  color: rgba(0, 0, 0, 0.88);
+  color: v-bind('token.colorText');
 }
 
 .hidden-date-picker {
