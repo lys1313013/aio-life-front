@@ -713,7 +713,7 @@ const stopCurrentTimeUpdater = () => {
 };
 
 const updateIsMobile = () => {
-  isMobile.value = window.innerWidth < 768;
+  isMobile.value = window.innerWidth < 1024;
   nextTick(() => updateMobileTimelineHeight());
 };
 
@@ -1280,12 +1280,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .left-panel {
   flex: 3;
-  min-width: 600px;
+  min-width: 500px;
 }
 
 .right-panel {
   flex: 2;
-  min-width: 420px;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1382,7 +1382,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 /* 手机端样式 */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .date-picker-container {
     border-radius: 5px;
   }
@@ -1762,7 +1762,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 .pie-chart-card {
-  min-width: 400px;
+  min-width: 300px;
   flex: 2;
 }
 
@@ -1832,7 +1832,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   height: 24px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .time-tracker {
     padding: 10px;
   }
