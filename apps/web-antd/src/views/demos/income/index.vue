@@ -12,26 +12,26 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
 import { deleteData, query } from '#/api/core/income';
 
-import FormDrawerDemo from './form-drawer.vue';
 import IncomeDashboard from './components/IncomeDashboard.vue';
+import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
-  incomeId: any;
-  category: string;
-  color: string;
-  price: string;
-  productName: string;
-  releaseDate: string;
+  incomeId: number | string;
+  amt: number;
+  remark: string;
+  incTypeId: number;
+  incDate: string;
+  updateTime: string;
 }
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>([]);
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+  [],
+);
 
 const loadIncomeTypes = async () => {
   try {
     const res = await getByDictType('income_type');
     dictOptions.value = res.dictDetailList;
-    console.log('加载字典选项成功');
-    console.log(dictOptions.value);
   } catch (error) {
     console.error('加载收入类型失败:', error);
   }
@@ -41,7 +41,6 @@ const loadIncomeTypes = async () => {
 const getIncomeTypeLabel = (value: number) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
   const option = dictOptions.value.find((item) => item.id === value);
-  console.log(dictOptions.value)
   return option ? option.label : String(value);
 };
 
@@ -96,23 +95,25 @@ const gridOptions: VxeGridProps<RowType> = {
       field: 'amt',
       cellType: 'number',
       title: '金额',
+      minWidth: 100,
       sortable: true,
       align: 'right',
       formatter: ({ cellValue }) => {
         return cellValue.toFixed(2);
       },
     },
-    { field: 'remark', title: '备注', sortable: true},
+    { field: 'remark', title: '备注', sortable: true, minWidth: 150 },
     {
       field: 'incTypeId',
       title: '收入类型',
+      minWidth: 100,
       sortable: true,
       formatter: ({ cellValue }) => {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'incDate', title: '时间', sortable: true },
-    { field: 'updateTime', title: '修改时间', sortable: true },
+    { field: 'incDate', title: '时间', sortable: true, minWidth: 120 },
+    { field: 'updateTime', title: '修改时间', sortable: true, minWidth: 160 },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -123,13 +124,14 @@ const gridOptions: VxeGridProps<RowType> = {
   ],
   showFooter: true, // 显示底部合计行
   footerMethod: ({ columns, data }) => {
-    const footerData = [];
-    const sums = {};
+    const footerData: Record<string, string>[] = [];
+    const sums: Record<string, string> = {};
     columns.forEach((column) => {
       const field = column.field;
+      if (!field) return;
       if (field === 'amt') {
         const total = data.reduce((prev, row) => {
-          const value = row[field];
+          const value = row[field as keyof RowType];
           return prev + (Number(value) || 0);
         }, 0);
         sums[field] = `${total.toFixed(2)}`;
@@ -147,7 +149,7 @@ const gridOptions: VxeGridProps<RowType> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        await loadIncomeTypes()
+        await loadIncomeTypes();
         return await query({
           page: page.currentPage,
           pageSize: page.pageSize,
