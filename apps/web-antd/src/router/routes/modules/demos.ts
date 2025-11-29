@@ -61,9 +61,9 @@ const routes: RouteRecordRaw[] = [
           icon: 'mdi:run-fast',
           title: '运动',
         },
-        name: 'sysDictType',
-        path: '/demos/sysDictType',
-        component: () => import('#/views/demos/sysDictType/index.vue'),
+        name: 'exercise',
+        path: '/demos/exercise',
+        component: () => import('#/views/demos/exercise/index.vue'),
       },
       {
         meta: {
