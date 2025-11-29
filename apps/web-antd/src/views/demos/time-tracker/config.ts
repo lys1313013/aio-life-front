@@ -44,7 +44,7 @@ export const defaultCategories: TimeSlotCategory[] = [
   },
   {
     id: 'commuting',
-    name: '通勤',
+    name: '交通',
     color: '#eb2f96',
   },
   {

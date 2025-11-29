@@ -288,22 +288,20 @@
               :categories="config.categories"
               :selected-date="selectedDate"
             />
-            <Card class="stats-card">
-              <div class="stats-content">
-                <div class="stat-item">
-                  <span class="stat-label">总时间段数：</span>
-                  <span class="stat-value">{{ filteredTimeSlots.length }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">总时长：</span>
-                  <span class="stat-value">{{ formatDuration(totalDuration) }}</span>
-                </div>
-                <div class="stat-item" v-if="!selectedFilterCategoryId">
-                  <span class="stat-label">空闲时间：</span>
-                  <span class="stat-value">{{ formatDuration(freeTime) }}</span>
-                </div>
+            <div class="stats-cards-group">
+              <div class="stat-square-card">
+                <span class="stat-label-corner">总计</span>
+                <span class="stat-value-center">{{ filteredTimeSlots.length }}</span>
               </div>
-            </Card>
+              <div class="stat-square-card">
+                <span class="stat-label-corner">时长</span>
+                <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
+              </div>
+              <div class="stat-square-card" v-if="!selectedFilterCategoryId">
+                <span class="stat-label-corner">空闲</span>
+                <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -337,6 +335,7 @@
         v-if="editingSlot"
         :slot="editingSlot"
         :categories="config.categories"
+        :existing-slots="timeSlots"
         @save="handleSaveSlot"
         @delete="handleDeleteSlot"
         @cancel="handleEditCancel"
@@ -1697,34 +1696,51 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .stats-row {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.stats-card {
-  min-width: 300px;
-  flex: 1;
-}
-
-.stats-content {
+.stats-cards-group {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 110px; /* 固定宽度 */
+  flex: none;
 }
 
-.stat-item {
+.stat-square-card {
+  position: relative;
+  aspect-ratio: 1; /* 正方形 */
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  transition: all 0.3s;
+  cursor: default;
 }
 
-.stat-label {
-  color: #595959;
+.stat-square-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: transparent;
 }
 
-.stat-value {
-  font-weight: 500;
+.stat-label-corner {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font-size: 12px;
+  color: #8c8c8c;
+  line-height: 1;
+}
+
+.stat-value-center {
+  font-size: 16px;
+  font-weight: 600;
   color: #262626;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, monospace;
 }
 
 .pie-chart-card {
@@ -1743,6 +1759,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .floating-add-button .add-button {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
+  background-color: rgba(24, 144, 255, 0.6) !important;
+  border: none !important;
 }
 
 .floating-add-button .add-button:hover {
@@ -1760,7 +1778,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   bottom: 24px;
   width: 56px;
   height: 56px;
-  background-color: #1890ff;
+  background-color: rgba(24, 144, 255, 0.6);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1770,10 +1788,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
   transition: all 0.3s ease;
   z-index: 10000;
   user-select: none;
+  backdrop-filter: blur(4px);
 }
 
 .floating-btn:hover {
-  background-color: #40a9ff;
+  background-color: rgba(24, 144, 255, 0.8);
   transform: scale(1.05);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
@@ -1916,5 +1935,25 @@ const getDaySlots = (date: string): TimeSlot[] => {
     height: 43px;
     font-size: 18px;
   }
+
+  .stats-cards-group {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .stat-square-card {
+    flex: 1;
+    min-width: 0;
+  }
 }
+
+/* Custom padding overrides */
+:deep(.bar-chart-card .ant-card-body),
+:deep(.daily-bar-chart-card .ant-card-body),
+:deep(.pie-chart-card .ant-card-body) {
+  padding: 10px !important;
+}
+
 </style>

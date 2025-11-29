@@ -182,12 +182,13 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
-import { timeToMinutes, minutesToTime, formatDuration } from '../utils';
+import { timeToMinutes, minutesToTime, formatDuration, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
 import dayjs from 'dayjs';
 
 interface Props {
   slot: TimeSlot;
   categories: TimeSlotCategory[];
+  existingSlots?: TimeSlot[];
 }
 
 interface Emits {
@@ -330,17 +331,44 @@ const adjustStartTime = (minutes: number) => {
   if (!formState.value.startTime) return;
 
   const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  const newMinutes = Math.max(0, Math.min(1439, currentMinutes + minutes));
-
-  formState.value.startTime = minutesToTimePickerValue(newMinutes);
-
-  // 如果结束时间早于新的开始时间，自动调整结束时间
-  if (formState.value.endTime) {
-    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-    if (endMinutes <= newMinutes) {
-      formState.value.endTime = minutesToTimePickerValue(newMinutes + 1);
+  const proposedMinutes = currentMinutes + minutes;
+  
+  // 获取上下界限
+  let minMinutes = 0;
+  let maxMinutes = 1439;
+  
+  if (props.existingSlots && props.slot) {
+    // 构造当前临时slot用于查询
+    const tempSlot = {
+      ...props.slot,
+      id: formState.value.id || 'temp-id',
+      startTime: currentMinutes,
+      endTime: formState.value.endTime ? timeToMinutes(formState.value.endTime.format('HH:mm')) : currentMinutes + 30
+    };
+    
+    // 获取上方最近的时间段结束时间
+    // 注意：这里我们要找的是在这个slot开始时间之前最近的一个结束时间
+    const aboveEndTime = getAboveSlotEndTime(props.existingSlots, tempSlot, tempSlot.id);
+    if (aboveEndTime !== null) {
+      // 限制：必须 > 上一个的结束时间。如果上一个结束是10:30，这里只能是10:31
+      minMinutes = aboveEndTime + 1; 
     }
   }
+  
+  // 如果有结束时间，开始时间必须小于结束时间
+  if (formState.value.endTime) {
+    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+    // 限制最大值为结束时间 - 1
+    maxMinutes = Math.min(maxMinutes, endMinutes - 1);
+  }
+  
+  // 如果范围无效（min > max），则不调整
+  if (minMinutes > maxMinutes) return;
+
+  // 限制范围
+  const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
+  
+  formState.value.startTime = minutesToTimePickerValue(newMinutes);
 };
 
 // 调整结束时间
@@ -348,8 +376,32 @@ const adjustEndTime = (minutes: number) => {
   if (!formState.value.endTime) return;
 
   const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-  const newMinutes = Math.max(0, Math.min(1439, currentMinutes + minutes));
+  const proposedMinutes = currentMinutes + minutes;
 
+  let maxMinutes = 1439;
+  let minMinutes = 0; // 受限于开始时间
+
+  if (formState.value.startTime) {
+      minMinutes = timeToMinutes(formState.value.startTime.format('HH:mm')) + 1;
+  }
+
+  if (props.existingSlots && props.slot) {
+      const tempSlot = {
+        ...props.slot,
+        id: formState.value.id || 'temp-id',
+        startTime: formState.value.startTime ? timeToMinutes(formState.value.startTime.format('HH:mm')) : 0,
+        endTime: currentMinutes
+      };
+      
+      const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
+      if (belowStartTime !== null) {
+          // 限制：必须 < 下一个的开始时间。如果下一个开始是11:00，这里只能是10:59
+          maxMinutes = belowStartTime - 1;
+      }
+  }
+
+  const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
+  
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
 };
 

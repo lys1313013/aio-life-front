@@ -116,7 +116,7 @@ export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
   if (hours > 0) {
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
+    return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
   }
-  return `${mins}分钟`;
+  return `${mins}m`;
 }
