@@ -297,7 +297,7 @@
                 <span class="stat-label-corner">时长</span>
                 <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
               </div>
-              <div class="stat-square-card" v-if="!selectedFilterCategoryId">
+              <div class="stat-square-card" v-if="!selectedFilterCategoryId" :style="freeTimeCardStyle">
                 <span class="stat-label-corner">空闲</span>
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
               </div>
@@ -456,21 +456,85 @@ const totalDuration = computed(() => {
   return filteredTimeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
 });
 
-// 计算空闲时间
-const freeTime = computed(() => {
+const maxDuration = computed(() => {
   if (statMode.value === 'week') {
-    const totalWeekMinutes = 7 * 1440;
-    const ft = totalWeekMinutes - totalDuration.value;
-    return Math.max(0, ft);
+    return 7 * 1440;
   }
   if (statMode.value === 'month') {
-    const daysInMonth = selectedDate.value.daysInMonth();
-    const totalMonthMinutes = daysInMonth * 1440;
-    const ft = totalMonthMinutes - totalDuration.value;
-    return Math.max(0, ft);
+    return selectedDate.value.daysInMonth() * 1440;
   }
-  const ft = 1440 - totalDuration.value;
+  return 1440;
+});
+
+// 计算空闲时间
+const freeTime = computed(() => {
+  const ft = maxDuration.value - totalDuration.value;
   return Math.max(0, ft);
+});
+
+const freeTimeCardStyle = computed(() => {
+  // 1. 计算每个分类的总时长
+  const categoryDurations = new Map<string, number>();
+  filteredTimeSlots.value.forEach(slot => {
+    const duration = slot.endTime - slot.startTime;
+    const current = categoryDurations.get(slot.categoryId) || 0;
+    categoryDurations.set(slot.categoryId, current + duration);
+  });
+
+  // 2. 转换为数组并按时长降序排序
+  const sortedCategories = Array.from(categoryDurations.entries())
+    .map(([id, duration]) => {
+      const category = config.value.categories.find(c => c.id === id);
+      return {
+        id,
+        duration,
+        color: category?.color || '#d9d9d9',
+        name: category?.name
+      };
+    })
+    .sort((a, b) => b.duration - a.duration);
+
+  // 3. 构建渐变样式
+  if (sortedCategories.length === 0) {
+    return {};
+  }
+
+  const gradientStops: string[] = [];
+  let currentPercent = 0;
+  const totalMax = maxDuration.value || 1440;
+
+  // 辅助函数：将 hex 颜色转换为 rgba，并指定透明度
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  sortedCategories.forEach(item => {
+    const percent = (item.duration / totalMax) * 100;
+    const start = currentPercent;
+    const end = Math.min(100, currentPercent + percent);
+    const color = item.color.startsWith('#') ? hexToRgba(item.color, 0.6) : item.color; // 降低透明度
+
+    // 添加颜色断点，中间留出微小空隙作为分割线
+    gradientStops.push(`${color} ${start.toFixed(2)}%`);
+    gradientStops.push(`${color} ${(end - 0.5).toFixed(2)}%`);
+    gradientStops.push(`rgba(255,255,255,0.5) ${(end - 0.5).toFixed(2)}%`); // 分割线开始
+    gradientStops.push(`rgba(255,255,255,0.5) ${end.toFixed(2)}%`); // 分割线结束
+
+    currentPercent = end;
+  });
+
+  // 填充剩余部分为带纹理的白色背景
+  if (currentPercent < 100) {
+    gradientStops.push(`rgba(255,255,255,0.9) ${currentPercent.toFixed(2)}%`);
+    gradientStops.push(`rgba(255,255,255,0.9) 100%`);
+  }
+
+  return {
+    background: `linear-gradient(to top, ${gradientStops.join(', ')})`
+  };
 });
 
 // 计算当前周的所有日期
@@ -1731,34 +1795,41 @@ const getDaySlots = (date: string): TimeSlot[] => {
   aspect-ratio: 1; /* 正方形 */
   background: #fff;
   border-radius: 12px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid rgba(0, 0, 0, 0.05); /* 更淡的边框 */
   display: flex;
   justify-content: center;
   align-items: center;
   transition: all 0.3s;
   cursor: default;
+  overflow: hidden; /* 确保背景不溢出圆角 */
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.02); /* 内阴影增加质感 */
 }
 
 .stat-square-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); /* 更柔和的悬浮阴影 */
   border-color: transparent;
 }
 
 .stat-label-corner {
   position: absolute;
-  top: 10px;
-  left: 12px;
-  font-size: 12px;
-  color: #8c8c8c;
+  top: 12px;
+  left: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #595959;
   line-height: 1;
+  z-index: 2; /* 确保在背景之上 */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8); /* 文字描边效果 */
 }
 
 .stat-value-center {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #262626;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, monospace;
+  z-index: 2; /* 确保在背景之上 */
+  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8); /* 文字描边效果 */
 }
 
 .pie-chart-card {
