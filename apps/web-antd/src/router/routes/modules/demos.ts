@@ -125,15 +125,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:chart-bar',
-          title: '收入看板',
-        },
-        name: 'incomeDashboard',
-        path: '/finance/incomeDashboard',
-        component: () => import('#/views/demos/income/dashboard.vue'),
-      },
-      {
-        meta: {
           icon: 'mdi:cash-minus',
           title: '支出',
         },
