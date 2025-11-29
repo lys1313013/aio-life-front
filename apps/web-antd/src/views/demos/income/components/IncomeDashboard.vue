@@ -4,6 +4,7 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
+import { usePreferences } from '@vben/preferences';
 import { Card, Select } from 'ant-design-vue';
 
 import { statisticsByYear, statisticsByMonth } from '#/api/core/income';
@@ -16,6 +17,7 @@ const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
 const { renderEcharts: renderMonthEcharts } = useEcharts(monthChartRef);
+const { isMobile } = usePreferences();
 
 interface IncomeDetail {
   typeName: string; // 收入类型名称
@@ -114,9 +116,11 @@ const getMonthlySeriesData = () => {
 
     return {
       name: type,
-      type: 'bar',
+      type: isMobile.value ? 'line' : 'bar',
       stack: 'income',
-      barWidth: 10,
+      areaStyle: isMobile.value ? {} : undefined,
+      barWidth: isMobile.value ? undefined : 20, // 恢复并稍微加宽柱子
+      barMaxWidth: isMobile.value ? undefined : 50, // 增加最大宽度
       barGap: '0%', // 柱子之间的间距
       emphasis: {
         focus: 'series',
@@ -138,19 +142,20 @@ const getMonthlySeriesData = () => {
   });
 
   // 添加总收入在最前面
-  series.unshift({
-    name: '总收入',
-    type: 'bar',
-    label: {
-      show: false,
-      position: 'top', // 字显示在上方
-      formatter: () => '',
-    },
-    emphasis: {
-      focus: 'series',
-    },
-    data: getMonthlyTotalIncome(),
-  });
+  // series.unshift({
+  //   name: '总收入',
+  //   type: 'bar',
+  //   barWidth: 40,
+  //   label: {
+  //     show: false,
+  //     position: 'top', // 字显示在上方
+  //     formatter: () => '',
+  //   },
+  //   emphasis: {
+  //     focus: 'series',
+  //   },
+  //   data: getMonthlyTotalIncome(),
+  // });
 
   return series;
 };
@@ -254,7 +259,8 @@ const getSeriesData = () => {
       name: type,
       type: 'bar',
       stack: 'income',
-      barWidth: 10,
+      barWidth: 15, // 限制柱子宽度
+      barMaxWidth: 30,
       barGap: '0%', // 柱子之间的间距
       emphasis: {
         focus: 'series',
@@ -279,6 +285,7 @@ const getSeriesData = () => {
   series.unshift({
     name: '总收入',
     type: 'bar',
+    barWidth: 30,
     label: {
       show: true,
       position: 'top', // 字显示在上方
@@ -310,8 +317,8 @@ const updateCharts = () => {
   // 渲染柱状图
   renderEcharts({
     grid: {
-      left: '1%',
-      right: '1%',
+      left: '3%',
+      right: '4%',
       bottom: '3%',
       containLabel: true,
     },
@@ -343,7 +350,10 @@ const updateCharts = () => {
         return tooltip;
       },
     },
-    legend: {},
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+    },
     xAxis: [
       {
         type: 'category',
@@ -369,16 +379,18 @@ const updateCharts = () => {
       formatter: '{a} <br/>{b}: {c} ({d}%)'
     },
     legend: {
-      orient: 'vertical',
-      right: 10,
-      top: 'center'
+      type: 'scroll',
+      orient: 'horizontal',
+      bottom: 0,
+      left: 'center'
     },
     series: [
       {
         name: '收入类型分布',
         type: 'pie',
-        radius: ['0%', '80%'],
-        avoidLabelOverlap: false,
+        radius: ['0%', '60%'],
+        center: ['50%', '45%'],
+        avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
@@ -388,7 +400,7 @@ const updateCharts = () => {
           show: true,
           position: 'outside',
           formatter: (params: any) => {
-            return `${params.name}\n${params.value} (${params.percent}%)`;
+            return `${params.name}\n${params.percent}%`;
           },
           fontSize: 12
         },
@@ -416,17 +428,18 @@ const updateCharts = () => {
       formatter: '{a} <br/>{b}: {c} ({d}%)',
     },
     legend: {
-      orient: 'vertical',
-      left: 10,
-      top: 'center'
+      type: 'scroll',
+      orient: 'horizontal',
+      bottom: 0,
+      left: 'center'
     },
     series: [
       {
         name: '年份收入分布',
         type: 'pie',
-        radius: '80%',
-        center: ['50%', '50%'],
-        avoidLabelOverlap: false,
+        radius: '60%',
+        center: ['50%', '45%'],
+        avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
@@ -435,7 +448,7 @@ const updateCharts = () => {
         label: {
           show: true,
           formatter: (params: any) => {
-            return `${params.name}\n${params.value} (${params.percent}%)`;
+            return `${params.name}\n${params.percent}%`;
           },
           fontSize: 12
         },
@@ -457,8 +470,8 @@ const updateCharts = () => {
   // 渲染月份柱状图
   renderMonthEcharts({
     grid: {
-      left: '1%',
-      right: '1%',
+      left: '3%',
+      right: '4%',
       bottom: '3%',
       containLabel: true,
     },
@@ -473,14 +486,12 @@ const updateCharts = () => {
 
         // 计算该月份的总收入
         params.forEach((item: any) => {
-          if (item.seriesName !== '总收入') {
             total += item.value || 0;
-          }
         });
 
         // 显示各项的金额和百分比
         params.forEach((item: any) => {
-          if (item.seriesName !== '总收入' && item.value > 0) {
+          if (item.value > 0) {
             const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
           }
@@ -490,7 +501,10 @@ const updateCharts = () => {
         return tooltip;
       },
     },
-    legend: {},
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+    },
     xAxis: [
       {
         type: 'category',
@@ -546,7 +560,7 @@ onMounted(async () => {
 });
 
 // 监听年份选择变化
-watch(selectedYear, () => {
+watch([selectedYear, isMobile], () => {
   updateCharts();
 });
 
@@ -578,9 +592,8 @@ defineExpose({
           <Select
             v-model:value="selectedYear"
             :options="yearOptions"
-            style="width: 160px"
             placeholder="请选择年份"
-            class="custom-select"
+            class="custom-select year-select"
           />
         </div>
       </div>
@@ -624,6 +637,10 @@ defineExpose({
   align-items: center;
   gap: 12px;
   padding: 8px 16px;
+}
+
+.year-select {
+  width: 160px;
 }
 
 .year-label {
@@ -710,6 +727,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 400px;
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 /* 月份收入图单独占据一行 */
@@ -754,22 +772,49 @@ defineExpose({
 }
 
 @media (max-width: 768px) {
+  .income-dashboard {
+    padding: 8px;
+  }
+
   .dashboard-header {
+    flex-direction: column-reverse;
+    gap: 16px;
+  }
+  
+  .total-stats {
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .stat-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
   }
   
   .year-selector-wrapper {
     width: 100%;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+  }
+
+  .year-select {
+    width: 100% !important;
   }
 
   .chart-item {
-    height: 350px;
+    height: 320px;
+    padding: 8px;
   }
   
   .stat-value {
-    font-size: 24px;
+    font-size: 28px;
+  }
+
+  .stat-label {
+    font-size: 13px;
   }
 }
 </style>
