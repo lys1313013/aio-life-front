@@ -751,15 +751,33 @@ const getSlotStyle = (slot: TimeSlot) => {
     ? slot.categoryId === selectedFilterCategoryId.value
     : false;
 
-  return {
+  // 判断是否是未来的时间段
+  const today = dayjs().format('YYYY-MM-DD');
+  const isFuture = slot.date > today || (slot.date === today && slot.startTime > currentTime.value);
+
+  const style: any = {
     top: `${top}px`,
     height: `${height}px`,
     backgroundColor: category?.color || '#d9d9d9',
     opacity: selectedFilterCategoryId.value && !isHighlighted ? 0.3 : 1,
-    border: isHighlighted ? '2px solid #1890ff' : 'none',
-    boxShadow: isHighlighted ? '0 0 8px rgba(24, 144, 255, 0.5)' : 'none',
     zIndex: isHighlighted ? 10 : 1
   };
+
+  if (isHighlighted) {
+    style.border = isFuture ? '2px dashed #1890ff' : '2px solid #1890ff';
+    style.boxShadow = '0 0 8px rgba(24, 144, 255, 0.5)';
+  } else {
+    style.border = isFuture ? '2px dashed #fff' : 'none';
+    style.boxShadow = 'none';
+  }
+
+  if (isFuture) {
+    // 添加点状填充效果
+    style.backgroundImage = 'radial-gradient(rgba(255, 255, 255, 0.3) 1.5px, transparent 1.5px)';
+    style.backgroundSize = '6px 6px';
+  }
+
+  return style;
 };
 
 const getDragPreviewStyle = () => {
@@ -1368,7 +1386,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   .date-picker-container {
     border-radius: 5px;
   }
-  
+
   .date-nav-button.ant-btn {
     height: 24px !important;
     width: 24px !important;
@@ -1942,7 +1960,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
     justify-content: space-between;
     flex-wrap: wrap;
   }
-  
+
   .stat-square-card {
     flex: 1;
     min-width: 0;

@@ -409,7 +409,7 @@ const adjustEndTime = (minutes: number) => {
 const roundStartTime = (direction: 'up' | 'down') => {
   if (!formState.value.startTime) return;
 
-  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+  const currentMinutes = timeToMinutes(formState.value.startTime);
   const roundedMinutes = direction === 'down'
     ? Math.floor(currentMinutes / 60) * 60
     : Math.ceil(currentMinutes / 60) * 60;
