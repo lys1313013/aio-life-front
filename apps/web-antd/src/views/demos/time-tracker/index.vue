@@ -1771,7 +1771,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 10000;
+  z-index: 10;
 }
 
 .floating-add-button .add-button {
