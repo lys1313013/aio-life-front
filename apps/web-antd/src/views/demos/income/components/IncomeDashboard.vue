@@ -558,30 +558,30 @@ defineExpose({
 
 <template>
   <div class="income-dashboard">
-    <!-- 年份选择器 -->
-    <Card class="year-selector-card">
-      <div class="year-selector-content">
-        <span class="year-label">选择年份：</span>
-        <Select
-          v-model:value="selectedYear"
-          :options="yearOptions"
-          style="width: 200px"
-          placeholder="请选择年份"
-        />
-      </div>
-    </Card>
-
-    <!-- 总金额卡片 -->
+    <!-- 总金额卡片（包含年份选择） -->
     <div class="total-card">
-      <div class="total-stats">
-        <div class="stat-item">
-          <div class="stat-label">总收入</div>
-          <div class="stat-value">{{ formatCurrency(totalAmount) }}</div>
+      <div class="dashboard-header">
+        <div class="total-stats">
+          <div class="stat-item">
+            <div class="stat-label">总收入</div>
+            <div class="stat-value">{{ formatCurrency(totalAmount) }}</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-label">{{ new Date().getFullYear() }}年总收入</div>
+            <div class="stat-value">{{ formatCurrency(currentYearAmount) }}</div>
+          </div>
         </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <div class="stat-label">{{ new Date().getFullYear() }}年总收入</div>
-          <div class="stat-value">{{ formatCurrency(currentYearAmount) }}</div>
+
+        <div class="year-selector-wrapper">
+          <span class="year-label">选择年份：</span>
+          <Select
+            v-model:value="selectedYear"
+            :options="yearOptions"
+            style="width: 160px"
+            placeholder="请选择年份"
+            class="custom-select"
+          />
         </div>
       </div>
     </div>
@@ -612,23 +612,25 @@ defineExpose({
   padding: 12px;
 }
 
-.year-selector-card {
-  margin-bottom: 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.dashboard-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.year-selector-content {
+.year-selector-wrapper {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 8px 16px;
 }
 
 .year-label {
   font-weight: 500;
-  color: #333;
+  color: #fff;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .total-card {
@@ -646,27 +648,8 @@ defineExpose({
   box-shadow: 0 12px 40px rgba(102, 126, 234, 0.35);
 }
 
-.total-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.total-icon {
-  font-size: 56px;
-  opacity: 0.9;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
-}
-
-.total-title {
-  font-size: 20px;
-  font-weight: 600;
-  opacity: 0.95;
-  letter-spacing: 0.5px;
-}
-
 .total-stats {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -689,6 +672,7 @@ defineExpose({
   margin-bottom: 8px;
   font-weight: 500;
   letter-spacing: 0.3px;
+  color: #fff;
 }
 
 .stat-value {
@@ -700,6 +684,7 @@ defineExpose({
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: #fff; /* Fallback */
 }
 
 .stat-divider {
@@ -769,31 +754,21 @@ defineExpose({
 }
 
 @media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .year-selector-wrapper {
+    width: 100%;
+    justify-content: center;
+  }
+
   .chart-item {
     height: 350px;
   }
-
-  .year-selector-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .year-selector-content :deep(.ant-select) {
-    width: 100% !important;
-  }
-
-  .total-content {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
-
-  .total-icon {
-    font-size: 36px;
-  }
-
-  .total-amount {
+  
+  .stat-value {
     font-size: 24px;
   }
 }
