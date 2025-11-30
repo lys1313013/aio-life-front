@@ -226,7 +226,7 @@ const tableReload = async () => {
         </Button>
       </template>
       <template #action="{ row }">
-        <a href="#" @click="openFormDrawer(row)">编辑</a>
+        <a href="javascript:;" @click="openFormDrawer(row)">编辑</a>
         &nbsp;&nbsp;
         <Popconfirm
           title="是否确认删除?"
@@ -234,7 +234,7 @@ const tableReload = async () => {
           cancel-text="否"
           @confirm="deleteRow(row)"
         >
-          <a href="#">删除</a>
+          <a href="javascript:;">删除</a>
         </Popconfirm>
       </template>
     </Grid>
