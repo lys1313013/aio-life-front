@@ -7,7 +7,7 @@ import { onMounted, ref, computed, nextTick, watch } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import { Button, Popconfirm, Card, Select } from 'ant-design-vue';
+import { Button, Popconfirm, Card, Select, message } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -42,7 +42,7 @@ const areaChartRef = ref<EchartsUIType>();
 const yearPieChartRef = ref<EchartsUIType>();
 const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
-const { renderEcharts: renderAreaChart } = useEcharts(areaChartRef);
+const { renderEcharts: renderAreaChart, getChartInstance: getAreaChartInstance } = useEcharts(areaChartRef);
 const { renderEcharts: renderYearPieChart } = useEcharts(yearPieChartRef);
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
@@ -119,10 +119,8 @@ const expenseTypeStats = computed(() => {
 
   filteredExpData.value.forEach((yearData) => {
     yearData.detail.forEach((item) => {
-      if (!typeData[item.typeName]) {
-        typeData[item.typeName] = 0;
-      }
-      typeData[item.typeName] += item.amt;
+      const current = typeData[item.typeName] || 0;
+      typeData[item.typeName] = current + item.amt;
     });
   });
 
@@ -175,6 +173,8 @@ const getBarChartSeries = computed(() => {
     return {
       name: type,
       type: 'bar',
+      barWidth: 10,
+      barGap: '0%', // 柱子之间的间距
       stack: 'expense',
       emphasis: {
         focus: 'series',
@@ -344,7 +344,7 @@ const formatCurrency = (amount: number) => {
 };
 
 // 更新图表
-const updateCharts = () => {
+const updateCharts = async () => {
 
   const typeData = expenseTypeStats.value;
   const barChartSeries = getBarChartSeries.value;
@@ -357,7 +357,7 @@ const updateCharts = () => {
   }
 
   // 渲染年度柱状图
-  renderLineChart({
+  await renderLineChart({
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -406,11 +406,11 @@ const updateCharts = () => {
         formatter: '¥{value}'
       }
     },
-    series: barChartSeries
+    series: barChartSeries as any
   });
 
   // 渲染饼图
-  renderPieChart({
+  await renderPieChart({
     tooltip: {
       trigger: 'item',
       formatter: '{a} <br/>{b}: {c} ({d}%)'
@@ -456,7 +456,7 @@ const updateCharts = () => {
 
   // 渲染堆叠面积图
   const months = getMonths.value;
-  renderAreaChart({
+  await renderAreaChart({
     tooltip: {
       trigger: 'axis',
       axisPointer: {
@@ -499,7 +499,8 @@ const updateCharts = () => {
       data: months,
       axisLabel: {
         rotate: 45
-      }
+      },
+      triggerEvent: true,
     },
     yAxis: {
       type: 'value',
@@ -507,12 +508,49 @@ const updateCharts = () => {
         formatter: '¥{value}'
       }
     },
-    series: areaChartSeries
+    series: areaChartSeries.map(item => ({ ...item, symbol: 'emptyCircle', symbolSize: 4 })) as any
   });
+
+  // 绑定点击事件
+  const areaChartInstance = getAreaChartInstance();
+  if (areaChartInstance) {
+    areaChartInstance.off('click');
+    // 监听 zr:click 以捕获所有点击事件，包括空白处，但这里我们主要关注组件点击
+    areaChartInstance.on('click', (params: any) => {
+      let monthStr = '';
+      // 处理轴标签点击
+      if (params.componentType === 'xAxis') {
+        monthStr = params.value;
+      } 
+      // 处理数据点点击
+      else if (params.componentType === 'series') {
+        monthStr = params.name;
+      }
+
+      if (monthStr && /^\d{4}-\d{2}$/.test(monthStr)) {
+        const [year, month] = monthStr.split('-').map(Number) as [number, number];
+        const lastDay = new Date(year, month, 0).getDate();
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+        message.success(`已选择月份: ${monthStr}`);
+        
+        if (gridApi && gridApi.formApi) {
+           gridApi.formApi.setValues({
+            expTimeRange: [startDate, endDate],
+          });
+        } else {
+           console.error('gridApi or formApi is missing', gridApi);
+        }
+      }
+    });
+  } else {
+    console.warn('Failed to get chart instance');
+  }
 
   // 渲染年度支出时间分布饼图
   const yearPieData = getYearPieChartData.value;
-  renderYearPieChart({
+  await renderYearPieChart({
     tooltip: {
       trigger: 'item',
       formatter: '{a} <br/>{b}: {c} ({d}%)'
@@ -742,8 +780,8 @@ const gridOptions: VxeGridProps<RowType> = {
   ],
   showFooter: true, // 显示底部合计行
   footerMethod: ({ columns, data }) => {
-    const footerData = [];
-    const sums = {};
+    const footerData: Record<string, string>[] = [];
+    const sums: Record<string, string> = {};
     columns.forEach((column) => {
       const field = column.field;
       if (field === 'amt') {
@@ -868,11 +906,23 @@ const processQueryCondition = (formValues: any) => {
 const tableReload = () => {
   gridApi.reload();
 };
+
+const handleUpdateSuccess = async (updatedRow: any) => {
+  // 更新表格数据而不刷新整个表格
+  const { fullData } = gridApi.grid.getTableData();
+  const targetRow = fullData.find((item) => item.id === updatedRow.id);
+  if (targetRow) {
+    Object.assign(targetRow, updatedRow);
+  }
+
+  // 刷新看板数据
+  await getYearlyStatistics();
+};
 </script>
 
 <template>
   <div class="vp-raw w-full">
-    <FormDrawer @table-reload="tableReload" />
+    <FormDrawer @table-reload="tableReload" @update-success="handleUpdateSuccess" />
 
     <!-- 图表区域 -->
     <div class="charts-section mb-6">
@@ -1085,7 +1135,7 @@ const tableReload = () => {
     flex-direction: column-reverse;
     gap: 16px;
   }
-  
+
   .total-stats {
     flex-direction: column;
     gap: 16px;
@@ -1097,7 +1147,7 @@ const tableReload = () => {
     height: 1px;
     background: rgba(255, 255, 255, 0.2);
   }
-  
+
   .year-selector-wrapper {
     width: 100%;
     justify-content: center;

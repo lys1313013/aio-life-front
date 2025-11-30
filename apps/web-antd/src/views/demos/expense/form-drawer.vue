@@ -13,7 +13,7 @@ defineOptions({
   name: 'FormDrawerDemo',
 });
 
-const emit = defineEmits(['tableReload']);
+const emit = defineEmits(['tableReload', 'updateSuccess']);
 
 // 连续录入模式开关
 const continuousMode = ref(false);
@@ -152,12 +152,16 @@ const [Drawer, drawerApi] = useVbenDrawer({
     if (continuousMode.value) {
       // 连续录入模式：重置表单，保持弹窗打开
       resetForm();
+      tableReload();
     } else {
       // 普通模式：关闭弹窗
       drawerApi.close();
+      if (processedData.id) {
+        emit('updateSuccess', processedData);
+      } else {
+        tableReload();
+      }
     }
-
-    tableReload();
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {

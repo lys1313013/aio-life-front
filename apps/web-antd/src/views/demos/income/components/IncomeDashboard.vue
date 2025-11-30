@@ -529,7 +529,7 @@ const refreshData = async () => {
   try {
     // 保存当前选中的年份
     const currentYear = selectedYear.value;
-    
+
     const [yearRes, monthRes] = await Promise.all([
       statisticsByYear({}),
       statisticsByMonth({})
@@ -788,7 +788,7 @@ defineExpose({
     flex-direction: column-reverse;
     gap: 16px;
   }
-  
+
   .total-stats {
     flex-direction: column;
     gap: 16px;
@@ -800,7 +800,7 @@ defineExpose({
     height: 1px;
     background: rgba(255, 255, 255, 0.2);
   }
-  
+
   .year-selector-wrapper {
     width: 100%;
     justify-content: center;
@@ -816,7 +816,7 @@ defineExpose({
     height: 320px;
     padding: 8px;
   }
-  
+
   .stat-value {
     font-size: 28px;
   }
