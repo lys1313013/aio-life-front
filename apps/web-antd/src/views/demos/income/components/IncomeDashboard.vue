@@ -35,8 +35,8 @@ interface MonthlyIncomeData {
   detail: IncomeDetail[]; // 该月份下的收入详情列表
 }
 
-let incData: IncomeData[] = [];
-let monthlyIncData: MonthlyIncomeData[] = [];
+const incData = ref<IncomeData[]>([]);
+const monthlyIncData = ref<MonthlyIncomeData[]>([]);
 
 // 计算总收入
 const totalAmount = ref(0);
@@ -62,18 +62,18 @@ const formatCurrency = (amount: number) => {
 // 根据选中的年份过滤数据
 const filteredData = computed(() => {
   if (selectedYear.value === 'all') {
-    return incData;
+    return incData.value;
   }
-  return incData.filter((item) => item.year === selectedYear.value);
+  return incData.value.filter((item) => item.year === selectedYear.value);
 });
 
 // 根据选中的年份过滤月份数据
 const filteredMonthlyData = computed(() => {
   let data: MonthlyIncomeData[] = [];
   if (selectedYear.value === 'all') {
-    data = monthlyIncData;
+    data = monthlyIncData.value;
   } else {
-    data = monthlyIncData.filter((item) => item.year === selectedYear.value);
+    data = monthlyIncData.value.filter((item) => item.year === selectedYear.value);
   }
   // 按时间升序排序
   return [...data].sort((a, b) => {
@@ -304,7 +304,7 @@ const updateCharts = () => {
 
   // 计算当年总收入
   const currentYear = new Date().getFullYear();
-  const currentYearData = incData.find(item => item.year === currentYear);
+  const currentYearData = incData.value.find(item => item.year === currentYear);
   if (currentYearData) {
     currentYearAmount.value = currentYearData.detail.reduce((sum, item) => sum + item.amt, 0);
   } else {
@@ -527,15 +527,18 @@ const updateCharts = () => {
 // 刷新数据
 const refreshData = async () => {
   try {
+    // 保存当前选中的年份
+    const currentYear = selectedYear.value;
+    
     const [yearRes, monthRes] = await Promise.all([
       statisticsByYear({}),
       statisticsByMonth({})
     ]);
-    incData = yearRes;
-    monthlyIncData = monthRes;
+    incData.value = yearRes;
+    monthlyIncData.value = monthRes;
 
     // 根据incData生成年份选项
-    const years = [...new Set(incData.map((item) => item.year))].sort(
+    const years = [...new Set(incData.value.map((item) => item.year))].sort(
       (a, b) => b - a,
     );
     yearOptions.value = [
@@ -543,8 +546,9 @@ const refreshData = async () => {
       ...years.map(year => ({ value: year, label: year }))
     ];
 
-    // 设置默认选中为全部年份
-    selectedYear.value = 'all';
+    // 恢复之前选中的年份，如果该年份不再存在则设为全部
+    const yearExists = yearOptions.value.some(option => option.value === currentYear);
+    selectedYear.value = yearExists ? currentYear : 'all';
 
     updateCharts();
   } catch (error) {
@@ -556,9 +560,16 @@ onMounted(async () => {
   await refreshData();
 });
 
+// 定义年份变化事件
+const emit = defineEmits<{
+  (e: 'yearChange', year: number | 'all'): void
+}>();
+
 // 监听年份选择变化
-watch([selectedYear, isMobile], () => {
+watch([selectedYear, isMobile], (newVal) => {
   updateCharts();
+  // 触发年份变化事件
+  emit('yearChange', newVal[0]);
 });
 
 // 暴露刷新方法给父组件

@@ -28,6 +28,9 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
+// 跟踪选中的年份
+const selectedYear = ref<number | 'all'>('all');
+
 const loadIncomeTypes = async () => {
   try {
     const res = await getByDictType('income_type');
@@ -88,6 +91,7 @@ const gridOptions: VxeGridProps<RowType> = {
   },
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
+  maxHeight: 1000, // 直接在根级别配置表格最大高度，解决vxe-table缺少高度参数的警告
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
@@ -155,6 +159,8 @@ const gridOptions: VxeGridProps<RowType> = {
           pageSize: page.pageSize,
           condition: {
             ...formValues,
+            // 添加年份条件，当选择"全部"时不传递year参数
+            ...(selectedYear.value !== 'all' ? { year: selectedYear.value } : {}),
           },
         });
       },
@@ -204,9 +210,16 @@ const deleteRow = async (row: RowType) => {
   }
 };
 
+// 处理年份变化
+const handleYearChange = async (year: number | 'all') => {
+  selectedYear.value = year;
+  // 只刷新表格，不刷新看板，避免重复刷新
+  await gridApi.reload();
+};
+
 const tableReload = async () => {
   await gridApi.reload();
-  // 刷新看板数据
+  // 刷新看板数据，但只在非年份选择触发时调用
   if (dashboardRef.value) {
     await dashboardRef.value.refreshData();
   }
@@ -217,7 +230,7 @@ const tableReload = async () => {
   <div class="vp-raw w-full">
     <FormDrawer @table-reload="tableReload" />
     <!-- 收入看板 -->
-    <IncomeDashboard ref="dashboardRef" />
+    <IncomeDashboard ref="dashboardRef" @year-change="handleYearChange" />
     <!-- 收入列表 -->
     <Grid>
       <template #toolbar-tools>
