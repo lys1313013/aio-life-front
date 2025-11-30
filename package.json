@@ -118,5 +118,8 @@
       "canvas",
       "node-gyp"
     ]
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }
