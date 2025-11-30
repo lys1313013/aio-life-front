@@ -90,11 +90,16 @@ const [Drawer, drawerApi] = useVbenDrawer({
     drawerApi.close();
   },
   onConfirm: async () => {
-    const newVar = await formApi.submitForm();
-    await insertOrUpdate(toRaw(newVar));
-    drawerApi.close();
-    tableReload();
-  },
+      drawerApi.lock();
+      try {
+        const newVar = await formApi.submitForm();
+        await insertOrUpdate(toRaw(newVar));
+        drawerApi.close();
+        tableReload();
+      } finally {
+        drawerApi.unlock();
+      }
+    },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
       const { values } = drawerApi.getData<Record<string, any>>();
