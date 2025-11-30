@@ -620,7 +620,7 @@ onMounted(() => {
 
     <!-- 关键指标统计 -->
     <Row :gutter="16" class="stats-row">
-      <Col :span="6">
+      <Col :xs="24" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总收入"
@@ -630,7 +630,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :span="6">
+      <Col :xs="24" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总支出"
@@ -640,7 +640,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :span="6">
+      <Col :xs="24" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总结余"
@@ -650,7 +650,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :span="6">
+      <Col :xs="24" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="结余率"
@@ -666,12 +666,12 @@ onMounted(() => {
     <!-- 图表区域 -->
     <div class="charts-container">
               <Row :gutter="16" class="chart-row">
-        <Col :span="12">
+        <Col :xs="24" :sm="24" :md="12" :lg="12">
       <Card class="chart-card" title="年度收支结余对比">
         <EchartsUI ref="yearChartRef" style="height: 300px;" />
       </Card>
       </Col>
-<Col :span="12">
+<Col :xs="24" :sm="24" :md="12" :lg="12">
       <Card class="chart-card" title="每年结余占比">
         <EchartsUI ref="yearlyBalancePieChartRef" style="height: 300px;" />
       </Card>
@@ -684,12 +684,12 @@ onMounted(() => {
       </Card>
 
       <Row :gutter="16" class="chart-row">
-        <Col :span="12">
+        <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="月度收支对比">
             <EchartsUI ref="monthlyChartRef" style="height: 300px;" />
           </Card>
         </Col>
-        <Col :span="12">
+        <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="收支分类占比">
             <EchartsUI ref="categoryChartRef" style="height: 300px;" />
           </Card>
@@ -702,7 +702,7 @@ onMounted(() => {
     <!-- 数据表格区域 -->
     <div class="data-section">
       <Row :gutter="16">
-        <Col :span="12">
+        <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card title="月度结余明细" class="data-card">
             <div class="data-table">
               <div class="table-header">
@@ -725,7 +725,7 @@ onMounted(() => {
             </div>
           </Card>
         </Col>
-        <Col :span="12">
+        <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card title="年度结余明细" class="data-card">
             <div class="data-table">
               <div class="table-header">
@@ -807,6 +807,7 @@ onMounted(() => {
   border-collapse: collapse;
   max-height: 400px;
   overflow-y: auto;
+  position: relative;
 }
 
 .table-header,
@@ -828,10 +829,13 @@ onMounted(() => {
   flex: 0.8;
 }
 
-.table-header .table-cell {
+.table-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #fafafa;
   font-weight: 600;
   color: #595959;
-  background-color: #fafafa;
 }
 
 .table-row.positive .balance {
@@ -874,6 +878,31 @@ onMounted(() => {
   
   .year-stats-row .ant-col {
     margin-bottom: 16px;
+  }
+  
+  /* 响应式图表高度 */
+  .chart-card .echarts-ui {
+    height: 250px !important;
+  }
+  
+  /* 优化数据表格在手机端的显示 */
+  .data-table {
+    overflow-x: auto;
+  }
+  
+  .table-header,
+  .table-row {
+    min-width: 400px;
+  }
+  
+  .table-cell {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+  
+  /* 优化图表配置 */
+  .chart-card .ant-card-head-title {
+    font-size: 14px;
   }
 }
 
