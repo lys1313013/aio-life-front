@@ -13,6 +13,8 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
 import { deleteData, query, deleteBatch, statisticsByYear, statisticsByMonth } from '#/api/core/expense';
 
+import { PAY_TYPE_OPTIONS } from '#/constants/expense';
+
 import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
@@ -47,10 +49,7 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
-const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>([
-  { id: 1, label: '支付宝', value: '1' },
-  { id: 2, label: '微信', value: '2' },
-]);
+const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
 
 // 年度统计数据相关
 interface ExpenseDetail {
@@ -94,8 +93,8 @@ const loadExpTypes = async () => {
 
 const loadPayTypes = async () => {
   try {
-    // 写死支付方式对照，1为支付宝，2为微信
-    payTypeOptions.value = [{ id: 1, label: '支付宝', value: '1' }, { id: 2, label: '微信', value: '2' }];
+    // 使用预定义的支付方式选项
+    payTypeOptions.value = PAY_TYPE_OPTIONS;
   } catch (error) {
     console.error('加载支付方式失败:', error);
   }
@@ -647,6 +646,16 @@ const formOptions: VbenFormProps = {
       },
       fieldName: 'expTimeRange',
       label: '日期区间',
+    },
+     {
+      component: 'Input',
+      fieldName: 'counterparty',
+      label: '交易对方',
+    },
+    {
+      component: 'Input',
+      fieldName: 'expDesc',
+      label: '交易描述',
     },
     {
       component: 'Input',

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref, toRaw, nextTick } from 'vue';
+import { nextTick, onMounted, ref, toRaw } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
@@ -7,14 +7,17 @@ import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
 import { insertOrUpdate } from '#/api/core/expense';
 
-// 连续录入模式开关
-const continuousMode = ref(false);
+import { PAY_TYPE_OPTIONS } from '#/constants/expense';
 
 defineOptions({
   name: 'FormDrawerDemo',
 });
 
 const emit = defineEmits(['tableReload']);
+
+// 连续录入模式开关
+const continuousMode = ref(false);
+
 const tableReload = () => {
   emit('tableReload');
 };
@@ -23,16 +26,14 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
-const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>([
-  { id: 1, label: '支付宝', value: '1' },
-]);
+const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
 
 async function loadDictOptions() {
   try {
     const res = await getByDictType('exp_type');
     dictOptions.value = res.dictDetailList;
-    // 写死支付方式对照，1为支付宝
-    payTypeOptions.value = [{ id: 1, label: '支付宝', value: '1' }];
+    // 使用预定义的支付方式选项
+    payTypeOptions.value = PAY_TYPE_OPTIONS;
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
@@ -137,15 +138,16 @@ const [Drawer, drawerApi] = useVbenDrawer({
     const processedData = { ...toRaw(formData) };
 
     // 处理日期字段，确保格式正确
-    if (processedData.expTime) {
-      // 如果只有日期部分，添加时间部分
-      if (typeof processedData.expTime === 'string' && !processedData.expTime.includes(' ')) {
-        processedData.expTime = `${processedData.expTime} 00:00:00`;
-      }
+    if (
+      processedData.expTime && // 如果只有日期部分，添加时间部分
+      typeof processedData.expTime === 'string' &&
+      !processedData.expTime.includes(' ')
+    ) {
+      processedData.expTime = `${processedData.expTime} 00:00:00`;
     }
 
     await insertOrUpdate(processedData);
-    
+
     // 根据连续录入模式决定是否关闭弹窗
     if (continuousMode.value) {
       // 连续录入模式：重置表单，保持弹窗打开
@@ -154,7 +156,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
       // 普通模式：关闭弹窗
       drawerApi.close();
     }
-    
+
     tableReload();
   },
   onOpenChange(isOpen: boolean) {
@@ -168,9 +170,15 @@ const [Drawer, drawerApi] = useVbenDrawer({
           if (processedValues.expTime) {
             // 确保日期格式正确，直接使用后端返回的日期时间格式
             // DatePicker 会自动根据 format 和 valueFormat 进行显示
-            if (typeof processedValues.expTime === 'string' && processedValues.expTime.includes('T')) {
+            if (
+              typeof processedValues.expTime === 'string' &&
+              processedValues.expTime.includes('T')
+            ) {
               // 如果是 ISO 格式，转换为本地格式
-              processedValues.expTime = processedValues.expTime.replace('T', ' ');
+              processedValues.expTime = processedValues.expTime.replace(
+                'T',
+                ' ',
+              );
             }
           } else {
             // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
@@ -192,21 +200,21 @@ const [Drawer, drawerApi] = useVbenDrawer({
 <template>
   <Drawer>
     <Form />
-    
+
     <!-- 连续录入模式开关 -->
     <div class="continuous-mode-switch">
       <div class="flex items-center gap-2">
         <span class="text-sm text-gray-600">连续录入:</span>
-        <div 
-          class="relative inline-block w-10 h-6 cursor-pointer"
+        <div
+          class="relative inline-block h-6 w-10 cursor-pointer"
           @click="continuousMode = !continuousMode"
         >
-          <div 
-            class="absolute top-0 left-0 right-0 bottom-0 rounded-full transition-colors duration-300"
+          <div
+            class="absolute bottom-0 left-0 right-0 top-0 rounded-full transition-colors duration-300"
             :class="continuousMode ? 'bg-blue-500' : 'bg-gray-300'"
           ></div>
-          <div 
-            class="absolute top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300"
+          <div
+            class="absolute top-1 h-4 w-4 rounded-full bg-white transition-transform duration-300"
             :class="continuousMode ? 'translate-x-5' : 'translate-x-1'"
           ></div>
         </div>
