@@ -23,10 +23,16 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
+const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>([
+  { id: 1, label: '支付宝', value: '1' },
+]);
+
 async function loadDictOptions() {
   try {
     const res = await getByDictType('exp_type');
     dictOptions.value = res.dictDetailList;
+    // 写死支付方式对照，1为支付宝
+    payTypeOptions.value = [{ id: 1, label: '支付宝', value: '1' }];
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
@@ -73,6 +79,17 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'expTypeId',
       label: '支出类型',
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        placeholder: '请选择',
+        options: payTypeOptions,
+        style: { width: '100%' },
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
+      },
+      fieldName: 'payTypeId',
+      label: '支付方式',
     },
     {
       component: 'DatePicker',

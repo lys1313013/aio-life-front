@@ -3,15 +3,15 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref, computed, nextTick } from 'vue';
+import { onMounted, ref, computed, nextTick, watch } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import { Button, Popconfirm, Card } from 'ant-design-vue';
+import { Button, Popconfirm, Card, Select } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
-import { deleteData, query, deleteBatch } from '#/api/core/expense';
+import { deleteData, query, deleteBatch, statisticsByYear, statisticsByMonth } from '#/api/core/expense';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -36,15 +36,52 @@ interface RowType {
 // 图表相关引用
 const lineChartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
+const areaChartRef = ref<EchartsUIType>();
+const yearPieChartRef = ref<EchartsUIType>();
 const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
+const { renderEcharts: renderAreaChart } = useEcharts(areaChartRef);
+const { renderEcharts: renderYearPieChart } = useEcharts(yearPieChartRef);
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
+const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>([
+  { id: 1, label: '支付宝', value: '1' },
+  { id: 2, label: '微信', value: '2' },
+]);
+
+// 年度统计数据相关
+interface ExpenseDetail {
+  typeName: string; // 支出类型名称
+  amt: number; // 支出金额
+}
+
+interface ExpenseData {
+  year: number; // 年份
+  detail: ExpenseDetail[]; // 该年份下的支出详情列表
+}
+
+// 月度统计数据相关
+interface MonthlyExpenseData {
+  year: number; // 年份
+  month: number; // 月份
+  detail: ExpenseDetail[]; // 该月份下的支出详情列表
+}
+
+// 年度选择相关
+const selectedYear = ref<number | 'all'>('all');
+const yearOptions = ref<{ value: string | number; label: string | number }[]>([{ value: 'all', label: '全部' }]);
+
 // 表格数据引用
 const tableData = ref<RowType[]>([]);
+
+// 年度统计数据
+const expData = ref<ExpenseData[]>([]);
+
+// 月度统计数据
+const monthlyExpData = ref<MonthlyExpenseData[]>([]);
 
 const loadExpTypes = async () => {
   try {
@@ -55,6 +92,15 @@ const loadExpTypes = async () => {
   }
 };
 
+const loadPayTypes = async () => {
+  try {
+    // 写死支付方式对照，1为支付宝，2为微信
+    payTypeOptions.value = [{ id: 1, label: '支付宝', value: '1' }, { id: 2, label: '微信', value: '2' }];
+  } catch (error) {
+    console.error('加载支付方式失败:', error);
+  }
+};
+
 // 添加一个计算属性或方法来查找标签
 const getIncomeTypeLabel = (value: number) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
@@ -62,54 +108,23 @@ const getIncomeTypeLabel = (value: number) => {
   return option ? option.label : String(value);
 };
 
-// 计算月份统计数据
-const monthlyStats = computed(() => {
-  const monthlyData: Record<string, number> = {};
-
-  tableData.value.forEach((row) => {
-    if (row.expTime) {
-      try {
-        // 解析日期，提取年月 - 支持多种日期格式
-        let date: Date;
-        if (typeof row.expTime === 'string' && row.expTime.includes('T')) {
-          // ISO 格式：2025-10-12T00:00:00
-          date = new Date(row.expTime);
-        } else if (typeof row.expTime === 'string' && row.expTime.includes(' ')) {
-          // 日期时间格式：2025-10-12 00:00:00
-          date = new Date(row.expTime.replace(' ', 'T'));
-        } else {
-          // 纯日期格式：2025-10-12
-          date = new Date(row.expTime + 'T00:00:00');
-        }
-
-        if (!isNaN(date.getTime())) {
-          const year = date.getFullYear();
-          const month = date.getMonth() + 1;
-          const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
-
-          if (!monthlyData[monthKey]) {
-            monthlyData[monthKey] = 0;
-          }
-          monthlyData[monthKey] += row.amt || 0;
-        }
-      } catch (error) {
-        console.warn('日期解析失败:', row.expTime, error);
-      }
-    }
-  });
-  return monthlyData;
-});
+// 获取支付方式标签
+const getPayTypeLabel = (value: number) => {
+  const option = payTypeOptions.value.find((item) => item.id === value);
+  return option ? option.label : String(value);
+};
 
 // 计算支出类型统计数据
 const expenseTypeStats = computed(() => {
   const typeData: Record<string, number> = {};
 
-  tableData.value.forEach((row) => {
-    const typeLabel = getIncomeTypeLabel(row.expTypeId);
-    if (!typeData[typeLabel]) {
-      typeData[typeLabel] = 0;
-    }
-    typeData[typeLabel] += row.amt || 0;
+  filteredExpData.value.forEach((yearData) => {
+    yearData.detail.forEach((item) => {
+      if (!typeData[item.typeName]) {
+        typeData[item.typeName] = 0;
+      }
+      typeData[item.typeName] += item.amt;
+    });
   });
 
   const result = Object.entries(typeData).map(([name, value]) => ({
@@ -119,10 +134,205 @@ const expenseTypeStats = computed(() => {
   return result;
 });
 
+// 获取年份列表
+const getYears = computed(() => {
+  return filteredExpData.value.map((item) => item.year).sort((a, b) => a - b);
+});
+
+// 获取所有支出类型
+const getAllExpenseTypes = computed(() => {
+  const types = new Set<string>();
+  filteredExpData.value.forEach((yearData) => {
+    yearData.detail.forEach((item) => {
+      types.add(item.typeName);
+    });
+  });
+  return Array.from(types);
+});
+
+// 计算每年的总支出
+const getTotalExpenseByYear = computed(() => {
+  return filteredExpData.value.map((yearData) => {
+    const total = yearData.detail.reduce((sum, item) => sum + item.amt, 0);
+    return Number(total.toFixed(2));
+  });
+});
+
+// 获取年度柱状图的系列数据
+const getBarChartSeries = computed(() => {
+  const types = getAllExpenseTypes.value;
+  const years = getYears.value;
+
+  const series = types.map((type) => {
+    const data = years.map((year) => {
+      const yearData = filteredExpData.value.find((item) => item.year === year);
+      if (yearData) {
+        const detail = yearData.detail.find((d) => d.typeName === type);
+        return detail ? detail.amt : 0;
+      }
+      return 0;
+    });
+
+    return {
+      name: type,
+      type: 'bar',
+      stack: 'expense',
+      emphasis: {
+        focus: 'series',
+      },
+      data,
+    };
+  });
+
+  // 添加总支出在最前面
+  series.unshift({
+    name: '总支出',
+    type: 'bar',
+    barWidth: 30,
+    label: {
+      show: true,
+      position: 'top',
+    },
+    emphasis: {
+      focus: 'series',
+    },
+    data: getTotalExpenseByYear.value,
+  });
+
+  return series;
+});
+
+// 根据选中的年份过滤月度统计数据
+const filteredMonthlyExpData = computed(() => {
+  if (selectedYear.value === 'all') {
+    return monthlyExpData.value;
+  }
+  return monthlyExpData.value.filter((item) => item.year === selectedYear.value);
+});
+
+// 获取月份列表
+const getMonths = computed(() => {
+  return filteredMonthlyExpData.value.map((item) => {
+    const yearStr = item.year.toString();
+    const monthStr = item.month.toString().padStart(2, '0');
+    return `${yearStr}-${monthStr}`;
+  }).sort();
+});
+
+// 获取堆叠面积图的系列数据
+const getAreaChartSeries = computed(() => {
+  // 获取所有支出类型
+  const types = new Set<string>();
+  filteredMonthlyExpData.value.forEach((monthData) => {
+    monthData.detail.forEach((item) => {
+      types.add(item.typeName);
+    });
+  });
+  const expenseTypes = Array.from(types);
+
+  const months = getMonths.value;
+
+  const series = expenseTypes.map((type) => {
+      const data = months.map((monthStr) => {
+        // 解析月份字符串，获取年份和月份
+        const [year, month] = monthStr.split('-').map(Number);
+        // 查找对应的月度数据
+        const monthData = filteredMonthlyExpData.value.find((item) => item.year === year && item.month === month);
+        if (monthData) {
+          // 查找该月份下的对应类型数据
+          const detail = monthData.detail.find((d) => d.typeName === type);
+          return detail ? detail.amt : 0;
+        }
+        return 0;
+      });
+
+    return {
+      name: type,
+      type: 'line',
+      stack: 'expense',
+      areaStyle: {},
+      emphasis: {
+        focus: 'series',
+      },
+      data,
+    };
+  });
+
+  return series;
+});
+
+// 获取年度支出时间分布饼图数据
+const getYearPieChartData = computed(() => {
+  const yearTotals: Record<string, number> = {};
+
+  filteredExpData.value.forEach((yearData) => {
+    const yearTotal = yearData.detail.reduce((total, item) => total + item.amt, 0);
+    yearTotals[yearData.year] = (yearTotals[yearData.year] || 0) + yearTotal;
+  });
+
+  const data = Object.entries(yearTotals)
+    .map(([year, value]) => ({
+      name: `${year}年`,
+      value: Number(value.toFixed(2))
+    }))
+    .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+
+  return {
+    data,
+    total: data.reduce((sum, item) => sum + item.value, 0)
+  };
+});
+
+// 根据选中的年份过滤数据
+const filteredData = computed(() => {
+  if (selectedYear.value === 'all') {
+    return tableData.value;
+  }
+  return tableData.value.filter((row) => {
+    if (row.expTime) {
+      try {
+        let date: Date;
+        if (typeof row.expTime === 'string' && row.expTime.includes('T')) {
+          date = new Date(row.expTime);
+        } else if (typeof row.expTime === 'string' && row.expTime.includes(' ')) {
+          date = new Date(row.expTime.replace(' ', 'T'));
+        } else {
+          date = new Date(row.expTime + 'T00:00:00');
+        }
+        return date.getFullYear() === selectedYear.value;
+      } catch (error) {
+        return false;
+      }
+    }
+    return false;
+  });
+});
+
+// 根据选中的年份过滤年度统计数据
+const filteredExpData = computed(() => {
+  if (selectedYear.value === 'all') {
+    return expData.value;
+  }
+  return expData.value.filter((item) => item.year === selectedYear.value);
+});
+
 // 计算总支出
 const totalExpense = computed(() => {
-  const total = tableData.value.reduce((total, row) => total + (row.amt || 0), 0);
-  return total;
+  return filteredExpData.value.reduce((total, yearData) => {
+    const yearTotal = yearData.detail.reduce((sum, item) => sum + item.amt, 0);
+    return total + yearTotal;
+  }, 0);
+});
+
+// 计算今年总支出
+const currentYearExpense = computed(() => {
+  const currentYear = new Date().getFullYear();
+  const currentYearData = expData.value.find(item => item.year === currentYear);
+  if (currentYearData) {
+    return currentYearData.detail.reduce((sum, item) => sum + item.amt, 0);
+  } else {
+    return 0;
+  }
 });
 
 // 格式化金额显示
@@ -137,15 +347,17 @@ const formatCurrency = (amount: number) => {
 // 更新图表
 const updateCharts = () => {
 
-  const monthlyData = monthlyStats.value;
   const typeData = expenseTypeStats.value;
+  const barChartSeries = getBarChartSeries.value;
+  const areaChartSeries = getAreaChartSeries.value;
+  const years = getYears.value;
 
   // 检查是否有数据
-  if (Object.keys(monthlyData).length === 0 || typeData.length === 0) {
+  if (years.length === 0 || typeData.length === 0) {
     return;
   }
 
-  // 渲染柱状图（替换直线图）
+  // 渲染年度柱状图
   renderLineChart({
     tooltip: {
       trigger: 'axis',
@@ -153,22 +365,41 @@ const updateCharts = () => {
         type: 'shadow'
       },
       formatter: (params: any) => {
-        const data = params[0];
-        return `${data.name}<br/>支出金额: ${formatCurrency(data.value)}`;
-      }
+        let tooltip = `${params[0].name}<br/>`;
+        let total = 0;
+
+        // 计算该年份的总支出
+        params.forEach((item: any) => {
+          if (item.seriesName !== '总支出') {
+            total += item.value || 0;
+          }
+        });
+
+        // 显示各项的金额和百分比
+        params.forEach((item: any) => {
+          if (item.seriesName !== '总支出' && item.value > 0) {
+            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            tooltip += `${item.marker} ${item.seriesName}: ${formatCurrency(item.value)} (${percentage}%)<br/>`;
+          }
+        });
+
+        tooltip += `总计: ${formatCurrency(total)}`;
+        return tooltip;
+      },
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
-      containLabel: true
+      bottom: '10%',
+      containLabel: true,
     },
     xAxis: {
       type: 'category',
-      data: Object.keys(monthlyData).sort(),
-      axisLabel: {
-        rotate: 45
-      }
+      data: years,
     },
     yAxis: {
       type: 'value',
@@ -176,27 +407,7 @@ const updateCharts = () => {
         formatter: '¥{value}'
       }
     },
-    series: [{
-      name: '月度支出',
-      type: 'bar',
-      barWidth: '60%',
-      data: Object.keys(monthlyData).sort().map(key => monthlyData[key]),
-      itemStyle: {
-        color: '#ff6b6b'
-      },
-      emphasis: {
-        itemStyle: {
-          color: '#ee5a52'
-        }
-      },
-      label: {
-        show: true,
-        position: 'top',
-        formatter: (params: any) => {
-          return formatCurrency(params.value);
-        }
-      }
-    }]
+    series: barChartSeries
   });
 
   // 渲染饼图
@@ -243,11 +454,156 @@ const updateCharts = () => {
       data: typeData
     }]
   });
+
+  // 渲染堆叠面积图
+  const months = getMonths.value;
+  renderAreaChart({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+      },
+      formatter: (params: any) => {
+        let tooltip = `${params[0].name}<br/>`;
+        let total = 0;
+
+        // 计算该月份的总支出
+        params.forEach((item: any) => {
+          total += item.value || 0;
+        });
+
+        // 显示各项的金额和百分比
+        params.forEach((item: any) => {
+          if (item.value > 0) {
+            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            tooltip += `${item.marker} ${item.seriesName}: ${formatCurrency(item.value)} (${percentage}%)<br/>`;
+          }
+        });
+
+        tooltip += `总计: ${formatCurrency(total)}`;
+        return tooltip;
+      },
+    },
+    legend: {
+      type: 'scroll',
+      bottom: 0,
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '10%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: months,
+      axisLabel: {
+        rotate: 45
+      }
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: '¥{value}'
+      }
+    },
+    series: areaChartSeries
+  });
+
+  // 渲染年度支出时间分布饼图
+  const yearPieData = getYearPieChartData.value;
+  renderYearPieChart({
+    tooltip: {
+      trigger: 'item',
+      formatter: '{a} <br/>{b}: {c} ({d}%)'
+    },
+    legend: {
+      type: 'scroll',
+      orient: 'horizontal',
+      bottom: 0,
+      left: 'center'
+    },
+    series: [
+      {
+        name: '年份支出分布',
+        type: 'pie',
+        radius: '60%',
+        center: ['50%', '45%'],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: {
+          show: true,
+          formatter: (params: any) => {
+            return `${params.name}\n${params.percent}%`;
+          },
+          fontSize: 12
+        },
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold'
+          }
+        },
+        labelLine: {
+          show: true
+        },
+        data: yearPieData.data
+      }
+    ]
+  });
 };
 
-// 在组件挂载时加载值集数据
-onMounted(() => {
-  loadExpTypes();
+// 从年度统计数据中提取年份并更新年份选项
+const updateYearOptions = () => {
+  const years = new Set<number>();
+  expData.value.forEach((yearData) => {
+    years.add(yearData.year);
+  });
+
+  // 生成年份选项
+  const sortedYears = Array.from(years).sort((a, b) => b - a);
+  yearOptions.value = [
+    { value: 'all', label: '全部' },
+    ...sortedYears.map(year => ({ value: year, label: year }))
+  ];
+};
+
+// 获取年度和月度统计数据
+const getYearlyStatistics = async () => {
+  try {
+    const [yearRes, monthRes] = await Promise.all([
+      statisticsByYear({}),
+      statisticsByMonth({})
+    ]);
+    expData.value = yearRes;
+    monthlyExpData.value = monthRes;
+    updateYearOptions();
+    nextTick(() => {
+      updateCharts();
+    });
+  } catch (error) {
+    console.error('获取统计数据失败:', error);
+  }
+};
+
+// 监听年度选择变化
+watch(selectedYear, () => {
+  nextTick(() => {
+    updateCharts();
+  });
+});
+
+// 在组件挂载时加载值集数据和年度统计数据
+onMounted(async () => {
+  await loadExpTypes();
+  await loadPayTypes();
+  await getYearlyStatistics();
 });
 
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
@@ -271,12 +627,22 @@ const formOptions: VbenFormProps = {
       label: '支出类型',
     },
     {
+      component: 'Select',
+      componentProps: {
+        placeholder: '请选择支付方式',
+        options: payTypeOptions, // 绑定支付方式选项
+        allowClear: true, // 添加清除选项功能
+        fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
+      },
+      fieldName: 'payTypeId',
+      label: '支付方式',
+    },
+    {
       component: 'RangePicker',
       componentProps: {
         placeholder: ['开始日期', '结束日期'],
-        format: 'YYYY-MM-DD HH:mm:ss',
-        valueFormat: 'YYYY-MM-DD HH:mm:ss',
-        showTime: { format: 'HH:mm:ss' },
+        format: 'YYYY-MM-DD',
+        valueFormat: 'YYYY-MM-DD',
         style: { width: '100%' },
       },
       fieldName: 'expTimeRange',
@@ -349,6 +715,7 @@ const gridOptions: VxeGridProps<RowType> = {
         return getIncomeTypeLabel(cellValue);
       },
     },
+    { field: 'payTypeId', title: '支付方式', sortable: true, width: 100, formatter: ({ cellValue }) => { return getPayTypeLabel(cellValue); } },
     { field: 'remark', title: '备注', sortable: true, width: 100 },
     { field: 'expTime', title: '时间', sortable: true, width: 180 },
     { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
@@ -412,12 +779,10 @@ const gridOptions: VxeGridProps<RowType> = {
           }
 
           // 保存表格数据用于图表统计
-          tableData.value = result.items;
+        tableData.value = result.items;
 
-          // 立即更新图表
-          nextTick(() => {
-            updateCharts();
-          });
+        // 更新年度统计数据
+        await getYearlyStatistics();
         } else {
           tableData.value = [];
         }
@@ -504,22 +869,44 @@ const tableReload = () => {
     <div class="charts-section mb-6">
       <!-- 总金额卡片 -->
       <div class="total-card">
-        <div class="total-content">
-          <div class="total-icon">💸</div>
-          <div class="total-info">
-            <div class="total-label">总支出</div>
-            <div class="total-amount">{{ formatCurrency(totalExpense) }}</div>
+        <div class="dashboard-header">
+          <div class="total-stats">
+            <div class="stat-item">
+              <div class="stat-label">总支出</div>
+              <div class="stat-value">{{ formatCurrency(totalExpense) }}</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-label">{{ new Date().getFullYear() }}年总支出</div>
+              <div class="stat-value">{{ formatCurrency(currentYearExpense) }}</div>
+            </div>
+          </div>
+
+          <div class="year-selector-wrapper">
+            <span class="year-label">选择年份：</span>
+            <Select
+              v-model:value="selectedYear"
+              :options="yearOptions"
+              placeholder="请选择年份"
+              class="custom-select year-select"
+            />
           </div>
         </div>
       </div>
 
       <!-- 图表容器 -->
       <div class="chart-container">
-        <Card class="chart-item" title="月度支出趋势">
+        <Card class="chart-item" title="年度支出趋势">
           <EchartsUI ref="lineChartRef" style="height: 300px;" />
         </Card>
         <Card class="chart-item" title="支出类型分布">
           <EchartsUI ref="pieChartRef" style="height: 300px;" />
+        </Card>
+        <Card class="chart-item" title="年度支出时间分布">
+          <EchartsUI ref="yearPieChartRef" style="height: 300px;" />
+        </Card>
+        <Card class="chart-item full-width area-chart-item" title="月度支出趋势">
+          <EchartsUI ref="areaChartRef" style="height: 350px;" />
         </Card>
       </div>
     </div>
@@ -552,7 +939,9 @@ const tableReload = () => {
 
 <style scoped>
 .charts-section {
-  padding: 0;
+  padding: 12px;
+  margin-bottom: 30px;
+  overflow: hidden;
 }
 
 /* 表格容器样式 */
@@ -569,52 +958,171 @@ const tableReload = () => {
 }
 
 .total-card {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-  border-radius: 12px;
-  padding: 24px;
+  background: linear-gradient(135deg, #f093fb 0%, #764ba2 50%, #667eea 100%);
+  border-radius: 16px;
+  padding: 16px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
   color: white;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.total-content {
+.total-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  transform: rotate(0deg);
+  animation: shimmer 3s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: rotate(0deg) translate(-50%, -50%);
+  }
+  100% {
+    transform: rotate(360deg) translate(-50%, -50%);
+  }
+}
+
+.total-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.35);
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.total-stats {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-around;
+  gap: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.total-icon {
-  font-size: 48px;
-  opacity: 0.9;
-}
-
-.total-info {
+.stat-item {
   flex: 1;
+  text-align: center;
 }
 
-.total-label {
-  font-size: 16px;
-  opacity: 0.9;
+.stat-label {
+  font-size: 14px;
+  opacity: 0.85;
   margin-bottom: 8px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #fff;
 }
 
-.total-amount {
-  font-size: 32px;
+.stat-value {
+  font-size: 36px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 50%, #e0c3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: #fff; /* Fallback */
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-divider {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  border-radius: 0.5px;
+}
+
+.year-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.year-label {
+  font-weight: 500;
+  color: #fff;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.year-select {
+  width: 160px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column-reverse;
+    gap: 16px;
+  }
+  
+  .total-stats {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .stat-divider {
+    width: 100%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+  
+  .year-selector-wrapper {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .year-select {
+    width: 100% !important;
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
 }
 
 .chart-container {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
-  height: 350px;
+  height: auto;
 }
 
 .chart-item {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 350px;
+}
+
+.chart-item.full-width {
+  grid-column: 1 / -1;
 }
 
 .chart-item :deep(.ant-card-body) {
@@ -623,17 +1131,34 @@ const tableReload = () => {
 }
 
 .chart-item :deep(.echarts-ui) {
-  height: 300px;
+  height: calc(100% - 48px);
+}
+
+/* 确保堆叠面积图底部有足够空间，避免与搜索框重叠 */
+.area-chart-item {
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+@media (max-width: 1400px) {
+  .chart-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 1200px) {
   .chart-container {
     grid-template-columns: 1fr;
-    height: auto;
   }
 
   .chart-item {
     height: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-item {
+    height: 300px;
   }
 }
 
