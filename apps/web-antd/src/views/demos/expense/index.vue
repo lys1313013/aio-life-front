@@ -6,6 +6,7 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import { onMounted, ref, computed, nextTick, watch } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
+import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Button, Popconfirm, Card, Select, message } from 'ant-design-vue';
 
@@ -44,6 +45,7 @@ const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
 const { renderEcharts: renderAreaChart, getChartInstance: getAreaChartInstance } = useEcharts(areaChartRef);
 const { renderEcharts: renderYearPieChart } = useEcharts(yearPieChartRef);
+const { isMobile } = usePreferences();
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
@@ -196,7 +198,7 @@ const getBarChartSeries = computed(() => {
       focus: 'series',
     },
     data: getTotalExpenseByYear.value,
-  });
+  } as any);
 
   return series;
 });
@@ -488,9 +490,9 @@ const updateCharts = async () => {
       bottom: 0,
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '10%',
+      left: '10',
+      right: '10',
+      bottom: '20',
       containLabel: true,
     },
     xAxis: {
@@ -498,7 +500,8 @@ const updateCharts = async () => {
       boundaryGap: false,
       data: months,
       axisLabel: {
-        rotate: 45
+        rotate: 45,
+        interval: 'auto'
       },
       triggerEvent: true,
     },
@@ -521,7 +524,7 @@ const updateCharts = async () => {
       // 处理轴标签点击
       if (params.componentType === 'xAxis') {
         monthStr = params.value;
-      } 
+      }
       // 处理数据点点击
       else if (params.componentType === 'series') {
         monthStr = params.name;
@@ -534,7 +537,7 @@ const updateCharts = async () => {
         const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
 
         message.success(`已选择月份: ${monthStr}`);
-        
+
         if (gridApi && gridApi.formApi) {
            gridApi.formApi.setValues({
             expTimeRange: [startDate, endDate],
@@ -649,7 +652,7 @@ const [FormDrawer, formDrawerApi] = useVbenDrawer({
 
 const formOptions: VbenFormProps = {
   // 默认展开
-  collapsed: false,
+  collapsed: isMobile.value,
   schema: [
     // 搜索
     {
@@ -964,7 +967,8 @@ const handleUpdateSuccess = async (updatedRow: any) => {
         <Card class="chart-item" title="年度支出时间分布">
           <EchartsUI ref="yearPieChartRef" style="height: 300px;" />
         </Card>
-        <Card class="chart-item full-width area-chart-item" title="月度支出趋势">
+        <Card class="chart-item full-width area-chart-item">
+          <h3>月度支出趋势</h3>
           <EchartsUI ref="areaChartRef" style="height: 350px;" />
         </Card>
       </div>
@@ -1217,23 +1221,17 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 
 @media (max-width: 768px) {
   .chart-item {
-    height: 300px;
+    height: 380px;
   }
-}
-
-@media (max-width: 768px) {
-  .total-content {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
+  
+  .charts-section {
+    padding: 8px;
+    margin-bottom: 0px;
   }
 
-  .total-icon {
-    font-size: 36px;
-  }
-
-  .total-amount {
-    font-size: 24px;
+  .total-card {
+    padding: 12px;
+    margin-bottom: 12px;
   }
 }
 </style>
