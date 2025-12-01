@@ -3,8 +3,9 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref, computed, nextTick } from 'vue';
+import { onMounted, ref, computed, nextTick, watch } from 'vue';
 
+import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Button, Popconfirm, Card, Drawer } from 'ant-design-vue';
 
@@ -29,6 +30,7 @@ const lineChartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
 const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
+const { isMobile } = usePreferences();
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
@@ -136,7 +138,8 @@ const updateCharts = () => {
       type: 'category',
       data: Object.keys(monthlyData).sort(),
       axisLabel: {
-        rotate: 45
+        rotate: 45,
+        interval: isMobile.value ? 0 : 'auto', // 手机端强制显示所有标签
       }
     },
     yAxis: {
@@ -174,7 +177,11 @@ const updateCharts = () => {
       trigger: 'item',
       formatter: '{a} <br/>{b}: {c} ({d}%)'
     },
-    legend: {
+    legend: isMobile.value ? {
+      orient: 'horizontal',
+      bottom: '0',
+      left: 'center'
+    } : {
       orient: 'vertical',
       right: 10,
       top: 'center'
@@ -182,8 +189,9 @@ const updateCharts = () => {
     series: [{
       name: '运动类型分布',
       type: 'pie',
-      radius: ['0%', '80%'],
-      avoidLabelOverlap: false,
+      radius: isMobile.value ? ['0%', '55%'] : ['0%', '80%'],
+      center: isMobile.value ? ['50%', '45%'] : ['50%', '50%'],
+      avoidLabelOverlap: true,
       itemStyle: {
         borderRadius: 10,
         borderColor: '#fff',
@@ -213,6 +221,13 @@ const updateCharts = () => {
     }]
   });
 };
+
+// 监听设备变化，重新渲染图表
+watch(isMobile, () => {
+  setTimeout(() => {
+    updateCharts();
+  }, 200);
+});
 
 // 在组件挂载时加载值集数据
 onMounted(() => {
@@ -500,7 +515,7 @@ const tableReload = () => {
     <Drawer
       v-model:open="drawerVisible"
       :title="currentRow ? '编辑运动记录' : '新增运动记录'"
-      :width="600"
+      :width="isMobile ? '100%' : 600"
     >
       <FormDrawerDemo
         :values="currentRow"

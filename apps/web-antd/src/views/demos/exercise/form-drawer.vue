@@ -73,6 +73,7 @@ const [Form, formApi] = useVbenForm({
         placeholder: '请选择日期',
         format: 'YYYY-MM-DD',
         valueFormat: 'YYYY-MM-DD',
+        style: { width: '100%' },
       },
       fieldName: 'exerciseDate',
       label: '运动日期',
