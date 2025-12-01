@@ -184,8 +184,7 @@ onMounted(async () => {
   <div class="think-page">
     <div class="header">
       <div class="header-left">
-        <div class="title">每日思考</div>
-        <div class="subtitle">记录每日思考，捕捉灵感瞬间。</div>
+        <div class="subtitle">记录每次思考，捕捉灵感瞬间。</div>
       </div>
       <div class="header-right">
         <Button type="primary" @click="openAddModal">
@@ -212,7 +211,7 @@ onMounted(async () => {
         :key="thought.id"
         hoverable
         class="thought-card"
-        @dblclick="openEditModal(thought.id)"
+        @click="openEditModal(thought.id)"
       >
         <div class="card-content">{{ thought.content }}</div>
         <div class="card-footer">
@@ -257,7 +256,9 @@ onMounted(async () => {
 
 <style scoped>
 .think-page {
-  padding: 20px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .header {
@@ -265,17 +266,18 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
-  padding: 20px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f0f5ff 0%, #fff 60%);
-  border: 1px solid #e6f4ff;
+  margin-bottom: 24px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+  border: 1px solid rgba(230, 244, 255, 0.8);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .header-right {
@@ -286,59 +288,81 @@ onMounted(async () => {
 
 .title {
   margin: 0;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 600;
   color: #1f1f1f;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  color: #8c8c8c;
+  color: #666;
+  font-size: 14px;
 }
 
 .empty-wrap {
   background: #fff;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  padding: 40px 20px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 12px;
+  padding: 60px 20px;
+  text-align: center;
 }
 
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
+  gap: 20px;
+}
+
+.thought-card {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+  background: #fff;
+}
+
+.thought-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  border-color: #e6f4ff;
 }
 
 .thought-card :deep(.ant-card-body) {
   display: flex;
   flex-direction: column;
   height: 100%;
+  padding: 20px;
 }
 
 .card-content {
   flex: 1;
-  font-size: 14px;
-  color: #1f1f1f;
-  line-height: 1.7;
+  font-size: 15px;
+  color: #262626;
+  line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  margin-bottom: 16px;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f5f5f5;
 }
 
 .card-date {
   font-size: 12px;
-  color: #8c8c8c;
+  color: #999;
 }
 
 .event-item {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
 }
 
 .event-row {
@@ -348,20 +372,53 @@ onMounted(async () => {
 }
 
 .event-time {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 12px;
-  color: #8c8c8c;
+  color: #999;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  margin-top: 24px;
 }
 
+/* Mobile Adaptation */
 @media (max-width: 768px) {
+  .think-page {
+    padding: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+  }
+
+  .header-right {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .header-right .ant-btn {
+    width: 100%;
+    height: 40px;
+  }
+
   .cards-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .thought-card :deep(.ant-card-body) {
+    padding: 16px;
+  }
+
+  .card-content {
+    font-size: 14px;
+    -webkit-line-clamp: 4;
   }
 }
 </style>
