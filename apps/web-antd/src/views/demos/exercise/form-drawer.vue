@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 
 import { Button } from 'ant-design-vue';
+import dayjs from 'dayjs';
 
 import { useVbenForm } from '#/adapter/form';
 import { add, update } from '#/api/core/exerciseRecord';
@@ -38,7 +39,12 @@ watch(
   () => props.values,
   (newValues) => {
     if (newValues) {
-      formApi.setValues(newValues);
+      const values = { ...newValues };
+      // 如果没有日期，默认为当天
+      if (!values.exerciseDate) {
+        values.exerciseDate = dayjs().format('YYYY-MM-DD');
+      }
+      formApi.setValues(values);
     }
   },
   { deep: true }
@@ -78,6 +84,7 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'exerciseDate',
       label: '运动日期',
       rules: 'required',
+      defaultValue: dayjs().format('YYYY-MM-DD'),
     },
     {
       component: 'Input',
@@ -119,6 +126,7 @@ const handleSubmit = async () => {
     }
     if (res) {
       emit('table-reload');
+      emit('close');
     }
   } catch (error) {
     console.error('提交表单失败:', error);

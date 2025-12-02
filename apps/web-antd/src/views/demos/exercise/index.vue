@@ -430,8 +430,8 @@ const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
 
 const deleteRow = async (row: RowType) => {
   try {
-    await deleteData({
-      id: row.id,
+    await deleteBatch({
+      idList: [row.id],
     }).then(() => gridApi.reload());
   } catch (error) {
     console.error('捕获异常：', error);
@@ -493,9 +493,16 @@ const tableReload = () => {
         <Button class="mr-2" type="primary" @click="openAddFormDrawer">
           新增
         </Button>
-        <Button class="mr-2" type="primary" @click="submitDeleteData">
-          删除
-        </Button>
+        <Popconfirm
+          title="确认删除选中的记录吗?"
+          ok-text="确定"
+          cancel-text="取消"
+          @confirm="submitDeleteData"
+        >
+          <Button class="mr-2" type="primary" danger>
+            删除
+          </Button>
+        </Popconfirm>
       </template>
       <template #action="{ row }">
         <a href="javascript:void(0)" @click="openFormDrawer(row)">编辑</a>
@@ -506,7 +513,7 @@ const tableReload = () => {
           cancel-text="否"
           @confirm="deleteRow(row)"
         >
-          <a href="javascript:void(0)">删除</a>
+          <a href="javascript:void(0)" style="color: red">删除</a>
         </Popconfirm>
       </template>
     </Grid>
