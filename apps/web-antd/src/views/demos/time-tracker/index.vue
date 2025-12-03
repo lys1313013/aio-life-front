@@ -297,6 +297,10 @@
                 <span class="stat-label-corner">时长</span>
                 <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
               </div>
+              <div class="stat-square-card" v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId">
+                <span class="stat-label-corner">平均</span>
+                <span class="stat-value-center">{{ formatDuration(Math.round(averageDuration)) }}</span>
+              </div>
               <div class="stat-square-card" v-if="!selectedFilterCategoryId" :style="freeTimeCardStyle">
                 <span class="stat-label-corner">空闲</span>
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
@@ -458,6 +462,19 @@ const filteredTimeSlots = computed(() => {
 
 const totalDuration = computed(() => {
   return filteredTimeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
+});
+
+const averageDuration = computed(() => {
+  // 计算分母：当前视图范围内，实际有数据记录的天数（不区分分类）
+  // 比如：这个月录了3天数据，其中2天有筛选中分类的数据，分母应该是3
+  const activeDates = new Set(timeSlots.value.map(slot => slot.date));
+  const activeDaysCount = activeDates.size;
+
+  if (activeDaysCount === 0) {
+    return 0;
+  }
+
+  return totalDuration.value / activeDaysCount;
 });
 
 const maxDuration = computed(() => {
