@@ -4,10 +4,12 @@ export interface TimeSlot {
   startTime: number; // 开始时间（分钟，0-1440）
   endTime: number; // 结束时间（分钟，0-1440）
   categoryId: string; // 分类ID
-  title: string;     // 标题
+  title: string; // 标题
   description?: string; // 描述
-  color?: string;    // 颜色
-  date: string;      // 日期（YYYY-MM-DD格式）
+  color?: string; // 颜色
+  date: string; // 日期（YYYY-MM-DD格式）
+  exerciseTypeId?: string; // 运动类型ID
+  exerciseCount?: number; // 运动次数
 }
 
 // 时间段分类
@@ -34,17 +36,19 @@ export interface TimeSlotFormData {
   categoryId: string;
   title: string;
   description?: string;
+  exerciseTypeId?: string;
+  exerciseCount?: number;
 }
 
 // 拖拽操作类型
 export interface DragOperation {
-  type: 'create' | 'resize' | 'move';
+  type: 'create' | 'move' | 'resize';
   slotId?: string;
   startX?: number;
   startY: number;
   startTime: number;
   currentTime: number;
-  direction?: 'top' | 'bottom';
+  direction?: 'bottom' | 'top';
   originalStart?: number;
   originalEnd?: number;
   changed?: boolean;

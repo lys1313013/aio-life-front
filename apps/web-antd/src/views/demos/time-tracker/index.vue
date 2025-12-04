@@ -1279,7 +1279,9 @@ const handleSaveSlot = (formData: any) => {
       categoryId: formData.categoryId,
       title: formData.title,
       description: formData.description || '',
-      date: currentDate
+      date: currentDate,
+      exerciseTypeId: formData.exerciseTypeId,
+      exerciseCount: formData.exerciseCount
     };
 
     // 如果用户没有修改标题，自动设置为分类名称

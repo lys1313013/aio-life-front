@@ -26,6 +26,32 @@
         </Select>
       </Form.Item>
 
+      <!-- 运动相关字段 -->
+      <template v-if="formState.categoryId === 'exercise'">
+        <Row :gutter="16">
+          <Col :span="12">
+            <Form.Item label="运动类型" name="exerciseTypeId">
+              <Select
+                v-model:value="formState.exerciseTypeId"
+                placeholder="请选择运动类型"
+                :options="exerciseTypeOptions"
+                allowClear
+              />
+            </Form.Item>
+          </Col>
+          <Col :span="12">
+            <Form.Item label="运动数量" name="exerciseCount">
+              <InputNumber
+                v-model:value="formState.exerciseCount"
+                placeholder="数量"
+                style="width: 100%"
+                :min="0"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      </template>
+
       <Row :gutter="16">
         <Col :span="12">
           <Form.Item label="开始时间" name="startTime">
@@ -179,10 +205,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea } from 'ant-design-vue';
+import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
 import { timeToMinutes, minutesToTime, formatDuration, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
+import { getByDictType } from '#/api/core/common';
 import dayjs from 'dayjs';
 
 interface Props {
@@ -200,14 +227,49 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+// 本地表单状态接口，时间字段使用 Dayjs
+interface LocalFormState {
+  id?: string;
+  startTime?: dayjs.Dayjs;
+  endTime?: dayjs.Dayjs;
+  categoryId: string;
+  title: string;
+  description?: string;
+  exerciseTypeId?: string;
+  exerciseCount?: number;
+}
+
 const formRef = ref<FormInstance>();
-const formState = ref<TimeSlotFormData>({
+const formState = ref<LocalFormState>({
   id: '',
   startTime: undefined,
   endTime: undefined,
   categoryId: '',
   title: '',
-  description: ''
+  description: '',
+  exerciseTypeId: undefined,
+  exerciseCount: undefined
+});
+
+const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
+
+// 加载运动类型
+const loadExerciseTypes = async () => {
+  try {
+    const res = await getByDictType('exercise_type');
+    if (res && res.dictDetailList) {
+      exerciseTypeOptions.value = res.dictDetailList.map((item: any) => ({
+        label: item.label,
+        value: item.value
+      }));
+    }
+  } catch (error) {
+    console.error('加载运动类型失败:', error);
+  }
+};
+
+onMounted(() => {
+  loadExerciseTypes();
 });
 
 // 连续调整相关变量
@@ -228,7 +290,7 @@ const duration = computed(() => {
 });
 
 // 表单验证规则
-const rules = {
+const rules: any = {
   title: [
     { required: true, message: '请输入标题', trigger: 'blur' },
     { max: 50, message: '标题不能超过50个字符', trigger: 'blur' }
@@ -282,7 +344,9 @@ const initializeForm = (slot: TimeSlot) => {
     endTime: minutesToTimePickerValue(slot.endTime),
     categoryId: slot.categoryId,
     title: slot.title,
-    description: slot.description || ''
+    description: slot.description || '',
+    exerciseTypeId: slot.exerciseTypeId,
+    exerciseCount: slot.exerciseCount
   };
 };
 
@@ -317,7 +381,9 @@ const handleSave = async () => {
       endTime: timeToMinutes(formState.value.endTime.format('HH:mm')),
       categoryId: formState.value.categoryId,
       title: formState.value.title,
-      description: formState.value.description
+      description: formState.value.description,
+      exerciseTypeId: formState.value.exerciseTypeId,
+      exerciseCount: formState.value.exerciseCount
     };
 
     emit('save', saveData);
@@ -409,7 +475,7 @@ const adjustEndTime = (minutes: number) => {
 const roundStartTime = (direction: 'up' | 'down') => {
   if (!formState.value.startTime) return;
 
-  const currentMinutes = timeToMinutes(formState.value.startTime);
+  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const roundedMinutes = direction === 'down'
     ? Math.floor(currentMinutes / 60) * 60
     : Math.ceil(currentMinutes / 60) * 60;

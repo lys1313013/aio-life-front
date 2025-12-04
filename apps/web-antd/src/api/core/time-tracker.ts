@@ -17,6 +17,8 @@ export interface TimeRecordEntity {
   createUser: number;
   createTime: string;
   updateTime: string;
+  exerciseTypeId?: string;
+  exerciseCount?: number;
 }
 
 /**
