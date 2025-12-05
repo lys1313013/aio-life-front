@@ -11,14 +11,14 @@ import { statisticsByMonth as expenseStatisticsByMonth } from '#/api/core/expens
 
 // 图表引用
 const balanceChartRef = ref<EchartsUIType>();
-const monthlyChartRef = ref<EchartsUIType>();
-const categoryChartRef = ref<EchartsUIType>();
+const incomeCategoryChartRef = ref<EchartsUIType>();
+const expenseCategoryChartRef = ref<EchartsUIType>();
 const yearChartRef = ref<EchartsUIType>();
 const yearlyBalancePieChartRef = ref<EchartsUIType>();
 
 const { renderEcharts: renderBalanceChart } = useEcharts(balanceChartRef);
-const { renderEcharts: renderMonthlyChart } = useEcharts(monthlyChartRef);
-const { renderEcharts: renderCategoryChart } = useEcharts(categoryChartRef);
+const { renderEcharts: renderIncomeCategoryChart } = useEcharts(incomeCategoryChartRef);
+const { renderEcharts: renderExpenseCategoryChart } = useEcharts(expenseCategoryChartRef);
 const { renderEcharts: renderYearChart } = useEcharts(yearChartRef);
 const { renderEcharts: renderYearlyBalancePieChart } = useEcharts(yearlyBalancePieChartRef);
 
@@ -279,8 +279,8 @@ const currentYearStats = computed(() => {
 // 更新图表
 const updateCharts = () => {
   updateBalanceChart();
-  updateMonthlyChart();
-  updateCategoryChart();
+  updateIncomeCategoryChart();
+  updateExpenseCategoryChart();
   updateYearChart();
   updateYearlyBalancePieChart();
 };
@@ -328,43 +328,9 @@ const updateBalanceChart = () => {
   });
 };
 
-// 更新月度对比图
-const updateMonthlyChart = () => {
-  const data = filteredData.value.monthly;
-  
-  if (!data || data.length === 0) return;
-  
-  const chartData = [...data].reverse();
-  
-  renderMonthlyChart({
-    ...getCommonChartConfig('月度收支对比'),
-    legend: { data: ['收入', '支出'] },
-    xAxis: {
-      type: 'category',
-      data: chartData.map(item => item.month),
-      axisLabel: { rotate: 45 }
-    },
-    series: [
-      {
-        name: '收入',
-        type: 'bar',
-        data: chartData.map(item => item.income),
-        itemStyle: { color: '#52c41a' }
-      },
-      {
-        name: '支出',
-        type: 'bar',
-        data: chartData.map(item => item.expense),
-        itemStyle: { color: '#ff4d4f' }
-      }
-    ]
-  });
-};
-
-// 更新分类占比图
-const updateCategoryChart = () => {
+// 更新收入分类占比图
+const updateIncomeCategoryChart = () => {
   const incomeTypes = new Map<string, number>();
-  const expenseTypes = new Map<string, number>();
   
   // 统计收入类型
   filteredData.value.income?.forEach(item => {
@@ -374,27 +340,14 @@ const updateCategoryChart = () => {
     });
   });
   
-  // 统计支出类型
-  filteredData.value.expense?.forEach(item => {
-    item.detail?.forEach(detail => {
-      const current = expenseTypes.get(detail.typeName) || 0;
-      expenseTypes.set(detail.typeName, current + detail.amt);
-    });
-  });
-  
   const incomeData = Array.from(incomeTypes.entries()).map(([name, value]) => ({
     name,
     value: Number(value.toFixed(2))
   }));
   
-  const expenseData = Array.from(expenseTypes.entries()).map(([name, value]) => ({
-    name,
-    value: Number(value.toFixed(2))
-  }));
+  if (incomeData.length === 0) return;
   
-  if (incomeData.length === 0 && expenseData.length === 0) return;
-  
-  renderCategoryChart({
+  renderIncomeCategoryChart({
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
@@ -410,7 +363,7 @@ const updateCategoryChart = () => {
         name: '收入分类',
         type: 'pie',
         radius: ['40%', '70%'],
-        center: ['25%', '50%'],
+        center: ['50%', '50%'],
         data: incomeData,
         label: {
           show: true,
@@ -429,12 +382,47 @@ const updateCategoryChart = () => {
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      },
+      }
+    ]
+  });
+};
+
+// 更新支出分类占比图
+const updateExpenseCategoryChart = () => {
+  const expenseTypes = new Map<string, number>();
+  
+  // 统计支出类型
+  filteredData.value.expense?.forEach(item => {
+    item.detail?.forEach(detail => {
+      const current = expenseTypes.get(detail.typeName) || 0;
+      expenseTypes.set(detail.typeName, current + detail.amt);
+    });
+  });
+  
+  const expenseData = Array.from(expenseTypes.entries()).map(([name, value]) => ({
+    name,
+    value: Number(value.toFixed(2))
+  }));
+  
+  if (expenseData.length === 0) return;
+  
+  renderExpenseCategoryChart({
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.seriesName}<br/>${params.marker} ${params.name}: ${formatCurrency(params.value)}<br/>占比: ${params.percent}%`;
+      }
+    },
+    legend: {
+      orient: 'vertical',
+      left: 'left'
+    },
+    series: [
       {
         name: '支出分类',
         type: 'pie',
         radius: ['40%', '70%'],
-        center: ['75%', '50%'],
+        center: ['50%', '50%'],
         data: expenseData,
         label: {
           show: true,
@@ -685,13 +673,13 @@ onMounted(() => {
 
       <Row :gutter="16" class="chart-row">
         <Col :xs="24" :sm="24" :md="12" :lg="12">
-          <Card class="chart-card" title="月度收支对比">
-            <EchartsUI ref="monthlyChartRef" style="height: 300px;" />
+          <Card class="chart-card" title="收入分类占比">
+            <EchartsUI ref="incomeCategoryChartRef" style="height: 300px;" />
           </Card>
         </Col>
         <Col :xs="24" :sm="24" :md="12" :lg="12">
-          <Card class="chart-card" title="收支分类占比">
-            <EchartsUI ref="categoryChartRef" style="height: 300px;" />
+          <Card class="chart-card" title="支出分类占比">
+            <EchartsUI ref="expenseCategoryChartRef" style="height: 300px;" />
           </Card>
         </Col>
       </Row>
