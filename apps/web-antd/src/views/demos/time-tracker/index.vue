@@ -2,6 +2,9 @@
   <div class="time-tracker">
     <!-- 标题和操作栏 -->
     <div class="header">
+      <div class="header-left" v-if="!isMobile">
+        <span class="quote-text">{{ currentQuote }}</span>
+      </div>
       <div class="header-right">
         <!-- 按钮区 -->
         <div class="actions">
@@ -401,27 +404,20 @@ import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover, theme }
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
-
-// 扩展dayjs插件
-dayjs.extend(weekOfYear);
-dayjs.extend(isoWeek);
 import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
-
-const { useToken } = theme;
-const { token } = useToken();
 
 import { defaultConfig } from './config';
 import {
-  formatSlotTime,
   formatDuration,
+  formatSlotTime,
+  generateId,
+  getAboveSlotEndTime,
+  getBelowSlotStartTime,
+  getSlotPosition,
   getTimeFromPosition,
-  snapToGrid,
   hasOverlap,
   isValidSlot,
-  generateId,
-  getSlotPosition,
-  getBelowSlotStartTime,
-  getAboveSlotEndTime
+  snapToGrid
 } from './utils';
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
@@ -430,7 +426,22 @@ import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
 import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
 import CategoryFilter from './components/CategoryFilter.vue';
-import { query, queryForWeek, update, save, deleteByDate, deleteData, recommendType } from '#/api/core/time-tracker';
+import {
+  deleteByDate,
+  deleteData,
+  query,
+  queryForWeek,
+  recommendType,
+  save,
+  update,
+} from '#/api/core/time-tracker';
+
+// 扩展dayjs插件
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
+
+const { useToken } = theme;
+const { token } = useToken();
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -443,17 +454,31 @@ const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const currentCategoryId = ref(defaultConfig.defaultCategoryId);
 const dragOperation = ref<DragOperation | null>(null);
-const selectedFilterCategoryId = ref<string | null>(null);
+const selectedFilterCategoryId = ref<null | string>(null);
 const showEditModal = ref(false);
 const showCategoryModal = ref(false);
-const editingSlot = ref<TimeSlot | null>(null);
+const editingSlot = ref<null | TimeSlot>(null);
 const currentTime = ref(0);
 const selectedDate = ref(dayjs());
 const loading = ref(false);
-const statMode = ref<'day' | 'week' | 'month'>('day');
+const statMode = ref<'day' | 'month' | 'week'>('day');
 const selectedWeekDayIndex = ref(0);
 const selectedMonthDayIndex = ref(0);
 const isMobile = ref(false);
+const currentQuote = ref('');
+
+const quotes = [
+  '人生没有白走的路，每一步都算数',
+  '种一棵树最好的时间是十年前，其次是现在',
+  '千里之行，始于足下',
+  '不积跬步，无以至千里',
+  '想做的事做完了吗？',
+  'Stay hungry, stay foolish.',
+  '慢慢走，会很快',
+  '盛年不重来，一日难再晨',
+  '知行合一',
+  '做，才有答案；不做，全是问题。',
+];
 
 // 确认弹窗状态
 const showDeleteConfirmModal = ref(false);
@@ -467,17 +492,22 @@ const filteredTimeSlots = computed(() => {
   if (!selectedFilterCategoryId.value) {
     return timeSlots.value;
   }
-  return timeSlots.value.filter(slot => slot.categoryId === selectedFilterCategoryId.value);
+  return timeSlots.value.filter(
+    (slot) => slot.categoryId === selectedFilterCategoryId.value,
+  );
 });
 
 const totalDuration = computed(() => {
-  return filteredTimeSlots.value.reduce((total, slot) => total + (slot.endTime - slot.startTime + 1), 0);
+  return filteredTimeSlots.value.reduce(
+    (total, slot) => total + (slot.endTime - slot.startTime + 1),
+    0,
+  );
 });
 
 const averageDuration = computed(() => {
   // 计算分母：当前视图范围内，实际有数据记录的天数（不区分分类）
   // 比如：这个月录了3天数据，其中2天有筛选中分类的数据，分母应该是3
-  const activeDates = new Set(timeSlots.value.map(slot => slot.date));
+  const activeDates = new Set(timeSlots.value.map((slot) => slot.date));
   const activeDaysCount = activeDates.size;
 
   if (activeDaysCount === 0) {
@@ -506,21 +536,21 @@ const freeTime = computed(() => {
 const freeTimeCardStyle = computed(() => {
   // 1. 计算每个分类的总时长
   const categoryDurations = new Map<string, number>();
-  filteredTimeSlots.value.forEach(slot => {
+  filteredTimeSlots.value.forEach((slot) => {
     const duration = slot.endTime - slot.startTime;
     const current = categoryDurations.get(slot.categoryId) || 0;
     categoryDurations.set(slot.categoryId, current + duration);
   });
 
   // 2. 转换为数组并按时长降序排序
-  const sortedCategories = Array.from(categoryDurations.entries())
+  const sortedCategories = [...categoryDurations.entries()]
     .map(([id, duration]) => {
-      const category = config.value.categories.find(c => c.id === id);
+      const category = config.value.categories.find((c) => c.id === id);
       return {
         id,
         duration,
         color: category?.color || '#d9d9d9',
-        name: category?.name
+        name: category?.name,
       };
     })
     .sort((a, b) => b.duration - a.duration);
@@ -536,17 +566,19 @@ const freeTimeCardStyle = computed(() => {
 
   // 辅助函数：将 hex 颜色转换为 rgba，并指定透明度
   const hexToRgba = (hex: string, alpha: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    const r = Number.parseInt(hex.slice(1, 3), 16);
+    const g = Number.parseInt(hex.slice(3, 5), 16);
+    const b = Number.parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  sortedCategories.forEach(item => {
+  sortedCategories.forEach((item) => {
     const percent = (item.duration / totalMax) * 100;
     const start = currentPercent;
     const end = Math.min(100, currentPercent + percent);
-    const color = item.color.startsWith('#') ? hexToRgba(item.color, 0.6) : item.color; // 降低透明度
+    const color = item.color.startsWith('#')
+      ? hexToRgba(item.color, 0.6)
+      : item.color; // 降低透明度
 
     // 只有当该段长度足够时，才显示分割线，避免渲染错误
     const gap = 0.5;
@@ -566,14 +598,16 @@ const freeTimeCardStyle = computed(() => {
 
   // 填充剩余部分为带纹理的白色背景
   if (currentPercent < 100) {
-    gradientStops.push(`rgba(255,255,255,0.9) ${currentPercent.toFixed(2)}%`);
-    gradientStops.push(`rgba(255,255,255,0.9) 100%`);
+    gradientStops.push(
+      `rgba(255,255,255,0.9) ${currentPercent.toFixed(2)}%`,
+      `rgba(255,255,255,0.9) 100%`,
+    );
   }
 
   return {
     backgroundImage: `linear-gradient(to top, ${gradientStops.join(', ')})`,
     backgroundRepeat: 'no-repeat',
-    backgroundColor: '#fff'
+    backgroundColor: '#fff',
   };
 });
 
@@ -590,7 +624,7 @@ const weekDays = computed(() => {
     days.push({
       date: day.format('YYYY-MM-DD'),
       weekday: weekdays[i],
-      dayjs: day
+      dayjs: day,
     });
   }
 
@@ -602,7 +636,7 @@ const currentDayInfo = computed(() => {
   const weekday = weekdays[selectedDate.value.isoWeekday() - 1];
   return {
     weekday,
-    date: selectedDate.value.format('YYYY-MM-DD')
+    date: selectedDate.value.format('YYYY-MM-DD'),
   };
 });
 
@@ -610,7 +644,7 @@ const monthDays = computed(() => {
   const currentDay = selectedDate.value;
   const startOfMonth = currentDay.startOf('month');
   const endOfMonth = currentDay.endOf('month');
-  const days: Array<{ date: string; weekday: string; dayjs: any }> = [];
+  const days: Array<{ date: string; dayjs: any; weekday: string }> = [];
   const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
   let iter = startOfMonth;
   while (iter.isBefore(endOfMonth) || iter.isSame(endOfMonth, 'day')) {
@@ -618,22 +652,26 @@ const monthDays = computed(() => {
     days.push({
       date: iter.format('YYYY-MM-DD'),
       weekday: weekdays[weekdayIndex] || '',
-      dayjs: iter
+      dayjs: iter,
     });
     iter = iter.add(1, 'day');
   }
   return days;
 });
 
-
-
 // 获取当前选中日期
 const getCurrentSelectedDate = () => {
   if (statMode.value === 'week') {
-    return weekDays.value[selectedWeekDayIndex.value]?.date || selectedDate.value.format('YYYY-MM-DD');
+    return (
+      weekDays.value[selectedWeekDayIndex.value]?.date ||
+      selectedDate.value.format('YYYY-MM-DD')
+    );
   }
   if (statMode.value === 'month') {
-    return monthDays.value[selectedMonthDayIndex.value]?.date || selectedDate.value.format('YYYY-MM-DD');
+    return (
+      monthDays.value[selectedMonthDayIndex.value]?.date ||
+      selectedDate.value.format('YYYY-MM-DD')
+    );
   }
   return selectedDate.value.format('YYYY-MM-DD');
 };
@@ -643,12 +681,15 @@ const editModalTitle = computed(() => {
   if (!editingSlot.value) return '编辑时间段';
 
   // 判断是新增还是编辑：如果时间段ID在现有时间段中不存在，则是新增
-  const isExisting = timeSlots.value.some(slot => slot.id === editingSlot.value?.id);
+  const isExisting = timeSlots.value.some(
+    (slot) => slot.id === editingSlot.value?.id,
+  );
   return isExisting ? '编辑时间段' : '新增时间段';
 });
 
 // 生命周期
 onMounted(() => {
+  currentQuote.value = quotes[Math.floor(Math.random() * quotes.length)] || '';
   loadData();
   startCurrentTimeUpdater();
   updateIsMobile();
@@ -671,9 +712,11 @@ const loadData = async () => {
     let response;
 
     if (statMode.value === 'week' || statMode.value === 'month') {
-      const daysValue = statMode.value === 'week' ? weekDays.value : monthDays.value;
+      const daysValue =
+        statMode.value === 'week' ? weekDays.value : monthDays.value;
       const startDate = daysValue.length > 0 ? daysValue[0]?.date || '' : '';
-      const endDate = daysValue.length > 0 ? daysValue[daysValue.length - 1]?.date || '' : '';
+      const endDate =
+        daysValue.length > 0 ? daysValue[daysValue.length - 1]?.date || '' : '';
       const queryParams = { condition: { startDate, endDate } };
 
       response = await queryForWeek(queryParams);
@@ -695,13 +738,8 @@ const loadData = async () => {
       // 调用普通查询接口
       response = await query(queryParams);
 
-      if (response && response.items) {
-        timeSlots.value = response.items;
-      } else {
-        timeSlots.value = [];
-      }
+      timeSlots.value = response && response.items ? response.items : [];
     }
-
   } catch (error) {
     console.error('加载数据失败:', error);
     message.error('加载数据失败');
@@ -724,13 +762,13 @@ const confirmResetData = async () => {
 
     if (statMode.value === 'week') {
       // 按周模式下，清除整周数据
-      const promises = weekDays.value.map(day =>
-        deleteByDate({date: day.date})
+      const promises = weekDays.value.map((day) =>
+        deleteByDate({ date: day.date }),
       );
       await Promise.all(promises);
     } else {
       // 按天模式下，清除当天数据
-      await deleteByDate({date: currentDate});
+      await deleteByDate({ date: currentDate });
     }
 
     timeSlots.value = [];
@@ -750,7 +788,7 @@ const cancelDelete = () => {
 };
 
 // 日期处理函数
-const handleFilterChange = (categoryId: string | null) => {
+const handleFilterChange = (categoryId: null | string) => {
   selectedFilterCategoryId.value = categoryId;
 };
 
@@ -811,7 +849,7 @@ const startCurrentTimeUpdater = () => {
   };
 
   updateCurrentTime();
-  timeUpdater = setInterval(updateCurrentTime, 60000) as unknown as number; // 每分钟更新一次
+  timeUpdater = setInterval(updateCurrentTime, 60_000) as unknown as number; // 每分钟更新一次
 };
 
 const stopCurrentTimeUpdater = () => {
@@ -834,7 +872,12 @@ const syncMonthScroll = () => {
 // 计算手机端可用高度
 const updateMobileTimelineHeight = () => {
   if (!isMobile.value) return;
-  const containerEl = statMode.value === 'week' ? weekTimelineContainerRef.value : (statMode.value === 'month' ? monthTimelineContainerRef.value : timelineContainerRef.value);
+  const containerEl =
+    statMode.value === 'week'
+      ? weekTimelineContainerRef.value
+      : (statMode.value === 'month'
+        ? monthTimelineContainerRef.value
+        : timelineContainerRef.value);
   if (!containerEl) return;
   const rect = containerEl.getBoundingClientRect();
   const viewportHeight = window.innerHeight;
@@ -843,16 +886,23 @@ const updateMobileTimelineHeight = () => {
 };
 // 样式计算
 const getSlotStyle = (slot: TimeSlot) => {
-  const weekContainer = document.querySelector('.week-days-container') as HTMLElement | null;
-  const monthContainer = document.querySelector('.month-days-container') as HTMLElement | null;
-  const timelineHeight = statMode.value === 'week'
-    ? (weekContainer?.offsetHeight || 740)
-    : statMode.value === 'month'
-    ? (monthContainer?.offsetHeight || 740)
-    : (timelineRef.value?.offsetHeight || 800);
+  const weekContainer = document.querySelector(
+    '.week-days-container',
+  ) as HTMLElement | null;
+  const monthContainer = document.querySelector(
+    '.month-days-container',
+  ) as HTMLElement | null;
+  const timelineHeight =
+    statMode.value === 'week'
+      ? weekContainer?.offsetHeight || 740
+      : statMode.value === 'month'
+        ? monthContainer?.offsetHeight || 740
+        : timelineRef.value?.offsetHeight || 800;
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
-  const category = config.value.categories.find(cat => cat.id === slot.categoryId);
+  const category = config.value.categories.find(
+    (cat) => cat.id === slot.categoryId,
+  );
 
   // 高亮显示选中的分类
   const isHighlighted = selectedFilterCategoryId.value
@@ -861,14 +911,16 @@ const getSlotStyle = (slot: TimeSlot) => {
 
   // 判断是否是未来的时间段
   const today = dayjs().format('YYYY-MM-DD');
-  const isFuture = slot.date > today || (slot.date === today && slot.startTime > currentTime.value);
+  const isFuture =
+    slot.date > today ||
+    (slot.date === today && slot.startTime > currentTime.value);
 
   const style: any = {
     top: `${top}px`,
     height: `${height}px`,
     backgroundColor: category?.color || '#d9d9d9',
     opacity: selectedFilterCategoryId.value && !isHighlighted ? 0.3 : 1,
-    zIndex: isHighlighted ? 10 : 1
+    zIndex: isHighlighted ? 10 : 1,
   };
 
   if (isHighlighted) {
@@ -881,7 +933,8 @@ const getSlotStyle = (slot: TimeSlot) => {
 
   if (isFuture) {
     // 添加点状填充效果
-    style.backgroundImage = 'radial-gradient(rgba(255, 255, 255, 0.3) 1.5px, transparent 1.5px)';
+    style.backgroundImage =
+      'radial-gradient(rgba(255, 255, 255, 0.3) 1.5px, transparent 1.5px)';
     style.backgroundSize = '6px 6px';
   }
 
@@ -895,19 +948,24 @@ const getDragPreviewStyle = () => {
     dragOperation.value.startTime,
     dragOperation.value.currentTime,
   );
-  const endTime = Math.max(dragOperation.value.startTime, dragOperation.value.currentTime);
+  const endTime = Math.max(
+    dragOperation.value.startTime,
+    dragOperation.value.currentTime,
+  );
   const duration = endTime - startTime;
 
   if (duration < 5) return {}; // 允许显示较短的时间段预览，但至少保留5分钟高度以可见
 
   const top = (startTime / 1440) * timelineRef.value.offsetHeight;
   const height = (duration / 1440) * timelineRef.value.offsetHeight;
-  const category = config.value.categories.find(cat => cat.id === currentCategoryId.value);
+  const category = config.value.categories.find(
+    (cat) => cat.id === currentCategoryId.value,
+  );
 
   return {
     top: `${top}px`,
     height: `${height}px`,
-    backgroundColor: category?.color + '80' // 半透明
+    backgroundColor: `${category?.color}80`, // 半透明
   };
 };
 
@@ -926,13 +984,23 @@ const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
   if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
-  const startTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
-  dragOperation.value = { type: 'create', startY: y, startTime, currentTime: startTime };
+  const startTime = Math.min(
+    1439,
+    snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+  );
+  dragOperation.value = {
+    type: 'create',
+    startY: y,
+    startTime,
+    currentTime: startTime,
+  };
 
   // 添加全局事件监听，支持拖出容器
   window.addEventListener('mousemove', handleTrackPointerMove);
   window.addEventListener('mouseup', handleTrackPointerUp);
-  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchmove', handleTrackPointerMove, {
+    passive: false,
+  });
   window.addEventListener('touchend', handleTrackPointerUp);
 };
 
@@ -940,67 +1008,99 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   if (!dragOperation.value || !timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
-  dragOperation.value.currentTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
+  dragOperation.value.currentTime = Math.min(
+    1439,
+    snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+  );
 
   // 处理创建时的碰撞检测
   if (dragOperation.value.type === 'create') {
     const start = dragOperation.value.startTime;
     let current = dragOperation.value.currentTime;
     const currentDate = getCurrentSelectedDate();
-    
+
     // 获取当天的所有时间段
-    const daySlots = timeSlots.value.filter(s => s.date === currentDate);
+    const daySlots = timeSlots.value.filter((s) => s.date === currentDate);
 
     if (current > start) {
       // 向下拖拽
       // 找到开始时间在当前拖拽起始点之后最近的一个时间段
       const firstSlotAfter = daySlots
-        .filter(s => s.startTime >= start)
+        .filter((s) => s.startTime >= start)
         .sort((a, b) => a.startTime - b.startTime)[0];
-      
-      if (firstSlotAfter) {
-        // 限制当前时间不能超过该时间段的开始时间
-        if (current >= firstSlotAfter.startTime) {
-          current = firstSlotAfter.startTime - 1;
-        }
+
+      if (
+        firstSlotAfter && // 限制当前时间不能超过该时间段的开始时间
+        current >= firstSlotAfter.startTime
+      ) {
+        current = firstSlotAfter.startTime - 1;
       }
     } else if (current < start) {
       // 向上拖拽
       // 找到结束时间在当前拖拽起始点之前最近的一个时间段
       const firstSlotBefore = daySlots
-        .filter(s => s.endTime <= start)
+        .filter((s) => s.endTime <= start)
         .sort((a, b) => b.endTime - a.endTime)[0];
-        
-      if (firstSlotBefore) {
-        // 限制当前时间不能小于该时间段的结束时间
-        if (current <= firstSlotBefore.endTime) {
-          current = firstSlotBefore.endTime + 1;
-        }
+
+      if (
+        firstSlotBefore && // 限制当前时间不能小于该时间段的结束时间
+        current <= firstSlotBefore.endTime
+      ) {
+        current = firstSlotBefore.endTime + 1;
       }
     }
     dragOperation.value.currentTime = current;
   }
 
   // 处理时间段移动和调整大小
-  if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
+  if (
+    dragOperation.value.type === 'move' ||
+    dragOperation.value.type === 'resize'
+  ) {
     const deltaY = y - dragOperation.value.startY;
-    const deltaTime = getTimeFromPosition(deltaY, timelineRef.value.offsetHeight);
+    const deltaTime = getTimeFromPosition(
+      deltaY,
+      timelineRef.value.offsetHeight,
+    );
 
-    const slot = timeSlots.value.find(s => s.id === dragOperation.value!.slotId);
+    const slot = timeSlots.value.find(
+      (s) => s.id === dragOperation.value!.slotId,
+    );
     if (!slot) return;
 
     if (dragOperation.value.type === 'move') {
       // 移动时间段
-      const newStartTime = Math.max(0, Math.min(1439 - (slot.endTime - slot.startTime), dragOperation.value.startTime + deltaTime));
+      const newStartTime = Math.max(
+        0,
+        Math.min(
+          1439 - (slot.endTime - slot.startTime),
+          dragOperation.value.startTime + deltaTime,
+        ),
+      );
       const newEndTime = newStartTime + (slot.endTime - slot.startTime);
 
       // 检查下方时间段限制
-      const movedSlot = { ...slot, startTime: newStartTime, endTime: newEndTime };
-      const belowSlotStartTime = getBelowSlotStartTime(timeSlots.value, movedSlot, slot.id);
+      const movedSlot = {
+        ...slot,
+        startTime: newStartTime,
+        endTime: newEndTime,
+      };
+      const belowSlotStartTime = getBelowSlotStartTime(
+        timeSlots.value,
+        movedSlot,
+        slot.id,
+      );
 
       // 检查上方时间段限制：必须比上方结束时间大1分钟
-      const aboveSlotEndTime = getAboveSlotEndTime(timeSlots.value, movedSlot, slot.id);
-      if (aboveSlotEndTime !== null && movedSlot.startTime <= aboveSlotEndTime) {
+      const aboveSlotEndTime = getAboveSlotEndTime(
+        timeSlots.value,
+        movedSlot,
+        slot.id,
+      );
+      if (
+        aboveSlotEndTime !== null &&
+        movedSlot.startTime <= aboveSlotEndTime
+      ) {
         const duration = slot.endTime - slot.startTime;
         const minStartTime = aboveSlotEndTime + 1;
         movedSlot.startTime = Math.max(minStartTime, movedSlot.startTime);
@@ -1008,7 +1108,10 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
       }
 
       // 如果下方有时间段，确保当前时间段不会与下方时间段重叠
-      if (belowSlotStartTime !== null && movedSlot.endTime > belowSlotStartTime) {
+      if (
+        belowSlotStartTime !== null &&
+        movedSlot.endTime > belowSlotStartTime
+      ) {
         // 限制当前时间段的结束时间不能超过下方时间段的开始时间
         const maxEndTime = belowSlotStartTime;
         const maxStartTime = maxEndTime - (slot.endTime - slot.startTime);
@@ -1021,46 +1124,77 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
       }
 
       // 检查是否重叠（排除自身）
-      const otherSlots = timeSlots.value.filter(s => s.id !== slot.id);
+      const otherSlots = timeSlots.value.filter((s) => s.id !== slot.id);
       if (!hasOverlap(otherSlots, movedSlot)) {
         slot.startTime = movedSlot.startTime;
         slot.endTime = movedSlot.endTime;
         if (dragOperation.value) {
-          dragOperation.value.changed = (dragOperation.value.originalStart !== slot.startTime) || (dragOperation.value.originalEnd !== slot.endTime);
+          dragOperation.value.changed =
+            dragOperation.value.originalStart !== slot.startTime ||
+            dragOperation.value.originalEnd !== slot.endTime;
         }
       }
     } else if (dragOperation.value.type === 'resize') {
-      const newTime = Math.max(0, Math.min(1439, dragOperation.value.startTime + deltaTime));
+      const newTime = Math.max(
+        0,
+        Math.min(1439, dragOperation.value.startTime + deltaTime),
+      );
 
       if (dragOperation.value.slotId) {
-        const resizeSlot = timeSlots.value.find(s => s.id === dragOperation.value?.slotId);
+        const resizeSlot = timeSlots.value.find(
+          (s) => s.id === dragOperation.value?.slotId,
+        );
         if (!resizeSlot) return;
 
         const originalStart = resizeSlot.startTime;
         const originalEnd = resizeSlot.endTime;
 
         if (dragOperation.value.direction === 'top') {
-          const newStartTime = Math.min(newTime, originalEnd - config.value.minSlotDuration);
+          const newStartTime = Math.min(
+            newTime,
+            originalEnd - config.value.minSlotDuration,
+          );
           resizeSlot.startTime = Math.max(0, newStartTime);
           const aboveSlots = timeSlots.value
-            .filter(s => s.id !== resizeSlot.id && s.date === resizeSlot.date && s.endTime <= originalStart)
+            .filter(
+              (s) =>
+                s.id !== resizeSlot.id &&
+                s.date === resizeSlot.date &&
+                s.endTime <= originalStart,
+            )
             .sort((a, b) => b.endTime - a.endTime);
-          if (aboveSlots.length > 0 && aboveSlots[0] && resizeSlot.startTime <= aboveSlots[0].endTime) {
+          if (
+            aboveSlots.length > 0 &&
+            aboveSlots[0] &&
+            resizeSlot.startTime <= aboveSlots[0].endTime
+          ) {
             resizeSlot.startTime = aboveSlots[0].endTime + 1;
           }
         } else {
-          const newEndTime = Math.max(newTime, originalStart + config.value.minSlotDuration);
+          const newEndTime = Math.max(
+            newTime,
+            originalStart + config.value.minSlotDuration,
+          );
           resizeSlot.endTime = Math.min(1439, newEndTime);
         }
 
         if (dragOperation.value.direction === 'bottom') {
-          const belowSlotStartTime = getBelowSlotStartTime(timeSlots.value, resizeSlot, resizeSlot.id);
-          if (belowSlotStartTime !== null && resizeSlot.endTime > belowSlotStartTime) {
+          const belowSlotStartTime = getBelowSlotStartTime(
+            timeSlots.value,
+            resizeSlot,
+            resizeSlot.id,
+          );
+          if (
+            belowSlotStartTime !== null &&
+            resizeSlot.endTime > belowSlotStartTime
+          ) {
             resizeSlot.endTime = belowSlotStartTime;
           }
         }
 
-        const otherSlots = timeSlots.value.filter(s => s.id !== resizeSlot.id);
+        const otherSlots = timeSlots.value.filter(
+          (s) => s.id !== resizeSlot.id,
+        );
         if (hasOverlap(otherSlots, resizeSlot)) {
           resizeSlot.startTime = originalStart;
           resizeSlot.endTime = originalEnd;
@@ -1069,7 +1203,10 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
           }
         }
         if (dragOperation.value) {
-          dragOperation.value.changed = dragOperation.value.changed || (dragOperation.value.originalStart !== resizeSlot.startTime) || (dragOperation.value.originalEnd !== resizeSlot.endTime);
+          dragOperation.value.changed =
+            dragOperation.value.changed ||
+            dragOperation.value.originalStart !== resizeSlot.startTime ||
+            dragOperation.value.originalEnd !== resizeSlot.endTime;
         }
       }
     }
@@ -1090,15 +1227,24 @@ const handleTrackPointerUp = async () => {
 
   if (dragOperation.value.type === 'create') {
     // 创建新时间段
-    const startTime = Math.min(dragOperation.value.startTime, dragOperation.value.currentTime);
-    const endTime = Math.max(dragOperation.value.startTime, dragOperation.value.currentTime);
+    const startTime = Math.min(
+      dragOperation.value.startTime,
+      dragOperation.value.currentTime,
+    );
+    const endTime = Math.max(
+      dragOperation.value.startTime,
+      dragOperation.value.currentTime,
+    );
     const duration = endTime - startTime;
 
     if (duration >= config.value.minSlotDuration) {
       let recommendedCategoryId = currentCategoryId.value;
       try {
         const middleTime = Math.floor((startTime + endTime) / 2);
-        const result = await recommendType({ date: selectedDate.value.format('YYYY-MM-DD'), time: middleTime });
+        const result = await recommendType({
+          date: selectedDate.value.format('YYYY-MM-DD'),
+          time: middleTime,
+        });
         if (result) {
           recommendedCategoryId = result;
         }
@@ -1112,23 +1258,28 @@ const handleTrackPointerUp = async () => {
         endTime,
         categoryId: recommendedCategoryId,
         title: getCategoryName(recommendedCategoryId, config.value.categories),
-        date: selectedDate.value.format('YYYY-MM-DD')
+        date: selectedDate.value.format('YYYY-MM-DD'),
       };
       // 检查是否重叠
-      const daySlots = timeSlots.value.filter(s => s.date === newSlot.date);
-      if (!hasOverlap(daySlots, newSlot)) {
+      const daySlots = timeSlots.value.filter((s) => s.date === newSlot.date);
+      if (hasOverlap(daySlots, newSlot)) {
+        message.warning('时间段重叠，无法创建');
+      } else {
         timeSlots.value.push(newSlot);
         save(newSlot as any);
-      } else {
-        message.warning('时间段重叠，无法创建');
       }
     }
-  } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
-    if (dragOperation.value.changed && dragOperation.value.slotId) {
-      const slot = timeSlots.value.find(s => s.id === dragOperation.value?.slotId);
-      if (slot) {
-        update(slot as any);
-      }
+  } else if (
+    (dragOperation.value.type === 'move' ||
+      dragOperation.value.type === 'resize') &&
+    dragOperation.value.changed &&
+    dragOperation.value.slotId
+  ) {
+    const slot = timeSlots.value.find(
+      (s) => s.id === dragOperation.value?.slotId,
+    );
+    if (slot) {
+      update(slot as any);
     }
   }
 
@@ -1142,7 +1293,10 @@ const handleTrackPointerLeave = () => {
   // }
 };
 
-const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) => {
+const handleSlotPointerDown = (
+  event: MouseEvent | TouchEvent,
+  slot: TimeSlot,
+) => {
   event.stopPropagation();
 
   if (!timelineRef.value) return;
@@ -1158,17 +1312,23 @@ const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) =
     currentTime: slot.startTime,
     originalStart: slot.startTime,
     originalEnd: slot.endTime,
-    changed: false
+    changed: false,
   };
 
   // 添加全局事件监听
   window.addEventListener('mousemove', handleTrackPointerMove);
   window.addEventListener('mouseup', handleTrackPointerUp);
-  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchmove', handleTrackPointerMove, {
+    passive: false,
+  });
   window.addEventListener('touchend', handleTrackPointerUp);
 };
 
-const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot, direction: 'top' | 'bottom') => {
+const handleResizeStartPointer = (
+  event: MouseEvent | TouchEvent,
+  slot: TimeSlot,
+  direction: 'bottom' | 'top',
+) => {
   event.stopPropagation();
 
   if (!timelineRef.value) return;
@@ -1185,13 +1345,15 @@ const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot
     direction,
     originalStart: slot.startTime,
     originalEnd: slot.endTime,
-    changed: false
+    changed: false,
   };
 
   // 添加全局事件监听
   window.addEventListener('mousemove', handleTrackPointerMove);
   window.addEventListener('mouseup', handleTrackPointerUp);
-  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchmove', handleTrackPointerMove, {
+    passive: false,
+  });
   window.addEventListener('touchend', handleTrackPointerUp);
 };
 
@@ -1270,12 +1432,15 @@ const handleAddSlot = async () => {
   }
 
   // 查找当前空隙的下一个时间段的开始时间
-  const nextSlot = sameDaySlots.find(slot => slot.startTime > smartStartTime);
+  const nextSlot = sameDaySlots.find((slot) => slot.startTime > smartStartTime);
   if (nextSlot && nextSlot.startTime > smartStartTime) {
     // 如果空隙不足30分钟，设置结束时间为下一个时间段的开始时间
     const availableTime = nextSlot.startTime - smartStartTime - 1;
     if (availableTime < 30) {
-      endTime = Math.min(smartStartTime + availableTime, isToday ? currentTime.value : 1439);
+      endTime = Math.min(
+        smartStartTime + availableTime,
+        isToday ? currentTime.value : 1439,
+      );
     }
   }
 
@@ -1295,11 +1460,11 @@ const handleAddSlot = async () => {
   const newSlot: TimeSlot = {
     id: generateId(),
     startTime: smartStartTime,
-    endTime: endTime,
+    endTime,
     categoryId: recommendedCategoryId,
     title: getCategoryName(recommendedCategoryId, config.value.categories),
     description: '',
-    date: currentDate
+    date: currentDate,
   };
 
   editingSlot.value = newSlot;
@@ -1307,29 +1472,9 @@ const handleAddSlot = async () => {
 };
 
 const handleSaveSlot = (formData: any) => {
-  const index = timeSlots.value.findIndex(slot => slot.id === formData.id);
+  const index = timeSlots.value.findIndex((slot) => slot.id === formData.id);
 
-  if (index !== -1) {
-    // 编辑现有时间段
-    const updatedSlot = { ...timeSlots.value[index], ...formData };
-
-    // 检查重叠时，只考虑同一天内的时间段
-      const sameDaySlots = timeSlots.value.filter(
-        (slot: TimeSlot) => slot.date === updatedSlot.date && slot.id !== formData.id
-      );
-
-    if (isValidSlot(updatedSlot, config.value) && !hasOverlap(sameDaySlots, updatedSlot)) {
-      timeSlots.value[index] = updatedSlot;
-      update(updatedSlot).then(() => {
-        showEditModal.value = false;
-      }).catch(err => {
-        console.error('更新失败:', err);
-        message.error('更新失败');
-      });
-    } else {
-      message.error('时间段无效或重叠');
-    }
-  } else {
+  if (index === -1) {
     // 新增时间段
     const currentDate = getCurrentSelectedDate();
 
@@ -1342,21 +1487,55 @@ const handleSaveSlot = (formData: any) => {
       description: formData.description || '',
       date: currentDate,
       exerciseTypeId: formData.exerciseTypeId,
-      exerciseCount: formData.exerciseCount
+      exerciseCount: formData.exerciseCount,
     };
 
     // 如果用户没有修改标题，自动设置为分类名称
     if (!newSlot.title || newSlot.title === '') {
-      newSlot.title = getCategoryName(newSlot.categoryId, config.value.categories);
+      newSlot.title = getCategoryName(
+        newSlot.categoryId,
+        config.value.categories,
+      );
     }
 
     // 检查重叠时，只考虑同一天内的时间段
-    const sameDaySlots = timeSlots.value.filter((slot: TimeSlot) => slot.date === currentDate);
+    const sameDaySlots = timeSlots.value.filter(
+      (slot: TimeSlot) => slot.date === currentDate,
+    );
 
-    if (isValidSlot(newSlot, config.value) && !hasOverlap(sameDaySlots, newSlot)) {
+    if (
+      isValidSlot(newSlot, config.value) &&
+      !hasOverlap(sameDaySlots, newSlot)
+    ) {
       timeSlots.value.push(newSlot);
       save(newSlot as any);
       showEditModal.value = false;
+    } else {
+      message.error('时间段无效或重叠');
+    }
+  } else {
+    // 编辑现有时间段
+    const updatedSlot = { ...timeSlots.value[index], ...formData };
+
+    // 检查重叠时，只考虑同一天内的时间段
+    const sameDaySlots = timeSlots.value.filter(
+      (slot: TimeSlot) =>
+        slot.date === updatedSlot.date && slot.id !== formData.id,
+    );
+
+    if (
+      isValidSlot(updatedSlot, config.value) &&
+      !hasOverlap(sameDaySlots, updatedSlot)
+    ) {
+      timeSlots.value[index] = updatedSlot;
+      update(updatedSlot)
+        .then(() => {
+          showEditModal.value = false;
+        })
+        .catch((error) => {
+          console.error('更新失败:', error);
+          message.error('更新失败');
+        });
     } else {
       message.error('时间段无效或重叠');
     }
@@ -1367,11 +1546,11 @@ const handleDeleteSlot = async (slotId: string) => {
   try {
     loading.value = true;
     await deleteData({ id: slotId });
-    timeSlots.value = timeSlots.value.filter(slot => slot.id !== slotId);
+    timeSlots.value = timeSlots.value.filter((slot) => slot.id !== slotId);
     showEditModal.value = false;
     message.success('删除成功');
-  } catch (err) {
-    console.error('删除失败:', err);
+  } catch (error) {
+    console.error('删除失败:', error);
     message.error('删除失败');
   } finally {
     loading.value = false;
@@ -1390,8 +1569,11 @@ const handleCategoriesUpdate = (categories: TimeSlotCategory[]) => {
 };
 
 // 工具函数
-const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => {
-  const category = categories.find(cat => cat.id === categoryId);
+const getCategoryName = (
+  categoryId: string,
+  categories: TimeSlotCategory[],
+) => {
+  const category = categories.find((cat) => cat.id === categoryId);
   return category?.name || '未知';
 };
 
@@ -1399,8 +1581,6 @@ const getCategoryName = (categoryId: string, categories: TimeSlotCategory[]) => 
 const getDaySlots = (date: string): TimeSlot[] => {
   return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
 };
-
-
 </script>
 
 <style scoped>
@@ -1412,9 +1592,22 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.header-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.quote-text {
+  font-size: 14px;
+  color: #8c8c8c;
+  letter-spacing: 0.9px;
 }
 
 .header-right {
@@ -1963,7 +2156,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
   font-size: 18px;
   font-weight: 700;
   color: #262626;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, monospace;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, monospace;
   z-index: 2; /* 确保在背景之上 */
   text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8); /* 文字描边效果 */
 }
@@ -2046,7 +2241,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
   .content-layout {
     flex-direction: column;
   }
-  .left-panel, .right-panel {
+  .left-panel,
+  .right-panel {
     min-width: 0;
     width: 100%;
   }
@@ -2062,6 +2258,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
     flex-wrap: nowrap;
     flex-shrink: 0;
     gap: 8px;
+    margin-left: auto;
   }
   .actions {
     display: flex;
@@ -2090,7 +2287,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
     height: calc(100vh - 320px);
   }
   .month-header {
-    grid-template-columns: 35px repeat(var(--month-day-count, 30), minmax(45px, 1fr));
+    grid-template-columns: 35px repeat(
+        var(--month-day-count, 30),
+        minmax(45px, 1fr)
+      );
   }
   .week-header {
     grid-template-columns: 35px repeat(7, 1fr);
@@ -2100,7 +2300,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
     padding: 2px;
   }
   .month-days-container {
-    grid-template-columns: repeat(var(--month-day-count, 30), minmax(45px, 1fr));
+    grid-template-columns: repeat(
+      var(--month-day-count, 30),
+      minmax(45px, 1fr)
+    );
   }
   .month-day-track {
     min-width: 45px;
@@ -2180,5 +2383,4 @@ const getDaySlots = (date: string): TimeSlot[] => {
 :deep(.pie-chart-card .ant-card-body) {
   padding: 10px !important;
 }
-
 </style>
