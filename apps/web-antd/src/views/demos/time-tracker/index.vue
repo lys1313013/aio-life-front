@@ -203,55 +203,65 @@
 
           <template v-else>
             <div class="timeline-container" ref="timelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
-              <div class="time-scale">
-                <div
-                  v-for="hour in 24"
-                  :key="hour"
-                  class="hour-marker"
-                  :style="{ top: `${(hour / 24) * 100}%` }"
-                >
-                  <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
+              <div class="day-header">
+                <div class="time-scale-header"></div>
+                <div class="day-column-header active">
+                  <div class="day-name">{{ currentDayInfo.weekday }}</div>
+                  <div class="day-date">{{ currentDayInfo.date }}</div>
                 </div>
               </div>
 
-              <div
-                ref="timelineRef"
-                class="timeline-track"
-                @mousedown="handleTrackPointerDown"
-                @mousemove="handleTrackPointerMove"
-                @mouseup="handleTrackPointerUp"
-                @mouseleave="handleTrackPointerLeave"
-                @touchstart="handleTrackPointerDown"
-                @touchmove.prevent="handleTrackPointerMove"
-                @touchend="handleTrackPointerUp"
-                @touchcancel="handleTrackPointerLeave"
-                :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
-              >
-              <div
-                v-for="slot in timeSlots"
-                :key="slot.id"
-                class="time-slot"
-                :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                @mousedown="handleSlotPointerDown($event, slot)"
-                @touchstart="handleSlotPointerDown($event, slot)"
-                @click="handleSlotClick(slot)"
-              >
-                <div class="slot-content">
-                  <div class="slot-info">
-                    <span class="slot-title">{{ slot.title }}</span>
-                    <span class="slot-time">{{ formatSlotTime(slot) }}</span>
+              <div class="timeline-body-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
                   </div>
                 </div>
-                <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
-                <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
+
+                <div
+                  ref="timelineRef"
+                  class="timeline-track"
+                  @mousedown="handleTrackPointerDown"
+                  @mousemove="handleTrackPointerMove"
+                  @mouseup="handleTrackPointerUp"
+                  @mouseleave="handleTrackPointerLeave"
+                  @touchstart="handleTrackPointerDown"
+                  @touchmove.prevent="handleTrackPointerMove"
+                  @touchend="handleTrackPointerUp"
+                  @touchcancel="handleTrackPointerLeave"
+                  :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
+                >
+                  <div
+                    v-for="slot in timeSlots"
+                    :key="slot.id"
+                    class="time-slot"
+                    :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
+                    @mousedown="handleSlotPointerDown($event, slot)"
+                    @touchstart="handleSlotPointerDown($event, slot)"
+                    @click="handleSlotClick(slot)"
+                  >
+                    <div class="slot-content">
+                      <div class="slot-info">
+                        <span class="slot-title">{{ slot.title }}</span>
+                        <span class="slot-time">{{ formatSlotTime(slot) }}</span>
+                      </div>
+                    </div>
+                    <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
+                    <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
+                  </div>
+                  <div
+                    v-if="dragOperation"
+                    class="drag-preview"
+                    :style="getDragPreviewStyle()"
+                  ></div>
+                </div>
               </div>
-              <div
-                v-if="dragOperation"
-                class="drag-preview"
-                :style="getDragPreviewStyle()"
-              ></div>
             </div>
-          </div>
           </template>
         </Spin>
       </div>
@@ -585,6 +595,15 @@ const weekDays = computed(() => {
   }
 
   return days;
+});
+
+const currentDayInfo = computed(() => {
+  const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
+  const weekday = weekdays[selectedDate.value.isoWeekday() - 1];
+  return {
+    weekday,
+    date: selectedDate.value.format('YYYY-MM-DD')
+  };
 });
 
 const monthDays = computed(() => {
@@ -1538,6 +1557,18 @@ const getDaySlots = (date: string): TimeSlot[] => {
   .date-picker-wrapper {
     height: 24px;
   }
+
+  .timeline-container .day-header {
+    grid-template-columns: 35px 1fr;
+  }
+
+  .timeline-container .time-scale-header {
+    width: 35px;
+  }
+
+  .timeline-container .time-scale {
+    width: 35px;
+  }
 }
 
 .category-label {
@@ -1581,6 +1612,36 @@ const getDaySlots = (date: string): TimeSlot[] => {
   overflow: hidden;
   height: 800px; /* 设置固定高度 */
   display: flex;
+  flex-direction: column;
+}
+
+.day-header {
+  display: grid;
+  grid-template-columns: 45px 1fr;
+  height: 45px;
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+.day-column-header {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: background-color 0.2s;
+}
+
+.day-column-header.active {
+  background: #e6f7ff;
+  font-weight: 500;
+}
+
+.timeline-body-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
 /* 按周统计样式 */
@@ -1600,7 +1661,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .month-header {
   display: grid;
-  grid-template-columns: 60px repeat(var(--month-day-count, 30), 1fr);
+  grid-template-columns: 45px repeat(var(--month-day-count, 30), 1fr);
   height: 45px;
   border-bottom: 1px solid #d9d9d9;
   background: #fafafa;
@@ -1664,14 +1725,14 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .week-header {
   display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-columns: 45px repeat(7, 1fr);
   height: 45px;
   border-bottom: 1px solid #d9d9d9;
   background: #fafafa;
 }
 
 .time-scale-header {
-  width: 60px;
+  width: 45px;
   border-right: 1px solid #d9d9d9;
   flex-shrink: 0;
 }
@@ -1743,7 +1804,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .time-scale {
   position: relative;
-  width: 60px;
+  width: 45px;
   background: #fafafa;
   border-right: 1px solid #d9d9d9;
   flex-shrink: 0;
