@@ -879,7 +879,7 @@ const getDragPreviewStyle = () => {
   const endTime = Math.max(dragOperation.value.startTime, dragOperation.value.currentTime);
   const duration = endTime - startTime;
 
-  if (duration < config.value.minSlotDuration) return {};
+  if (duration < 5) return {}; // 允许显示较短的时间段预览，但至少保留5分钟高度以可见
 
   const top = (startTime / 1440) * timelineRef.value.offsetHeight;
   const height = (duration / 1440) * timelineRef.value.offsetHeight;
@@ -909,6 +909,12 @@ const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
   const y = getClientY(event) - rect.top;
   const startTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
   dragOperation.value = { type: 'create', startY: y, startTime, currentTime: startTime };
+
+  // 添加全局事件监听，支持拖出容器
+  window.addEventListener('mousemove', handleTrackPointerMove);
+  window.addEventListener('mouseup', handleTrackPointerUp);
+  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchend', handleTrackPointerUp);
 };
 
 const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
@@ -916,6 +922,45 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
   dragOperation.value.currentTime = Math.min(1439, snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)));
+
+  // 处理创建时的碰撞检测
+  if (dragOperation.value.type === 'create') {
+    const start = dragOperation.value.startTime;
+    let current = dragOperation.value.currentTime;
+    const currentDate = getCurrentSelectedDate();
+    
+    // 获取当天的所有时间段
+    const daySlots = timeSlots.value.filter(s => s.date === currentDate);
+
+    if (current > start) {
+      // 向下拖拽
+      // 找到开始时间在当前拖拽起始点之后最近的一个时间段
+      const firstSlotAfter = daySlots
+        .filter(s => s.startTime >= start)
+        .sort((a, b) => a.startTime - b.startTime)[0];
+      
+      if (firstSlotAfter) {
+        // 限制当前时间不能超过该时间段的开始时间
+        if (current >= firstSlotAfter.startTime) {
+          current = firstSlotAfter.startTime - 1;
+        }
+      }
+    } else if (current < start) {
+      // 向上拖拽
+      // 找到结束时间在当前拖拽起始点之前最近的一个时间段
+      const firstSlotBefore = daySlots
+        .filter(s => s.endTime <= start)
+        .sort((a, b) => b.endTime - a.endTime)[0];
+        
+      if (firstSlotBefore) {
+        // 限制当前时间不能小于该时间段的结束时间
+        if (current <= firstSlotBefore.endTime) {
+          current = firstSlotBefore.endTime + 1;
+        }
+      }
+    }
+    dragOperation.value.currentTime = current;
+  }
 
   // 处理时间段移动和调整大小
   if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
@@ -1013,6 +1058,12 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
 };
 
 const handleTrackPointerUp = async () => {
+  // 移除全局事件监听
+  window.removeEventListener('mousemove', handleTrackPointerMove);
+  window.removeEventListener('mouseup', handleTrackPointerUp);
+  window.removeEventListener('touchmove', handleTrackPointerMove);
+  window.removeEventListener('touchend', handleTrackPointerUp);
+
   if (!dragOperation.value) {
     dragOperation.value = null;
     return;
@@ -1044,17 +1095,14 @@ const handleTrackPointerUp = async () => {
         title: getCategoryName(recommendedCategoryId, config.value.categories),
         date: selectedDate.value.format('YYYY-MM-DD')
       };
-      // 重叠的时候，取上方的最大值和下方的最小值
-      timeSlots.value.forEach(slot => {
-        if (newSlot.startTime > slot.startTime && newSlot.startTime <= slot.endTime && newSlot.endTime > slot.endTime) {
-          newSlot.startTime = slot.endTime + 1;
-        } else if (newSlot.startTime < slot.startTime && newSlot.endTime > slot.startTime && newSlot.endTime <= slot.endTime) {
-          newSlot.endTime = slot.startTime - 1;
-        }
-      });
-
-      timeSlots.value.push(newSlot);
-      save(newSlot as any);
+      // 检查是否重叠
+      const daySlots = timeSlots.value.filter(s => s.date === newSlot.date);
+      if (!hasOverlap(daySlots, newSlot)) {
+        timeSlots.value.push(newSlot);
+        save(newSlot as any);
+      } else {
+        message.warning('时间段重叠，无法创建');
+      }
     }
   } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
     if (dragOperation.value.changed && dragOperation.value.slotId) {
@@ -1069,9 +1117,10 @@ const handleTrackPointerUp = async () => {
 };
 
 const handleTrackPointerLeave = () => {
-  if (dragOperation.value?.type === 'create') {
-    dragOperation.value = null;
-  }
+  // 移除原有逻辑，防止拖拽出容器时中断操作
+  // if (dragOperation.value?.type === 'create') {
+  //   dragOperation.value = null;
+  // }
 };
 
 const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) => {
@@ -1092,6 +1141,12 @@ const handleSlotPointerDown = (event: MouseEvent | TouchEvent, slot: TimeSlot) =
     originalEnd: slot.endTime,
     changed: false
   };
+
+  // 添加全局事件监听
+  window.addEventListener('mousemove', handleTrackPointerMove);
+  window.addEventListener('mouseup', handleTrackPointerUp);
+  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchend', handleTrackPointerUp);
 };
 
 const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot, direction: 'top' | 'bottom') => {
@@ -1113,6 +1168,12 @@ const handleResizeStartPointer = (event: MouseEvent | TouchEvent, slot: TimeSlot
     originalEnd: slot.endTime,
     changed: false
   };
+
+  // 添加全局事件监听
+  window.addEventListener('mousemove', handleTrackPointerMove);
+  window.addEventListener('mouseup', handleTrackPointerUp);
+  window.addEventListener('touchmove', handleTrackPointerMove, { passive: false });
+  window.addEventListener('touchend', handleTrackPointerUp);
 };
 
 const handleSlotClick = (slot: TimeSlot) => {
