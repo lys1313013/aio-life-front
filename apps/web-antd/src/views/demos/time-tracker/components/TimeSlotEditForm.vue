@@ -171,9 +171,17 @@
         </Col>
       </Row>
 
-      <Form.Item label="时长">
-        <div class="duration-display">
-          {{ formatDuration(duration) }}
+      <Form.Item>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88);">时长：</span>
+          <InputNumber
+            v-model:value="editableDuration"
+            :min="1"
+            :step="5"
+            :precision="0"
+            style="flex: 1;"
+            placeholder="请输入时长"
+          />
         </div>
       </Form.Item>
 
@@ -287,6 +295,43 @@ const duration = computed(() => {
   const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
 
   return Math.max(0, endMinutes - startMinutes);
+});
+
+// 计算时长（可编辑）
+const editableDuration = computed({
+  get: () => {
+    if (!formState.value.startTime || !formState.value.endTime) return 0;
+    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+    return Math.max(0, endMinutes - startMinutes);
+  },
+  set: (val: number) => {
+    if (!formState.value.startTime) return;
+    
+    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+    const proposedEndMinutes = startMinutes + val;
+    
+    let maxMinutes = 1439;
+    
+    if (props.existingSlots) {
+      const tempSlot = {
+        ...props.slot,
+        id: formState.value.id || 'temp-id',
+        startTime: startMinutes,
+        endTime: startMinutes // 设置为开始时间，以便查找紧邻的下一个时间段
+      };
+      
+      const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
+      if (belowStartTime !== null) {
+        maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
+      }
+    }
+    
+    // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
+    const finalEndMinutes = Math.max(startMinutes + 1, Math.min(maxMinutes, proposedEndMinutes));
+    
+    formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
+  }
 });
 
 // 表单验证规则
