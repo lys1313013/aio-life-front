@@ -296,10 +296,17 @@
               :selected-filter-category-id="selectedFilterCategoryId"
             />
             <TimeCategoryPieChart
-              v-if="statMode === 'day' || !selectedFilterCategoryId"
+              v-if="statMode === 'day' && !selectedFilterCategoryId"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
+            />
+            <TimeCategoryStackedAreaChart
+              v-if="(statMode === 'week' || statMode === 'month') && !selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
             />
             <div class="stats-cards-group">
               <div class="stat-square-card">
@@ -422,6 +429,7 @@ import {
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
+import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
 import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
