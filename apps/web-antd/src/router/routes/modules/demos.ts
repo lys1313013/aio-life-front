@@ -95,6 +95,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '备忘录',
+          icon: 'mdi:note-text-outline',
+        },
+        name: 'memo',
+        path: '/demos/memo',
+        component: () => import('#/views/demos/memo/index.vue'),
+      },
+      {
+        meta: {
           icon: 'mdi:flask-outline',
           title: '测试界面',
         },
