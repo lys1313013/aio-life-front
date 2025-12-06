@@ -80,6 +80,7 @@ function useExtraMenu(useRootMenus?: ComputedRef<MenuRecordRaw[]>) {
     );
     extraActiveMenu.value = rootMenuPath ?? findMenu?.path ?? '';
     extraMenus.value = rootMenu?.children ?? [];
+    sidebarExtraVisible.value = false;
   };
 
   const handleMenuMouseEnter = (menu: MenuRecordRaw) => {
