@@ -668,18 +668,13 @@ const loadData = async () => {
       } else {
         timeSlots.value = [];
       }
-
-      console.log('最终设置的时间段数据:', timeSlots.value);
     } else {
       // 按天查询
       const currentDate = selectedDate.value.format('YYYY-MM-DD');
       const queryParams = { condition: { date: currentDate } };
 
-      console.log('按天查询参数:', queryParams);
-
       // 调用普通查询接口
       response = await query(queryParams);
-      console.log('按天查询返回数据:', response);
 
       if (response && response.items) {
         timeSlots.value = response.items;
@@ -1027,7 +1022,6 @@ const handleTrackPointerUp = async () => {
     // 创建新时间段
     const startTime = Math.min(dragOperation.value.startTime, dragOperation.value.currentTime);
     const endTime = Math.max(dragOperation.value.startTime, dragOperation.value.currentTime);
-    console.log('startTime', startTime, 'endTime', endTime)
     const duration = endTime - startTime;
 
     if (duration >= config.value.minSlotDuration) {
@@ -1052,28 +1046,15 @@ const handleTrackPointerUp = async () => {
       };
       // 重叠的时候，取上方的最大值和下方的最小值
       timeSlots.value.forEach(slot => {
-        // 打印slow.startTime的类型
-        console.log(typeof slot.startTime);
-        if (newSlot.startTime > slot.endTime || newSlot.endTime < slot.startTime) {
-          console.log("不包含");
-        } else if (newSlot.startTime <= slot.startTime && newSlot.endTime > slot.endTime) {
-          console.log("全包含");
-        } else if (newSlot.startTime <= slot.endTime && newSlot.endTime > slot.endTime) {
-          newSlot.startTime = slot.endTime + 1
-        } else if (newSlot.endTime > slot.startTime && newSlot.startTime < slot.startTime) {
-
-          newSlot.endTime = slot.startTime - 1
+        if (newSlot.startTime > slot.startTime && newSlot.startTime <= slot.endTime && newSlot.endTime > slot.endTime) {
+          newSlot.startTime = slot.endTime + 1;
+        } else if (newSlot.startTime < slot.startTime && newSlot.endTime > slot.startTime && newSlot.endTime <= slot.endTime) {
+          newSlot.endTime = slot.startTime - 1;
         }
       });
 
-      if (!hasOverlap(timeSlots.value, newSlot)) {
-        timeSlots.value.push(newSlot);
-        save(newSlot as any);
-      } else {
-        // todo
-        timeSlots.value.push(newSlot);
-        save(newSlot as any);
-      }
+      timeSlots.value.push(newSlot);
+      save(newSlot as any);
     }
   } else if (dragOperation.value.type === 'move' || dragOperation.value.type === 'resize') {
     if (dragOperation.value.changed && dragOperation.value.slotId) {
