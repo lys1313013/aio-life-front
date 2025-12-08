@@ -76,7 +76,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:timeline-clock-outline',
+          icon: 'mdi:history',
           title: '时迹',
           backTop: false,
         },
