@@ -132,10 +132,11 @@ const saveCard = async () => {
             create_time: e?.create_time ?? new Date().toISOString(),
           })),
       date: saved?.date ?? new Date().toISOString(),
+      createTime: saved?.createTime ?? saved?.create_time ?? new Date().toISOString(),
     };
 
     if (currentEditId.value === null) {
-      thoughts.value.push(normalized);
+      thoughts.value.unshift(normalized);
     } else {
       const idx = thoughts.value.findIndex((t) => t.id === currentEditId.value);
       if (idx !== -1) thoughts.value[idx] = normalized;
@@ -172,7 +173,8 @@ const loadThoughts = async () => {
         }))
       : [],
     date: t?.date ?? new Date().toISOString(),
-  }));
+    createTime: t?.createTime ?? t?.create_time ?? new Date().toISOString(),
+  })).sort((a: Thought, b: Thought) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
 };
 
 onMounted(async () => {
