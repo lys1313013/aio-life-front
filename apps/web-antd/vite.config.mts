@@ -4,6 +4,15 @@ export default defineConfig(async () => {
   return {
     application: {},
     vite: {
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              echarts: ['echarts'],
+            },
+          },
+        },
+      },
       server: {
         proxy: {
           '/api': {
