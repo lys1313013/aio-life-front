@@ -195,16 +195,17 @@
 
       <Form.Item>
         <div class="form-actions">
-          <Button type="primary" html-type="submit">保存</Button>
-          <Button @click="$emit('cancel')" style="margin-left: 8px">取消</Button>
           <Button
             danger
             @click="handleDelete"
-            style="margin-left: auto"
             v-if="formState.id"
           >
             删除
           </Button>
+          <div style="margin-left: auto">
+            <Button @click="$emit('cancel')">取消</Button>
+            <Button type="primary" html-type="submit">保存</Button>
+          </div>
         </div>
       </Form.Item>
     </Form>
