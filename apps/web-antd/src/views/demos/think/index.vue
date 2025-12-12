@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, toRaw } from 'vue';
-import { query as queryThink, save as saveThink, update as updateThink } from '#/api/core/think';
-import { Button, Card, Modal, Input, Form, Empty, Space, message, Tag } from 'ant-design-vue';
+import { query as queryThink, save as saveThink, update as updateThink, deleteData as deleteThink } from '#/api/core/think';
+import { Button, Card, Modal, Input, Form, Empty, Space, message, Tag, Popconfirm } from 'ant-design-vue';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 interface Event {
@@ -148,6 +148,17 @@ const saveCard = async () => {
   }
 };
 
+const handleDelete = async (id: number) => {
+  try {
+    await deleteThink({ idList: [id] });
+    thoughts.value = thoughts.value.filter((t) => t.id !== id);
+    message.success('删除成功');
+    closeCardModal();
+  } catch (e) {
+    message.error('删除失败');
+  }
+};
+
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
@@ -245,7 +256,19 @@ onMounted(async () => {
           </Button>
         </Form.Item>
 
-        <div class="form-actions">
+        <div class="form-actions" :style="{ justifyContent: currentEditId ? 'space-between' : 'flex-end' }">
+          <Popconfirm
+            v-if="currentEditId"
+            title="确定要删除这条思考吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="handleDelete(currentEditId!)"
+          >
+            <Button danger>
+              <template #icon><DeleteOutlined /></template>
+              删除
+            </Button>
+          </Popconfirm>
           <Space>
             <Button @click="closeCardModal">取消</Button>
             <Button type="primary" @click="saveCard">保存</Button>

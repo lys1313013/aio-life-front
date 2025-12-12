@@ -1,11 +1,11 @@
 {
   "title": "Demos",
-  "antd": "Ant Design Vue",
+  "antd": "AIO-life",
   "vben": {
     "title": "Project",
     "about": "About",
     "document": "Document",
-    "antdv": "Ant Design Vue Version",
+    "antdv": "AIO-life Version",
     "naive-ui": "Naive UI Version",
     "element-plus": "Element Plus Version"
   }
