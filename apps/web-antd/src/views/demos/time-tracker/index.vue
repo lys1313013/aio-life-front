@@ -282,43 +282,6 @@
       <div class="right-panel">
         <div>
           <div class="stats-row">
-            <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
-            <DailyCategoryBarChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
-            />
-            <!-- 默认显示分类柱状图 -->
-            <TimeCategoryBarChart
-              v-if="!selectedFilterCategoryId || statMode === 'day'"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-            />
-            <DailyStatsPieChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
-            />
-            <TimeCategoryPieChart
-              v-if="statMode === 'day' && !selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-            />
-            <TimeCategoryStackedAreaChart
-              v-if="(statMode === 'week' || statMode === 'month') && !selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-            />
             <div class="stats-cards-group">
               <div class="stat-square-card">
                 <span class="stat-label-corner">总计</span>
@@ -365,6 +328,43 @@
                 </div>
               </div>
             </div>
+            <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
+            <DailyCategoryBarChart
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
+            <!-- 默认显示分类柱状图 -->
+            <TimeCategoryBarChart
+              v-if="!selectedFilterCategoryId || statMode === 'day'"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <DailyStatsPieChart
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
+            <TimeCategoryPieChart
+              v-if="statMode === 'day' && !selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <TimeCategoryStackedAreaChart
+              v-if="(statMode === 'week' || statMode === 'month') && !selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+            />
           </div>
         </div>
       </div>
@@ -2226,15 +2226,18 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .stats-cards-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 12px;
-  width: 110px; /* 固定宽度 */
+  width: 100%;
   flex: none;
+  flex-wrap: wrap;
 }
 
 .stat-square-card {
   position: relative;
-  aspect-ratio: 1; /* 正方形 */
+  height: 100px;
+  flex: 1;
+  min-width: 100px;
   background: v-bind('token.colorBgContainer');
   border-radius: 12px;
   border: 1px solid v-bind('token.colorBorderSecondary'); /* 更淡的边框 */
