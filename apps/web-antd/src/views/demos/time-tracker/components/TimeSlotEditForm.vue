@@ -219,7 +219,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber, Popconfirm } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
-import { timeToMinutes, minutesToTime, formatDuration, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
+import { timeToMinutes, minutesToTime, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
 import { getByDictType } from '#/api/core/common';
 import dayjs from 'dayjs';
 
@@ -517,26 +517,6 @@ const adjustEndTime = (minutes: number) => {
   const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
   
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
-};
-
-// 开始时间取整
-const roundStartTime = (direction: 'up' | 'down') => {
-  if (!formState.value.startTime) return;
-
-  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  const roundedMinutes = direction === 'down'
-    ? Math.floor(currentMinutes / 60) * 60
-    : Math.ceil(currentMinutes / 60) * 60;
-
-  formState.value.startTime = minutesToTimePickerValue(roundedMinutes);
-
-  // 如果结束时间早于新的开始时间，自动调整结束时间
-  if (formState.value.endTime) {
-    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-    if (endMinutes <= roundedMinutes) {
-      formState.value.endTime = minutesToTimePickerValue(roundedMinutes + 60);
-    }
-  }
 };
 
 // 处理删除

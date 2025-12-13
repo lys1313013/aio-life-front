@@ -114,10 +114,10 @@ const renderPieChart = () => {
             }
           },
           fontSize: 10,
-          fontWeight: 'normal',
+          fontWeight: 'normal' as const,
           color: '#333',
           minMargin: 5,
-          overflow: 'truncate',
+          overflow: 'truncate' as const,
           width: 80,
         },
         labelLine: {
@@ -130,7 +130,7 @@ const renderPieChart = () => {
           label: {
             show: true,
             fontSize: 14,
-            fontWeight: 'bold'
+            fontWeight: 'bold' as const
           }
         },
         data: pieChartData.value
@@ -138,7 +138,7 @@ const renderPieChart = () => {
     ]
   };
 
-  renderEcharts(options);
+  renderEcharts(options as any);
 };
 
 // 监听数据变化，重新渲染图表

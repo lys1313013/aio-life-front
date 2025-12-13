@@ -1,4 +1,4 @@
-import type { TimeSlot, TimeTrackerConfig } from './types';
+import type { TimeSlot } from './types';
 
 // 将分钟转换为时间字符串（HH:MM）
 export function minutesToTime(minutes: number): string {
@@ -9,13 +9,13 @@ export function minutesToTime(minutes: number): string {
 
 // 将时间字符串转换为分钟
 export function timeToMinutes(timeStr: string): number {
-  const [hours, minutes] = timeStr.split(':').map(Number);
+  const [hours = 0, minutes = 0] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
 }
 
 // 验证时间段是否重叠
 export function hasOverlap(slots: TimeSlot[], newSlot: TimeSlot): boolean {
-  return slots.some(slot => {
+  return slots.some((slot) => {
     if (slot.id === newSlot.id) return false; // 排除自身
     return newSlot.startTime < slot.endTime && newSlot.endTime > slot.startTime;
   });
@@ -69,11 +69,9 @@ export function getAboveSlotEndTime(slots: TimeSlot[], currentSlot: TimeSlot, ex
 }
 
 // 验证时间段是否有效
-export function isValidSlot(slot: TimeSlot, config: TimeTrackerConfig): boolean {
+export function isValidSlot(slot: TimeSlot): boolean {
   return (
-    slot.startTime >= 0 &&
-    slot.endTime <= 1439 &&
-    slot.startTime < slot.endTime
+    slot.startTime >= 0 && slot.endTime <= 1439 && slot.startTime < slot.endTime
   );
 }
 
@@ -98,7 +96,7 @@ export function snapToGrid(time: number, gridSize: number = 15): number {
 
 // 生成唯一ID
 export function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
 // 格式化时间段显示

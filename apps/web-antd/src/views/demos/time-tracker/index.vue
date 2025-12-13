@@ -407,7 +407,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, message, DatePicker, Spin, Radio, Popover, theme } from 'ant-design-vue';
+import { Button, Modal, message, DatePicker, Spin, Radio, Popover, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -1509,7 +1509,7 @@ const handleSaveSlot = (formData: any) => {
     );
 
     if (
-      isValidSlot(newSlot, config.value) &&
+      isValidSlot(newSlot) &&
       !hasOverlap(sameDaySlots, newSlot)
     ) {
       timeSlots.value.push(newSlot);
@@ -1529,7 +1529,7 @@ const handleSaveSlot = (formData: any) => {
     );
 
     if (
-      isValidSlot(updatedSlot, config.value) &&
+      isValidSlot(updatedSlot) &&
       !hasOverlap(sameDaySlots, updatedSlot)
     ) {
       timeSlots.value[index] = updatedSlot;
@@ -1832,7 +1832,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 .day-column-header.active {
-  background: #e6f7ff;
   font-weight: 500;
 }
 
