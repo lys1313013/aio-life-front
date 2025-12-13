@@ -106,7 +106,7 @@ const renderBarChart = () => {
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
             const text = duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
-            return activeDaysCount.value > 1 ? `均 ${text}` : text;
+            return activeDaysCount.value > 1 ? `日 ${text}` : text;
           },
           fontSize: 10
         },

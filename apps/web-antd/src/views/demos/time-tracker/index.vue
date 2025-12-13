@@ -138,9 +138,9 @@
                       @click="handleSlotClick(slot)"
                     >
                       <div class="slot-content">
-                        <div class="slot-info">
+                        <div class="slot-info" :style="isMobile ? { flexDirection: 'column', alignItems: 'flex-start', gap: '0' } : {}">
                           <span class="slot-title">{{ slot.title }}</span>
-                          <span v-if="slot.endTime - slot.startTime > 45" class="slot-time" style="margin-left: 4px; font-size: 11px;">
+                          <span v-if="slot.endTime - slot.startTime > 45" class="slot-time" :style="isMobile ? { fontSize: '10px', lineHeight: '1.2' } : { marginLeft: '4px', fontSize: '11px' }">
                             {{ formatDuration(slot.endTime - slot.startTime) }}
                           </span>
                         </div>

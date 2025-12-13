@@ -213,7 +213,8 @@ const renderChart = () => {
     yAxis: [
       {
         type: 'value',
-        name: '时长(分)'
+        name: '时长(分)',
+        max: props.statMode === 'day' ? 60 : 1450
       }
     ],
     series: series
