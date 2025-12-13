@@ -140,6 +140,9 @@
                       <div class="slot-content">
                         <div class="slot-info">
                           <span class="slot-title">{{ slot.title }}</span>
+                          <span v-if="slot.endTime - slot.startTime > 45" class="slot-time" style="margin-left: 4px; font-size: 11px;">
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -195,6 +198,9 @@
                       <div class="slot-content">
                         <div class="slot-info">
                           <span class="slot-title">{{ slot.title }}</span>
+                          <span v-if="slot.endTime - slot.startTime > 60" class="slot-time" style="margin-left: 2px; font-size: 10px;">
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -251,7 +257,12 @@
                     <div class="slot-content">
                       <div class="slot-info">
                         <span class="slot-title">{{ slot.title }}</span>
-                        <span class="slot-time">{{ formatSlotTime(slot) }}</span>
+                        <span class="slot-time">
+                          {{ formatSlotTime(slot) }}
+                          <span v-if="slot.endTime - slot.startTime > 30" style="margin-left: 4px; opacity: 0.8">
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
+                        </span>
                       </div>
                     </div>
                     <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
