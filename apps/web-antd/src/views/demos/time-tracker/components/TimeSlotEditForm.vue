@@ -174,14 +174,29 @@
       <Form.Item>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88);">时长：</span>
-          <InputNumber
-            v-model:value="editableDuration"
-            :min="1"
-            :step="5"
-            :precision="0"
-            style="flex: 1;"
-            placeholder="请输入时长"
-          />
+          <div style="display: flex; gap: 8px; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+              <InputNumber
+                v-model:value="editableHours"
+                :min="0"
+                :precision="0"
+                style="flex: 1;"
+                placeholder="时"
+              />
+              <span>小时</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
+              <InputNumber
+                v-model:value="editableMinutes"
+                :min="0"
+                :max="59"
+                :precision="0"
+                style="flex: 1;"
+                placeholder="分"
+              />
+              <span>分钟</span>
+            </div>
+          </div>
         </div>
       </Form.Item>
 
@@ -300,40 +315,52 @@ const duration = computed(() => {
   return Math.max(0, endMinutes - startMinutes);
 });
 
-// 计算时长（可编辑）
-const editableDuration = computed({
-  get: () => {
-    if (!formState.value.startTime || !formState.value.endTime) return 0;
-    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-    return Math.max(0, endMinutes - startMinutes);
-  },
-  set: (val: number) => {
-    if (!formState.value.startTime) return;
+// 更新时长逻辑
+const updateDuration = (val: number) => {
+  if (!formState.value.startTime) return;
     
-    const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-    const proposedEndMinutes = startMinutes + val;
+  const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+  const proposedEndMinutes = startMinutes + val;
     
-    let maxMinutes = 1439;
+  let maxMinutes = 1439;
     
-    if (props.existingSlots) {
-      const tempSlot = {
-        ...props.slot,
-        id: formState.value.id || 'temp-id',
-        startTime: startMinutes,
-        endTime: startMinutes // 设置为开始时间，以便查找紧邻的下一个时间段
-      };
+  if (props.existingSlots) {
+    const tempSlot = {
+      ...props.slot,
+      id: formState.value.id || 'temp-id',
+      startTime: startMinutes,
+      endTime: startMinutes // 设置为开始时间，以便查找紧邻的下一个时间段
+    };
       
-      const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
-      if (belowStartTime !== null) {
-        maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
-      }
+    const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
+    if (belowStartTime !== null) {
+      maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
     }
+  }
     
-    // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
-    const finalEndMinutes = Math.max(startMinutes + 1, Math.min(maxMinutes, proposedEndMinutes));
+  // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
+  const finalEndMinutes = Math.max(startMinutes + 1, Math.min(maxMinutes, proposedEndMinutes));
     
-    formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
+  formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
+};
+
+// 计算小时（可编辑）
+const editableHours = computed({
+  get: () => Math.floor(duration.value / 60),
+  set: (val: number) => {
+    const currentMinutes = duration.value % 60;
+    const totalMinutes = (val || 0) * 60 + currentMinutes;
+    updateDuration(totalMinutes);
+  }
+});
+
+// 计算分钟（可编辑）
+const editableMinutes = computed({
+  get: () => duration.value % 60,
+  set: (val: number) => {
+    const currentHours = Math.floor(duration.value / 60);
+    const totalMinutes = currentHours * 60 + (val || 0);
+    updateDuration(totalMinutes);
   }
 });
 
