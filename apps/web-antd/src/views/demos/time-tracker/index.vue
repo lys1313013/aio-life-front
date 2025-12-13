@@ -325,6 +325,34 @@
                 <span class="stat-label-corner">空闲</span>
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
               </div>
+              <div class="stat-square-card">
+                <span class="stat-label-corner">娱乐同比</span>
+                <div
+                  class="stat-value-center"
+                  :style="{
+                    color:
+                      entertainmentComparison.diff === 0
+                        ? 'inherit'
+                        : entertainmentComparison.diff > 0
+                          ? token.colorError
+                          : token.colorSuccess,
+                    fontSize: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }"
+                >
+                  <span
+                    v-if="entertainmentComparison.diff !== 0"
+                    style="margin-right: 2px"
+                  >
+                    {{ entertainmentComparison.diff > 0 ? '↑' : '↓' }}
+                  </span>
+                  <span>{{
+                    formatDuration(entertainmentComparison.absDiff)
+                  }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -460,6 +488,7 @@ const monthHeaderRef = ref<HTMLElement>();
 const monthDaysContainerRef = ref<HTMLElement>();
 const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
+const previousPeriodTimeSlots = ref<TimeSlot[]>([]);
 const currentCategoryId = ref(defaultConfig.defaultCategoryId);
 const dragOperation = ref<DragOperation | null>(null);
 const selectedFilterCategoryId = ref<null | string>(null);
@@ -525,6 +554,26 @@ const averageDuration = computed(() => {
   return totalDuration.value / activeDaysCount;
 });
 
+const entertainmentComparison = computed(() => {
+  const entertainmentId = 'entertainment';
+
+  const calcDuration = (slots: TimeSlot[]) => {
+    return slots
+      .filter((slot) => slot.categoryId === entertainmentId)
+      .reduce((total, slot) => total + (slot.endTime - slot.startTime), 0);
+  };
+
+  const currentDuration = calcDuration(timeSlots.value);
+  const previousDuration = calcDuration(previousPeriodTimeSlots.value);
+
+  const diff = currentDuration - previousDuration;
+  return {
+    diff,
+    direction: diff >= 0 ? '上升' : '下降',
+    absDiff: Math.abs(diff),
+  };
+});
+
 const maxDuration = computed(() => {
   if (statMode.value === 'week') {
     return 7 * 1440;
@@ -572,29 +621,42 @@ const freeTimeCardStyle = computed(() => {
   let currentPercent = 0;
   const totalMax = maxDuration.value || 1440;
 
-  // 辅助函数：将 hex 颜色转换为 rgba，并指定透明度
-  const hexToRgba = (hex: string, alpha: number) => {
-    const r = Number.parseInt(hex.slice(1, 3), 16);
-    const g = Number.parseInt(hex.slice(3, 5), 16);
-    const b = Number.parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  // 辅助函数：调整颜色透明度，支持 hex 和 rgb/rgba
+  const adjustColorOpacity = (color: string, alpha: number) => {
+    if (!color) return color;
+    if (color.startsWith('#')) {
+      if (color.length < 7) return color;
+      const r = Number.parseInt(color.slice(1, 3), 16);
+      const g = Number.parseInt(color.slice(3, 5), 16);
+      const b = Number.parseInt(color.slice(5, 7), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    if (color.startsWith('rgb')) {
+      const match = color.match(/\d+/g);
+      if (match && match.length >= 3) {
+        return `rgba(${match[0]}, ${match[1]}, ${match[2]}, ${alpha})`;
+      }
+    }
+    return color;
   };
+
+  const bgContainer = token.value.colorBgContainer;
+  const separatorColor = adjustColorOpacity(bgContainer, 0.5);
+  const remainingColor = adjustColorOpacity(bgContainer, 0.9);
 
   sortedCategories.forEach((item) => {
     const percent = (item.duration / totalMax) * 100;
     const start = currentPercent;
     const end = Math.min(100, currentPercent + percent);
-    const color = item.color.startsWith('#')
-      ? hexToRgba(item.color, 0.6)
-      : item.color; // 降低透明度
+    const color = adjustColorOpacity(item.color, 0.6); // 降低透明度
 
     // 只有当该段长度足够时，才显示分割线，避免渲染错误
     const gap = 0.5;
     if (percent > gap) {
       gradientStops.push(`${color} ${start.toFixed(2)}%`);
       gradientStops.push(`${color} ${(end - gap).toFixed(2)}%`);
-      gradientStops.push(`rgba(255,255,255,0.5) ${(end - gap).toFixed(2)}%`); // 分割线开始
-      gradientStops.push(`rgba(255,255,255,0.5) ${end.toFixed(2)}%`); // 分割线结束
+      gradientStops.push(`${separatorColor} ${(end - gap).toFixed(2)}%`); // 分割线开始
+      gradientStops.push(`${separatorColor} ${end.toFixed(2)}%`); // 分割线结束
     } else {
       // 长度不够，直接纯色填充
       gradientStops.push(`${color} ${start.toFixed(2)}%`);
@@ -607,15 +669,15 @@ const freeTimeCardStyle = computed(() => {
   // 填充剩余部分为带纹理的白色背景
   if (currentPercent < 100) {
     gradientStops.push(
-      `rgba(255,255,255,0.9) ${currentPercent.toFixed(2)}%`,
-      `rgba(255,255,255,0.9) 100%`,
+      `${remainingColor} ${currentPercent.toFixed(2)}%`,
+      `${remainingColor} 100%`,
     );
   }
 
   return {
     backgroundImage: `linear-gradient(to top, ${gradientStops.join(', ')})`,
     backgroundRepeat: 'no-repeat',
-    backgroundColor: '#fff',
+    backgroundColor: bgContainer,
   };
 });
 
@@ -717,8 +779,9 @@ const loadData = async () => {
   try {
     loading.value = true; // 开始加载
 
-    let response;
+    const promises: Promise<any>[] = [];
 
+    // 1. Current Period Request
     if (statMode.value === 'week' || statMode.value === 'month') {
       const daysValue =
         statMode.value === 'week' ? weekDays.value : monthDays.value;
@@ -726,32 +789,67 @@ const loadData = async () => {
       const endDate =
         daysValue.length > 0 ? daysValue[daysValue.length - 1]?.date || '' : '';
       const queryParams = { condition: { startDate, endDate } };
-
-      response = await queryForWeek(queryParams);
-
-      // 确保返回的数据是数组格式
-      if (Array.isArray(response)) {
-        timeSlots.value = response;
-      } else if (response && (response as any).items) {
-        // 如果返回的是QueryResponse格式，提取items
-        timeSlots.value = (response as any).items || [];
-      } else {
-        timeSlots.value = [];
-      }
+      promises.push(queryForWeek(queryParams));
     } else {
       // 按天查询
       const currentDate = selectedDate.value.format('YYYY-MM-DD');
       const queryParams = { condition: { date: currentDate } };
+      promises.push(query(queryParams));
+    }
 
-      // 调用普通查询接口
-      response = await query(queryParams);
+    // 2. Previous Period Request
+    let prevStartDate = '';
+    let prevEndDate = '';
 
-      timeSlots.value = response && response.items ? response.items : [];
+    if (statMode.value === 'week') {
+      const prevDate = selectedDate.value.subtract(1, 'week');
+      prevStartDate = prevDate.startOf('isoWeek').format('YYYY-MM-DD');
+      prevEndDate = prevDate.endOf('isoWeek').format('YYYY-MM-DD');
+      promises.push(
+        queryForWeek({
+          condition: { startDate: prevStartDate, endDate: prevEndDate },
+        }),
+      );
+    } else if (statMode.value === 'month') {
+      const prevDate = selectedDate.value.subtract(1, 'month');
+      prevStartDate = prevDate.startOf('month').format('YYYY-MM-DD');
+      prevEndDate = prevDate.endOf('month').format('YYYY-MM-DD');
+      promises.push(
+        queryForWeek({
+          condition: { startDate: prevStartDate, endDate: prevEndDate },
+        }),
+      );
+    } else {
+      const prevDate = selectedDate.value
+        .subtract(1, 'day')
+        .format('YYYY-MM-DD');
+      promises.push(query({ condition: { date: prevDate } }));
+    }
+
+    const [currentResponse, prevResponse] = await Promise.all(promises);
+
+    // Process Current Response
+    if (Array.isArray(currentResponse)) {
+      timeSlots.value = currentResponse;
+    } else if (currentResponse && (currentResponse as any).items) {
+      timeSlots.value = (currentResponse as any).items || [];
+    } else {
+      timeSlots.value = [];
+    }
+
+    // Process Previous Response
+    if (Array.isArray(prevResponse)) {
+      previousPeriodTimeSlots.value = prevResponse;
+    } else if (prevResponse && (prevResponse as any).items) {
+      previousPeriodTimeSlots.value = (prevResponse as any).items || [];
+    } else {
+      previousPeriodTimeSlots.value = [];
     }
   } catch (error) {
     console.error('加载数据失败:', error);
     message.error('加载数据失败');
     timeSlots.value = [];
+    previousPeriodTimeSlots.value = [];
   } finally {
     loading.value = false; // 结束加载
   }
@@ -2126,9 +2224,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .stat-square-card {
   position: relative;
   aspect-ratio: 1; /* 正方形 */
-  background: #fff;
+  background: v-bind('token.colorBgContainer');
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.05); /* 更淡的边框 */
+  border: 1px solid v-bind('token.colorBorderSecondary'); /* 更淡的边框 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2150,21 +2248,21 @@ const getDaySlots = (date: string): TimeSlot[] => {
   left: 14px;
   font-size: 13px;
   font-weight: 500;
-  color: #595959;
+  color: v-bind('token.colorTextSecondary');
   line-height: 1;
   z-index: 2; /* 确保在背景之上 */
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8); /* 文字描边效果 */
+  text-shadow: 0 0 4px v-bind('token.colorBgElevated'); /* 增加文字光晕，提高在复杂背景下的可读性 */
 }
 
 .stat-value-center {
   font-size: 18px;
   font-weight: 700;
-  color: #262626;
+  color: v-bind('token.colorText');
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
     Arial, monospace;
   z-index: 2; /* 确保在背景之上 */
-  text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8); /* 文字描边效果 */
+  text-shadow: 0 0 4px v-bind('token.colorBgElevated'); /* 增加文字光晕，提高在复杂背景下的可读性 */
 }
 
 .pie-chart-card {
