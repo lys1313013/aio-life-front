@@ -1372,7 +1372,7 @@ const handleSlotClick = (slot: TimeSlot) => {
   showEditModal.value = true;
 };
 
-// 计算智能开始时间
+// 计算开始时间
 const calculateSmartStartTime = (): number => {
   const currentDate = getCurrentSelectedDate();
 
@@ -1387,7 +1387,7 @@ const calculateSmartStartTime = (): number => {
   }
 
   // 检查第一个时间段之前是否有足够的空间（从00:00开始）
-  if (sameDaySlots[0]?.startTime && sameDaySlots[0].startTime >= 30) {
+  if (sameDaySlots[0]?.startTime) {
     return 0;
   }
 
@@ -1399,8 +1399,8 @@ const calculateSmartStartTime = (): number => {
     // 计算当前时间段结束时间和下一个时间段开始时间之间的空隙大小
     const gapSize = nextSlot!.startTime - currentSlot!.endTime - 1;
 
-    // 如果空隙足够容纳30分钟的时间段，或者空隙大于0（允许插入较短时间段）
-    if (gapSize >= 30 || gapSize > 0) {
+    // 如果空隙大于0（允许插入较短时间段）
+    if (gapSize > 0) {
       return currentSlot!.endTime + 1;
     }
   }
@@ -1442,14 +1442,11 @@ const handleAddSlot = async () => {
   // 查找当前空隙的下一个时间段的开始时间
   const nextSlot = sameDaySlots.find((slot) => slot.startTime > smartStartTime);
   if (nextSlot && nextSlot.startTime > smartStartTime) {
-    // 如果空隙不足30分钟，设置结束时间为下一个时间段的开始时间
     const availableTime = nextSlot.startTime - smartStartTime - 1;
-    if (availableTime < 30) {
-      endTime = Math.min(
-        smartStartTime + availableTime,
-        isToday ? currentTime.value : 1439,
-      );
-    }
+    endTime = Math.min(
+      smartStartTime + availableTime,
+      isToday ? currentTime.value : 1439,
+    );
   }
 
   // 获取推荐分类

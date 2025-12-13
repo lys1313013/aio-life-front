@@ -195,13 +195,15 @@
 
       <Form.Item>
         <div class="form-actions">
-          <Button
-            danger
-            @click="handleDelete"
+          <Popconfirm
             v-if="formState.id"
+            title="确定要删除此时间段吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="handleDelete"
           >
-            删除
-          </Button>
+            <Button danger>删除</Button>
+          </Popconfirm>
           <div style="margin-left: auto">
             <Button @click="$emit('cancel')">取消</Button>
             <Button type="primary" html-type="submit">保存</Button>
@@ -214,7 +216,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber } from 'ant-design-vue';
+import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber, Popconfirm } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
 import { timeToMinutes, minutesToTime, formatDuration, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
