@@ -222,16 +222,21 @@ const updateCharts = () => {
   });
 };
 
-// 监听设备变化，重新渲染图表
+// 监听设备变化，重新渲染图表和调整表格
 watch(isMobile, () => {
   setTimeout(() => {
     updateCharts();
+    updateColumnsVisibility();
   }, 200);
 });
 
 // 在组件挂载时加载值集数据
 onMounted(() => {
   loadExerciseTypes();
+  // 延迟调整列显隐，确保 Grid 已初始化
+  setTimeout(() => {
+    updateColumnsVisibility();
+  }, 500);
 });
 
 // 抽屉相关
@@ -300,7 +305,7 @@ const gridOptions: VxeGridProps<RowType> = {
     isShiftKey: true,
   },
   columns: [
-    { type: 'checkbox', title: '', width: 60 },
+    { type: 'checkbox', title: '', width: 40 },
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
@@ -309,7 +314,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       headerAlign: 'center',
       align: 'center',
-      width: 120,
+      width: 100,
       formatter: ({ cellValue }) => {
         return getExerciseTypeLabel(cellValue);
       },
@@ -320,7 +325,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       headerAlign: 'center',
       align: 'center',
-      width: 120,
+      width: 100,
     },
     {
       field: 'exerciseCount',
@@ -359,7 +364,7 @@ const gridOptions: VxeGridProps<RowType> = {
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 120,
+      width: 100,
     },
   ],
   keepSource: true,
@@ -427,6 +432,27 @@ const submitDeleteData = async () => {
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+
+const updateColumnsVisibility = () => {
+  if (!gridApi?.grid) return;
+
+  const mobile = isMobile.value;
+  // 获取所有列配置
+  const columns = gridApi.grid.getColumns();
+
+  columns.forEach((col) => {
+    // 手机端隐藏部分列
+    if (['createTime', 'updateTime', 'description', 'seq'].includes(col.field) || col.type === 'seq') {
+      col.visible = !mobile;
+    }
+    // 调整列宽
+    if (col.field === 'exerciseTypeId') {
+      col.width = mobile ? 100 : 120;
+    }
+  });
+
+  gridApi.grid.refreshColumn();
+};
 
 const deleteRow = async (row: RowType) => {
   try {
@@ -621,6 +647,10 @@ const tableReload = () => {
 }
 
 @media (max-width: 768px) {
+  .total-card {
+    padding: 16px;
+  }
+
   .total-content {
     flex-direction: column;
     text-align: center;
