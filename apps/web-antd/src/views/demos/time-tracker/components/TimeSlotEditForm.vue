@@ -426,9 +426,21 @@ const initializeForm = (slot: TimeSlot) => {
 };
 
 // 监听props变化
-watch(() => props.slot, (newSlot) => {
+watch(() => props.slot, (newSlot, oldSlot) => {
   if (newSlot) {
-    initializeForm(newSlot);
+    // 如果是新打开的或者切换了时间段，完全重新初始化
+    if (!oldSlot || newSlot.id !== oldSlot.id) {
+      initializeForm(newSlot);
+    } else {
+      // 如果是同一个时间段的更新（如异步获取推荐分类），只更新变化的字段
+      // 避免覆盖用户正在编辑的其他字段（如描述、时间等）
+      if (newSlot.categoryId !== oldSlot.categoryId) {
+        formState.value.categoryId = newSlot.categoryId;
+      }
+      if (newSlot.title !== oldSlot.title) {
+        formState.value.title = newSlot.title;
+      }
+    }
   }
 }, { immediate: true });
 

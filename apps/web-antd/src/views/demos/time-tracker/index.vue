@@ -1525,7 +1525,7 @@ const calculateSmartStartTime = (): number => {
   return Math.min((lastSlot?.endTime || 0) + 1, 1439);
 };
 
-const handleAddSlot = async () => {
+const handleAddSlot = () => {
   const currentDate = getCurrentSelectedDate();
 
   // 获取当天的时间段，按开始时间排序
@@ -1558,31 +1558,39 @@ const handleAddSlot = async () => {
     );
   }
 
-  // 获取推荐分类
-  let recommendedCategoryId = currentCategoryId.value;
-  try {
-    const middleTime = Math.floor((smartStartTime + endTime) / 2);
-    const result = await recommendType({ date: currentDate, time: middleTime });
-    if (result) {
-      recommendedCategoryId = result;
-    }
-  } catch (error) {
-    console.error('获取推荐分类失败', error);
-  }
+  // 默认使用当前选中的分类
+  const initialCategoryId = currentCategoryId.value;
 
   // 创建新的时间段对象
   const newSlot: TimeSlot = {
     id: generateId(),
     startTime: smartStartTime,
     endTime,
-    categoryId: recommendedCategoryId,
-    title: getCategoryName(recommendedCategoryId, config.value.categories),
+    categoryId: initialCategoryId,
+    title: getCategoryName(initialCategoryId, config.value.categories),
     description: '',
     date: currentDate,
   };
 
   editingSlot.value = newSlot;
   showEditModal.value = true;
+
+  // 异步获取推荐分类
+  const middleTime = Math.floor((smartStartTime + endTime) / 2);
+  recommendType({ date: currentDate, time: middleTime })
+    .then((result) => {
+      // 确保当前编辑的还是同一个slot（防止用户快速关闭重新打开等情况）
+      if (result && editingSlot.value && editingSlot.value.id === newSlot.id) {
+        editingSlot.value = {
+          ...editingSlot.value,
+          categoryId: result,
+          title: getCategoryName(result, config.value.categories),
+        };
+      }
+    })
+    .catch((error) => {
+      console.error('获取推荐分类失败', error);
+    });
 };
 
 const handleSaveSlot = (formData: any) => {
