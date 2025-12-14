@@ -1482,7 +1482,7 @@ const handleSlotClick = (slot: TimeSlot) => {
 };
 
 // 计算开始时间
-const calculateSmartStartTime = (): number => {
+const calculateSmartStartTime = (isToday: boolean, currentMinutes: number): number => {
   const currentDate = getCurrentSelectedDate();
 
   // 获取当天的时间段，按开始时间排序
@@ -1490,62 +1490,84 @@ const calculateSmartStartTime = (): number => {
     .filter((slot: TimeSlot) => slot.date === currentDate)
     .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
 
-  // 如果没有时间段，从00:00开始
+  // 如果没有时间段
   if (sameDaySlots.length === 0) {
-    return 0;
+    // 如果是今天，从当前时间开始；否则从00:00开始
+    return isToday ? currentMinutes : 0;
   }
 
-  // 检查第一个时间段之前是否有足够的空间（从00:00开始）
-  if (sameDaySlots[0]?.startTime) {
-    return 0;
-  }
+  let candidate = 0;
 
-  // 检查时间段之间的空隙
-  for (let i = 0; i < sameDaySlots.length - 1; i++) {
-    const currentSlot = sameDaySlots[i];
-    const nextSlot = sameDaySlots[i + 1];
-
-    // 计算当前时间段结束时间和下一个时间段开始时间之间的空隙大小
-    const gapSize = nextSlot!.startTime - currentSlot!.endTime - 1;
-
-    // 如果空隙大于0（允许插入较短时间段）
-    if (gapSize > 0) {
-      return currentSlot!.endTime + 1;
+  if (isToday) {
+    // 如果是今天，优先使用当前时间
+    candidate = currentMinutes;
+    // 如果当前时间与现有时间段重叠，则顺延到重叠时间段的结束
+    let overlappingSlot;
+    while ((overlappingSlot = sameDaySlots.find(s => candidate >= s.startTime && candidate <= s.endTime))) {
+      candidate = overlappingSlot.endTime + 1;
+    }
+  } else {
+    // 如果不是今天，优先追加在最后一个时间段之后
+    const lastSlot = sameDaySlots[sameDaySlots.length - 1];
+    if (lastSlot) {
+      candidate = lastSlot.endTime + 1;
     }
   }
 
-  // 检查最后一个时间段之后是否有足够的空间
-  const lastSlot = sameDaySlots[sameDaySlots.length - 1];
-  if (lastSlot?.endTime && lastSlot.endTime + 30 <= 1439) {
-    return lastSlot.endTime + 1;
+  // 如果计算出的时间有效且未越界，直接返回
+  if (candidate <= 1439) {
+    // 还需要检查这个 candidate 是否会和后面的 slot 重叠（针对 isToday 即使顺延后也可能撞上后面的 gap 还没填满的情况，但上面的 while 循环其实已经处理了重叠）
+    // 不过，如果是追加在最后（非今天），candidate 肯定是最大的，除了可能越界。
+    
+    // 还有一个情况：非今天，追加在最后。如果最后已经是 23:59，candidate 变成 1440，就会进下面的 fallback。
+    // 或者 isToday，当前时间是 23:59，candidate 也是 1440。
+    return candidate;
   }
 
-  // 如果没有足够的空间，返回当天最后一个时间段的结束时间 + 1分钟
-  // 但确保不超过23:59
-  return Math.min((lastSlot?.endTime || 0) + 1, 1439);
+  // 如果追加模式失败（比如已经到了一天末尾），尝试寻找之前的空隙
+  
+  // 1. 检查第一个时间段之前
+  if (sameDaySlots[0] && sameDaySlots[0].startTime > 0) {
+    return 0;
+  }
+
+  // 2. 检查中间的空隙
+  for (let i = 0; i < sameDaySlots.length - 1; i++) {
+    const currentSlot = sameDaySlots[i];
+    const nextSlot = sameDaySlots[i + 1];
+    if (currentSlot && nextSlot && nextSlot.startTime > currentSlot.endTime + 1) {
+      return currentSlot.endTime + 1;
+    }
+  }
+
+  // 3. 实在没有空间了，返回最后一个时间段的结束时间（虽然会重叠，但总比报错好，或者返回1439）
+  return 1439;
 };
 
 const handleAddSlot = () => {
   const currentDate = getCurrentSelectedDate();
+  
+  // 判断是否是今天
+  const today = dayjs().format('YYYY-MM-DD');
+  const isToday = currentDate === today;
+
+  // 计算智能开始时间
+  const smartStartTime = calculateSmartStartTime(isToday, currentTime.value);
 
   // 获取当天的时间段，按开始时间排序
   const sameDaySlots = timeSlots.value
     .filter((slot: TimeSlot) => slot.date === currentDate)
     .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
-
-  // 计算智能开始时间
-  const smartStartTime = calculateSmartStartTime();
-
-  // 判断是否是今天
-  const today = dayjs().format('YYYY-MM-DD');
-  const isToday = currentDate === today;
 
   // 智能计算结束时间：找到下一个时间段的开始时间，或者默认30分钟
   // 如果是今天，最大结束时间设为当前时间；否则设为23:59（1439分钟）
   let endTime = Math.min(smartStartTime + 30, 1439);
   if (isToday) {
-    // 当天直接取当前时间
-    endTime = currentTime.value;
+    // 当天直接取当前时间（如果 smartStartTime 也是当前时间，duration 会是 0，需要处理）
+    // 如果 smartStartTime 是根据当前时间推算的（比如当前时间被占用，推迟了），那么 endTime 至少要比 startTime 大
+    endTime = Math.max(currentTime.value, smartStartTime + 30);
+    // 确保不越界
+    endTime = Math.min(endTime, 1439);
   }
 
   // 查找当前空隙的下一个时间段的开始时间
