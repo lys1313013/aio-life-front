@@ -44,6 +44,7 @@
               <InputNumber
                 v-model:value="formState.exerciseCount"
                 placeholder="数量"
+                class="input-align-right"
                 style="width: 100%"
                 :min="0"
               />
@@ -173,17 +174,18 @@
 
       <Form.Item>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88);">时长：</span>
+          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88);">时长</span>
           <div style="display: flex; gap: 8px; flex: 1;">
             <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
               <InputNumber
                 v-model:value="editableHours"
                 :min="0"
                 :precision="0"
+                class="input-align-right"
                 style="flex: 1;"
                 placeholder="时"
               />
-              <span>小时</span>
+              <span>时</span>
             </div>
             <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
               <InputNumber
@@ -191,10 +193,11 @@
                 :min="0"
                 :max="59"
                 :precision="0"
+                class="input-align-right"
                 style="flex: 1;"
                 placeholder="分"
               />
-              <span>分钟</span>
+              <span>分</span>
             </div>
           </div>
         </div>
@@ -674,5 +677,9 @@ onUnmounted(() => {
 
 .form-actions .ant-btn:last-child {
   margin-right: 0;
+}
+
+:deep(.input-align-right input) {
+  text-align: right;
 }
 </style>
