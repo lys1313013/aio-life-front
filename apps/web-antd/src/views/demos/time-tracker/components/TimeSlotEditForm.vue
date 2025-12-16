@@ -26,33 +26,6 @@
         </Select>
       </Form.Item>
 
-      <!-- 运动相关字段 -->
-      <template v-if="formState.categoryId === 'exercise'">
-        <Row :gutter="16">
-          <Col :span="12">
-            <Form.Item label="运动类型" name="exerciseTypeId">
-              <Select
-                v-model:value="formState.exerciseTypeId"
-                placeholder="请选择运动类型"
-                :options="exerciseTypeOptions"
-                allowClear
-              />
-            </Form.Item>
-          </Col>
-          <Col :span="12">
-            <Form.Item label="运动数量" name="exerciseCount">
-              <InputNumber
-                v-model:value="formState.exerciseCount"
-                placeholder="数量"
-                class="input-align-right"
-                style="width: 100%"
-                :min="0"
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-      </template>
-
       <Row :gutter="16">
         <Col :span="12">
           <Form.Item label="开始时间" name="startTime">
@@ -171,6 +144,34 @@
           </Form.Item>
         </Col>
       </Row>
+
+
+      <!-- 运动相关字段 -->
+      <template v-if="formState.categoryId === 'exercise'">
+        <Row :gutter="16">
+          <Col :span="12">
+            <Form.Item label="运动类型" name="exerciseTypeId">
+              <Select
+                v-model:value="formState.exerciseTypeId"
+                placeholder="请选择运动类型"
+                :options="exerciseTypeOptions"
+                allowClear
+              />
+            </Form.Item>
+          </Col>
+          <Col :span="12">
+            <Form.Item label="运动数量" name="exerciseCount">
+              <InputNumber
+                v-model:value="formState.exerciseCount"
+                placeholder="数量"
+                class="input-align-right"
+                style="width: 100%"
+                :min="0"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+      </template>
 
       <Form.Item>
         <div style="display: flex; align-items: center; gap: 8px;">
