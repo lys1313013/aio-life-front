@@ -297,12 +297,89 @@ const formOptions: VbenFormProps = {
   submitOnEnter: true,
 };
 
+import { Modal } from 'ant-design-vue';
+
+// ...
+
+// 触摸事件相关状态
+const touchTimer = ref<any>(null);
+const isLongPress = ref(false);
+const touchStartTime = ref(0);
+
+const handleCellClick = (params: any) => {
+  // 如果是手机端，且不是长按触发的点击
+  if (isMobile.value && !isLongPress.value) {
+    // 只有点击数据列才触发编辑
+    if (['exerciseTypeId', 'exerciseDate', 'exerciseCount'].includes(params.column.field)) {
+      openFormDrawer(params.row);
+    }
+  }
+  // 重置长按标志
+  isLongPress.value = false;
+};
+
+// 模拟长按逻辑 (需要在 gridOptions 中配置 cell-class-name 或者利用 cell-click 的修饰符不太好做)
+// 使用 vxe-table 的 event.preventDefault() 也不太容易拦截原生 contextmenu
+// 替代方案：利用 touchstart/touchend 配合 row 获取
+
+const onRowTouchStart = (event: TouchEvent) => {
+  if (!isMobile.value) return;
+  
+  const target = event.target as HTMLElement;
+  // 查找最近的行元素，vxe-table 的行通常有 .vxe-body--row 类
+  const tr = target.closest('.vxe-body--row');
+  if (!tr) return;
+
+  isLongPress.value = false;
+  touchStartTime.value = Date.now();
+  
+  touchTimer.value = setTimeout(() => {
+    isLongPress.value = true;
+    
+    // 获取行数据
+    const row = gridApi.grid?.getRowNode(tr as HTMLElement)?.item;
+    if (!row) return;
+
+    // 触发删除确认
+    Modal.confirm({
+      title: '确认删除',
+      content: `是否确认删除 ${getExerciseTypeLabel(row.exerciseTypeId)} (${row.exerciseDate})？`,
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        deleteRow(row);
+      }
+    });
+  }, 600); // 600ms 视为长按
+};
+
+const onRowTouchEnd = () => {
+  if (touchTimer.value) {
+    clearTimeout(touchTimer.value);
+    touchTimer.value = null;
+  }
+};
+
+const onRowTouchMove = () => {
+  // 如果移动了，取消长按
+  if (touchTimer.value) {
+    clearTimeout(touchTimer.value);
+    touchTimer.value = null;
+  }
+};
+
 const gridOptions: VxeGridProps<RowType> = {
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
   maxHeight: 800, // 表格最大高度
   checkboxConfig: {
     isShiftKey: true,
+  },
+  // 添加事件监听
+  rowConfig: {
+    isHover: true,
+    isCurrent: true,
   },
   columns: [
     { type: 'checkbox', title: '', width: 40 },
@@ -365,6 +442,15 @@ const gridOptions: VxeGridProps<RowType> = {
       fixed: 'right',
       title: '操作',
       width: 100,
+    },
+    {
+      field: 'mobileCard',
+      title: '详情',
+      visible: false,
+      slots: { default: 'mobile-card' },
+      width: '100%',
+      showOverflow: false,
+      className: 'mobile-card-col',
     },
   ],
   keepSource: true,
@@ -431,23 +517,63 @@ const submitDeleteData = async () => {
   }
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ 
+  formOptions, 
+  gridOptions,
+  gridEvents: {
+    cellClick: handleCellClick,
+    // vxe-table 不直接支持 rowTouchStart 事件，需要通过 cell-mouseenter 等间接方式或者自定义事件
+    // 但 vxe-grid 组件支持 v-on 绑定所有 vxe-table 事件
+  }
+});
+
+// 为了支持长按，我们需要在 mounted 后手动给 grid body 添加监听，或者利用 cell-click 配合 time diff
+// 但 cell-click 只在 touchend 后触发。
+// 更好的方式是利用 cell-render 或者 slot。
+// 但我们不想改每个 column 的 slot。
+
+// 我们可以利用 @cell-touchstart 等事件吗？vxe-table 文档里没有标准的 touch 事件。
+// 我们可以监听 cell-click，但那是 click。
+// 让我们尝试使用 @mousedown/@mouseup 模拟，在移动端会映射为 touchstart/touchend
+
+// 更新：在 Grid 模板中使用 @cell-click
+
 
 const updateColumnsVisibility = () => {
   if (!gridApi?.grid) return;
 
   const mobile = isMobile.value;
-  // 获取所有列配置
-  const columns = gridApi.grid.getColumns();
+  // 手机端隐藏表头、边框、斑马纹，清除最大高度
+  gridApi.setState({
+    gridOptions: {
+      showHeader: true, // 手机端也显示表头
+      border: !mobile, // 手机端不显示边框，保持简洁
+      stripe: !mobile,
+      maxHeight: mobile ? '' : 800,
+      size: mobile ? 'mini' : 'small', // 手机端使用更紧凑的尺寸
+      rowClassName: mobile ? 'mobile-row' : '',
+    },
+  });
 
-  columns.forEach((col) => {
-    // 手机端隐藏部分列
-    if (['createTime', 'updateTime', 'description', 'seq'].includes(col.field) || col.type === 'seq') {
+  // 获取所有列配置
+  const { fullColumn } = gridApi.grid.getTableColumn();
+
+  fullColumn.forEach((col) => {
+    // 手机端不显示 mobileCard，而是显示精简的表格列
+    if (col.field === 'mobileCard') {
+      col.visible = false;
+    } else if (['exerciseTypeId', 'exerciseDate', 'exerciseCount'].includes(col.field)) {
+      col.visible = true;
+      // 手机端自动调整宽度
+      if (mobile) {
+        col.width = col.field === 'exerciseDate' ? 100 : 'auto';
+      }
+    } else if (col.type === 'checkbox' || col.type === 'seq' || col.field === 'action') {
+      // 手机端隐藏复选框、序号、操作列以节省空间
       col.visible = !mobile;
-    }
-    // 调整列宽
-    if (col.field === 'exerciseTypeId') {
-      col.width = mobile ? 100 : 120;
+    } else {
+      // 隐藏其他所有列
+      col.visible = !mobile;
     }
   });
 
@@ -488,9 +614,9 @@ const tableReload = () => {
 </script>
 
 <template>
-  <div class="vp-raw w-full">
+  <div class="vp-raw w-full exercise-wrapper">
     <!-- 图表区域 -->
-    <div class="charts-section mb-6">
+    <div class="charts-section">
       <!-- 总运动次数卡片 -->
       <div class="total-card">
         <div class="total-content">
@@ -505,16 +631,23 @@ const tableReload = () => {
       <!-- 图表容器 -->
       <div class="chart-container">
         <Card class="chart-item" title="月度运动趋势">
-          <EchartsUI ref="lineChartRef" style="height: 300px;" />
+          <EchartsUI ref="lineChartRef" style="height: 300px; width: 100%;" />
         </Card>
-        <Card class="chart-item" title="运动类型分布">
-          <EchartsUI ref="pieChartRef" style="height: 300px;" />
+        <Card class="chart-item" >
+          <EchartsUI ref="pieChartRef" style="height: 300px; width: 100%;" />
         </Card>
       </div>
     </div>
 
     <!-- 表格区域 -->
-    <Grid>
+    <div 
+      class="table-wrapper"
+      @touchstart="isMobile ? onRowTouchStart($event) : undefined"
+      @touchend="isMobile ? onRowTouchEnd : undefined"
+      @touchmove="isMobile ? onRowTouchMove : undefined"
+      @contextmenu.prevent="isMobile ? ($event: MouseEvent) => $event.preventDefault() : undefined"
+    >
+      <Grid>
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormDrawer">
           新增
@@ -542,7 +675,41 @@ const tableReload = () => {
           <a href="javascript:void(0)" style="color: red">删除</a>
         </Popconfirm>
       </template>
+      <template #mobile-card="{ row }">
+        <div class="mobile-card-item">
+          <div class="card-header">
+            <span class="card-title">{{ getExerciseTypeLabel(row.exerciseTypeId) }}</span>
+            <span class="card-date">{{ row.exerciseDate }}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-row">
+              <span class="label">数量:</span>
+              <span class="value">{{ row.exerciseCount }}</span>
+            </div>
+            <div class="card-row" v-if="row.description">
+              <span class="label">备注:</span>
+              <span class="value">{{ row.description }}</span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <Button size="small" type="link" @click="openFormDrawer(row)">
+              编辑
+            </Button>
+            <Popconfirm
+              title="是否确认删除?"
+              ok-text="是"
+              cancel-text="否"
+              @confirm="deleteRow(row)"
+            >
+              <Button size="small" type="link" danger>
+                删除
+              </Button>
+            </Popconfirm>
+          </div>
+        </div>
+      </template>
     </Grid>
+    </div>
 
     <!-- 表单抽屉 -->
     <Drawer
@@ -562,6 +729,7 @@ const tableReload = () => {
 <style scoped>
 .charts-section {
   padding: 0;
+  margin-bottom: 24px;
 }
 
 /* 表格容器样式 */
@@ -575,6 +743,28 @@ const tableReload = () => {
 
 :deep(.vxe-table--header-wrapper) {
   overflow-x: hidden;
+}
+
+:deep(.mobile-card-col) {
+  padding: 0 !important;
+  background-color: transparent !important;
+}
+
+:deep(.mobile-row) {
+  background-color: transparent !important;
+}
+
+:deep(.mobile-row .vxe-body--column) {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  height: 48px !important;
+  user-select: none; /* 禁止选中文本，优化长按体验 */
+  -webkit-user-select: none;
+}
+
+/* 隐藏移动端的排序图标以节省空间，或者保留但变小 */
+:deep(.mobile-row .vxe-cell--sort) {
+  display: none;
 }
 
 .total-card {
@@ -624,6 +814,8 @@ const tableReload = () => {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 0; /* 防止 grid item 溢出 */
+  overflow: hidden;
 }
 
 .chart-item :deep(.ant-card-body) {
@@ -647,6 +839,18 @@ const tableReload = () => {
 }
 
 @media (max-width: 768px) {
+  .exercise-wrapper {
+    padding: 12px;
+  }
+
+  .charts-section {
+    margin-bottom: 12px;
+  }
+
+  .chart-container {
+    gap: 12px;
+  }
+
   .total-card {
     padding: 16px;
   }
@@ -664,5 +868,63 @@ const tableReload = () => {
   .total-amount {
     font-size: 24px;
   }
+}
+
+.mobile-card-item {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f0f0;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+}
+
+.card-date {
+  color: #999;
+  font-size: 12px;
+}
+
+.card-body {
+  margin-bottom: 8px;
+}
+
+.card-row {
+  display: flex;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.card-row .label {
+  color: #666;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.card-row .value {
+  color: #333;
+  flex: 1;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px dashed #f0f0f0;
+  padding-top: 8px;
 }
 </style>
