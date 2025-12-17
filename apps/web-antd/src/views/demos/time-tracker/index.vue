@@ -300,20 +300,23 @@
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
               </div>
               <div class="stat-square-card">
-                <span class="stat-label-corner">娱乐同比</span>
+                <span class="stat-label-corner">娱乐</span>
                 <div
-                  class="stat-value-center"
                   :style="{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '14px',
                     color:
                       entertainmentComparison.diff === 0
-                        ? 'inherit'
+                        ? '#8c8c8c'
                         : entertainmentComparison.diff > 0
                           ? token.colorError
                           : token.colorSuccess,
-                    fontSize: '16px',
+                    fontSize: '12px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    fontWeight: 'normal',
+                    zIndex: 2,
                   }"
                 >
                   <span
@@ -322,9 +325,13 @@
                   >
                     {{ entertainmentComparison.diff > 0 ? '↑' : '↓' }}
                   </span>
-                  <span>{{
-                    formatDuration(entertainmentComparison.absDiff)
-                  }}</span>
+                  <span v-if="entertainmentComparison.diff !== 0">
+                    {{ formatDuration(entertainmentComparison.absDiff) }}
+                  </span>
+                  <span v-else> - </span>
+                </div>
+                <div class="stat-value-center">
+                  {{ formatDuration(entertainmentComparison.currentDuration) }}
                 </div>
               </div>
             </div>
@@ -582,6 +589,7 @@ const entertainmentComparison = computed(() => {
     diff,
     direction: diff >= 0 ? '上升' : '下降',
     absDiff: Math.abs(diff),
+    currentDuration,
   };
 });
 
