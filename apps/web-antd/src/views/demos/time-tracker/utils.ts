@@ -111,10 +111,21 @@ export function getSlotDuration(slot: TimeSlot): number {
 
 // 格式化时长显示
 export function formatDuration(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
   const mins = minutes % 60;
-  if (hours > 0) {
-    return mins > 0 ? `${hours}h${mins}m` : `${hours}h`;
+
+  const parts: string[] = [];
+
+  if (days > 0) {
+    parts.push(`${days}d`);
   }
-  return `${mins}m`;
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+  if (mins > 0 || parts.length === 0) {
+    parts.push(`${mins}m`);
+  }
+
+  return parts.join('');
 }
