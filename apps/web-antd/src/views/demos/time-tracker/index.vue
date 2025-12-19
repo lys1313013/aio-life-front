@@ -8,31 +8,6 @@
       <div class="header-right">
         <!-- 按钮区 -->
         <div class="actions">
-          <Popover placement="bottom">
-            <template #content>
-              <div class="category-popover">
-                <div class="category-list">
-                  <Button
-                    v-for="category in config.categories"
-                    :key="category.id"
-                    :type="currentCategoryId === category.id ? 'primary' : 'default'"
-                    @click="currentCategoryId = category.id"
-                    :style="{ borderColor: category.color }"
-                    :disabled="loading"
-                    :size="isMobile ? 'small' : 'middle'"
-                  >
-                    <div class="category-button-content">
-                      <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
-                      {{ category.name }}
-                    </div>
-                  </Button>
-                </div>
-              </div>
-            </template>
-            <Button type="default" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-              <template #icon><TagOutlined /></template>
-            </Button>
-          </Popover>
           <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
             <template #icon><SettingOutlined /></template>
           </Button>
@@ -452,8 +427,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined, TagOutlined } from '@ant-design/icons-vue';
-import { Button, Modal, message, DatePicker, Spin, Radio, Popover, theme } from 'ant-design-vue';
+import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { Button, Modal, message, DatePicker, Spin, Radio, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -507,7 +482,6 @@ const monthDaysContainerRef = ref<HTMLElement>();
 const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const previousPeriodTimeSlots = ref<TimeSlot[]>([]);
-const currentCategoryId = ref(defaultConfig.defaultCategoryId);
 const dragOperation = ref<DragOperation | null>(null);
 const selectedFilterCategoryId = ref<null | string>(null);
 const showEditModal = ref(false);
@@ -1084,7 +1058,7 @@ const getDragPreviewStyle = () => {
   const top = (startTime / 1440) * timelineRef.value.offsetHeight;
   const height = (duration / 1440) * timelineRef.value.offsetHeight;
   const category = config.value.categories.find(
-    (cat) => cat.id === currentCategoryId.value,
+    (cat) => cat.id === config.value.defaultCategoryId,
   );
 
   return {
@@ -1363,7 +1337,7 @@ const handleTrackPointerUp = async () => {
     const duration = endTime - startTime;
 
     if (duration >= config.value.minSlotDuration) {
-      let recommendedCategoryId = currentCategoryId.value;
+      let recommendedCategoryId = config.value.defaultCategoryId;
       try {
         const middleTime = Math.floor((startTime + endTime) / 2);
         const result = await recommendType({
@@ -1562,7 +1536,7 @@ const handleAddSlot = () => {
   }
 
   // 默认使用当前选中的分类
-  const initialCategoryId = currentCategoryId.value;
+  const initialCategoryId = config.value.defaultCategoryId;
 
   // 创建新的时间段对象
   const newSlot: TimeSlot = {
