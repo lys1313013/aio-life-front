@@ -70,24 +70,25 @@ function useExtraMenu(useRootMenus?: ComputedRef<MenuRecordRaw[]>) {
    * 侧边菜单鼠标移出事件
    */
   const handleSideMouseLeave = () => {
-    if (preferences.sidebar.expandOnHover) {
-      return;
-    }
-
     const { findMenu, rootMenu, rootMenuPath } = findRootMenuByPath(
       menus.value,
       route.path,
     );
     extraActiveMenu.value = rootMenuPath ?? findMenu?.path ?? '';
     extraMenus.value = rootMenu?.children ?? [];
+
+    if (preferences.sidebar.expandOnHover) {
+      return;
+    }
     sidebarExtraVisible.value = false;
   };
 
   const handleMenuMouseEnter = (menu: MenuRecordRaw) => {
+    const { findMenu } = findRootMenuByPath(menus.value, menu.path);
+    extraMenus.value = findMenu?.children ?? [];
+    extraActiveMenu.value = menu.parents?.[parentLevel.value] ?? menu.path;
+
     if (!preferences.sidebar.expandOnHover) {
-      const { findMenu } = findRootMenuByPath(menus.value, menu.path);
-      extraMenus.value = findMenu?.children ?? [];
-      extraActiveMenu.value = menu.parents?.[parentLevel.value] ?? menu.path;
       sidebarExtraVisible.value = extraMenus.value.length > 0;
     }
   };

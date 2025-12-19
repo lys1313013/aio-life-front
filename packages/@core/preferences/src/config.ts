@@ -71,7 +71,7 @@ const defaultPreferences: Preferences = {
     collapsedButton: true,
     collapsedShowTitle: false,
     enable: true,
-    expandOnHover: true,
+    expandOnHover: false,
     extraCollapse: false,
     fixedButton: true,
     hidden: false,

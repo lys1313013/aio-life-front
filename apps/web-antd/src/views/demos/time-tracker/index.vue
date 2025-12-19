@@ -1465,7 +1465,6 @@ const handleSlotClick = (slot: TimeSlot) => {
 
 // 计算开始时间
 const calculateStartTime = (): number => {
-  debugger
   const currentDate = getCurrentSelectedDate();
 
   // 获取当天的时间段，按开始时间排序
