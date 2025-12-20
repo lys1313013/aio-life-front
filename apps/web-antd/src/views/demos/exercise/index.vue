@@ -324,7 +324,7 @@ const handleCellClick = (params: any) => {
 
 const onRowTouchStart = (event: TouchEvent) => {
   if (!isMobile.value) return;
-  
+
   const target = event.target as HTMLElement;
   // 查找最近的行元素，vxe-table 的行通常有 .vxe-body--row 类
   const tr = target.closest('.vxe-body--row');
@@ -332,10 +332,10 @@ const onRowTouchStart = (event: TouchEvent) => {
 
   isLongPress.value = false;
   touchStartTime.value = Date.now();
-  
+
   touchTimer.value = setTimeout(() => {
     isLongPress.value = true;
-    
+
     // 获取行数据
     const row = gridApi.grid?.getRowNode(tr as HTMLElement)?.item;
     if (!row) return;
@@ -517,8 +517,8 @@ const submitDeleteData = async () => {
   }
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ 
-  formOptions, 
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions,
   gridOptions,
   gridEvents: {
     cellClick: handleCellClick,
@@ -630,17 +630,17 @@ const tableReload = () => {
 
       <!-- 图表容器 -->
       <div class="chart-container">
-        <Card class="chart-item" title="月度运动趋势">
+        <Card class="chart-item">
           <EchartsUI ref="lineChartRef" style="height: 300px; width: 100%;" />
         </Card>
-        <Card class="chart-item" >
+        <Card class="chart-item">
           <EchartsUI ref="pieChartRef" style="height: 300px; width: 100%;" />
         </Card>
       </div>
     </div>
 
     <!-- 表格区域 -->
-    <div 
+    <div
       class="table-wrapper"
       @touchstart="isMobile ? onRowTouchStart($event) : undefined"
       @touchend="isMobile ? onRowTouchEnd : undefined"
@@ -727,9 +727,13 @@ const tableReload = () => {
 </template>
 
 <style scoped>
+.exercise-wrapper {
+  padding: 12px;
+}
+
 .charts-section {
   padding: 0;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 /* 表格容器样式 */
@@ -770,8 +774,8 @@ const tableReload = () => {
 .total-card {
   background: linear-gradient(135deg, #4ecdc4 0%, #26a69a 100%);
   border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 20px;
+  padding: 12px;
+  margin-bottom: 12px;
   box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
   color: white;
 }
@@ -806,7 +810,7 @@ const tableReload = () => {
 .chart-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 12px;
   height: 350px;
 }
 
@@ -819,7 +823,7 @@ const tableReload = () => {
 }
 
 .chart-item :deep(.ant-card-body) {
-  padding: 0;
+  padding: 12px;
   height: 100%;
 }
 
@@ -839,22 +843,6 @@ const tableReload = () => {
 }
 
 @media (max-width: 768px) {
-  .exercise-wrapper {
-    padding: 12px;
-  }
-
-  .charts-section {
-    margin-bottom: 12px;
-  }
-
-  .chart-container {
-    gap: 12px;
-  }
-
-  .total-card {
-    padding: 16px;
-  }
-
   .total-content {
     flex-direction: column;
     text-align: center;
