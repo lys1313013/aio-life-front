@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { Card, Button, List, Modal, Input, message, Popconfirm, Tooltip } from 'ant-design-vue';
+import { Card, Button, Modal, Input, message, Popconfirm, Tooltip, Spin, Empty } from 'ant-design-vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
 import { getMemoListApi, createMemoApi, updateMemoApi, deleteMemoApi, type Memo } from '#/api/core/memo';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import MemoFab from './MemoFab.vue';
 
 const memos = ref<Memo[]>([]);
 const loading = ref(false);
 const modalVisible = ref(false);
-const modalTitle = ref('新建备忘录');
+const modalTitle = ref('新建');
 const confirmLoading = ref(false);
 
 const formState = reactive({
@@ -29,14 +30,14 @@ const fetchMemos = async () => {
 };
 
 const handleAdd = () => {
-  modalTitle.value = '新建备忘录';
+  modalTitle.value = '新建';
   formState.id = '';
   formState.content = '';
   modalVisible.value = true;
 };
 
 const handleEdit = (item: Memo) => {
-  modalTitle.value = '编辑备忘录';
+  modalTitle.value = '编辑';
   formState.id = item.id;
   formState.content = item.content;
   modalVisible.value = true;
@@ -103,37 +104,28 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 h-full flex flex-col">
-    <div class="mb-4 flex justify-between items-center">
-      <h2 class="text-xl font-bold text-slate-800 dark:text-slate-100">备忘录</h2>
-      <Button type="primary" shape="round" size="large" @click="handleAdd">
-        <template #icon><PlusOutlined /></template>
-        新建备忘录
-      </Button>
-    </div>
-
-    <div class="flex-1 overflow-auto">
-      <List
-        :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 4, xxl: 6 }"
-        :data-source="memos"
-        :loading="loading"
-        :row-key="(item: any) => item.id"
-      >
-        <template #renderItem="{ item }">
-          <List.Item>
+  <div class="p-2 h-full flex flex-col overflow-hidden">
+    <div class="flex-1 overflow-y-auto overflow-x-hidden">
+      <Spin :spinning="loading">
+        <div v-if="memos.length > 0" class="columns-2 md:columns-3 lg:columns-4 gap-2 mx-auto">
+          <div 
+            v-for="item in memos" 
+            :key="item.id" 
+            class="break-inside-avoid mb-2"
+          >
             <div 
-              class="group relative flex flex-col h-[200px] p-5 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-transparent dark:border-slate-700"
+              class="group relative flex flex-col p-3 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-transparent dark:border-slate-700"
               :class="getBgColor(item.id)"
             >
               <!-- Content Area -->
               <div class="flex-1 overflow-hidden cursor-pointer" @click="handleEdit(item)">
-                <p class="whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-base leading-relaxed break-words line-clamp-6">
+                <p class="whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-base leading-relaxed break-words">
                   {{ item.content }}
                 </p>
               </div>
               
               <!-- Footer Area -->
-              <div class="mt-4 flex justify-between items-center text-xs text-slate-400">
+              <div class="mt-3 flex justify-between items-center text-xs text-slate-400">
                 <div class="flex items-center gap-1">
                   <ClockCircleOutlined />
                   <Tooltip :title="new Date(item.createTime).toLocaleString()">
@@ -141,7 +133,7 @@ onMounted(() => {
                   </Tooltip>
                 </div>
                 
-                <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <Tooltip title="编辑">
                     <Button 
                       type="text" 
@@ -154,7 +146,7 @@ onMounted(() => {
                     </Button>
                   </Tooltip>
                   <Popconfirm
-                    title="确定要删除这条备忘录吗？"
+                    title="确定要删除这条记录吗？"
                     ok-text="是"
                     cancel-text="否"
                     @confirm="handleDelete(item.id)"
@@ -174,9 +166,10 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-          </List.Item>
-        </template>
-      </List>
+          </div>
+        </div>
+        <Empty v-else-if="!loading" description="暂无笔记" class="mt-20" />
+      </Spin>
     </div>
 
     <Modal
@@ -195,15 +188,11 @@ onMounted(() => {
         :bordered="false"
       />
     </Modal>
+    
+    <MemoFab @click="handleAdd" />
   </div>
 </template>
 
 <style scoped>
 /* Custom scrollbar for memo content if needed */
-.line-clamp-6 {
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
 </style>
