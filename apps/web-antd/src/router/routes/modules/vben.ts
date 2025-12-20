@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('#/views/_core/about/index.vue'),
     meta: {
       icon: 'lucide:copyright',
-      title: $t('my-hub.vben.about'),
+      title: $t('项目信息'),
       order: 9999,
     },
   },
