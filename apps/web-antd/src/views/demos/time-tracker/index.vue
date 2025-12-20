@@ -107,15 +107,16 @@
                       v-for="slot in getDaySlots(day.date)"
                       :key="slot.id"
                       class="time-slot"
+                      :class="getSlotClass(slot)"
                       :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
                       @mousedown="handleSlotPointerDown($event, slot)"
                       @touchstart="handleSlotPointerDown($event, slot)"
                       @click="handleSlotClick(slot)"
                     >
                       <div class="slot-content">
-                        <div class="slot-info" :style="isMobile ? { flexDirection: 'column', alignItems: 'flex-start', gap: '0' } : {}">
+                        <div class="slot-info" :style="isMobile ? { flexDirection: 'column', alignItems: 'center', gap: '0' } : {}">
                           <span class="slot-title">{{ slot.title }}</span>
-                          <span v-if="slot.endTime - slot.startTime > 45" class="slot-time" :style="isMobile ? { fontSize: '10px', lineHeight: '1.2' } : { marginLeft: '4px', fontSize: '11px' }">
+                          <span class="slot-time" :style="isMobile ? { fontSize: '10px', lineHeight: '1.2' } : { marginLeft: '4px', fontSize: '11px' }">
                             {{ formatDuration(slot.endTime - slot.startTime) }}
                           </span>
                         </div>
@@ -224,6 +225,7 @@
                     v-for="slot in timeSlots"
                     :key="slot.id"
                     class="time-slot"
+                    :class="getSlotClass(slot)"
                     :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
                     @mousedown="handleSlotPointerDown($event, slot)"
                     @touchstart="handleSlotPointerDown($event, slot)"
@@ -234,7 +236,7 @@
                         <span class="slot-title">{{ slot.title }}</span>
                         <span class="slot-time">
                           {{ formatSlotTime(slot) }}
-                          <span v-if="slot.endTime - slot.startTime > 30" style="margin-left: 4px; opacity: 0.8">
+                          <span style="margin-left: 4px; opacity: 0.8">
                             {{ formatDuration(slot.endTime - slot.startTime) }}
                           </span>
                         </span>
@@ -983,20 +985,33 @@ const updateMobileTimelineHeight = () => {
   const available = Math.max(300, viewportHeight - rect.top);
   mobileTimelineHeight.value = available;
 };
-// 样式计算
-const getSlotStyle = (slot: TimeSlot) => {
+// 获取时间轴高度
+const getTimelineHeight = () => {
   const weekContainer = document.querySelector(
     '.week-days-container',
   ) as HTMLElement | null;
   const monthContainer = document.querySelector(
     '.month-days-container',
   ) as HTMLElement | null;
-  const timelineHeight =
-    statMode.value === 'week'
-      ? weekContainer?.offsetHeight || 740
-      : statMode.value === 'month'
-        ? monthContainer?.offsetHeight || 740
-        : timelineRef.value?.offsetHeight || 800;
+  return statMode.value === 'week'
+    ? weekContainer?.offsetHeight || 740
+    : statMode.value === 'month'
+      ? monthContainer?.offsetHeight || 740
+      : timelineRef.value?.offsetHeight || 800;
+};
+
+// 获取时间段样式类
+const getSlotClass = (slot: TimeSlot) => {
+  const timelineHeight = getTimelineHeight();
+  const { height } = getSlotPosition(slot, timelineHeight);
+  if (height < 20) return 'is-tiny';
+  if (height < 40) return 'is-small';
+  return '';
+};
+
+// 样式计算
+const getSlotStyle = (slot: TimeSlot) => {
+  const timelineHeight = getTimelineHeight();
 
   const { top, height } = getSlotPosition(slot, timelineHeight);
   const category = config.value.categories.find(
@@ -2140,11 +2155,52 @@ const getDaySlots = (date: string): TimeSlot[] => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+小尺寸时间段优化
+.time-slot.is-small .slot-content {
+  padding: 0 4px;
+}
+
+.time-slot.is-small .slot-info {
+  gap: 4px;
+}
+
+.time-slot.is-small .slot-title {
+  font-size: 12px;
+}
+
+.time-slot.is-small .slot-time {
+  font-size: 12px;
+  transform: scale(0.85);
+  transform-origin: center center;
+}
+
+.time-slot.is-tiny .slot-content {
+  padding: 0 2px;
+}
+
+.time-slot.is-tiny .slot-info {
+  gap: 2px;
+}
+
+.time-slot.is-tiny .slot-title {
+  font-size: 12px;
+  transform: scale(0.85);
+  transform-origin: center center;
+}
+
+.time-slot.is-tiny .slot-time {
+  font-size: 12px;
+  transform: scale(0.85);
+  transform-origin: center center;
+}
+
+
 .slot-content {
   padding: 8px;
   height: 100%;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: white;
   font-weight: 500;
 }
@@ -2152,7 +2208,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .slot-info {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   width: 100%;
   gap: 8px;
 }
