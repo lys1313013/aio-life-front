@@ -7,11 +7,11 @@ import { onMounted, ref, computed, nextTick, watch } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import { Button, Popconfirm, Card, Drawer } from 'ant-design-vue';
+import { Button, Popconfirm, Card } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
-import { deleteData, deleteBatch, query } from '#/api/core/exerciseRecord';
+import { deleteBatch, query } from '#/api/core/exerciseRecord';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -239,17 +239,17 @@ onMounted(() => {
   }, 500);
 });
 
-// 抽屉相关
-const drawerVisible = ref(false);
+// 模态框相关
+const modalVisible = ref(false);
 const currentRow = ref<any>(null);
 
-const openFormDrawer = (row?: any) => {
+const openFormModal = (row?: any) => {
   currentRow.value = row;
-  drawerVisible.value = true;
+  modalVisible.value = true;
 };
 
-const closeFormDrawer = () => {
-  drawerVisible.value = false;
+const closeFormModal = () => {
+  modalVisible.value = false;
   currentRow.value = null;
 };
 
@@ -301,73 +301,16 @@ import { Modal } from 'ant-design-vue';
 
 // ...
 
-// 触摸事件相关状态
-const touchTimer = ref<any>(null);
-const isLongPress = ref(false);
-const touchStartTime = ref(0);
-
 const handleCellClick = (params: any) => {
-  // 如果是手机端，且不是长按触发的点击
-  if (isMobile.value && !isLongPress.value) {
+  // 如果是手机端
+  if (isMobile.value) {
     // 只有点击数据列才触发编辑
     if (['exerciseTypeId', 'exerciseDate', 'exerciseCount'].includes(params.column.field)) {
-      openFormDrawer(params.row);
+      openFormModal(params.row);
     }
   }
-  // 重置长按标志
-  isLongPress.value = false;
 };
 
-// 模拟长按逻辑 (需要在 gridOptions 中配置 cell-class-name 或者利用 cell-click 的修饰符不太好做)
-// 使用 vxe-table 的 event.preventDefault() 也不太容易拦截原生 contextmenu
-// 替代方案：利用 touchstart/touchend 配合 row 获取
-
-const onRowTouchStart = (event: TouchEvent) => {
-  if (!isMobile.value) return;
-
-  const target = event.target as HTMLElement;
-  // 查找最近的行元素，vxe-table 的行通常有 .vxe-body--row 类
-  const tr = target.closest('.vxe-body--row');
-  if (!tr) return;
-
-  isLongPress.value = false;
-  touchStartTime.value = Date.now();
-
-  touchTimer.value = setTimeout(() => {
-    isLongPress.value = true;
-
-    // 获取行数据
-    const row = gridApi.grid?.getRowNode(tr as HTMLElement)?.item;
-    if (!row) return;
-
-    // 触发删除确认
-    Modal.confirm({
-      title: '确认删除',
-      content: `是否确认删除 ${getExerciseTypeLabel(row.exerciseTypeId)} (${row.exerciseDate})？`,
-      okText: '删除',
-      okType: 'danger',
-      cancelText: '取消',
-      onOk: () => {
-        deleteRow(row);
-      }
-    });
-  }, 600); // 600ms 视为长按
-};
-
-const onRowTouchEnd = () => {
-  if (touchTimer.value) {
-    clearTimeout(touchTimer.value);
-    touchTimer.value = null;
-  }
-};
-
-const onRowTouchMove = () => {
-  // 如果移动了，取消长按
-  if (touchTimer.value) {
-    clearTimeout(touchTimer.value);
-    touchTimer.value = null;
-  }
-};
 
 const gridOptions: VxeGridProps<RowType> = {
   border: true, // 表格是否显示边框
@@ -495,8 +438,8 @@ const gridOptions: VxeGridProps<RowType> = {
 };
 
 // 新增运动记录
-const openAddFormDrawer = () => {
-  openFormDrawer();
+const openAddFormModal = () => {
+  openFormModal();
 };
 
 const submitDeleteData = async () => {
@@ -526,18 +469,6 @@ const [Grid, gridApi] = useVbenVxeGrid({
     // 但 vxe-grid 组件支持 v-on 绑定所有 vxe-table 事件
   }
 });
-
-// 为了支持长按，我们需要在 mounted 后手动给 grid body 添加监听，或者利用 cell-click 配合 time diff
-// 但 cell-click 只在 touchend 后触发。
-// 更好的方式是利用 cell-render 或者 slot。
-// 但我们不想改每个 column 的 slot。
-
-// 我们可以利用 @cell-touchstart 等事件吗？vxe-table 文档里没有标准的 touch 事件。
-// 我们可以监听 cell-click，但那是 click。
-// 让我们尝试使用 @mousedown/@mouseup 模拟，在移动端会映射为 touchstart/touchend
-
-// 更新：在 Grid 模板中使用 @cell-click
-
 
 const updateColumnsVisibility = () => {
   if (!gridApi?.grid) return;
@@ -642,14 +573,10 @@ const tableReload = () => {
     <!-- 表格区域 -->
     <div
       class="table-wrapper"
-      @touchstart="isMobile ? onRowTouchStart($event) : undefined"
-      @touchend="isMobile ? onRowTouchEnd : undefined"
-      @touchmove="isMobile ? onRowTouchMove : undefined"
-      @contextmenu.prevent="isMobile ? ($event: MouseEvent) => $event.preventDefault() : undefined"
     >
       <Grid>
       <template #toolbar-tools>
-        <Button class="mr-2" type="primary" @click="openAddFormDrawer">
+        <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
         </Button>
         <Popconfirm
@@ -664,7 +591,7 @@ const tableReload = () => {
         </Popconfirm>
       </template>
       <template #action="{ row }">
-        <a href="javascript:void(0)" @click="openFormDrawer(row)">编辑</a>
+        <a href="javascript:void(0)" @click="openFormModal(row)">编辑</a>
         &nbsp;&nbsp;
         <Popconfirm
           title="是否确认删除?"
@@ -692,7 +619,7 @@ const tableReload = () => {
             </div>
           </div>
           <div class="card-footer">
-            <Button size="small" type="link" @click="openFormDrawer(row)">
+            <Button size="small" type="link" @click="openFormModal(row)">
               编辑
             </Button>
             <Popconfirm
@@ -711,18 +638,20 @@ const tableReload = () => {
     </Grid>
     </div>
 
-    <!-- 表单抽屉 -->
-    <Drawer
-      v-model:open="drawerVisible"
+    <!-- 表单模态框 -->
+    <Modal
+      v-model:open="modalVisible"
       :title="currentRow ? '编辑运动记录' : '新增运动记录'"
-      :width="isMobile ? '100%' : 600"
+      :width="isMobile ? '90%' : 600"
+      :footer="null"
+      :destroy-on-close="true"
     >
       <FormDrawerDemo
         :values="currentRow"
         @table-reload="tableReload"
-        @close="closeFormDrawer"
+        @close="closeFormModal"
       />
-    </Drawer>
+    </Modal>
   </div>
 </template>
 
@@ -762,8 +691,6 @@ const tableReload = () => {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
   height: 48px !important;
-  user-select: none; /* 禁止选中文本，优化长按体验 */
-  -webkit-user-select: none;
 }
 
 /* 隐藏移动端的排序图标以节省空间，或者保留但变小 */
