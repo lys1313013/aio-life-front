@@ -9,7 +9,7 @@ import MemoFab from './MemoFab.vue';
 
 const memos = ref<Memo[]>([]);
 const loading = ref(false);
-const modalVisible = ref(false);
+const modalOpen = ref(false);
 const modalTitle = ref('新建');
 const confirmLoading = ref(false);
 
@@ -33,14 +33,14 @@ const handleAdd = () => {
   modalTitle.value = '新建';
   formState.id = '';
   formState.content = '';
-  modalVisible.value = true;
+  modalOpen.value = true;
 };
 
 const handleEdit = (item: Memo) => {
   modalTitle.value = '编辑';
   formState.id = item.id;
   formState.content = item.content;
-  modalVisible.value = true;
+  modalOpen.value = true;
 };
 
 const handleDelete = async (id: string) => {
@@ -67,7 +67,7 @@ const handleOk = async () => {
       await createMemoApi(formState.content);
       message.success('创建成功');
     }
-    modalVisible.value = false;
+    modalOpen.value = false;
     fetchMemos();
   } finally {
     confirmLoading.value = false;
@@ -173,7 +173,7 @@ onMounted(() => {
     </div>
 
     <Modal
-      v-model:open="modalVisible"
+      v-model:open="modalOpen"
       :title="modalTitle"
       :confirm-loading="confirmLoading"
       @ok="handleOk"

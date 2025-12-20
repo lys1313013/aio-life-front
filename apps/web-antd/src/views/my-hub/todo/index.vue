@@ -103,7 +103,7 @@
     </div>
 
     <a-modal
-      v-model:visible="editModalVisible"
+      v-model:open="editModalVisible"
       title="编辑任务"
       @ok="handleEditOk"
     >
@@ -129,7 +129,7 @@
       />
     </a-modal>
     <a-modal
-      v-model:visible="editColumnModalVisible"
+      v-model:open="editColumnModalVisible"
       title="编辑"
       @ok="handleEditColumnOk"
     >

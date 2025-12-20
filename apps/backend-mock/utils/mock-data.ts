@@ -85,31 +85,31 @@ const dashboardMenus = [
 const createDemosMenus = (role: 'admin' | 'super' | 'user') => {
   const roleWithMenus = {
     admin: {
-      component: '/demos/access/admin-visible',
+      component: '/my-hub/access/admin-visible',
       meta: {
         icon: 'mdi:button-cursor',
-        title: 'demos.access.adminVisible',
+        title: 'my-hub.access.adminVisible',
       },
       name: 'AccessAdminVisibleDemo',
-      path: '/demos/access/admin-visible',
+      path: '/my-hub/access/admin-visible',
     },
     super: {
-      component: '/demos/access/super-visible',
+      component: '/my-hub/access/super-visible',
       meta: {
         icon: 'mdi:button-cursor',
-        title: 'demos.access.superVisible',
+        title: 'my-hub.access.superVisible',
       },
       name: 'AccessSuperVisibleDemo',
-      path: '/demos/access/super-visible',
+      path: '/my-hub/access/super-visible',
     },
     user: {
-      component: '/demos/access/user-visible',
+      component: '/my-hub/access/user-visible',
       meta: {
         icon: 'mdi:button-cursor',
-        title: 'demos.access.userVisible',
+        title: 'my-hub.access.userVisible',
       },
       name: 'AccessUserVisibleDemo',
-      path: '/demos/access/user-visible',
+      path: '/my-hub/access/user-visible',
     },
   };
 
@@ -119,48 +119,48 @@ const createDemosMenus = (role: 'admin' | 'super' | 'user') => {
         icon: 'ic:baseline-view-in-ar',
         keepAlive: true,
         order: 1000,
-        title: 'demos.title',
+        title: 'my-hub.title',
       },
       name: 'Demos',
-      path: '/demos',
-      redirect: '/demos/access',
+      path: '/my-hub',
+      redirect: '/my-hub/access',
       children: [
         {
           name: 'AccessDemos',
           path: '/demosaccess',
           meta: {
             icon: 'mdi:cloud-key-outline',
-            title: 'demos.access.backendPermissions',
+            title: 'my-hub.access.backendPermissions',
           },
-          redirect: '/demos/access/page-control',
+          redirect: '/my-hub/access/page-control',
           children: [
             {
               name: 'AccessPageControlDemo',
-              path: '/demos/access/page-control',
-              component: '/demos/access/index',
+              path: '/my-hub/access/page-control',
+              component: '/my-hub/access/index',
               meta: {
                 icon: 'mdi:page-previous-outline',
-                title: 'demos.access.pageAccess',
+                title: 'my-hub.access.pageAccess',
               },
             },
             {
               name: 'AccessButtonControlDemo',
-              path: '/demos/access/button-control',
-              component: '/demos/access/button-control',
+              path: '/my-hub/access/button-control',
+              component: '/my-hub/access/button-control',
               meta: {
                 icon: 'mdi:button-cursor',
-                title: 'demos.access.buttonControl',
+                title: 'my-hub.access.buttonControl',
               },
             },
             {
               name: 'AccessMenuVisible403Demo',
-              path: '/demos/access/menu-visible-403',
-              component: '/demos/access/menu-visible-403',
+              path: '/my-hub/access/menu-visible-403',
+              component: '/my-hub/access/menu-visible-403',
               meta: {
                 authority: ['no-body'],
                 icon: 'mdi:button-cursor',
                 menuVisibleWithForbidden: true,
-                title: 'demos.access.menuVisible403',
+                title: 'my-hub.access.menuVisible403',
               },
             },
             roleWithMenus[role],
@@ -310,7 +310,7 @@ export const MOCK_MENU_LIST = [
     meta: {
       badgeType: 'dot',
       order: 9998,
-      title: 'demos.vben.title',
+      title: 'my-hub.vben.title',
       icon: 'carbon:data-center',
     },
     name: 'Project',
@@ -329,7 +329,7 @@ export const MOCK_MENU_LIST = [
         meta: {
           icon: 'carbon:book',
           iframeSrc: 'https://doc.vben.pro',
-          title: 'demos.vben.document',
+          title: 'my-hub.vben.document',
         },
       },
       {
@@ -358,7 +358,7 @@ export const MOCK_MENU_LIST = [
           icon: 'carbon:hexagon-vertical-solid',
           badgeType: 'dot',
           link: 'https://ant.vben.pro',
-          title: 'demos.vben.antdv',
+          title: 'my-hub.vben.antdv',
         },
       },
     ],
@@ -371,7 +371,7 @@ export const MOCK_MENU_LIST = [
     meta: {
       icon: 'lucide:copyright',
       order: 9999,
-      title: 'demos.vben.about',
+      title: 'my-hub.vben.about',
     },
     name: 'About',
     path: '/about',

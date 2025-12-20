@@ -227,7 +227,7 @@ export default {
     <div class="electronics-container">
       <!-- 维护设备弹窗 -->
       <AModal
-        v-model:visible="visible"
+        v-model:open="visible"
         title="新增设备"
         @ok="handleOk"
         @cancel="handleCancel"
