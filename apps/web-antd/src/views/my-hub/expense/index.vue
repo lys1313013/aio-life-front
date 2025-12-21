@@ -958,18 +958,21 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 
       <!-- 图表容器 -->
       <div class="chart-container">
-        <Card class="chart-item" title="年度支出趋势">
-          <EchartsUI ref="lineChartRef" style="height: 300px;" />
+        <Card class="chart-item">
+          <h3>年度支出趋势</h3>
+          <EchartsUI ref="lineChartRef" style="height: 300px" />
         </Card>
-        <Card class="chart-item" title="支出类型分布">
-          <EchartsUI ref="pieChartRef" style="height: 300px;" />
+        <Card class="chart-item">
+          <h3>支出类型分布</h3>
+          <EchartsUI ref="pieChartRef" style="height: 300px" />
         </Card>
-        <Card class="chart-item" title="年度支出时间分布">
-          <EchartsUI ref="yearPieChartRef" style="height: 300px;" />
+        <Card class="chart-item">
+          <h3>年度支出时间分布</h3>
+          <EchartsUI ref="yearPieChartRef" style="height: 300px" />
         </Card>
         <Card class="chart-item full-width area-chart-item">
-          <h3>月度支出趋势</h3>
-          <EchartsUI ref="areaChartRef" style="height: 350px;" />
+          <h3>月支出趋势</h3>
+          <EchartsUI ref="areaChartRef" style="height: 350px" />
         </Card>
       </div>
     </div>
@@ -1184,6 +1187,15 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   height: 350px;
 }
 
+.chart-item h3 {
+  margin: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  flex-shrink: 0;
+}
+
 .chart-item.full-width {
   grid-column: 1 / -1;
 }
@@ -1223,7 +1235,7 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   .chart-item {
     height: 380px;
   }
-  
+
   .charts-section {
     padding: 8px;
     margin-bottom: 0px;

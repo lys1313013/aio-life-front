@@ -3,6 +3,11 @@ import type { TimeTrackerConfig, TimeSlotCategory } from './types';
 // 默认时间段分类
 export const defaultCategories: TimeSlotCategory[] = [
   {
+    id: 'rest',
+    name: '休息',
+    color: '#faad14', // gold-6
+  },
+  {
     id: 'project',
     name: '项目',
     color: '#722ed1', // purple-6
@@ -16,11 +21,6 @@ export const defaultCategories: TimeSlotCategory[] = [
     id: 'work',
     name: '工作',
     color: '#1677ff', // blue-6
-  },
-  {
-    id: 'rest',
-    name: '休息',
-    color: '#faad14', // gold-6
   },
   {
     id: 'entertainment',
