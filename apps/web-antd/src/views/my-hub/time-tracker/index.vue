@@ -899,8 +899,14 @@ const handleDateChange = () => {
 
 const handleStatModeChange = () => {
   // 切换统计模式时重新加载数据
-  selectedWeekDayIndex.value = 0;
-  selectedMonthDayIndex.value = 0;
+  if (statMode.value === 'week') {
+    selectedWeekDayIndex.value = selectedDate.value.isoWeekday() - 1;
+  } else if (statMode.value === 'month') {
+    selectedMonthDayIndex.value = selectedDate.value.date() - 1;
+  } else {
+    selectedWeekDayIndex.value = 0;
+    selectedMonthDayIndex.value = 0;
+  }
   loadData();
   nextTick(() => updateMobileTimelineHeight());
 };
