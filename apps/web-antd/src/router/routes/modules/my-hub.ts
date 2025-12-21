@@ -13,8 +13,18 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:history',
+          title: '时迹',
+          backTop: false,
+        },
+        name: 'timeTracker',
+        path: '/my-hub/time-tracker',
+        component: () => import('#/views/my-hub/time-tracker/index.vue'),
+      },
+      {
+        meta: {
           icon: 'mdi:clipboard-text-clock-outline',
-          title: '待办看板',
+          title: '待办',
         },
         name: 'todo',
         path: '/my-hub/todo',
@@ -28,15 +38,6 @@ const routes: RouteRecordRaw[] = [
         name: 'device',
         path: '/my-hub/device',
         component: () => import('#/views/my-hub/device/index.vue'),
-      },
-      {
-        meta: {
-          icon: 'mdi:chart-line-variant',
-          title: '演出',
-        },
-        name: 'performance',
-        path: '/my-hub/performance',
-        component: () => import('#/views/my-hub/performance/index.vue'),
       },
       {
         meta: {
@@ -58,16 +59,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:history',
-          title: '时迹',
-          backTop: false,
-        },
-        name: 'timeTracker',
-        path: '/my-hub/time-tracker',
-        component: () => import('#/views/my-hub/time-tracker/index.vue'),
-      },
-      {
-        meta: {
           title: '闪念',
           icon: 'mdi:lightbulb-on-outline',
         },
@@ -83,6 +74,15 @@ const routes: RouteRecordRaw[] = [
         name: 'memo',
         path: '/my-hub/memo',
         component: () => import('#/views/my-hub/memo/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'mdi:chart-line-variant',
+          title: '演出',
+        },
+        name: 'performance',
+        path: '/my-hub/performance',
+        component: () => import('#/views/my-hub/performance/index.vue'),
       },
       {
         meta: {
