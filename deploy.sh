@@ -41,7 +41,7 @@ fi
 echo "打包 dist 文件夹..."
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ARCHIVE_NAME="dist_$TIMESTAMP.tar.gz"
-tar -czf "/tmp/$ARCHIVE_NAME" -C "$PROJECT_DIR/apps/web-antd" dist
+tar --no-xattrs -czf "/tmp/$ARCHIVE_NAME" -C "$PROJECT_DIR/apps/web-antd" dist
 
 LOCAL_ARCHIVE_PATH="/tmp/$ARCHIVE_NAME"
 echo "创建压缩包: $LOCAL_ARCHIVE_PATH"
