@@ -728,7 +728,6 @@ defineExpose({
 }
 
 .chart-item {
-  background: #fff;
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -748,7 +747,6 @@ defineExpose({
   margin: 0 0 10px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
   text-align: center;
   flex-shrink: 0;
 }

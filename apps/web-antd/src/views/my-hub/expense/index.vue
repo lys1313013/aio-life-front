@@ -1181,7 +1181,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 }
 
 .chart-item {
-  background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: 350px;
@@ -1191,7 +1190,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   margin: 12px;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
   text-align: center;
   flex-shrink: 0;
 }
