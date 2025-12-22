@@ -194,7 +194,6 @@ const updateCharts = () => {
       avoidLabelOverlap: true,
       itemStyle: {
         borderRadius: 10,
-        borderColor: '#fff',
         borderWidth: 2,
       },
       label: {
@@ -340,6 +339,14 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
+      field: 'exerciseCount',
+      title: '数量',
+      sortable: true,
+      headerAlign: 'center',
+      align: 'center',
+      width: 110,
+    },
+    {
       field: 'exerciseDate',
       title: '运动日期',
       sortable: true,
@@ -348,20 +355,12 @@ const gridOptions: VxeGridProps<RowType> = {
       width: 100,
     },
     {
-      field: 'exerciseCount',
-      title: '运动数量',
-      sortable: true,
-      headerAlign: 'center',
-      align: 'center',
-      width: 120,
-    },
-    {
       field: 'description',
       title: '备注',
       sortable: true,
       headerAlign: 'center',
       align: 'left',
-      width: 100,
+      minWidth: 100,
     },
     {
       field: 'createTime',
@@ -551,7 +550,6 @@ const tableReload = () => {
       <!-- 总运动次数卡片 -->
       <div class="total-card">
         <div class="total-content">
-          <div class="total-icon">🏃</div>
           <div class="total-info">
             <div class="total-label">总运动次数</div>
             <div class="total-amount">{{ totalExercise }}次</div>
@@ -710,12 +708,8 @@ const tableReload = () => {
 .total-content {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.total-icon {
-  font-size: 48px;
-  opacity: 0.9;
+  justify-content: center;
+  text-align: center;
 }
 
 .total-info {
@@ -742,7 +736,7 @@ const tableReload = () => {
 }
 
 .chart-item {
-  background: #fff;
+  /* background: #fff; */
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-width: 0; /* 防止 grid item 溢出 */
@@ -770,16 +764,6 @@ const tableReload = () => {
 }
 
 @media (max-width: 768px) {
-  .total-content {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
-
-  .total-icon {
-    font-size: 36px;
-  }
-
   .total-amount {
     font-size: 24px;
   }

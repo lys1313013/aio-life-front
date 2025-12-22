@@ -34,32 +34,17 @@ onMounted(() => {
   loadExerciseTypes();
 });
 
-// 监听 props.values 变化，实时更新表单数据
-watch(
-  () => props.values,
-  (newValues) => {
-    if (newValues) {
-      const values = { ...newValues };
-      // 如果没有日期，默认为当天
-      if (!values.exerciseDate) {
-        values.exerciseDate = dayjs().format('YYYY-MM-DD');
-      }
-      formApi.setValues(values);
-    }
-  },
-  { deep: true }
-);
-
 const [Form, formApi] = useVbenForm({
   schema: [
     {
       component: 'Input',
-      componentProps: {
-        placeholder: '【自动生成】',
-      },
       fieldName: 'id',
       label: '主键',
       disabled: true,
+      dependencies: {
+        triggerFields: ['id'],
+        show: false,
+      },
     },
     {
       component: 'Select',
@@ -111,6 +96,22 @@ const [Form, formApi] = useVbenForm({
   showDefaultActions: false,
   submitOnEnter: true,
 });
+
+// 监听 props.values 变化，实时更新表单数据
+watch(
+  () => props.values,
+  (newValues) => {
+    if (newValues) {
+      const values = { ...newValues };
+      // 如果没有日期，默认为当天
+      if (!values.exerciseDate) {
+        values.exerciseDate = dayjs().format('YYYY-MM-DD');
+      }
+      formApi.setValues(values);
+    }
+  },
+  { deep: true, immediate: true },
+);
 
 // 提交表单
 const handleSubmit = async () => {
