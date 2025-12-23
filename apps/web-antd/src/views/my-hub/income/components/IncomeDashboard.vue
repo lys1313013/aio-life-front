@@ -390,7 +390,6 @@ const updateCharts = () => {
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
-          borderColor: '#fff',
           borderWidth: 2,
         },
         label: {
@@ -439,7 +438,6 @@ const updateCharts = () => {
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
-          borderColor: '#fff',
           borderWidth: 2
         },
         label: {
@@ -608,22 +606,22 @@ defineExpose({
     </div>
 
     <div class="chart-container">
-      <div class="chart-item">
+      <Card class="chart-item">
         <h3>年收入趋势</h3>
         <EchartsUI ref="chartRef" />
-      </div>
-      <div class="chart-item">
+      </Card>
+      <Card class="chart-item">
         <h3>收入类型分布</h3>
         <EchartsUI ref="pieChartRef" />
-      </div>
-      <div class="chart-item">
+      </Card>
+      <Card class="chart-item">
         <h3>收入时间分布</h3>
         <EchartsUI ref="yearPieChartRef" />
-      </div>
-      <div class="chart-item">
+      </Card>
+      <Card class="chart-item full-width area-chart-item">
         <h3>月收入趋势</h3>
         <EchartsUI ref="monthChartRef" />
-      </div>
+      </Card>
     </div>
   </div>
 </template>
@@ -729,10 +727,7 @@ defineExpose({
 
 .chart-item {
   border-radius: 8px;
-  padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
   height: 400px;
   overflow: hidden; /* 防止内容溢出 */
 }
@@ -752,7 +747,7 @@ defineExpose({
 }
 
 .chart-item :deep(.echarts-ui),
-.chart-item > div:not(h3) {
+.chart-item :deep(.ant-card-body) > div:not(h3) {
   flex: 1;
   min-height: 0;
 }

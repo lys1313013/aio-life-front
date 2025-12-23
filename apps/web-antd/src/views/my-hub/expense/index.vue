@@ -928,7 +928,7 @@ const handleUpdateSuccess = async (updatedRow: any) => {
     <FormDrawer @table-reload="tableReload" @update-success="handleUpdateSuccess" />
 
     <!-- 图表区域 -->
-    <div class="charts-section mb-6">
+    <div class="charts-section">
       <!-- 总金额卡片 -->
       <div class="total-card">
         <div class="dashboard-header">
@@ -960,19 +960,19 @@ const handleUpdateSuccess = async (updatedRow: any) => {
       <div class="chart-container">
         <Card class="chart-item">
           <h3>年度支出趋势</h3>
-          <EchartsUI ref="lineChartRef" style="height: 300px" />
+          <EchartsUI ref="lineChartRef" />
         </Card>
         <Card class="chart-item">
           <h3>支出类型分布</h3>
-          <EchartsUI ref="pieChartRef" style="height: 300px" />
+          <EchartsUI ref="pieChartRef" />
         </Card>
         <Card class="chart-item">
           <h3>年度支出时间分布</h3>
-          <EchartsUI ref="yearPieChartRef" style="height: 300px" />
+          <EchartsUI ref="yearPieChartRef" />
         </Card>
         <Card class="chart-item full-width area-chart-item">
           <h3>月支出趋势</h3>
-          <EchartsUI ref="areaChartRef" style="height: 350px" />
+          <EchartsUI ref="areaChartRef" />
         </Card>
       </div>
     </div>
@@ -1006,7 +1006,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 <style scoped>
 .charts-section {
   padding: 12px;
-  margin-bottom: 30px;
   overflow: hidden;
 }
 
@@ -1176,18 +1175,18 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 .chart-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: 12px;
   height: auto;
 }
 
 .chart-item {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  height: 350px;
 }
 
 .chart-item h3 {
   margin: 12px;
+  margin-bottom: 0px;
   font-size: 16px;
   font-weight: 600;
   text-align: center;
@@ -1201,21 +1200,27 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 .chart-item :deep(.ant-card-body) {
   padding: 0;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-item :deep(.echarts-ui) {
-  height: calc(100% - 48px);
+  flex: 1;
+  min-height: 0;
 }
 
 /* 确保堆叠面积图底部有足够空间，避免与搜索框重叠 */
 .area-chart-item {
-  margin-bottom: 20px;
   overflow: hidden;
 }
 
 @media (max-width: 1400px) {
   .chart-container {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .chart-item.full-width {
+    grid-column: auto;
   }
 }
 
@@ -1237,11 +1242,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   .charts-section {
     padding: 8px;
     margin-bottom: 0px;
-  }
-
-  .total-card {
-    padding: 12px;
-    margin-bottom: 12px;
   }
 }
 </style>
