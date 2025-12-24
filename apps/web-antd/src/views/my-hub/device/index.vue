@@ -83,7 +83,6 @@ export default {
         .reduce((sum, item) => sum + item.purchasePrice, 0)
         .toFixed(2);
       this.totalCount = res.items.length;
-      console.log('查询设备:', res);
     },
 
     showModal() {
@@ -106,8 +105,6 @@ export default {
       this.visible = true;
     },
     async handleOk() {
-      console.log('新增日期:', this.newDevice.purchaseDate);
-
       // 确保日期正确格式化
       let formattedDate = '';
       if (this.newDevice.purchaseDate) {
@@ -181,7 +178,6 @@ export default {
     },
     // 切换页签
     onTabChange(value, type) {
-      console.log(value, type);
       if (type === 'tabKey') {
         this.tabKey = value;
       }
@@ -278,14 +274,10 @@ export default {
       <div class="total-static">
         <ACard>
           <span>总资产: {{ totalAmt }} 元</span>
-          <br />
           <span>资产数量： {{ totalCount }} 个</span>
-          <br />
           <span>每日成本： {{ totalDailyCost }}</span>
-          <br />
         </ACard>
       </div>
-      <br />
       <!-- 设备列表 -->
       <div class="electronics-grid">
         <div
@@ -361,6 +353,71 @@ export default {
   gap: 20px;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   /* 动态控制每行显示个数 */
+}
+
+@media screen and (max-width: 768px) {
+  /* 覆盖 Ant Design Card 样式 */
+  :deep(.ant-card-body) {
+    padding: 12px !important;
+  }
+
+  :deep(.ant-card-head) {
+    padding: 0 12px !important;
+    min-height: 46px;
+  }
+
+  :deep(.ant-tabs-tab) {
+    padding: 8px 0 !important;
+    margin: 0 12px 0 0 !important;
+  }
+
+  .electronics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .electronics-container {
+    padding: 0;
+  }
+
+  .total-static {
+    margin-bottom: 12px;
+  }
+
+  .card-content {
+    padding: 8px;
+  }
+
+  .card-content h3 {
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+
+  .price,
+  .purchase-date,
+  .usage-days,
+  .avg-cost {
+    font-size: 12px;
+    margin: 2px 0;
+  }
+
+  /* 隐藏部分不重要的信息以节省空间，或者调整显示 */
+  .purchase-date {
+    display: none;
+  }
+
+  .delete-btn {
+    top: 0;
+    right: 0;
+    padding: 4px;
+  }
+
+  .status-badge {
+    bottom: 5px;
+    right: 5px;
+    font-size: 10px;
+    padding: 1px 6px;
+  }
 }
 
 .electronics-card {
@@ -514,29 +571,22 @@ export default {
 
 .status-using {
   background-color: #7fbd60;
-  /* 绿色 */
 }
 
 .status-damaged {
   background-color: #f5222d;
-  /* 红色 */
 }
 
 .status-processed {
   background-color: #b7eb8f;
-  /* 浅绿色 */
 }
 
 .status-idle {
   background-color: #d9d9d9;
-  /* 灰色 */
   color: #666;
 }
 .total-static {
   margin-bottom: 20px;
-}
-
-.total-static .ant-card {
 }
 
 .total-static .ant-card span {
