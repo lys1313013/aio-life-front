@@ -2273,7 +2273,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .stats-cards-group {
   display: flex;
   flex-direction: row;
-  gap: 12px;
+  gap: 7px;
   width: 100%;
   flex: none;
   flex-wrap: wrap;
