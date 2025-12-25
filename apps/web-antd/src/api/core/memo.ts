@@ -2,6 +2,7 @@ import { requestClient } from "#/api/request";
 
 export interface Memo {
   id: string;
+  title: string;
   content: string;
   createTime: string;
   updateTime: string;
@@ -16,12 +17,12 @@ export async function getMemoListApi() {
   return res.items;
 }
 
-export async function createMemoApi(content: string) {
-  return requestClient.post<boolean>('/memo/save', { content });
+export async function createMemoApi(memo: Partial<Memo>) {
+  return requestClient.post<boolean>('/memo/save', memo);
 }
 
-export async function updateMemoApi(id: string, content: string) {
-  return requestClient.post<boolean>('/memo/update', { id, content });
+export async function updateMemoApi(memo: Partial<Memo>) {
+  return requestClient.post<boolean>('/memo/update', memo);
 }
 
 export async function deleteMemoApi(id: string) {

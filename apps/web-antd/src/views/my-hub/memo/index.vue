@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { Card, Button, Modal, Input, message, Popconfirm, Tooltip, Spin, Empty } from 'ant-design-vue';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
+import { usePreferences } from '@vben/preferences';
+import { Button, Modal, Input, message, Popconfirm, Tooltip, Spin, Empty } from 'ant-design-vue';
+import { EditOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
 import { getMemoListApi, createMemoApi, updateMemoApi, deleteMemoApi, type Memo } from '#/api/core/memo';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -12,9 +13,11 @@ const loading = ref(false);
 const modalOpen = ref(false);
 const modalTitle = ref('新建');
 const confirmLoading = ref(false);
+const { isMobile } = usePreferences();
 
 const formState = reactive({
   id: '',
+  title: '',
   content: '',
 });
 
@@ -32,6 +35,7 @@ const fetchMemos = async () => {
 const handleAdd = () => {
   modalTitle.value = '新建';
   formState.id = '';
+  formState.title = '';
   formState.content = '';
   modalOpen.value = true;
 };
@@ -39,6 +43,7 @@ const handleAdd = () => {
 const handleEdit = (item: Memo) => {
   modalTitle.value = '编辑';
   formState.id = item.id;
+  formState.title = item.title;
   formState.content = item.content;
   modalOpen.value = true;
 };
@@ -54,18 +59,16 @@ const handleDelete = async (id: string) => {
 };
 
 const handleOk = async () => {
-  if (!formState.content) {
+  if (!formState.content && !formState.title) {
     message.warning('请输入内容');
     return;
   }
   confirmLoading.value = true;
   try {
     if (formState.id) {
-      await updateMemoApi(formState.id, formState.content);
-      message.success('更新成功');
+      await updateMemoApi({ ...formState });
     } else {
-      await createMemoApi(formState.content);
-      message.success('创建成功');
+      await createMemoApi({ ...formState });
     }
     modalOpen.value = false;
     fetchMemos();
@@ -119,7 +122,10 @@ onMounted(() => {
             >
               <!-- Content Area -->
               <div class="flex-1 overflow-hidden cursor-pointer" @click="handleEdit(item)">
-                <p class="whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-base leading-relaxed break-words">
+                <h3 v-if="item.title" class="font-bold text-lg mb-1 truncate text-slate-800 dark:text-slate-200">
+                  {{ item.title }}
+                </h3>
+                <p class="whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-base leading-relaxed break-words line-clamp-[10]">
                   {{ item.content }}
                 </p>
               </div>
@@ -128,8 +134,8 @@ onMounted(() => {
               <div class="mt-3 flex justify-between items-center text-xs text-slate-400">
                 <div class="flex items-center gap-1">
                   <ClockCircleOutlined />
-                  <Tooltip :title="new Date(item.createTime).toLocaleString()">
-                    <span>{{ formatTime(item.createTime) }}</span>
+                  <Tooltip :title="new Date(item.updateTime).toLocaleString()">
+                    <span>{{ formatTime(item.updateTime) }}</span>
                   </Tooltip>
                 </div>
                 
@@ -177,15 +183,23 @@ onMounted(() => {
       :title="modalTitle"
       :confirm-loading="confirmLoading"
       @ok="handleOk"
-      :width="600"
+      :width="isMobile ? '100%' : '70%'"
+      :centered="true"
+      :body-style="{ height: isMobile ? 'calc(100vh - 110px)' : '60vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }"
       class="memo-modal"
     >
+      <Input
+        v-model:value="formState.title"
+        placeholder="标题"
+        class="!text-lg !font-bold !mb-2 !border-0 focus:!shadow-none !px-0"
+        :bordered="false"
+      />
       <Input.TextArea
         v-model:value="formState.content"
-        :rows="8"
         placeholder="记下你的想法..."
-        class="!text-base !leading-relaxed !resize-none !border-0 focus:!shadow-none"
+        class="!text-base !leading-relaxed !resize-none !border-0 focus:!shadow-none flex-1 !px-0"
         :bordered="false"
+        style="height: 100%;"
       />
     </Modal>
     

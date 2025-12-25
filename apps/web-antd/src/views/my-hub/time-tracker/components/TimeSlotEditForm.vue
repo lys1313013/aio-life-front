@@ -167,6 +167,8 @@
                 class="input-align-right"
                 style="width: 100%"
                 :min="0"
+                inputmode="numeric"
+                pattern="[0-9]*"
               />
             </Form.Item>
           </Col>
@@ -183,8 +185,10 @@
                 :min="0"
                 :precision="0"
                 class="input-align-right"
-                style="flex: 1;"
+                style="flex: 1"
                 placeholder="时"
+                inputmode="numeric"
+                pattern="[0-9]*"
               />
               <span>时</span>
             </div>
@@ -195,7 +199,9 @@
                 :max="59"
                 :precision="0"
                 class="input-align-right"
-                style="flex: 1;"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                style="flex: 1"
                 placeholder="分"
               />
               <span>分</span>
@@ -322,12 +328,12 @@ const duration = computed(() => {
 // 更新时长逻辑
 const updateDuration = (val: number) => {
   if (!formState.value.startTime) return;
-    
+
   const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const proposedEndMinutes = startMinutes + val;
-    
+
   let maxMinutes = 1439;
-    
+
   if (props.existingSlots) {
     const tempSlot = {
       ...props.slot,
@@ -335,16 +341,16 @@ const updateDuration = (val: number) => {
       startTime: startMinutes,
       endTime: startMinutes // 设置为开始时间，以便查找紧邻的下一个时间段
     };
-      
+
     const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
     if (belowStartTime !== null) {
       maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
     }
   }
-    
+
   // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
   const finalEndMinutes = Math.max(startMinutes + 1, Math.min(maxMinutes, proposedEndMinutes));
-    
+
   formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
 };
 
@@ -489,11 +495,11 @@ const adjustStartTime = (minutes: number) => {
 
   const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const proposedMinutes = currentMinutes + minutes;
-  
+
   // 获取上下界限
   let minMinutes = 0;
   let maxMinutes = 1439;
-  
+
   if (props.existingSlots && props.slot) {
     // 构造当前临时slot用于查询
     const tempSlot = {
@@ -502,29 +508,29 @@ const adjustStartTime = (minutes: number) => {
       startTime: currentMinutes,
       endTime: formState.value.endTime ? timeToMinutes(formState.value.endTime.format('HH:mm')) : currentMinutes + 30
     };
-    
+
     // 获取上方最近的时间段结束时间
     // 注意：这里我们要找的是在这个slot开始时间之前最近的一个结束时间
     const aboveEndTime = getAboveSlotEndTime(props.existingSlots, tempSlot, tempSlot.id);
     if (aboveEndTime !== null) {
       // 限制：必须 > 上一个的结束时间。如果上一个结束是10:30，这里只能是10:31
-      minMinutes = aboveEndTime + 1; 
+      minMinutes = aboveEndTime + 1;
     }
   }
-  
+
   // 如果有结束时间，开始时间必须小于结束时间
   if (formState.value.endTime) {
     const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
     // 限制最大值为结束时间 - 1
     maxMinutes = Math.min(maxMinutes, endMinutes - 1);
   }
-  
+
   // 如果范围无效（min > max），则不调整
   if (minMinutes > maxMinutes) return;
 
   // 限制范围
   const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
-  
+
   formState.value.startTime = minutesToTimePickerValue(newMinutes);
 };
 
@@ -549,7 +555,7 @@ const adjustEndTime = (minutes: number) => {
         startTime: formState.value.startTime ? timeToMinutes(formState.value.startTime.format('HH:mm')) : 0,
         endTime: currentMinutes
       };
-      
+
       const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
       if (belowStartTime !== null) {
           // 限制：必须 < 下一个的开始时间。如果下一个开始是11:00，这里只能是10:59
@@ -558,7 +564,7 @@ const adjustEndTime = (minutes: number) => {
   }
 
   const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
-  
+
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
 };
 
