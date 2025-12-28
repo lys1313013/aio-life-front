@@ -49,6 +49,7 @@ export default {
       newVideo: {
         title: '',
         url: '',
+        bvid: '',
         cover: '',
         duration: 0, // 秒数
         episodes: 1,
@@ -248,6 +249,7 @@ export default {
       this.newVideo = {
         title: '',
         url: '',
+        bvid: '',
         cover: '',
         duration: 0, // 秒数
         episodes: 1,
@@ -262,7 +264,9 @@ export default {
     showEditModal(video) {
       this.newVideo = {
         ...video,
+        bvid: video.bvid || '',
         ownerName: video.owner?.name || video.ownerName || '',
+        watchedDurationFormatted: this.formatDuration(video.watchedDuration),
       };
       this.visible = true;
     },
@@ -291,8 +295,9 @@ export default {
       this.newVideo = {
         title: '',
         url: '',
+        bvid: '',
         cover: '',
-        duration: '',
+        duration: 0,
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
@@ -300,6 +305,7 @@ export default {
         notes: '',
         ownerName: '',
         watchedDuration: 0, // 已学习时长（秒数）
+        watchedDurationFormatted: '00:00:00',
       };
     },
 
@@ -316,6 +322,7 @@ export default {
           this.newVideo = {
             ...this.newVideo,
             url: res.data.url || this.newVideo.url, // 用清理后的URL覆盖原始URL
+            bvid: res.data.bvid || '',
             title: res.data.title || '',
             cover: res.data.cover || '',
             duration: res.data.duration || 0, // 秒数
@@ -387,28 +394,24 @@ export default {
     },
 
     updateProgressFromEpisode() {
-      // 根据当前集数和总集数自动计算学习进度
-      if (this.newVideo.currentEpisode && this.newVideo.episodes) {
-        const progress = Math.max(
-          0,
-          Math.min(
-            100,
-            ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * 100,
-          ),
-        );
-        this.newVideo.progress = Math.round(progress);
+      // 1. 先计算已观看时长
+      this.calculateWatchedDuration();
 
-        // 根据进度更新状态
-        if (this.newVideo.progress >= 100) {
-          this.newVideo.status = 5; // 已完成
-        } else if (this.newVideo.progress > 0) {
-          this.newVideo.status = 2; // 进行中
-        }
+      // 2. 根据时长自动计算学习进度百分比
+      if (this.newVideo.duration > 0) {
+        const progress = (this.newVideo.watchedDuration / this.newVideo.duration) * 100;
+        this.newVideo.progress = Math.min(100, Math.max(0, Math.round(progress)));
+      } else if (this.newVideo.currentEpisode && this.newVideo.episodes) {
+        // 如果没有总时长，则按集数比例计算（兜底逻辑）
+        const progress = ((this.newVideo.currentEpisode - 1) / this.newVideo.episodes) * 100;
+        this.newVideo.progress = Math.min(100, Math.max(0, Math.round(progress)));
+      }
 
-        // 只有在没有API返回的已观看时长数据时才重新计算
-        if (!this.newVideo.watchedDuration || this.newVideo.watchedDuration === 0) {
-          this.calculateWatchedDuration();
-        }
+      // 3. 根据进度更新状态
+      if (this.newVideo.progress >= 100) {
+        this.newVideo.status = 5; // 已完成
+      } else if (this.newVideo.progress > 0) {
+        this.newVideo.status = 2; // 进行中
       }
     },
 
@@ -437,17 +440,8 @@ export default {
           }
 
           // 格式化已观看时长
-          const hours = Math.floor(watchedSeconds / 3600);
-          const minutes = Math.floor((watchedSeconds % 3600) / 60);
-          const seconds = Math.floor(watchedSeconds % 60);
-
-          if (hours > 0) {
-            this.newVideo.watchedDurationFormatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          } else {
-            this.newVideo.watchedDurationFormatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-          }
-
-          this.newVideo.watchedDurationSeconds = Math.round(watchedSeconds);
+          this.newVideo.watchedDurationFormatted = this.formatDuration(watchedSeconds);
+          this.newVideo.watchedDuration = Math.round(watchedSeconds);
         }
       }
     },
@@ -532,6 +526,7 @@ export default {
 
     /**
      * 获取实际显示的进度值
+     * 优先使用已观看时长/总时长计算进度
      * 对于已完成状态的视频，进度条始终显示100%
      */
     getActualProgress(video) {
@@ -539,8 +534,15 @@ export default {
       if (video.status === 5 || video.status === 'completed') {
         return 100;
       }
-      // 其他状态返回实际进度值
-      return video.progress;
+
+      // 使用时长计算进度
+      if (video.duration > 0) {
+        const progress = (video.watchedDuration / video.duration) * 100;
+        return Math.min(100, Math.max(0, Math.round(progress)));
+      }
+
+      // 兜底返回原始进度值
+      return video.progress || 0;
     },
 
     /**
@@ -736,7 +738,9 @@ export default {
             <!-- 显示视频时长 -->
             <div v-if="video.duration" class="duration-info">
               <span class="duration-label">时长:</span>
-              <span class="duration-value">{{ formatDuration(video.duration) }}</span>
+                  <span class="duration-value">{{
+                    formatDuration(video.duration)
+                  }}</span>
             </div>
 
             <!-- 显示统计数据 -->
@@ -822,9 +826,15 @@ export default {
             </div>
           </AFormItem>
 
-          <AFormItem label="视频标题">
-            <AInput v-model:value="newVideo.title" placeholder="视频标题" />
-          </AFormItem>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+            <AFormItem label="视频标题">
+              <AInput v-model:value="newVideo.title" placeholder="视频标题" />
+            </AFormItem>
+
+            <AFormItem label="BV号">
+              <AInput v-model:value="newVideo.bvid" readonly placeholder="BV号 (自动解析)" />
+            </AFormItem>
+          </div>
 
           <AFormItem label="UP主名称">
             <AInput v-model:value="newVideo.ownerName" placeholder="UP主名称" />
