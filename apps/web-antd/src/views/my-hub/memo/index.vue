@@ -117,7 +117,7 @@ onMounted(() => {
             class="break-inside-avoid mb-2"
           >
             <div 
-              class="group relative flex flex-col p-3 rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg border border-transparent dark:border-slate-700"
+              class="group relative flex flex-col p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.3 hover:shadow-lg border border-transparent dark:border-slate-700"
               :class="getBgColor(item.id)"
             >
               <!-- Content Area -->
@@ -182,6 +182,7 @@ onMounted(() => {
       v-model:open="modalOpen"
       :title="modalTitle"
       :confirm-loading="confirmLoading"
+      :maskClosable="false"
       @ok="handleOk"
       :width="isMobile ? '100%' : '70%'"
       :centered="true"

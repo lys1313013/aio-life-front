@@ -234,7 +234,7 @@ onMounted(async () => {
       </Card>
     </div>
 
-    <Modal v-model:open="showModal" :title="modalTitle" :footer="null" @cancel="closeCardModal">
+    <Modal v-model:open="showModal" :title="modalTitle" :footer="null" :maskClosable="false" @cancel="closeCardModal">
       <Form layout="vertical">
         <Form.Item label="思考内容" required>
           <Input.TextArea v-model:value="form.content" :rows="4" placeholder="写下你的思考..." />
