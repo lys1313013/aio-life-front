@@ -50,12 +50,13 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:video-vintage',
-          title: '视频学习记录',
+          icon: 'mdi:videoWatch-vintage',
+          title: '视频观看',
+          backTop: false,
         },
-        name: 'bilibiliVideo',
-        path: '/my-hub/bilibili-video',
-        component: () => import('#/views/my-hub/bilibili-video/index.vue'),
+        name: 'videoWatch',
+        path: '/my-hub/videoWatch',
+        component: () => import('#/views/my-hub/videoWatch/index.vue'),
       },
       {
         meta: {
