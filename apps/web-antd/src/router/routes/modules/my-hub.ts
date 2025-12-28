@@ -50,7 +50,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:videoWatch-vintage',
+          icon: 'mdi:video-vintage',
           title: '视频观看',
           backTop: false,
         },
