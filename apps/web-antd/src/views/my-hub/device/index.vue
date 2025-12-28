@@ -9,12 +9,14 @@ import {
   Input,
   InputNumber,
   Modal,
+  Popconfirm,
   Select,
+  message,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/common';
-import { insertOrUpdate, query } from '#/api/core/device';
+import { deleteData, insertOrUpdate, query } from '#/api/core/device';
 
 export default {
   components: {
@@ -24,6 +26,7 @@ export default {
     AFormItem: Form.Item,
     AInput: Input,
     AInputNumber: InputNumber,
+    APopconfirm: Popconfirm,
     ADatePicker: DatePicker,
     ASelect: Select,
     ASelectOption: Select.Option,
@@ -209,6 +212,15 @@ export default {
         this.statusOptions = res.dictDetailList;
       }
     },
+    async handleDelete(item) {
+      try {
+        await deleteData({ id: item.id });
+        await this.query();
+      } catch (error) {
+        console.error('删除失败:', error);
+        message.error('删除失败');
+      }
+    },
   },
 };
 </script>
@@ -305,12 +317,19 @@ export default {
             </div>
           </div>
           <div class="card-content">
-            <AButton
-              class="delete-btn"
-              type="text"
-              danger
-              @click.stop="handleDelete(item, index)"
-            />
+            <APopconfirm
+              title="确定要删除这个设备吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDelete(item)"
+            >
+              <AButton
+                class="delete-btn"
+                type="text"
+                danger
+                @click.stop
+              />
+            </APopconfirm>
             <h3>{{ item.name }}</h3>
             <p class="price">价格: {{ item.purchasePrice }}</p>
             <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>

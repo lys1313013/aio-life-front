@@ -8,6 +8,7 @@ import {
   InputNumber,
   message,
   Modal,
+  Popconfirm,
   Progress,
   Select,
   Tag,
@@ -35,6 +36,7 @@ export default {
     ASelect: Select,
     ASelectOption: Select.Option,
     ACard: Card,
+    APopconfirm: Popconfirm,
     ATag: Tag,
     AProgress: Progress,
     ATabs: Tabs,
@@ -348,10 +350,15 @@ export default {
       }
     },
 
-    async handleDelete(video, index) {
-      await deleteBilibiliVideo({ id: video.id });
-      message.success('删除成功');
-      this.query();
+    async handleDelete(video) {
+      try {
+        await deleteBilibiliVideo({ id: video.id });
+        message.success('删除成功');
+        await this.query();
+      } catch (error) {
+        console.error('删除失败:', error);
+        message.error('删除失败');
+      }
     },
 
     getStatusText(status) {
@@ -673,14 +680,21 @@ export default {
             </div>
           </div>
           <div class="card-content">
-            <AButton
-              class="delete-btn"
-              type="text"
-              danger
-              @click.stop="handleDelete(video, index)"
+            <APopconfirm
+              title="确定要删除这个视频吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDelete(video)"
             >
-              删除
-            </AButton>
+              <AButton
+                class="delete-btn"
+                type="text"
+                danger
+                @click.stop
+              >
+                删除
+              </AButton>
+            </APopconfirm>
             <h3>{{ video.title || '未命名视频' }}</h3>
 
             <!-- 显示UP主信息 -->
