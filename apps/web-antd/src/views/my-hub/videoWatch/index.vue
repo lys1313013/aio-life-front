@@ -509,10 +509,13 @@ export default {
                     <VideoCameraOutlined class="text-3xl sm:text-4xl text-muted-foreground opacity-20" />
                   </div>
 
-                  <!-- 时长标签 -->
-                  <div class="absolute bottom-1 sm:bottom-1.5 right-1 sm:right-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-black/40 text-white text-[9px] sm:text-[10px] font-medium rounded-md backdrop-blur-md border border-white/10 tabular-nums z-20">
-                    {{ formatDuration(video.duration) || '未知' }}
-                  </div>
+                  <!-- 底部渐变遮罩 -->
+                   <div class="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-black/50 via-black/30 to-transparent pointer-events-none z-10"></div>
+ 
+                   <!-- 时长标签 -->
+                   <div class="absolute bottom-1 right-1 text-white text-[10px] sm:text-[11px] font-medium tabular-nums z-20">
+                     {{ formatDuration(video.duration) || '未知' }}
+                   </div>
 
                   <!-- 状态角标 -->
                   <div
@@ -559,7 +562,6 @@ export default {
                       <span class="truncate font-medium">{{ video.owner?.name || video.ownerName || '未知UP主' }}</span>
                     </span>
                     <span class="inline-flex items-center font-bold tabular-nums text-primary/80">
-                      <ClockCircleOutlined class="mr-1 text-[9px] sm:text-[10px]" />
                       {{ video.currentEpisode }}/{{ video.episodes }}
                     </span>
                   </div>
