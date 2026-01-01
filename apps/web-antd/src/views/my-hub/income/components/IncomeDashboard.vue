@@ -316,7 +316,7 @@ const updateCharts = () => {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: isMobile.value ? '15%' : '3%',
       containLabel: true,
     },
     tooltip: {
@@ -350,6 +350,9 @@ const updateCharts = () => {
     legend: {
       type: 'scroll',
       bottom: 0,
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     xAxis: [
       {
@@ -379,14 +382,16 @@ const updateCharts = () => {
       type: 'scroll',
       orient: 'horizontal',
       bottom: 0,
-      left: 'center'
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     series: [
       {
         name: '收入类型分布',
         type: 'pie',
-        radius: ['0%', '60%'],
-        center: ['50%', '45%'],
+        radius: isMobile.value ? ['0%', '45%'] : ['0%', '60%'],
+        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
@@ -396,9 +401,9 @@ const updateCharts = () => {
           show: true,
           position: 'outside',
           formatter: (params: any) => {
-            return `${params.name}\n${params.percent}%`;
+            return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
           },
-          fontSize: 12
+          fontSize: isMobile.value ? 10 : 12
         },
         emphasis: {
           label: {
@@ -409,8 +414,8 @@ const updateCharts = () => {
         },
         labelLine: {
           show: true,
-          length: 10,
-          length2: 10
+          length: isMobile.value ? 5 : 10,
+          length2: isMobile.value ? 5 : 10
         },
         data: pieData.data
       }
@@ -427,14 +432,16 @@ const updateCharts = () => {
       type: 'scroll',
       orient: 'horizontal',
       bottom: 0,
-      left: 'center'
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     series: [
       {
         name: '年份收入分布',
         type: 'pie',
-        radius: '60%',
-        center: ['50%', '45%'],
+        radius: isMobile.value ? '45%' : '60%',
+        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
@@ -443,9 +450,9 @@ const updateCharts = () => {
         label: {
           show: true,
           formatter: (params: any) => {
-            return `${params.name}\n${params.percent}%`;
+            return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
           },
-          fontSize: 12
+          fontSize: isMobile.value ? 10 : 12
         },
         emphasis: {
           label: {
@@ -455,7 +462,8 @@ const updateCharts = () => {
           }
         },
         labelLine: {
-          show: true
+          show: true,
+          length: isMobile.value ? 5 : 10
         },
         data: yearPieData.data
       }
@@ -467,7 +475,7 @@ const updateCharts = () => {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '3%',
+      bottom: isMobile.value ? '20%' : '3%',
       containLabel: true,
     },
     tooltip: {
@@ -499,6 +507,9 @@ const updateCharts = () => {
     legend: {
       type: 'scroll',
       bottom: 0,
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     xAxis: [
       {
@@ -510,12 +521,16 @@ const updateCharts = () => {
         },
         axisLabel: {
           rotate: 45,
+          fontSize: isMobile.value ? 10 : 12
         },
       },
     ],
     yAxis: [
       {
         type: 'value',
+        axisLabel: {
+          fontSize: isMobile.value ? 10 : 12
+        }
       },
     ],
     series: getMonthlySeriesData(),
@@ -746,6 +761,13 @@ defineExpose({
   flex-shrink: 0;
 }
 
+.chart-item :deep(.ant-card-body) {
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .chart-item :deep(.echarts-ui),
 .chart-item :deep(.ant-card-body) > div:not(h3) {
   flex: 1;
@@ -806,8 +828,8 @@ defineExpose({
   }
 
   .chart-item {
-    height: 320px;
-    padding: 8px;
+    height: 420px;
+    padding: 12px 8px;
   }
 
   .stat-value {

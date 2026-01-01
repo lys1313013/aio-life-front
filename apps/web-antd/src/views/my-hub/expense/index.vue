@@ -359,11 +359,10 @@ const updateCharts = async () => {
   }
 
   // 渲染年度柱状图
-  await renderLineChart({
-    tooltip: {
+  await renderLineChart({tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'shadow'
+        type: 'shadow',
       },
       formatter: (params: any) => {
         let tooltip = `${params[0].name}<br/>`;
@@ -390,12 +389,15 @@ const updateCharts = async () => {
     },
     legend: {
       type: 'scroll',
-      bottom: 0,
+      bottom: isMobile.value ? 0 : 0,
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '10%',
+      bottom: isMobile.value ? '15%' : '10%',
       containLabel: true,
     },
     xAxis: {
@@ -421,27 +423,29 @@ const updateCharts = async () => {
       type: 'scroll',
       orient: 'horizontal',
       bottom: 0,
-      left: 'center'
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     series: [{
       name: '支出类型分布',
-      type: 'pie',
-      radius: ['0%', '65%'],
-      center: ['50%', '45%'],
-      avoidLabelOverlap: false,
+        type: 'pie',
+        radius: isMobile.value ? ['0%', '45%'] : ['0%', '65%'],
+        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
+      avoidLabelOverlap: true,
       itemStyle: {
         borderRadius: 10,
         borderColor: '#fff',
         borderWidth: 2,
       },
       label: {
-        show: true,
-        position: 'outside',
-        formatter: (params: any) => {
-          return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
+          show: true,
+          position: 'outside',
+          formatter: (params: any) => {
+            return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
+          },
+          fontSize: isMobile.value ? 10 : 12
         },
-        fontSize: 12
-      },
       emphasis: {
         label: {
           show: true,
@@ -451,8 +455,8 @@ const updateCharts = async () => {
       },
       labelLine: {
         show: true,
-        length: 10,
-        length2: 10
+        length: isMobile.value ? 5 : 10,
+        length2: isMobile.value ? 5 : 10
       },
       data: typeData
     }]
@@ -490,11 +494,13 @@ const updateCharts = async () => {
     legend: {
       type: 'scroll',
       bottom: 0,
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     grid: {
       left: '10',
       right: '10',
-      bottom: '20',
+      bottom: isMobile.value ? '30' : '20',
       containLabel: true,
     },
     xAxis: {
@@ -503,14 +509,16 @@ const updateCharts = async () => {
       data: months,
       axisLabel: {
         rotate: 45,
-        interval: 'auto'
+        interval: 'auto',
+        fontSize: isMobile.value ? 10 : 12
       },
       triggerEvent: true,
     },
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: '¥{value}'
+        formatter: '¥{value}',
+        fontSize: isMobile.value ? 10 : 12
       }
     },
     series: areaChartSeries.map(item => ({ ...item, symbol: 'emptyCircle', symbolSize: 4 })) as any
@@ -564,14 +572,16 @@ const updateCharts = async () => {
       type: 'scroll',
       orient: 'horizontal',
       bottom: 0,
-      left: 'center'
+      left: 'center',
+      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
+      itemGap: isMobile.value ? 8 : 10,
     },
     series: [
       {
         name: '年份支出分布',
         type: 'pie',
-        radius: '60%',
-        center: ['50%', '45%'],
+        radius: isMobile.value ? '45%' : '60%',
+        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
@@ -581,9 +591,9 @@ const updateCharts = async () => {
         label: {
           show: true,
           formatter: (params: any) => {
-            return `${params.name}\n${params.percent}%`;
+            return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
           },
-          fontSize: 12
+          fontSize: isMobile.value ? 10 : 12
         },
         emphasis: {
           label: {
@@ -593,7 +603,8 @@ const updateCharts = async () => {
           }
         },
         labelLine: {
-          show: true
+          show: true,
+          length: isMobile.value ? 5 : 10
         },
         data: yearPieData.data
       }
@@ -635,7 +646,7 @@ const getYearlyStatistics = async () => {
 };
 
 // 监听年度选择变化
-watch(selectedYear, () => {
+watch([selectedYear, isMobile], () => {
   nextTick(() => {
     updateCharts();
   });
@@ -1244,7 +1255,11 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 
 @media (max-width: 768px) {
   .chart-item {
-    height: 380px;
+    height: 420px;
+  }
+
+  .chart-item :deep(.ant-card-body) {
+    padding: 12px 8px;
   }
 
   .charts-section {
