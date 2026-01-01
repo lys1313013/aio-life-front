@@ -8,7 +8,16 @@ import { usePreferences } from '@vben/preferences';
 import { useEcharts, EchartsUI } from '@vben/plugins/echarts';
 import { useUserStore } from '@vben/stores';
 
-import { Alert, message, Spin, theme } from 'ant-design-vue';
+import {
+  BarChartOutlined,
+  CalendarOutlined,
+  CoffeeOutlined,
+  FileTextOutlined,
+  FireOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons-vue';
+import { Card, Alert, message, Spin, theme } from 'ant-design-vue';
+import dayjs from 'dayjs';
 
 defineOptions({ name: 'GithubGraph' });
 
@@ -20,6 +29,16 @@ const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 const { isDark } = usePreferences();
 const { token } = theme.useToken();
+const contributionData = ref<any>(null);
+
+// Stats
+const totalContributions = ref(0);
+const maxContribution = ref(0);
+const bestMonth = ref({ date: '', count: 0 });
+const dailyAverage = ref('0');
+const busiestDay = ref({ date: '', count: 0 });
+const longestStreak = ref({ days: 0, start: '', end: '' });
+const longestGap = ref({ days: 0, start: '', end: '' });
 
 const colorPieces = computed(() => {
   if (isDark.value) {
@@ -33,7 +52,7 @@ const colorPieces = computed(() => {
   }
 
   return [
-    { color: '#e5e7eb', value: 0 },
+    { color: '#ebedf0', value: 0 },
     { color: '#9be9a8', value: 1 },
     { color: '#40c463', value: 2 },
     { color: '#30a14e', value: 3 },
@@ -47,21 +66,22 @@ async function fetchContributions(user: string) {
   try {
     loading.value = true;
     error.value = false;
-    const response = await fetch(`https://github-contributions-api.jogruber.de/v4/${user}`);
+    const response = await fetch(`https://github-contributions-api.jogruber.de/v4/${user}?y=last`);
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
     const data = await response.json();
-    return data;
+    contributionData.value = data;
   } catch (err) {
     error.value = true;
-    return null;
+    contributionData.value = null;
   } finally {
     loading.value = false;
   }
 }
 
-function updateChart(data: any) {
+function updateChart() {
+  const data = contributionData.value;
   if (!data || !data.contributions) return;
 
   const contributions = data.contributions as Array<{
@@ -76,6 +96,100 @@ function updateChart(data: any) {
 
   const windowed = filtered.slice(-371);
   if (windowed.length === 0) return;
+
+  // 1. Total & Max (Basic)
+  const total = windowed.reduce((acc, item) => acc + item.count, 0);
+  totalContributions.value = total;
+  maxContribution.value = Math.max(...windowed.map((item) => item.count));
+
+  // 2. Daily Average
+  dailyAverage.value = (total / windowed.length).toFixed(1);
+
+  // 3. Best Month
+  const monthMap = new Map<string, number>();
+  windowed.forEach((item) => {
+    const month = item.date.substring(0, 7); // YYYY-MM
+    monthMap.set(month, (monthMap.get(month) || 0) + item.count);
+  });
+  let maxMonthCount = 0;
+  let maxMonthDate = '';
+  for (const [month, count] of monthMap.entries()) {
+    if (count > maxMonthCount) {
+      maxMonthCount = count;
+      maxMonthDate = month;
+    }
+  }
+  bestMonth.value = {
+    date: dayjs(maxMonthDate).format('YYYY年M月'),
+    count: maxMonthCount,
+  };
+
+  // 4. Busiest Day
+  const busiest = windowed.find((item) => item.count === maxContribution.value);
+  if (busiest) {
+    busiestDay.value = {
+      date: dayjs(busiest.date).format('M月D日'),
+      count: busiest.count,
+    };
+  }
+
+  // 5. Longest Streak
+  let maxStreak = 0;
+  let currentStreak = 0;
+  let maxStreakStart = '';
+  let maxStreakEnd = '';
+  let currentStreakStart = '';
+
+  // 6. Longest Gap
+  let maxGap = 0;
+  let currentGap = 0;
+  let maxGapStart = '';
+  let maxGapEnd = '';
+  let currentGapStart = '';
+
+  windowed.forEach((item, index) => {
+    // Streak Logic
+    if (item.count > 0) {
+      if (currentStreak === 0) {
+        currentStreakStart = item.date;
+      }
+      currentStreak++;
+      if (currentStreak > maxStreak) {
+        maxStreak = currentStreak;
+        maxStreakStart = currentStreakStart;
+        maxStreakEnd = item.date;
+      }
+    } else {
+      currentStreak = 0;
+    }
+
+    // Gap Logic
+    if (item.count === 0) {
+      if (currentGap === 0) {
+        currentGapStart = item.date;
+      }
+      currentGap++;
+      if (currentGap > maxGap) {
+        maxGap = currentGap;
+        maxGapStart = currentGapStart;
+        maxGapEnd = item.date;
+      }
+    } else {
+      currentGap = 0;
+    }
+  });
+
+  longestStreak.value = {
+    days: maxStreak,
+    start: maxStreak > 0 ? dayjs(maxStreakStart).format('M月D日') : '-',
+    end: maxStreak > 0 ? dayjs(maxStreakEnd).format('M月D日') : '-',
+  };
+
+  longestGap.value = {
+    days: maxGap,
+    start: maxGap > 0 ? dayjs(maxGapStart).format('M月D日') : '-',
+    end: maxGap > 0 ? dayjs(maxGapEnd).format('M月D日') : '-',
+  };
 
   const recentData = windowed.map((item) => [item.date, item.level, item.count]);
 
@@ -105,11 +219,11 @@ function updateChart(data: any) {
       pieces: colorPieces.value.map((p) => ({ value: p.value, color: p.color })),
     },
     calendar: {
-      top: 10,
+      top: 45,
       left: 36,
       right: 12,
       range: [startDate, endDate],
-      cellSize: ['auto', 13],
+      cellSize: 13,
       splitLine: {
         show: false,
       },
@@ -118,9 +232,11 @@ function updateChart(data: any) {
         firstDay: 0,
         nameMap: ['', 'Mon', '', 'Wed', '', 'Fri', ''],
         margin: 10,
+        color: token.value.colorTextSecondary,
       },
       monthLabel: {
-        margin: 12,
+        margin: 10,
+        color: token.value.colorTextSecondary,
       },
     },
     series: {
@@ -129,14 +245,21 @@ function updateChart(data: any) {
       data: recentData,
       itemStyle: {
         borderRadius: 2,
-        borderWidth: 2,
-        borderColor: token.value.colorBorderSecondary,
+        borderWidth: 3,
+        borderColor: token.value.colorBgContainer,
       },
     },
   }));
 }
 
 let hasWarnedNoUsername = false;
+
+watch(
+  [contributionData, () => token.value.colorBgContainer, isDark],
+  () => {
+    updateChart();
+  },
+);
 
 watch(
   username,
@@ -149,10 +272,7 @@ watch(
       return;
     }
     hasWarnedNoUsername = false;
-    const data = await fetchContributions(user);
-    if (data) {
-      updateChart(data);
-    }
+    await fetchContributions(user);
   },
   { immediate: true },
 );
@@ -173,10 +293,112 @@ watch(
         </div>
 
         <div v-show="!error && !loading" class="w-full overflow-x-auto">
-          <div class="min-w-0">
-            <EchartsUI ref="chartRef" height="190px" />
+          <div class="min-w-[760px] pr-4">
+            <!-- Stats Grid -->
+            <div class="mb-6 grid grid-cols-1 gap-4 pl-9 md:grid-cols-3">
+              <!-- Best Month -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+                    <CalendarOutlined class="text-lg text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">这一年的高光月份</div>
+                    <div class="flex items-baseline gap-2">
+                      <span class="text-base font-medium">{{ bestMonth.date }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
 
-            <div class="mt-2 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <!-- Daily Average -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-green-100 p-2 dark:bg-green-900/30">
+                    <BarChartOutlined class="text-lg text-green-600 dark:text-green-400" />
+                  </div>
+                  <div class="w-full">
+                    <div class="flex items-center justify-between">
+                      <div class="text-xs text-gray-500">日均贡献</div>
+                      <span class="text-lg font-bold">{{ dailyAverage }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <!-- Total Contributions -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
+                    <FileTextOutlined class="text-lg text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div class="w-full">
+                    <div class="flex items-center justify-between">
+                      <div class="text-xs text-gray-500">最近一年总贡献</div>
+                      <span class="text-lg font-bold">{{ totalContributions }}</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <!-- Busiest Day -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-orange-100 p-2 dark:bg-orange-900/30">
+                    <ThunderboltOutlined class="text-lg text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">你最活跃的一天</div>
+                    <div class="mt-1">
+                      <span class="mr-1 text-2xl font-bold">{{ busiestDay.count }}</span>
+                      <span class="text-xs text-gray-500">次贡献</span>
+                    </div>
+                    <div class="text-xs text-gray-400">{{ busiestDay.date }}</div>
+                  </div>
+                </div>
+              </Card>
+
+              <!-- Longest Streak -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+                    <FireOutlined class="text-lg text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">最长连续打卡</div>
+                    <div class="mt-1">
+                      <span class="mr-1 text-2xl font-bold">{{ longestStreak.days }}</span>
+                      <span class="text-xs text-gray-500">天</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      {{ longestStreak.start }} - {{ longestStreak.end }}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <!-- Longest Gap -->
+              <Card :bordered="false" class="shadow-sm">
+                <div class="flex items-center gap-3">
+                  <div class="rounded-full bg-gray-100 p-2 dark:bg-gray-800">
+                    <CoffeeOutlined class="text-lg text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div>
+                    <div class="text-xs text-gray-500">休息最久的一段时间</div>
+                    <div class="mt-1">
+                      <span class="mr-1 text-2xl font-bold">{{ longestGap.days }}</span>
+                      <span class="text-xs text-gray-500">天</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      {{ longestGap.start }} - {{ longestGap.end }}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <EchartsUI ref="chartRef" height="220px" />
+
+            <div class="mr-4 mt-2 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>Less</span>
               <span
                 v-for="(c, idx) in legendColors"
