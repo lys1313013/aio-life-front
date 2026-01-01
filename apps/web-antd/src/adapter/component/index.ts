@@ -3,40 +3,86 @@
  * 可用于 vben-form、vben-modal、vben-drawer 等组件使用,
  */
 
-import type { Component } from 'vue';
+import type {
+  UploadChangeParam,
+  UploadFile,
+  UploadProps,
+} from 'ant-design-vue';
+
+import type { Component, Ref } from 'vue';
 
 import type { BaseFormComponentType } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
-import { defineComponent, getCurrentInstance, h, ref } from 'vue';
+import {
+  defineAsyncComponent,
+  defineComponent,
+  h,
+  ref,
+  render,
+  unref,
+  watch,
+} from 'vue';
 
 import { ApiComponent, globalShareState, IconPicker } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
+import { isEmpty } from '@vben/utils';
 
-import {
-  AutoComplete,
-  Button,
-  Checkbox,
-  CheckboxGroup,
-  DatePicker,
-  Divider,
-  Input,
-  InputNumber,
-  InputPassword,
-  Mentions,
-  notification,
-  Radio,
-  RadioGroup,
-  RangePicker,
-  Rate,
-  Select,
-  Space,
-  Switch,
-  Textarea,
-  TimePicker,
-  TreeSelect,
-  Upload,
-} from 'ant-design-vue';
+import { notification } from 'ant-design-vue';
+
+const AutoComplete = defineAsyncComponent(
+  () => import('ant-design-vue/es/auto-complete'),
+);
+const Button = defineAsyncComponent(() => import('ant-design-vue/es/button'));
+const Checkbox = defineAsyncComponent(
+  () => import('ant-design-vue/es/checkbox'),
+);
+const CheckboxGroup = defineAsyncComponent(() =>
+  import('ant-design-vue/es/checkbox').then((res) => res.CheckboxGroup),
+);
+const DatePicker = defineAsyncComponent(
+  () => import('ant-design-vue/es/date-picker'),
+);
+const Divider = defineAsyncComponent(() => import('ant-design-vue/es/divider'));
+const Input = defineAsyncComponent(() => import('ant-design-vue/es/input'));
+const InputNumber = defineAsyncComponent(
+  () => import('ant-design-vue/es/input-number'),
+);
+const InputPassword = defineAsyncComponent(() =>
+  import('ant-design-vue/es/input').then((res) => res.InputPassword),
+);
+const Mentions = defineAsyncComponent(
+  () => import('ant-design-vue/es/mentions'),
+);
+const Radio = defineAsyncComponent(() => import('ant-design-vue/es/radio'));
+const RadioGroup = defineAsyncComponent(() =>
+  import('ant-design-vue/es/radio').then((res) => res.RadioGroup),
+);
+const RangePicker = defineAsyncComponent(() =>
+  import('ant-design-vue/es/date-picker').then((res) => res.RangePicker),
+);
+const Rate = defineAsyncComponent(() => import('ant-design-vue/es/rate'));
+const Select = defineAsyncComponent(() => import('ant-design-vue/es/select'));
+const Space = defineAsyncComponent(() => import('ant-design-vue/es/space'));
+const Switch = defineAsyncComponent(() => import('ant-design-vue/es/switch'));
+const Textarea = defineAsyncComponent(() =>
+  import('ant-design-vue/es/input').then((res) => res.Textarea),
+);
+const TimePicker = defineAsyncComponent(
+  () => import('ant-design-vue/es/time-picker'),
+);
+const TreeSelect = defineAsyncComponent(
+  () => import('ant-design-vue/es/tree-select'),
+);
+const Cascader = defineAsyncComponent(
+  () => import('ant-design-vue/es/cascader'),
+);
+const Upload = defineAsyncComponent(() => import('ant-design-vue/es/upload'));
+const Image = defineAsyncComponent(() => import('ant-design-vue/es/image'));
+const PreviewGroup = defineAsyncComponent(() =>
+  import('ant-design-vue/es/image').then((res) => res.ImagePreviewGroup),
+);
 
 const withDefaultPlaceholder = <T extends Component>(
   component: T,
@@ -44,8 +90,8 @@ const withDefaultPlaceholder = <T extends Component>(
   componentProps: Recordable<any> = {},
 ) => {
   return defineComponent({
-    inheritAttrs: false,
     name: component.name,
+    inheritAttrs: false,
     setup: (props: any, { attrs, expose, slots }) => {
       const placeholder =
         props?.placeholder ||
@@ -53,16 +99,15 @@ const withDefaultPlaceholder = <T extends Component>(
         $t(`ui.placeholder.${type}`);
       // 透传组件暴露的方法
       const innerRef = ref();
-      const publicApi: Recordable<any> = {};
-      expose(publicApi);
-      const instance = getCurrentInstance();
-      instance?.proxy?.$nextTick(() => {
-        for (const key in innerRef.value) {
-          if (typeof innerRef.value[key] === 'function') {
-            publicApi[key] = innerRef.value[key];
-          }
-        }
-      });
+      expose(
+        new Proxy(
+          {},
+          {
+            get: (_target, key) => innerRef.value?.[key],
+            has: (_target, key) => key in (innerRef.value || {}),
+          },
+        ),
+      );
       return () =>
         h(
           component,
@@ -73,11 +118,223 @@ const withDefaultPlaceholder = <T extends Component>(
   });
 };
 
+const withPreviewUpload = () => {
+  return defineComponent({
+    name: Upload.name,
+    emits: ['change', 'update:modelValue'],
+    setup: (
+      props: any,
+      { attrs, slots, emit }: { attrs: any; emit: any; slots: any },
+    ) => {
+      const previewVisible = ref<boolean>(false);
+
+      const placeholder = attrs?.placeholder || $t(`ui.placeholder.upload`);
+
+      const listType = attrs?.listType || attrs?.['list-type'] || 'text';
+
+      const fileList = ref<UploadProps['fileList']>(
+        attrs?.fileList || attrs?.['file-list'] || [],
+      );
+
+      const handleChange = async (event: UploadChangeParam) => {
+        fileList.value = event.fileList;
+        emit('change', event);
+        emit(
+          'update:modelValue',
+          event.fileList?.length ? fileList.value : undefined,
+        );
+      };
+
+      const handlePreview = async (file: UploadFile) => {
+        previewVisible.value = true;
+        await previewImage(file, previewVisible, fileList);
+      };
+
+      const renderUploadButton = (): any => {
+        const isDisabled = attrs.disabled;
+
+        // 如果禁用，不渲染上传按钮
+        if (isDisabled) {
+          return null;
+        }
+
+        // 否则渲染默认上传按钮
+        return isEmpty(slots)
+          ? createDefaultSlotsWithUpload(listType, placeholder)
+          : slots;
+      };
+
+      // 可以监听到表单API设置的值
+      watch(
+        () => attrs.modelValue,
+        (res) => {
+          fileList.value = res;
+        },
+      );
+
+      return () =>
+        h(
+          Upload,
+          {
+            ...props,
+            ...attrs,
+            fileList: fileList.value,
+            onChange: handleChange,
+            onPreview: handlePreview,
+          },
+          renderUploadButton(),
+        );
+    },
+  });
+};
+
+const createDefaultSlotsWithUpload = (
+  listType: string,
+  placeholder: string,
+) => {
+  switch (listType) {
+    case 'picture-card': {
+      return {
+        default: () => placeholder,
+      };
+    }
+    default: {
+      return {
+        default: () =>
+          h(
+            Button,
+            {
+              icon: h(IconifyIcon, {
+                icon: 'ant-design:upload-outlined',
+                class: 'mb-1 size-4',
+              }),
+            },
+            () => placeholder,
+          ),
+      };
+    }
+  }
+};
+
+const previewImage = async (
+  file: UploadFile,
+  visible: Ref<boolean>,
+  fileList: Ref<UploadProps['fileList']>,
+) => {
+  // 检查是否为图片文件的辅助函数
+  const isImageFile = (file: UploadFile): boolean => {
+    const imageExtensions = new Set([
+      'bmp',
+      'gif',
+      'jpeg',
+      'jpg',
+      'png',
+      'webp',
+    ]);
+    if (file.url) {
+      const ext = file.url?.split('.').pop()?.toLowerCase();
+      return ext ? imageExtensions.has(ext) : false;
+    }
+    if (!file.type) {
+      const ext = file.name?.split('.').pop()?.toLowerCase();
+      return ext ? imageExtensions.has(ext) : false;
+    }
+    return file.type.startsWith('image/');
+  };
+
+  // 如果当前文件不是图片，直接打开
+  if (!isImageFile(file)) {
+    if (file.url) {
+      window.open(file.url, '_blank');
+    } else if (file.preview) {
+      window.open(file.preview, '_blank');
+    } else {
+      console.warn('无法打开文件，没有可用的URL或预览地址');
+    }
+    return;
+  }
+
+  // 对于图片文件，继续使用预览组
+  const [ImageComponent, PreviewGroupComponent] = await Promise.all([
+    Image,
+    PreviewGroup,
+  ]);
+
+  const getBase64 = (file: File) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.addEventListener('load', () => resolve(reader.result));
+      reader.addEventListener('error', (error) => reject(error));
+    });
+  };
+  // 从fileList中过滤出所有图片文件
+  const imageFiles = (unref(fileList) || []).filter((element) =>
+    isImageFile(element),
+  );
+
+  // 为所有没有预览地址的图片生成预览
+  for (const imgFile of imageFiles) {
+    if (!imgFile.url && !imgFile.preview && imgFile.originFileObj) {
+      imgFile.preview = (await getBase64(imgFile.originFileObj)) as string;
+    }
+  }
+  const container: HTMLElement | null = document.createElement('div');
+  document.body.append(container);
+
+  // 用于追踪组件是否已卸载
+  let isUnmounted = false;
+
+  const PreviewWrapper = {
+    setup() {
+      return () => {
+        if (isUnmounted) return null;
+        return h(
+          PreviewGroupComponent,
+          {
+            class: 'hidden',
+            preview: {
+              visible: visible.value,
+              // 设置初始显示的图片索引
+              current: imageFiles.findIndex((f) => f.uid === file.uid),
+              onVisibleChange: (value: boolean) => {
+                visible.value = value;
+                if (!value) {
+                  // 延迟清理，确保动画完成
+                  setTimeout(() => {
+                    if (!isUnmounted && container) {
+                      isUnmounted = true;
+                      render(null, container);
+                      container.remove();
+                    }
+                  }, 300);
+                }
+              },
+            },
+          },
+          () =>
+            // 渲染所有图片文件
+            imageFiles.map((imgFile) =>
+              h(ImageComponent, {
+                key: imgFile.uid,
+                src: imgFile.url || imgFile.preview,
+              }),
+            ),
+        );
+      };
+    },
+  };
+
+  render(h(PreviewWrapper), container);
+};
+
 // 这里需要自行根据业务组件库进行适配，需要用到的组件都需要在这里类型说明
 export type ComponentType =
+  | 'ApiCascader'
   | 'ApiSelect'
   | 'ApiTreeSelect'
   | 'AutoComplete'
+  | 'Cascader'
   | 'Checkbox'
   | 'CheckboxGroup'
   | 'DatePicker'
@@ -107,21 +364,43 @@ async function initComponentAdapter() {
     // 如果你的组件体积比较大，可以使用异步加载
     // Button: () =>
     // import('xxx').then((res) => res.Button),
-    ApiSelect: withDefaultPlaceholder(ApiComponent, 'select', {
-      component: Select,
-      loadingSlot: 'suffixIcon',
-      visibleEvent: 'onDropdownVisibleChange',
-      modelPropName: 'value',
-    }),
-    ApiTreeSelect: withDefaultPlaceholder(ApiComponent, 'select', {
-      component: TreeSelect,
+    ApiCascader: withDefaultPlaceholder(ApiComponent, 'select', {
+      component: Cascader,
       fieldNames: { label: 'label', value: 'value', children: 'children' },
       loadingSlot: 'suffixIcon',
       modelPropName: 'value',
-      optionsPropName: 'treeData',
       visibleEvent: 'onVisibleChange',
     }),
+    ApiSelect: withDefaultPlaceholder(
+      {
+        ...ApiComponent,
+        name: 'ApiSelect',
+      },
+      'select',
+      {
+        component: Select,
+        loadingSlot: 'suffixIcon',
+        visibleEvent: 'onDropdownVisibleChange',
+        modelPropName: 'value',
+      },
+    ),
+    ApiTreeSelect: withDefaultPlaceholder(
+      {
+        ...ApiComponent,
+        name: 'ApiTreeSelect',
+      },
+      'select',
+      {
+        component: TreeSelect,
+        fieldNames: { label: 'label', value: 'value', children: 'children' },
+        loadingSlot: 'suffixIcon',
+        modelPropName: 'value',
+        optionsPropName: 'treeData',
+        visibleEvent: 'onVisibleChange',
+      },
+    ),
     AutoComplete,
+    Cascader,
     Checkbox,
     CheckboxGroup,
     DatePicker,
@@ -153,7 +432,7 @@ async function initComponentAdapter() {
     Textarea: withDefaultPlaceholder(Textarea, 'input'),
     TimePicker,
     TreeSelect: withDefaultPlaceholder(TreeSelect, 'select'),
-    Upload,
+    Upload: withPreviewUpload(),
   };
 
   // 将组件注册到全局共享状态中

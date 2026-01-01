@@ -23,7 +23,6 @@ import {
 
 import { useNamespace } from '@vben-core/composables';
 import { Ellipsis } from '@vben-core/icons';
-import { isHttpUrl } from '@vben-core/shared/utils';
 
 import { useResizeObserver } from '@vueuse/core';
 
@@ -32,6 +31,7 @@ import {
   createSubMenuContext,
   useMenuStyle,
 } from '../hooks';
+import { useMenuScroll } from '../hooks/use-menu-scroll';
 import { flattedChildren } from '../utils';
 import SubMenu from './sub-menu.vue';
 
@@ -45,6 +45,7 @@ const props = withDefaults(defineProps<Props>(), {
   mode: 'vertical',
   rounded: true,
   theme: 'dark',
+  scrollToActive: false,
 });
 
 const emit = defineEmits<{
@@ -207,15 +208,19 @@ function handleResize() {
   isFirstTimeRender = false;
 }
 
-function getActivePaths() {
-  const activeItem = activePath.value && items.value[activePath.value];
+const enableScroll = computed(
+  () => props.scrollToActive && props.mode === 'vertical' && !props.collapse,
+);
 
-  if (!activeItem || props.mode === 'horizontal' || props.collapse) {
-    return [];
-  }
+const { scrollToActiveItem } = useMenuScroll(activePath, {
+  enable: enableScroll,
+  delay: 320,
+});
 
-  return activeItem.parentPaths;
-}
+// 监听 activePath 变化，自动滚动到激活项
+watch(activePath, () => {
+  scrollToActiveItem();
+});
 
 // 默认展开菜单
 function initMenu() {
@@ -247,9 +252,6 @@ function handleMenuItemClick(data: MenuItemClicked) {
   const { parentPaths, path } = data;
   if (!path || !parentPaths) {
     return;
-  }
-  if (!isHttpUrl(path)) {
-    activePath.value = path;
   }
 
   emit('select', path, parentPaths);
@@ -322,6 +324,16 @@ function removeSubMenu(subMenu: MenuItemRegistered) {
 function removeMenuItem(item: MenuItemRegistered) {
   Reflect.deleteProperty(items.value, item.path);
 }
+
+function getActivePaths() {
+  const activeItem = activePath.value && items.value[activePath.value];
+
+  if (!activeItem || props.mode === 'horizontal' || props.collapse) {
+    return [];
+  }
+
+  return activeItem.parentPaths;
+}
 </script>
 <template>
   <ul
@@ -376,12 +388,12 @@ $namespace: vben;
   padding: var(--menu-item-padding-y) var(--menu-item-padding-x);
   margin: 0 var(--menu-item-margin-x) var(--menu-item-margin-y)
     var(--menu-item-margin-x);
-  font-size: var(--menu-font-size);
+  font-size: var(--menu-font-size) !important;
   color: var(--menu-item-color);
-  text-decoration: none;
   white-space: nowrap;
-  list-style: none;
+  text-decoration: none;
   cursor: pointer;
+  list-style: none;
   background: var(--menu-item-background-color);
   border: none;
   border-radius: var(--menu-item-radius);
@@ -421,6 +433,7 @@ $namespace: vben;
   max-width: var(--menu-title-width);
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: var(--menu-font-size) !important;
   white-space: nowrap;
   opacity: 1;
 }
@@ -432,7 +445,7 @@ $namespace: vben;
 .#{$namespace}-menu__popup-container,
 .#{$namespace}-menu {
   --menu-title-width: 140px;
-  --menu-item-icon-size: 16px;
+  --menu-item-icon-size: var(--font-size-base, 16px);
   --menu-item-height: 38px;
   --menu-item-padding-y: 21px;
   --menu-item-padding-x: 12px;
@@ -446,7 +459,6 @@ $namespace: vben;
   --menu-item-collapse-margin-x: 0px;
   --menu-item-radius: 0px;
   --menu-item-indent: 16px;
-  --menu-font-size: 14px;
 
   &.is-dark {
     --menu-background-color: hsl(var(--menu));
@@ -705,8 +717,8 @@ $namespace: vben;
     width: var(--menu-item-icon-size);
     height: var(--menu-item-icon-size);
     margin-right: 8px;
-    text-align: center;
     vertical-align: middle;
+    text-align: center;
   }
 }
 
@@ -740,7 +752,7 @@ $namespace: vben;
     }
     .#{$namespace}-menu__icon {
       display: block;
-      font-size: 20px !important;
+      font-size: calc(var(--font-size-base, 16px) * 1.25) !important;
       transition: all 0.25s ease;
     }
 
@@ -748,7 +760,7 @@ $namespace: vben;
       display: inline-flex;
       margin-top: 8px;
       margin-bottom: 0;
-      font-size: 12px;
+      font-size: calc(var(--font-size-base, 16px) * 0.75);
       font-weight: 400;
       line-height: normal;
       transition: all 0.25s ease;
@@ -773,7 +785,7 @@ $namespace: vben;
     width: 100%;
     height: 100%;
     padding: 0 var(--menu-item-padding-x);
-    font-size: var(--menu-font-size);
+    font-size: var(--menu-font-size) !important;
     line-height: var(--menu-item-height);
   }
 }
@@ -800,8 +812,13 @@ $namespace: vben;
 
 .#{$namespace}-sub-menu-content {
   height: var(--menu-item-height);
+  font-size: var(--menu-font-size) !important;
 
   @include menu-item;
+
+  * {
+    font-size: inherit !important;
+  }
 
   &__icon-arrow {
     position: absolute;

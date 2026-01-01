@@ -3,7 +3,9 @@ import type {
   AvatarFallbackProps,
   AvatarImageProps,
   AvatarRootProps,
-} from 'radix-vue';
+} from 'reka-ui';
+
+import type { CSSProperties } from 'vue';
 
 import type { ClassType } from '@vben-core/typings';
 
@@ -16,6 +18,7 @@ interface Props extends AvatarFallbackProps, AvatarImageProps, AvatarRootProps {
   class?: ClassType;
   dot?: boolean;
   dotClass?: ClassType;
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
   size?: number;
 }
 
@@ -28,6 +31,15 @@ const props = withDefaults(defineProps<Props>(), {
   as: 'button',
   dot: false,
   dotClass: 'bg-green-500',
+  fit: 'cover',
+});
+
+const imageStyle = computed<CSSProperties>(() => {
+  const { fit } = props;
+  if (fit) {
+    return { objectFit: fit };
+  }
+  return {};
 });
 
 const text = computed(() => {
@@ -51,13 +63,13 @@ const rootStyle = computed(() => {
     class="relative flex flex-shrink-0 items-center"
   >
     <Avatar :class="props.class" class="size-full">
-      <AvatarImage :alt="alt" :src="src" />
+      <AvatarImage :alt="alt" :src="src" :style="imageStyle" />
       <AvatarFallback>{{ text }}</AvatarFallback>
     </Avatar>
     <span
       v-if="dot"
       :class="dotClass"
-      class="border-background absolute bottom-0 right-0 size-3 rounded-full border-2"
+      class="absolute bottom-0 right-0 size-3 rounded-full border-2 border-background"
     >
     </span>
   </div>

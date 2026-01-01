@@ -12,7 +12,8 @@ defineOptions({
   name: 'LanguageToggle',
 });
 
-async function handleUpdate(value: string) {
+async function handleUpdate(value: string | undefined) {
+  if (!value) return;
   const locale = value as SupportedLanguagesType;
   updatePreferences({
     app: {
@@ -30,7 +31,7 @@ async function handleUpdate(value: string) {
       :model-value="preferences.app.locale"
       @update:model-value="handleUpdate"
     >
-      <VbenIconButton>
+      <VbenIconButton class="hover:animate-[shrink_0.3s_ease-in-out]">
         <Languages class="text-foreground size-4" />
       </VbenIconButton>
     </VbenDropdownRadioMenu>

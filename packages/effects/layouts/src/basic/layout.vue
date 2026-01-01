@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { SetupContext } from 'vue';
+import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
 import type { MenuRecordRaw } from '@vben/types';
 
-import { computed, useSlots, watch } from 'vue';
+import { computed, onMounted, useSlots, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { useRefresh } from '@vben/hooks';
@@ -13,7 +14,7 @@ import {
   updatePreferences,
   usePreferences,
 } from '@vben/preferences';
-import { useLockStore } from '@vben/stores';
+import { useAccessStore } from '@vben/stores';
 import { cloneDeep, mapTree } from '@vben/utils';
 
 import { VbenAdminLayout } from '@vben-core/layout-ui';
@@ -50,9 +51,8 @@ const {
   sidebarCollapsed,
   theme,
 } = usePreferences();
-const lockStore = useLockStore();
+const accessStore = useAccessStore();
 const { refresh } = useRefresh();
-const route = useRoute();
 
 const showBackTop = computed(() => {
   return route.meta?.backTop !== false;
@@ -159,6 +159,25 @@ function clickLogo() {
   emit('clickLogo');
 }
 
+function autoCollapseMenuByRouteMeta(route: RouteLocationNormalizedLoaded) {
+  // 只在双列模式下生效
+  if (
+    ['header-mixed-nav', 'sidebar-mixed-nav'].includes(
+      preferences.app.layout,
+    ) &&
+    route.meta &&
+    route.meta.hideInMenu
+  ) {
+    sidebarExtraVisible.value = false;
+  }
+}
+
+const route = useRoute();
+
+onMounted(() => {
+  autoCollapseMenuByRouteMeta(route);
+});
+
 watch(
   () => preferences.app.layout,
   async (val) => {
@@ -186,8 +205,16 @@ const headerSlots = computed(() => {
   <VbenAdminLayout
     v-model:sidebar-extra-visible="sidebarExtraVisible"
     :content-compact="preferences.app.contentCompact"
+    :content-compact-width="preferences.app.contentCompactWidth"
+    :content-padding="preferences.app.contentPadding"
+    :content-padding-bottom="preferences.app.contentPaddingBottom"
+    :content-padding-left="preferences.app.contentPaddingLeft"
+    :content-padding-right="preferences.app.contentPaddingRight"
+    :content-padding-top="preferences.app.contentPaddingTop"
     :footer-enable="preferences.footer.enable"
     :footer-fixed="preferences.footer.fixed"
+    :footer-height="preferences.footer.height"
+    :header-height="preferences.header.height"
     :header-hidden="preferences.header.hidden"
     :header-mode="preferences.header.mode"
     :header-theme="headerTheme"
@@ -202,11 +229,15 @@ const headerSlots = computed(() => {
     :sidebar-fixed-button="preferences.sidebar.fixedButton"
     :sidebar-expand-on-hover="preferences.sidebar.expandOnHover"
     :sidebar-extra-collapse="preferences.sidebar.extraCollapse"
+    :sidebar-extra-collapsed-width="preferences.sidebar.extraCollapsedWidth"
     :sidebar-hidden="preferences.sidebar.hidden"
+    :sidebar-mixed-width="preferences.sidebar.mixedWidth"
     :sidebar-theme="sidebarTheme"
     :sidebar-width="preferences.sidebar.width"
+    :side-collapse-width="preferences.sidebar.collapseWidth"
     :tabbar-enable="preferences.tabbar.enable"
     :tabbar-height="preferences.tabbar.height"
+    :z-index="preferences.app.zIndex"
     @side-mouse-leave="handleSideMouseLeave"
     @toggle-sidebar="toggleSidebar"
     @update:sidebar-collapse="
@@ -228,13 +259,19 @@ const headerSlots = computed(() => {
     <template #logo>
       <VbenLogo
         v-if="preferences.logo.enable"
+        :fit="preferences.logo.fit"
         :class="logoClass"
         :collapsed="logoCollapsed"
         :src="preferences.logo.source"
+        :src-dark="preferences.logo.sourceDark"
         :text="preferences.app.name"
         :theme="showHeaderNav ? headerTheme : theme"
         @click="clickLogo"
-      />
+      >
+        <template v-if="$slots['logo-text']" #text>
+          <slot name="logo-text"></slot>
+        </template>
+      </VbenLogo>
     </template>
     <!-- 头部区域 -->
     <template #header>
@@ -269,6 +306,9 @@ const headerSlots = computed(() => {
         </template>
         <template #notification>
           <slot name="notification"></slot>
+        </template>
+        <template #timezone>
+          <slot name="timezone"></slot>
         </template>
         <template v-for="item in headerSlots" #[item]>
           <slot :name="item"></slot>
@@ -314,9 +354,16 @@ const headerSlots = computed(() => {
     <template #side-extra-title>
       <VbenLogo
         v-if="preferences.logo.enable"
+        :fit="preferences.logo.fit"
+        :src="preferences.logo.source"
+        :src-dark="preferences.logo.sourceDark"
         :text="preferences.app.name"
         :theme="theme"
-      />
+      >
+        <template v-if="$slots['logo-text']" #text>
+          <slot name="logo-text"></slot>
+        </template>
+      </VbenLogo>
     </template>
 
     <template #tabbar>
@@ -354,7 +401,7 @@ const headerSlots = computed(() => {
       />
 
       <Transition v-if="preferences.widget.lockScreen" name="slide-up">
-        <slot v-if="lockStore.isLockScreen" name="lock-screen"></slot>
+        <slot v-if="accessStore.isLockScreen" name="lock-screen"></slot>
       </Transition>
 
       <template v-if="preferencesButtonPosition.fixed">

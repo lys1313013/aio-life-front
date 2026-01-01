@@ -60,8 +60,9 @@ type BreadcrumbStyleType = 'background' | 'normal';
  * 权限模式
  * backend 后端权限模式
  * frontend 前端权限模式
+ * mixed 混合权限模式
  */
-type AccessModeType = 'backend' | 'frontend';
+type AccessModeType = 'backend' | 'frontend' | 'mixed';
 
 /**
  * 导航风格
@@ -92,6 +93,15 @@ type PageTransitionType = 'fade' | 'fade-down' | 'fade-slide' | 'fade-up';
  */
 type AuthPageLayoutType = 'panel-center' | 'panel-left' | 'panel-right';
 
+/**
+ * 时区选项
+ */
+interface TimezoneOption {
+  label: string;
+  offset: number;
+  timezone: string;
+}
+
 export type {
   AccessModeType,
   AuthPageLayoutType,
@@ -107,4 +117,5 @@ export type {
   PreferencesButtonPositionType,
   TabsStyleType,
   ThemeModeType,
+  TimezoneOption,
 };

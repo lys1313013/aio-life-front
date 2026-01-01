@@ -141,7 +141,10 @@ class PreferenceManager {
   private handleUpdates(updates: DeepPartial<Preferences>) {
     const themeUpdates = updates.theme || {};
     const appUpdates = updates.app || {};
-    if (themeUpdates && Object.keys(themeUpdates).length > 0) {
+    if (
+      (themeUpdates && Object.keys(themeUpdates).length > 0) ||
+      Reflect.has(themeUpdates, 'fontSize')
+    ) {
       updateCSSVariables(this.state);
     }
 
@@ -198,9 +201,16 @@ class PreferenceManager {
     window
       .matchMedia('(prefers-color-scheme: dark)')
       .addEventListener('change', ({ matches: isDark }) => {
-        this.updatePreferences({
-          theme: { mode: isDark ? 'dark' : 'light' },
-        });
+        // 如果偏好设置中主题模式为auto，则跟随系统更新
+        if (this.state.theme.mode === 'auto') {
+          this.updatePreferences({
+            theme: { mode: isDark ? 'dark' : 'light' },
+          });
+          // 恢复为auto模式
+          this.updatePreferences({
+            theme: { mode: 'auto' },
+          });
+        }
       });
   }
 
@@ -214,12 +224,8 @@ class PreferenceManager {
       const dom = document.documentElement;
       const COLOR_WEAK = 'invert-mode';
       const COLOR_GRAY = 'grayscale-mode';
-      colorWeakMode
-        ? dom.classList.add(COLOR_WEAK)
-        : dom.classList.remove(COLOR_WEAK);
-      colorGrayMode
-        ? dom.classList.add(COLOR_GRAY)
-        : dom.classList.remove(COLOR_GRAY);
+      dom.classList.toggle(COLOR_WEAK, colorWeakMode);
+      dom.classList.toggle(COLOR_GRAY, colorGrayMode);
     }
   }
 }

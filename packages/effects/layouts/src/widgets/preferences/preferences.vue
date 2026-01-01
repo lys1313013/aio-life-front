@@ -62,9 +62,9 @@ const listen = computed(() => {
       <slot>
         <VbenButton
           :title="$t('preferences.title')"
-          class="bg-primary/40 flex-col-center size-8 cursor-pointer rounded-r-lg rounded-l-none border-none hover:bg-primary/90 transition-all"
+          class="bg-primary flex-col-center size-10 cursor-pointer rounded-l-lg rounded-r-none border-none"
         >
-          <Settings class="size-4" />
+          <Settings class="size-5" />
         </VbenButton>
       </slot>
     </div>

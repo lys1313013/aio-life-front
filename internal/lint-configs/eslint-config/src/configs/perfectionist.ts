@@ -4,7 +4,6 @@ import { interopDefault } from '../util';
 
 export async function perfectionist(): Promise<Linter.Config[]> {
   const perfectionistPlugin = await interopDefault(
-    // @ts-expect-error - no types
     import('eslint-plugin-perfectionist'),
   );
 
@@ -70,7 +69,7 @@ export async function perfectionist(): Promise<Linter.Config[]> {
           },
         ],
         'perfectionist/sort-objects': [
-          'error',
+          'off',
           {
             customGroups: {
               items: 'items',

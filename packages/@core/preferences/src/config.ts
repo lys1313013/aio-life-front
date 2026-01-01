@@ -9,12 +9,20 @@ const defaultPreferences: Preferences = {
     colorWeakMode: false,
     compact: false,
     contentCompact: 'wide',
+    contentCompactWidth: 1200,
+    contentPadding: 0,
+    contentPaddingBottom: 0,
+    contentPaddingLeft: 0,
+    contentPaddingRight: 0,
+    contentPaddingTop: 0,
     defaultAvatar:
       'https://unpkg.com/@vbenjs/static-source@0.1.7/source/avatar-v1.webp',
+    defaultHomePath: '/analytics',
     dynamicTitle: true,
     enableCheckUpdates: true,
     enablePreferences: true,
     enableRefreshToken: false,
+    enableStickyPreferencesNavigationBar: true,
     isMobile: false,
     layout: 'sidebar-nav',
     locale: 'zh-CN',
@@ -22,6 +30,8 @@ const defaultPreferences: Preferences = {
     name: 'aio-life',
     preferencesButtonPosition: 'auto',
     watermark: false,
+    watermarkContent: '',
+    zIndex: 200,
   },
   breadcrumb: {
     enable: true,
@@ -42,15 +52,19 @@ const defaultPreferences: Preferences = {
   footer: {
     enable: false,
     fixed: false,
+    height: 32,
   },
   header: {
     enable: true,
+    height: 50,
     hidden: false,
     menuAlign: 'start',
     mode: 'fixed',
   },
+
   logo: {
     enable: true,
+    fit: 'contain',
     source: 'https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp',
   },
   navigation: {
@@ -70,11 +84,14 @@ const defaultPreferences: Preferences = {
     collapsed: false,
     collapsedButton: true,
     collapsedShowTitle: false,
+    collapseWidth: 60,
     enable: true,
-    expandOnHover: false,
+    expandOnHover: true,
     extraCollapse: false,
+    extraCollapsedWidth: 60,
     fixedButton: true,
     hidden: false,
+    mixedWidth: 80,
     width: 224,
   },
   tabbar: {
@@ -99,6 +116,7 @@ const defaultPreferences: Preferences = {
     colorWarning: 'hsl(42 84% 61%)',
     mode: 'dark',
     radius: '0.5',
+    fontSize: 16,
     semiDarkHeader: false,
     semiDarkSidebar: false,
   },
@@ -117,6 +135,7 @@ const defaultPreferences: Preferences = {
     refresh: true,
     sidebarToggle: true,
     themeToggle: true,
+    timezone: true,
   },
 };
 

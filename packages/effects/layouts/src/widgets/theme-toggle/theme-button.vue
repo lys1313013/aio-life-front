@@ -64,9 +64,9 @@ function toggleTheme(event: MouseEvent) {
       `circle(0px at ${x}px ${y}px)`,
       `circle(${endRadius}px at ${x}px ${y}px)`,
     ];
-    document.documentElement.animate(
+    const animate = document.documentElement.animate(
       {
-        clipPath: isDark.value ? [...clipPath].reverse() : clipPath,
+        clipPath: isDark.value ? [...clipPath].toReversed() : clipPath,
       },
       {
         duration: 450,
@@ -76,6 +76,9 @@ function toggleTheme(event: MouseEvent) {
           : '::view-transition-new(root)',
       },
     );
+    animate.onfinish = () => {
+      transition.skipTransition();
+    };
   });
 }
 </script>
@@ -85,7 +88,7 @@ function toggleTheme(event: MouseEvent) {
     :aria-label="theme"
     :class="[`is-${theme}`]"
     aria-live="polite"
-    class="theme-toggle cursor-pointer border-none bg-none"
+    class="theme-toggle cursor-pointer border-none bg-none hover:animate-[shrink_0.3s_ease-in-out]"
     v-bind="bindProps"
     @click.stop="toggleTheme"
   >
@@ -132,8 +135,8 @@ function toggleTheme(event: MouseEvent) {
   &__sun {
     @apply fill-foreground/90 stroke-none;
 
-    transition: transform 1.6s cubic-bezier(0.25, 0, 0.2, 1);
     transform-origin: center center;
+    transition: transform 1.6s cubic-bezier(0.25, 0, 0.2, 1);
 
     &:hover > svg > & {
       @apply fill-foreground/90;
@@ -143,10 +146,10 @@ function toggleTheme(event: MouseEvent) {
   &__sun-beams {
     @apply stroke-foreground/90 stroke-[2px];
 
+    transform-origin: center center;
     transition:
       transform 1.6s cubic-bezier(0.5, 1.5, 0.75, 1.25),
       opacity 0.6s cubic-bezier(0.25, 0, 0.3, 1);
-    transform-origin: center center;
 
     &:hover > svg > & {
       @apply stroke-foreground;
