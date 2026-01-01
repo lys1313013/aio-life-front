@@ -64,15 +64,22 @@ const formOptions: VbenFormProps = {
       fieldName: 'dictId',
       label: '字典类型',
     },
+    {
+      component: 'Input',
+      componentProps: {
+        placeholder: '',
+      },
+      fieldName: 'dictLabel',
+      label: '展示值',
+    },
   ],
   // 控制表单是否显示折叠按钮
   showCollapseButton: true,
   submitButtonOptions: {
     content: '查询',
   },
-  // 是否在字段值改变时提交表单
-  submitOnChange: true, // 按下回车时是否提交表单
-  submitOnEnter: true,
+  submitOnChange: false, // 是否在字段值改变时提交表单
+  submitOnEnter: true, // 按下回车时是否提交表单
 };
 
 const gridOptions: VxeGridProps<RowType> = {

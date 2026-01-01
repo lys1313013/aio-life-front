@@ -38,12 +38,13 @@ const [Form, formApi] = useVbenForm({
   schema: [
     {
       component: 'Input',
-      componentProps: {
-        placeholder: '【自动生成】',
-      },
       fieldName: 'dictCode',
       label: 'dictCode',
-      disabled: true
+      disabled: true,
+      dependencies: {
+        triggerFields: ['dictCode'],
+        show: false,
+      },
     },
     {
       component: 'Select',

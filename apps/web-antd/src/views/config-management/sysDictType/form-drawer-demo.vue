@@ -7,7 +7,7 @@ import { useVbenForm } from '#/adapter/form';
 import { insertOrUpdate } from '#/api/core/sysDictType';
 
 defineOptions({
-  name: 'FormDrawerDemo',
+  name: 'FormDrawer',
 });
 
 const emit = defineEmits(['tableReload']);
@@ -25,6 +25,10 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'dictId',
       label: '主键',
       disabled: true,
+      dependencies: {
+        triggerFields: ['id'],
+        show: false,
+      },
     },
     {
       component: 'Input',
