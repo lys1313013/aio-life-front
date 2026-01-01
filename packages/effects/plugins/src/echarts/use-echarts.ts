@@ -25,9 +25,11 @@ type EchartsUIType = typeof EchartsUI | undefined;
 
 type EchartsThemeType = 'dark' | 'light' | 'v5' | null;
 
+type EchartsOptionInput = (() => EChartsOption) | EChartsOption;
+
 function useEcharts(chartRef: Ref<EchartsUIType>) {
   let chartInstance: echarts.ECharts | null = null;
-  let cacheOptions: EChartsOption = {};
+  let cacheOptions: EchartsOptionInput = {};
 
   const { isDark } = usePreferences();
   const { height, width } = useWindowSize();
@@ -69,18 +71,21 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   };
 
   const renderEcharts = (
-    options: EChartsOption,
+    options: EchartsOptionInput,
     clear = true,
   ): Promise<Nullable<echarts.ECharts>> => {
     cacheOptions = options;
-    const currentOptions = {
-      ...options,
-      ...getOptions.value,
+    const getCurrentOptions = (): EChartsOption => {
+      const resolvedOptions = typeof options === 'function' ? options() : options;
+      return {
+        ...resolvedOptions,
+        ...getOptions.value,
+      };
     };
     return new Promise((resolve) => {
       if (chartRef.value?.offsetHeight === 0) {
         useTimeoutFn(async () => {
-          resolve(await renderEcharts(currentOptions));
+          resolve(await renderEcharts(options, clear));
         }, 30);
         return;
       }
@@ -88,7 +93,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
         const el = getChartEl();
         if (isElHidden(el)) {
           useTimeoutFn(async () => {
-            resolve(await renderEcharts(currentOptions));
+            resolve(await renderEcharts(options, clear));
           }, 30);
           return;
         }
@@ -98,7 +103,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
             if (!instance) return;
           }
           clear && chartInstance?.clear();
-          chartInstance?.setOption(currentOptions);
+          chartInstance?.setOption(getCurrentOptions());
           resolve(chartInstance);
         }, 30);
       });
