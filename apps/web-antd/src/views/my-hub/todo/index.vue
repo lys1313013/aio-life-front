@@ -7,27 +7,38 @@
       item-key="id"
       class="columns-container"
     >
-      <template #item="{ element: column }">
-        <div class="kanban-column">
+      <template #item="{ element: column, index }">
+        <div class="kanban-column" :style="{ backgroundColor: token[getColumnStyle(index).bgToken as keyof typeof token] as string }">
           <div class="column-header">
-            <h3
-              @click="openEditColumnModal(column)"
-              :style="{
-                backgroundColor: column.bgColor || '#fff',
-                borderRadius: '6px',
-                padding: '4px 10px',
-                margin: '0',
-                transition: 'all 0.3s'
-              }"
-            >{{ column.title }}</h3>
-            <a-button
-              type="text"
-              danger
-              @click.stop="confirmDeleteColumn(column.id)"
-              class="delete-column-btn"
-            >
-              <template #icon><delete-outlined style="color: #8c8c8c; font-size: 14px" /></template>
-            </a-button>
+            <div class="header-left">
+              <span 
+                class="column-title-tag"
+                :style="{ 
+                  backgroundColor: token[getColumnStyle(index).headerBgToken as keyof typeof token] as string,
+                  color: token[getColumnStyle(index).headerColorToken as keyof typeof token] as string
+                }"
+                @click="openEditColumnModal(column)"
+              >
+                {{ column.title }}
+              </span>
+              <span class="task-count">{{ column.tasks.length }}</span>
+            </div>
+            
+            <a-dropdown :trigger="['click']">
+              <a-button type="text" size="small" class="more-btn">
+                <template #icon><more-outlined /></template>
+              </a-button>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item key="edit" @click="openEditColumnModal(column)">
+                    <edit-outlined /> 编辑
+                  </a-menu-item>
+                  <a-menu-item key="delete" danger @click="confirmDeleteColumn(column.id)">
+                    <delete-outlined /> 删除
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </div>
           <draggable
             v-model="column.tasks"
@@ -40,7 +51,24 @@
             <template #item="{ element }">
               <div class="kanban-task" :data-task-id="element.id" @click="openEditModal(element)">
                 <div class="task-header">
-                  <p>{{ element.content }}</p>
+                  <span class="task-title">{{ element.content }}</span>
+                </div>
+                
+                <div class="task-meta">
+                  <div class="task-tags" v-if="element.detail && element.detail.length > 20">
+                     <span class="project-tag">{{ element.detail.substring(0, 8) }}...</span>
+                  </div>
+                  
+                  <div class="task-props">
+                     <div class="prop-item">
+                      <clock-circle-outlined class="prop-icon" />
+                      <span>未完成任务数: {{ element.subTasks ? element.subTasks.filter((s: any) => !s.completed).length : 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="task-footer">
+                  <span class="due-date">{{ formatDate(element.dueDate) }}</span>
                   <a-popconfirm
                     title="确定要删除这个任务吗?"
                     ok-text="确定"
@@ -50,23 +78,19 @@
                   >
                     <a-button
                       type="text"
+                      size="small"
                       danger
                       class="delete-task-btn"
                     >
-                      <template #icon><delete-outlined style="color: #8c8c8c; font-size: 14px" /></template>
+                      <template #icon><delete-outlined /></template>
                     </a-button>
                   </a-popconfirm>
                 </div>
-                <br>
-                <small v-if="element.dueDate">目标完成: {{ formatDate(element.dueDate) }}</small>
-                <br>
-                <br>
-                <small style="display: block; text-align: right"> {{ formatDate(element.createdAt) }}</small>
               </div>
             </template>
             <template #footer>
-              <div class="add-task-card">
-                <a-button type="text" @click="addTask(column.id)" class="simple-add-btn">
+              <div class="add-task-wrapper">
+                 <a-button type="text" block class="simple-add-btn" @click="addTask(column.id)">
                   <template #icon><plus-outlined /></template>
                 </a-button>
               </div>
@@ -118,14 +142,44 @@
       />
       <a-textarea
         v-model:value="editingTask.detail"
-        placeholder="任务明细"
-        :rows="4"
+        placeholder="任务备注"
+        :rows="3"
+        style="margin-bottom: 20px"
       />
+
+      <div class="subtasks-section">
+        <div class="subtasks-header">
+          <span class="subtasks-title">
+            <check-circle-outlined style="margin-right: 8px" />
+            明细任务
+          </span>
+          <a-button type="link" size="small" @click="addSubTask">
+            <template #icon><plus-outlined /></template>
+            添加
+          </a-button>
+        </div>
+        
+        <div class="subtasks-list">
+          <div v-for="(subTask, index) in editingTask.subTasks" :key="subTask.id" class="subtask-item">
+            <a-checkbox v-model:checked="subTask.completed" />
+            <a-input 
+              v-model:value="subTask.content" 
+              :bordered="false"
+              placeholder="输入任务内容..."
+              :class="{ 'subtask-completed': subTask.completed }"
+              style="flex: 1; margin: 0 8px"
+            />
+            <a-button type="text" danger size="small" @click="removeSubTask(index)">
+              <template #icon><delete-outlined /></template>
+            </a-button>
+          </div>
+        </div>
+      </div>
 
       <a-date-picker
         v-model:value="editingTask.dueDate"
         placeholder="目标完成时间"
-        style="margin-top: 10px; width: 100%"
+        style="margin-top: 20px; width: 100%"
       />
     </a-modal>
     <a-modal
@@ -140,7 +194,7 @@
       />
       <div style="display: flex; align-items: center; margin-bottom: 10px">
         <span style="margin-right: 10px">背景颜色:</span>
-        <a-input :style="{ backgroundColor: editingColumn.bgColor || '#fff'}"
+        <a-input :style="{ backgroundColor: editingColumn.bgColor || token.colorBgContainer, color: token.colorText }"
           v-model:value="editingColumn.bgColor"
           placeholder="输入颜色代码"
           style="width: 120px; margin-right: 10px"
@@ -153,26 +207,63 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
 import draggable from 'vuedraggable';
-import { Button as AButton, Input as AInput, Textarea as ATextarea, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm } from 'ant-design-vue';
+import { Button as AButton, Input as AInput, Textarea as ATextarea, Modal as AModal, DatePicker as ADatePicker, Popconfirm as APopconfirm, Checkbox as ACheckbox, theme, Dropdown as ADropdown, Menu as AMenu, MenuItem as AMenuItem, Tag as ATag } from 'ant-design-vue';
 
 import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn} from '#/api/core/todo';
 
 import { getTaskList, saveTask, updateTask, deleteTask, reSortTask } from '#/api/core/todo';
 
 import dayjs from 'dayjs';
-import { PlusOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, EditOutlined, MoreOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
-import { DeleteOutlined } from '@ant-design/icons-vue';
 import { Modal } from 'ant-design-vue';
+
+interface SubTask {
+  id: string;
+  content: string;
+  completed: boolean;
+}
+
+interface Task {
+  id: number;
+  content: string;
+  detail?: string;
+  subTasks?: SubTask[];
+  dueDate?: any;
+  createdAt?: any;
+  columnId?: number;
+}
+
+const { useToken } = theme;
+const { token } = useToken();
+
+// 预定义列主题颜色（仿照设计图）
+  const columnThemes = [
+    { bg: 'colorFillQuaternary', headerBg: 'colorFillSecondary', headerColor: 'colorText', label: '待办' }, // 灰
+    { bg: 'colorFillQuaternary', headerBg: 'colorPrimaryBg', headerColor: 'colorPrimary', label: '进行中' },   // 蓝
+    { bg: 'colorFillQuaternary', headerBg: 'colorSuccessBg', headerColor: 'colorSuccess', label: '已完成' },   // 绿
+    { bg: 'colorFillQuaternary', headerBg: 'colorErrorBg', headerColor: 'colorError', label: '阻塞' },       // 红
+  ];
+
+  // 获取列样式的辅助函数
+  const getColumnStyle = (index: number) => {
+    const themeIndex = index % columnThemes.length;
+    const currentTheme = columnThemes[themeIndex] ?? columnThemes[0];
+    // 使用 token 中的颜色值，确保支持夜间模式
+    // 注意：这里需要动态构建 style 对象，因为 v-bind 在 script 中不能直接用，
+    // 但我们可以利用 computed 或者直接在 template 中绑定 style
+    if (!currentTheme) return { bgToken: 'colorFillQuaternary', headerBgToken: 'colorFillSecondary', headerColorToken: 'colorText' };
+    return {
+      bgToken: currentTheme.bg,
+      headerBgToken: currentTheme.headerBg,
+      headerColorToken: currentTheme.headerColor
+    };
+  };
 
 const columns = ref<Array<{
   id: number;
   title: string;
-  tasks: Array<{
-    id: number;
-    content: string;
-    detail?: string;
-  }>;
+  tasks: Task[];
   bgColor?: string;
 }>>([]);
 
@@ -180,7 +271,10 @@ onMounted(async () => {
   // 初始化列
   const res = await getTaskColumnList({});
   console.log('getTaskColumnList', res);
-  columns.value = res.items;
+  columns.value = res.items.map((item: any) => ({
+    ...item,
+    tasks: item.tasks || []
+  }));
 
   getTaskList({}).then((res) => {
     console.log('getTaskList', res);
@@ -196,15 +290,15 @@ const newColumnName = ref('');
 const addTask = async (columnId: number) => {
   const column = columns.value.find(col => col.id === columnId);
   if (column) {
-    let newTask = {
+    const newTask: Task = {
       id: 0,
       content: '新任务',
       detail: '',
       createdAt: new Date(),
       columnId: columnId
     };
-    newTask = await saveTask(newTask);
-    column.tasks.push(newTask);
+    const savedTask = await saveTask(newTask);
+    column.tasks.push(savedTask);
   }
 
 };
@@ -266,27 +360,45 @@ const onColumnDragEnd = (event: any) => {
 };
 
 const formatDate = (date: any) => {
+  if (!date) return '';
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
 const editModalVisible = ref(false);
-const editingTask = ref({
-  id: null,
+const editingTask = ref<Task>({
+  id: 0,
   content: '',
   detail: '',
-  dueDate: null,
-  createdAt: null,
+  subTasks: [],
+  dueDate: undefined,
+  createdAt: undefined,
 });
 
 // 打开编辑模态框
-const openEditModal = (task: { id: null; content: string; dueDate: null; createdAt: null; } | { id: null; content: string; dueDate: null; createdAt: null; }) => {
-  let dueDate = task.dueDate ? dayjs(task.dueDate) : '';
+const openEditModal = (task: Task) => {
+  const dueDate = task.dueDate ? dayjs(task.dueDate) : undefined;
 
   editingTask.value = {
     ...task,
+    subTasks: task.subTasks ? [...task.subTasks] : [],
     dueDate: dueDate,
   };
   editModalVisible.value = true;
+};
+
+const addSubTask = () => {
+  if (!editingTask.value.subTasks) {
+    editingTask.value.subTasks = [];
+  }
+  editingTask.value.subTasks.push({
+    id: Math.random().toString(36).slice(2, 11),
+    content: '',
+    completed: false,
+  });
+};
+
+const removeSubTask = (index: number) => {
+  editingTask.value.subTasks?.splice(index, 1);
 };
 
 // 编辑任务
@@ -375,10 +487,6 @@ const handleEditColumnOk = async () => {
 }
 
 /* 拖拽时的样式 */
-.kanban-column.sortable-chosen {
-  /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); */
-}
-
 .kanban-column.sortable-ghost {
   opacity: 0.5;
 }
@@ -387,84 +495,207 @@ const handleEditColumnOk = async () => {
   flex: 1;
   min-width: 300px;
   max-width: 400px;
-  border-radius: 8px;
-  padding: 15px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s;
+  /* border: 1px solid v-bind('token.colorSplit'); */ /* 移除边框，使用背景色区分 */
 }
 
 .column-header {
-  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
+  padding: 0 4px;
 }
 
-.delete-column-btn {
-  position: absolute;
-  right: 0;
-  top: 0;
-  padding: 0;
-  color: #8c8c8c; /* 添加灰色 */
-  font-size: 14px; /* 缩小字体 */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.add-task-card {
-  margin-top: 10px;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
+.column-title-tag {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: v-bind('token.colorText');
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.simple-add-btn {
-  width: 100%;
-  color: #8c8c8c; /* 改为灰色 */
-  font-size: 16px;
+.column-title-tag:hover {
+  opacity: 0.8;
 }
 
-.simple-add-btn:hover {
-  color: #595959; /* 悬停时深灰色 */
+.task-count {
+  font-size: 14px;
+  color: v-bind('token.colorTextSecondary');
 }
 
-.column-header .ant-btn {
-  background: transparent;
-  border: none;
-  color: #1890ff;
-  font-size: 20px;
-  padding: 0 8px;
+.more-btn {
+  color: v-bind('token.colorTextSecondary');
+  opacity: 0.6;
+}
+
+.more-btn:hover {
+  opacity: 1;
+  color: v-bind('token.colorText');
 }
 
 .task-list {
   flex: 1;
   min-height: 100px;
-  border-radius: 4px;
-  padding: 10px;
+  padding: 4px;
   overflow-y: auto;
 }
 
 .kanban-task {
-  border: 1px solid #e8e8e8;
-  border-radius: 4px;
-  padding: 12px;
-  margin-bottom: 10px;
-  cursor: move;
-  transition: all 0.3s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: v-bind('token.colorBgContainer'); /* 纯白背景 */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* 极淡的阴影 */
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .kanban-task:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: v-bind('token.colorPrimary'); /* 悬浮显示主题色边框 */
 }
 
-.add-column {
-  min-width: 300px;
-  max-width: 400px;
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.task-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: v-bind('token.colorText');
+  line-height: 1.5;
+}
+
+.task-meta {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.project-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  background: v-bind('token.colorFillQuaternary');
+  border-radius: 4px;
+  font-size: 12px;
+  color: v-bind('token.colorTextSecondary');
+}
+
+.task-props {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prop-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: v-bind('token.colorTextSecondary');
+}
+
+.prop-icon {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: none; /* 移除分割线 */
+  padding-top: 0;
+  margin-top: 4px;
+}
+
+.due-date {
+  font-size: 12px;
+  color: v-bind('token.colorTextQuaternary');
+}
+
+.add-task-wrapper {
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+.simple-add-btn {
+  height: 40px;
+  border-radius: 6px;
+  color: v-bind('token.colorTextSecondary');
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.simple-add-btn:hover {
+  background: v-bind('token.colorFillQuaternary');
+  color: v-bind('token.colorText');
+}
+
+/* 隐藏不必要的样式 */
+.delete-column-btn { display: none; }
+.add-task-card { display: none; }
+
+
+.subtasks-section {
+  margin-top: 10px;
+}
+
+.subtasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.subtasks-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: v-bind('token.colorText');
+  display: flex;
+  align-items: center;
+}
+
+.subtasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  transition: background 0.3s;
+}
+
+.subtask-item:hover {
+  background: v-bind('token.colorFillQuaternary');
+}
+
+.subtask-completed {
+  text-decoration: line-through;
+  color: v-bind('token.colorTextQuaternary');
 }
 
 .floating-add-column {
@@ -486,36 +717,4 @@ const handleEditColumnOk = async () => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.delete-column-btn:hover .anticon {
-  color: #ff4d4f !important; /* danger 的红色 */
-}
-.task-header {
-  position: relative;
-}
-
-.delete-task-btn {
-  position: absolute;
-  right: 0;
-  top: 0;
-  padding: 0;
-  color: #8c8c8c;
-  font-size: 14px;
-  opacity: 0; /* 默认隐藏 */
-  transition: opacity 0.3s; /* 添加过渡效果 */
-}
-
-.kanban-task:hover .delete-task-btn {
-  opacity: 1; /* 鼠标悬停时显示 */
-}
-
-.delete-task-btn:hover .anticon {
-  color: #ff4d4f !important;
-}
-
-/* 添加标题悬停效果 */
-.column-header h3:hover {
-  cursor: pointer;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 </style>
