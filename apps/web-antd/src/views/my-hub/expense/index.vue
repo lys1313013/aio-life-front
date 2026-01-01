@@ -418,14 +418,16 @@ const updateCharts = async () => {
       formatter: '{a} <br/>{b}: {c} ({d}%)'
     },
     legend: {
-      orient: 'vertical',
-      right: 10,
-      top: 'center'
+      type: 'scroll',
+      orient: 'horizontal',
+      bottom: 0,
+      left: 'center'
     },
     series: [{
       name: '支出类型分布',
       type: 'pie',
-      radius: ['0%', '80%'],
+      radius: ['0%', '65%'],
+      center: ['50%', '45%'],
       avoidLabelOverlap: false,
       itemStyle: {
         borderRadius: 10,
