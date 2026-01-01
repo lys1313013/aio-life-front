@@ -97,7 +97,7 @@ const columns = [
 async function fetchRepoStats(user: string, repos: any[]) {
   // Limit to top 20 to avoid immediate rate limit for heavy users
   const targetRepos = repos.slice(0, 30);
-  
+
   for (const repo of targetRepos) {
     try {
       const res = await fetch(
@@ -112,7 +112,7 @@ async function fetchRepoStats(user: string, repos: any[]) {
         repo.myCommits = 'Rate Limit';
         repo.loadingStats = false;
         // Stop fetching if rate limit hit
-        break; 
+        break;
       }
       if (!res.ok) {
         repo.myCommits = 'Error';
@@ -130,7 +130,7 @@ async function fetchRepoStats(user: string, repos: any[]) {
       repo.loadingStats = false;
     }
   }
-  
+
   // Mark remaining as skipped
   repos.forEach(repo => {
     if (repo.loadingStats) {
@@ -195,15 +195,79 @@ async function fetchContributions(user: string) {
   try {
     loading.value = true;
     error.value = false;
-    const response = await fetch(`https://github-contributions-api.jogruber.de/v4/${user}?y=last`);
+
+    const query = `
+      query {
+        user(login: "${user}") {
+          contributionsCollection {
+            contributionCalendar {
+              totalContributions
+              weeks {
+                contributionDays {
+                  contributionCount
+                  date
+                  contributionLevel
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const response = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${githubToken.value}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
     if (!response.ok) {
       throw new Error('Failed to fetch data');
     }
-    const data = await response.json();
-    contributionData.value = data;
+
+    const res = await response.json();
+    if (res.errors) {
+      throw new Error(res.errors[0].message);
+    }
+
+    const calendar = res.data.user.contributionsCollection.contributionCalendar;
+    const contributions = [];
+
+    const mapLevel = (level: string) => {
+      switch (level) {
+        case 'NONE':
+          return 0;
+        case 'FIRST_QUARTILE':
+          return 1;
+        case 'SECOND_QUARTILE':
+          return 2;
+        case 'THIRD_QUARTILE':
+          return 3;
+        case 'FOURTH_QUARTILE':
+          return 4;
+        default:
+          return 0;
+      }
+    };
+
+    for (const week of calendar.weeks) {
+      for (const day of week.contributionDays) {
+        contributions.push({
+          date: day.date,
+          count: day.contributionCount,
+          level: mapLevel(day.contributionLevel),
+        });
+      }
+    }
+
+    contributionData.value = { contributions };
   } catch (err) {
     error.value = true;
     contributionData.value = null;
+    console.error(err);
   } finally {
     loading.value = false;
   }
@@ -219,7 +283,7 @@ function updateChart() {
     level: number;
   }>;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = dayjs().format('YYYY-MM-DD');
   const filtered = contributions.filter((item) => item.date <= today);
   filtered.sort((a, b) => a.date.localeCompare(b.date));
 
