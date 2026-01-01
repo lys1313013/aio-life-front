@@ -19,10 +19,11 @@ import {
 } from '@vueuse/core';
 
 import echarts from './echarts';
+import 'echarts/theme/v5';
 
 type EchartsUIType = typeof EchartsUI | undefined;
 
-type EchartsThemeType = 'dark' | 'light' | null;
+type EchartsThemeType = 'dark' | 'light' | 'v5' | null;
 
 function useEcharts(chartRef: Ref<EchartsUIType>) {
   let chartInstance: echarts.ECharts | null = null;
@@ -62,7 +63,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
     if (!el) {
       return;
     }
-    chartInstance = echarts.init(el, t || isDark.value ? 'dark' : null);
+    chartInstance = echarts.init(el, t || (isDark.value ? 'dark' : 'v5'));
 
     return chartInstance;
   };
