@@ -87,12 +87,12 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:flask-outline',
-          title: '测试界面',
+          title: '纪念日',
+          icon: 'mdi:calendar-heart',
         },
-        name: 'test',
-        path: '/my-hub/test',
-        component: () => import('#/views/my-hub/test/index.vue'),
+        name: 'anniversary',
+        path: '/my-hub/anniversary',
+        component: () => import('#/views/my-hub/anniversary/index.vue'),
       },
     ],
   },
