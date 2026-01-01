@@ -51,6 +51,8 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '请选择',
         options: exerciseTypeOptions,
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
         style: { width: '100%' },
         fieldNames: { label: 'label', value: 'value' },
       },

@@ -226,7 +226,7 @@ export default {
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
-        status: 2,
+        payStatus: 2,
         notes: '',
         ownerName: '',
         watchedDuration: 0,
@@ -511,7 +511,7 @@ export default {
 
                   <!-- 底部渐变遮罩 -->
                    <div class="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-black/50 via-black/30 to-transparent pointer-events-none z-10"></div>
- 
+
                    <!-- 时长标签 -->
                    <div class="absolute bottom-1 right-1 text-white text-[10px] sm:text-[11px] font-medium tabular-nums z-20">
                      {{ formatDuration(video.duration) || '未知' }}

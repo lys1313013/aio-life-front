@@ -65,6 +65,8 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '请选择',
         options: dictOptions,
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
         style: { width: '100%' },
       },
       fieldName: 'performanceType',

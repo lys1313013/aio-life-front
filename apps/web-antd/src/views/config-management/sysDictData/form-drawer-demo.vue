@@ -50,7 +50,9 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         placeholder: '请选择',
         options: dictOptions,
-        style: { width: '100%' }  // 设置为100%宽度
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
+        style: { width: '100%' },  // 设置为100%宽度
       },
       fieldName: 'dictId',
       label: '字典类型',

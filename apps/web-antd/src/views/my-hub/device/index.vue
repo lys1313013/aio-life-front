@@ -93,7 +93,7 @@ export default {
         name: '',
         purchasePrice: 0,
         purchaseDate: dayjs(),
-        status: '1', // 默认状态为"使用中",
+        payStatus: '1', // 默认状态为"使用中",
         image: '',
         type: this.tabKey,
       };

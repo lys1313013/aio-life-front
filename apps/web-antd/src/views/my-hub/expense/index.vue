@@ -661,6 +661,8 @@ const formOptions: VbenFormProps = {
         placeholder: '请选择支出类型',
         options: dictOptions, // 绑定类型选项
         allowClear: true, // 添加清除选项功能
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
       fieldName: 'expTypeId',
@@ -672,6 +674,8 @@ const formOptions: VbenFormProps = {
         placeholder: '请选择支付方式',
         options: payTypeOptions, // 绑定支付方式选项
         allowClear: true, // 添加清除选项功能
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
       fieldName: 'payTypeId',
@@ -710,7 +714,7 @@ const formOptions: VbenFormProps = {
     content: '查询',
   },
   // 是否在字段值改变时提交表单
-  submitOnChange: false,
+  submitOnChange: true,
   // 按下回车时提交表单
   submitOnEnter: true,
 };
@@ -771,6 +775,8 @@ const gridOptions: VxeGridProps<RowType> = {
     { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
     { field: 'counterparty', title: '交易对方', sortable: true, width: 150 },
     { field: 'transactionId', title: '交易号', sortable: true, width: 200 },
+    { field: 'transactionStatus', title: '交易状态', sortable: true, width: 200 },
+    { field: 'merchantOrderNo', title: '商家订单号', sortable: true, width: 200 },
     { field: 'createTime', title: '创建时间', sortable: true, width: 180 },
     { field: 'updateTime', title: '修改时间', sortable: true, width: 180 },
     {

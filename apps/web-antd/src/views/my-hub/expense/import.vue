@@ -8,7 +8,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useVbenDrawer } from '@vben/common-ui';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
-import { Button, Card, Popconfirm } from 'ant-design-vue';
+import { Button, Card, message, Popconfirm } from "ant-design-vue";
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 
@@ -32,7 +32,7 @@ interface Transaction {
   expDesc: string;
   amt: number;
   flow: string;
-  status: string;
+  transactionStatus: string;
   serviceFee: number;
   successfulRefund: number;
   remark: string;
@@ -222,10 +222,10 @@ const handleFile = async (file: File) => {
 
     loading.value = false;
     resultsVisible.value = true;
-    alert('文件导入成功');
+    message.success('文件导入成功');
   } catch (error) {
     console.error('Error:', error);
-    alert(`处理文件时出错: ${(error as Error).message}`);
+    message.error(`处理文件时出错: ${(error as Error).message}`);
     loading.value = false;
   }
 };
@@ -288,7 +288,7 @@ const parseCSV = (csvText: string): Transaction[] => {
         expDesc: columns[8] || '',
         amt: Number.parseFloat(columns[9] || '0') || 0,
         flow: columns[10] || '', // 收支方向
-        status: columns[11] || '',
+        transactionStatus: columns[11] || '',
         serviceFee: Number.parseFloat(columns[12] || '0') || 0,
         successfulRefund: Number.parseFloat(columns[13] || '0') || 0,
         remark: columns[14] || '',
@@ -299,7 +299,7 @@ const parseCSV = (csvText: string): Transaction[] => {
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
       // 过滤出状态为"成功"的支出记录
-      if (transaction.flow === '支出' && transaction.status === '交易成功') {
+      if (transaction.flow === '支出' && transaction.transactionStatus === '交易成功') {
         transactions.push(transaction);
       }
     }
@@ -358,7 +358,7 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): Transaction[] => {
       const flow = row[4] || '';
       const amountStr = row[5] || '';
       const paymentMethod = row[6] || '';
-      const status = row[7] || '';
+      const transactionStatus = row[7] || '';
       const transactionId = row[8] || '';
       const merchantOrderNo = row[9] || '';
       const remark = row[10] || '';
@@ -383,7 +383,7 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): Transaction[] => {
           amt: amount,
           transactionAmt: amount,
           flow: flow || '',
-          status: status || '',
+          transactionStatus: transactionStatus || '',
           serviceFee: 0,
           successfulRefund: 0,
           remark: remark || '',
@@ -506,7 +506,7 @@ const parseMobileCSV = (csvText: string): Transaction[] => {
         transactionAmt: Number.parseFloat(columns[6] || '0') || 0, // 交易金额
         amt: Number.parseFloat(columns[6] || '0') || 0, // 金额
         flow: columns[5] || '', // 收/支
-        status: columns[8] || '', // 交易状态
+        transactionStatus: columns[8] || '', // 交易状态
         serviceFee: 0, // 手机端没有服务费字段
         successfulRefund: 0, // 手机端没有退款字段
         remark: columns[11] || '', // 备注
@@ -890,7 +890,7 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
-      field: 'status',
+      field: 'transactionStatus',
       title: '交易状态',
       sortable: true,
     },
@@ -900,6 +900,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
     },
     { title: '交易号', field: 'transactionId' },
+    { title: '商家订单号', field: 'merchantOrderNo' },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -943,11 +944,11 @@ function submitData() {
   submitLoading.value = true;
   saveBatch(tableData)
     .then(() => {
-      alert('数据提交成功');
+      message.success('数据提交成功');
     })
     .catch((error) => {
       console.error('提交失败:', error);
-      alert(`提交失败: ${error.message}`);
+      message.error(`提交失败: ${error.message}`);
     })
     .finally(() => {
       submitLoading.value = false;

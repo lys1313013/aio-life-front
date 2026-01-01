@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
       {
         meta: {
           icon: 'mdi:book-settings-outline',
-          title: '字典管理',
+          title: '字典类型',
         },
         name: 'sysDictType',
         path: '/config-management/sysDictType',

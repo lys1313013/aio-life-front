@@ -8,6 +8,7 @@ import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/sysDictData';
+import { query as queryDictType } from '#/api/core/sysDictType';
 
 import FormDrawerDemo from './form-drawer-demo.vue';
 
@@ -20,6 +21,27 @@ interface RowType {
   releaseDate: string;
 }
 
+import { ref } from 'vue';
+
+const dictOptions = ref<Array<{label: string, value: string}>>([]);
+
+async function loadDictOptions() {
+  try {
+    const res = await queryDictType({});
+    dictOptions.value = res.items.map((item: { dictName: string; dictId: string }) => ({
+      label: item.dictName,
+      value: item.dictId
+    }));
+    console.log('字典类型选项:', dictOptions.value);
+  } catch (error) {
+    console.error('加载字典选项失败:', error);
+  }
+}
+import { onMounted } from 'vue';
+onMounted(() => {
+  loadDictOptions();
+});
+
 const [FormDrawer, formDrawerApi] = useVbenDrawer({
   connectedComponent: FormDrawerDemo,
 });
@@ -28,13 +50,19 @@ const formOptions: VbenFormProps = {
   // 默认展开
   collapsed: false,
   schema: [
+    // 搜索区
     {
-      component: 'Input',
+      component: 'Select',
       componentProps: {
-        placeholder: '',
+        placeholder: '请选择字典类型',
+        options: dictOptions, // 绑定字典类型选项
+        allowClear: true, // 添加清除选项功能
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
+        fieldNames: { label: 'label', value: 'value' },
       },
-      fieldName: 'dictName',
-      label: '字典名称',
+      fieldName: 'dictId',
+      label: '字典类型',
     },
   ],
   // 控制表单是否显示折叠按钮
@@ -43,8 +71,7 @@ const formOptions: VbenFormProps = {
     content: '查询',
   },
   // 是否在字段值改变时提交表单
-  submitOnChange: false,
-  // 按下回车时是否提交表单
+  submitOnChange: true, // 按下回车时是否提交表单
   submitOnEnter: true,
 };
 

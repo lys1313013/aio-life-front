@@ -263,6 +263,8 @@ const formOptions: VbenFormProps = {
         placeholder: '请选择运动类型',
         options: dictOptions, // 绑定类型选项
         allowClear: true, // 添加清除选项功能
+        showSearch: true, // 支持输入查询
+        optionFilterProp: 'label', // 按标签过滤
         fieldNames: { label: 'label', value: 'value' }, // 指定 label 和 value 的字段名
       },
       fieldName: 'exerciseTypeId',
@@ -291,7 +293,7 @@ const formOptions: VbenFormProps = {
     content: '查询',
   },
   // 是否在字段值改变时提交表单
-  submitOnChange: false,
+  submitOnChange: true,
   // 按下回车时提交表单
   submitOnEnter: true,
 };
