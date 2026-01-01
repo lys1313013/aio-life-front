@@ -10,19 +10,31 @@ import { useUserStore } from '@vben/stores';
 
 import {
   BarChartOutlined,
+  BranchesOutlined,
   CalendarOutlined,
   CoffeeOutlined,
   FileTextOutlined,
   FireOutlined,
+  StarOutlined,
   ThunderboltOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons-vue';
-import { Card, Alert, message, Spin, theme } from 'ant-design-vue';
+import {
+  Alert,
+  Card,
+  message,
+  Spin,
+  Table,
+  Tag,
+  theme,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 defineOptions({ name: 'GithubGraph' });
 
 const userStore = useUserStore();
 const username = computed(() => userStore.userInfo?.githubUsername);
+const githubToken = computed(() => userStore.userInfo?.githubToken);
 const loading = ref(false);
 const error = ref(false);
 const chartRef = ref<EchartsUIType>();
@@ -38,7 +50,124 @@ const bestMonth = ref({ date: '', count: 0 });
 const dailyAverage = ref('0');
 const busiestDay = ref({ date: '', count: 0 });
 const longestStreak = ref({ days: 0, start: '', end: '' });
-const longestGap = ref({ days: 0, start: '', end: '' });
+const todayContribution = ref(0);
+
+// Repository Stats
+const repoList = ref<any[]>([]);
+const reposLoading = ref(false);
+
+function formatDate(date: string) {
+  if (!date) return '-';
+  return dayjs(date).format('YYYY-MM-DD HH:mm');
+}
+
+const columns = [
+  {
+    title: '仓库名',
+    dataIndex: 'name',
+    key: 'name',
+  },
+  {
+    title: '语言',
+    dataIndex: 'language',
+    key: 'language',
+  },
+  {
+    title: 'Stars',
+    dataIndex: 'stargazers_count',
+    key: 'stargazers_count',
+  },
+  {
+    title: 'Forks',
+    dataIndex: 'forks_count',
+    key: 'forks_count',
+  },
+  {
+    title: '最近更新',
+    dataIndex: 'pushed_at',
+    key: 'pushed_at',
+  },
+  {
+    title: '个人提交数',
+    dataIndex: 'myCommits',
+    key: 'myCommits',
+  },
+];
+
+async function fetchRepoStats(user: string, repos: any[]) {
+  // Limit to top 20 to avoid immediate rate limit for heavy users
+  const targetRepos = repos.slice(0, 30);
+  
+  for (const repo of targetRepos) {
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${repo.full_name}/contributors?per_page=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${githubToken.value}`,
+          },
+        },
+      );
+      if (res.status === 403) {
+        repo.myCommits = 'Rate Limit';
+        repo.loadingStats = false;
+        // Stop fetching if rate limit hit
+        break; 
+      }
+      if (!res.ok) {
+        repo.myCommits = 'Error';
+        repo.loadingStats = false;
+        continue;
+      }
+      const contributors = await res.json();
+      const contributor = contributors.find(
+        (c: any) => c.login.toLowerCase() === user.toLowerCase(),
+      );
+      repo.myCommits = contributor ? contributor.contributions : 0;
+    } catch {
+      repo.myCommits = 'Error';
+    } finally {
+      repo.loadingStats = false;
+    }
+  }
+  
+  // Mark remaining as skipped
+  repos.forEach(repo => {
+    if (repo.loadingStats) {
+      repo.myCommits = repo.myCommits === 'Loading...' ? '-' : repo.myCommits;
+      repo.loadingStats = false;
+    }
+  });
+}
+
+async function fetchRepositories(user: string) {
+  reposLoading.value = true;
+  repoList.value = [];
+  try {
+    const res = await fetch(
+      `https://api.github.com/users/${user}/repos?sort=pushed&per_page=100`,
+      {
+        headers: {
+          Authorization: `Bearer ${githubToken.value}`,
+        },
+      },
+    );
+    if (!res.ok) throw new Error('Failed to fetch repos');
+    const data = await res.json();
+    repoList.value = data.map((repo: any) => ({
+      ...repo,
+      myCommits: 'Loading...',
+      loadingStats: true,
+    }));
+    // Fetch stats in background
+    fetchRepoStats(user, repoList.value);
+  } catch (e) {
+    console.error(e);
+    message.error('获取仓库列表失败');
+  } finally {
+    reposLoading.value = false;
+  }
+}
 
 const colorPieces = computed(() => {
   if (isDark.value) {
@@ -60,7 +189,7 @@ const colorPieces = computed(() => {
   ];
 });
 
-const legendColors = computed(() => colorPieces.value.map((p) => p.color));
+
 
 async function fetchContributions(user: string) {
   try {
@@ -94,10 +223,13 @@ function updateChart() {
   const filtered = contributions.filter((item) => item.date <= today);
   filtered.sort((a, b) => a.date.localeCompare(b.date));
 
+  // Today's contribution
+  const todayItem = filtered.find((item) => item.date === today);
+  todayContribution.value = todayItem ? todayItem.count : 0;
+
   const windowed = filtered.slice(-371);
   if (windowed.length === 0) return;
 
-  // 1. Total & Max (Basic)
   const total = windowed.reduce((acc, item) => acc + item.count, 0);
   totalContributions.value = total;
   maxContribution.value = Math.max(...windowed.map((item) => item.count));
@@ -140,14 +272,7 @@ function updateChart() {
   let maxStreakEnd = '';
   let currentStreakStart = '';
 
-  // 6. Longest Gap
-  let maxGap = 0;
-  let currentGap = 0;
-  let maxGapStart = '';
-  let maxGapEnd = '';
-  let currentGapStart = '';
-
-  windowed.forEach((item, index) => {
+  windowed.forEach((item) => {
     // Streak Logic
     if (item.count > 0) {
       if (currentStreak === 0) {
@@ -162,33 +287,12 @@ function updateChart() {
     } else {
       currentStreak = 0;
     }
-
-    // Gap Logic
-    if (item.count === 0) {
-      if (currentGap === 0) {
-        currentGapStart = item.date;
-      }
-      currentGap++;
-      if (currentGap > maxGap) {
-        maxGap = currentGap;
-        maxGapStart = currentGapStart;
-        maxGapEnd = item.date;
-      }
-    } else {
-      currentGap = 0;
-    }
   });
 
   longestStreak.value = {
     days: maxStreak,
     start: maxStreak > 0 ? dayjs(maxStreakStart).format('M月D日') : '-',
     end: maxStreak > 0 ? dayjs(maxStreakEnd).format('M月D日') : '-',
-  };
-
-  longestGap.value = {
-    days: maxGap,
-    start: maxGap > 0 ? dayjs(maxGapStart).format('M月D日') : '-',
-    end: maxGap > 0 ? dayjs(maxGapEnd).format('M月D日') : '-',
   };
 
   const recentData = windowed.map((item) => [item.date, item.level, item.count]);
@@ -272,14 +376,14 @@ watch(
       return;
     }
     hasWarnedNoUsername = false;
-    await fetchContributions(user);
+    await Promise.all([fetchContributions(user), fetchRepositories(user)]);
   },
   { immediate: true },
 );
 </script>
 
 <template>
-  <Page title="Github 贡献图">
+  <Page title="">
     <div class="p-4">
       <Spin :spinning="loading" tip="加载中...">
         <div v-if="error" class="w-full py-12 text-center">
@@ -295,7 +399,7 @@ watch(
         <div v-show="!error && !loading" class="w-full overflow-x-auto">
           <div class="min-w-[760px] pr-4">
             <!-- Stats Grid -->
-            <div class="mb-6 grid grid-cols-1 gap-4 pl-9 md:grid-cols-3">
+            <div class="mb-6 grid grid-cols-1 gap-4 pl-2 md:grid-cols-3">
               <!-- Best Month -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
@@ -377,36 +481,92 @@ watch(
                 </div>
               </Card>
 
-              <!-- Longest Gap -->
+              <!-- Today's Contribution -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-gray-100 p-2 dark:bg-gray-800">
-                    <CoffeeOutlined class="text-lg text-gray-600 dark:text-gray-400" />
+                  <div class="rounded-full bg-cyan-100 p-2 dark:bg-cyan-900/30">
+                    <CheckCircleOutlined class="text-lg text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <div>
-                    <div class="text-xs text-gray-500">休息最久的一段时间</div>
+                    <div class="text-xs text-gray-500">今日贡献次数</div>
                     <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{ longestGap.days }}</span>
-                      <span class="text-xs text-gray-500">天</span>
-                    </div>
-                    <div class="text-xs text-gray-400">
-                      {{ longestGap.start }} - {{ longestGap.end }}
+                      <span class="mr-1 text-2xl font-bold">{{ todayContribution }}</span>
+                      <span class="text-xs text-gray-500">次</span>
                     </div>
                   </div>
                 </div>
               </Card>
             </div>
-            <EchartsUI ref="chartRef" height="220px" />
+            <EchartsUI ref="chartRef" height="160px" />
 
-            <div class="mr-4 mt-2 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>Less</span>
-              <span
-                v-for="(c, idx) in legendColors"
-                :key="idx"
-                class="h-3 w-3 rounded-[2px] ring-1 ring-black/5 dark:ring-white/10"
-                :style="{ backgroundColor: c }"
-              />
-              <span>More</span>
+            <div class="mt-4">
+              <h3 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
+                仓库贡献统计
+              </h3>
+              <Table
+                :columns="columns"
+                :data-source="repoList"
+                :loading="reposLoading"
+                :pagination="{ pageSize: 10 }"
+                row-key="id"
+              >
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <a
+                      :href="record.html_url"
+                      class="flex items-center gap-2 text-blue-500 hover:underline"
+                      target="_blank"
+                    >
+                      <span class="font-medium">{{ record.name }}</span>
+                      <Tag v-if="record.private" color="red">Private</Tag>
+                      <Tag v-if="record.fork" color="orange">Fork</Tag>
+                    </a>
+                    <div class="max-w-[200px] truncate text-xs text-gray-500">
+                      {{ record.description }}
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'language'">
+                    <Tag v-if="record.language" color="blue">{{
+                      record.language
+                    }}</Tag>
+                  </template>
+                  <template v-if="column.key === 'stargazers_count'">
+                    <div class="flex items-center gap-1">
+                      <StarOutlined class="text-yellow-500" />
+                      <span>{{ record.stargazers_count }}</span>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'forks_count'">
+                    <div class="flex items-center gap-1">
+                      <BranchesOutlined class="text-gray-500" />
+                      <span>{{ record.forks_count }}</span>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'pushed_at'">
+                    <span class="text-gray-500">
+                      {{ formatDate(record.pushed_at) }}
+                    </span>
+                  </template>
+                  <template v-if="column.key === 'myCommits'">
+                    <div
+                      v-if="record.loadingStats"
+                      class="flex items-center gap-2"
+                    >
+                      <Spin size="small" />
+                    </div>
+                    <span
+                      v-else
+                      :class="{
+                        'font-bold text-green-600':
+                          typeof record.myCommits === 'number' &&
+                          record.myCommits > 0,
+                      }"
+                    >
+                      {{ record.myCommits }}
+                    </span>
+                  </template>
+                </template>
+              </Table>
             </div>
           </div>
         </div>
