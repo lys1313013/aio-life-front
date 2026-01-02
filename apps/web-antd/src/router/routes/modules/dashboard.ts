@@ -15,11 +15,11 @@ const routes: RouteRecordRaw[] = [
       {
         name: 'Analytics',
         path: '/analytics',
-        component: () => import('#/views/dashboard/analytics/index.vue'),
+        component: () => import('#/views/dashboard/home/index.vue'),
         meta: {
           affixTab: true,
           icon: 'lucide:area-chart',
-          title: $t('page.dashboard.analytics'),
+          title: '主页',
         },
       },
       {

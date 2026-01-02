@@ -25,6 +25,7 @@ export {
   VbenInputPassword,
   VbenLoading,
   VbenLogo,
+  VbenIcon,
   VbenPinInput,
   VbenSelect,
   VbenSpinner,
