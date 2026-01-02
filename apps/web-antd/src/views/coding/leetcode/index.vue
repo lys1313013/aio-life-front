@@ -52,6 +52,9 @@ type UserCalendar = {
 const userInfo = ref<PublicProfile | null>(null);
 const questionProgress = ref<QuestionProgress | null>(null);
 const dailyQuestionStatus = ref<string>('');
+const dailyQuestion = ref<DailyQuestion['todayRecord'][0]['question'] | null>(
+  null,
+);
 const longestStreak = ref(0);
 const mostActiveDay = ref<{ count: number; date: string } | null>(null);
 const todaySubmissions = ref(0);
@@ -166,6 +169,7 @@ async function fetchData() {
     questionProgress.value = profileRes.userProfileUserQuestionProgress;
     const todayRecord = dailyQuestionRes.todayRecord?.[0];
     dailyQuestionStatus.value = todayRecord?.userStatus || 'Unknown';
+    dailyQuestion.value = todayRecord?.question || null;
 
     renderGreenWall(calendarRes.userCalendar, range.start, range.end);
   } catch (error) {
@@ -341,6 +345,15 @@ function getTotalCount(difficulty: string) {
   return accepted + failed + untouched;
 }
 
+function goToDailyQuestion() {
+  if (dailyQuestion.value?.titleSlug) {
+    window.open(
+      `https://leetcode.cn/problems/${dailyQuestion.value.titleSlug}`,
+      '_blank',
+    );
+  }
+}
+
 onMounted(() => {
   fetchData();
 });
@@ -396,11 +409,21 @@ onMounted(() => {
                 {{ todaySubmissions }}
               </div>
             </Card>
-            <Card :bordered="false" class="shadow-sm">
+            <Card
+              :bordered="false"
+              class="cursor-pointer shadow-sm hover:shadow-md"
+              @click="goToDailyQuestion"
+            >
               <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                每日一题是否完成
+                每日一题
               </div>
-              <div class="text-2xl font-bold">
+              <div
+                class="text-2xl font-bold"
+                :class="{
+                  'text-red-500': dailyQuestionStatus !== 'Finish',
+                  'text-green-500': dailyQuestionStatus === 'Finish',
+                }"
+              >
                 {{ dailyQuestionStatus === 'Finish' ? '已完成' : '未完成' }}
               </div>
             </Card>
