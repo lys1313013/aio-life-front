@@ -120,6 +120,6 @@ export async function getGithubCardInfo(username: string, token: string) {
     totalValue: stats.currentStreak,
     url: `https://github.com/${username}`,
     value: stats.todayContribution,
-    valueColor: '#3fb27f',
+    valueColor: stats.todayContribution > 0 ? '#3fb27f' : '#ff4d4f',
   };
 }
