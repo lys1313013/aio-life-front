@@ -11,6 +11,16 @@ export default defineConfig(async () => {
                         target: 'http://localhost:45678/api',
                         ws: true,
                     },
+                    '/leetcode-api': {
+                        changeOrigin: true,
+                        rewrite: (path) => path.replace(/^\/leetcode-api/, ''),
+                        target: 'https://leetcode.cn',
+                        ws: true,
+                        headers: {
+                            Referer: 'https://leetcode.cn/',
+                            Origin: 'https://leetcode.cn',
+                        },
+                    },
                 },
             },
         },

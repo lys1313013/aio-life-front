@@ -20,6 +20,15 @@ const routes: RouteRecordRaw[] = [
         path: '/coding/github',
         component: () => import('#/views/coding/github/index.vue'),
       },
+      {
+        meta: {
+          icon: 'simple-icons:leetcode',
+          title: 'LeetCode',
+        },
+        name: 'LeetCode',
+        path: '/coding/leetcode',
+        component: () => import('#/views/coding/leetcode/index.vue'),
+      },
     ],
   },
 ];

@@ -1,11 +1,7 @@
 <script lang="ts" setup>
-import type { EchartsUIType } from '@vben/plugins/echarts';
-
 import { computed, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
-import { usePreferences } from '@vben/preferences';
-import { useEcharts, EchartsUI } from '@vben/plugins/echarts';
 import { useUserStore } from '@vben/stores';
 
 import {
@@ -27,9 +23,10 @@ import {
   Spin,
   Table,
   Tag,
-  theme,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'GithubGraph' });
 
@@ -38,11 +35,8 @@ const username = computed(() => userStore.userInfo?.githubUsername);
 const githubToken = computed(() => userStore.userInfo?.githubToken);
 const loading = ref(false);
 const error = ref(false);
-const chartRef = ref<EchartsUIType>();
-const { renderEcharts } = useEcharts(chartRef);
-const { isDark } = usePreferences();
-const { token } = theme.useToken();
 const contributionData = ref<any>(null);
+const graphData = ref<any[]>([]);
 
 // Stats
 const totalContributions = ref(0);
@@ -170,28 +164,6 @@ async function fetchRepositories(user: string) {
   }
 }
 
-const colorPieces = computed(() => {
-  if (isDark.value) {
-    return [
-      { color: '#161b22', value: 0 },
-      { color: '#0e4429', value: 1 },
-      { color: '#006d32', value: 2 },
-      { color: '#26a641', value: 3 },
-      { color: '#39d353', value: 4 },
-    ];
-  }
-
-  return [
-    { color: '#ebedf0', value: 0 },
-    { color: '#9be9a8', value: 1 },
-    { color: '#40c463', value: 2 },
-    { color: '#30a14e', value: 3 },
-    { color: '#216e39', value: 4 },
-  ];
-});
-
-
-
 async function fetchContributions(user: string) {
   try {
     loading.value = true;
@@ -295,6 +267,8 @@ function updateChart() {
   const windowed = filtered.slice(-371);
   if (windowed.length === 0) return;
 
+  graphData.value = windowed;
+
   const total = windowed.reduce((acc, item) => acc + item.count, 0);
   totalContributions.value = total;
   maxContribution.value = Math.max(...windowed.map((item) => item.count));
@@ -359,72 +333,12 @@ function updateChart() {
     start: maxStreak > 0 ? dayjs(maxStreakStart).format('M月D日') : '-',
     end: maxStreak > 0 ? dayjs(maxStreakEnd).format('M月D日') : '-',
   };
-
-  const recentData = windowed.map((item) => [item.date, item.level, item.count]);
-
-  const startDate = recentData.at(0)?.[0];
-  const endDate = recentData.at(-1)?.[0];
-  if (!startDate || !endDate) return;
-
-  renderEcharts(() => ({
-    tooltip: {
-      formatter: (params: any) => {
-        const date = params?.value?.[0] ?? '';
-        const count = params?.value?.[2] ?? 0;
-        return `${date}<br/>Contributions: <strong>${count}</strong>`;
-      },
-      backgroundColor: token.value.colorBgElevated,
-      borderColor: token.value.colorBorderSecondary,
-      textStyle: {
-        color: token.value.colorText,
-      },
-    },
-    visualMap: {
-      show: false,
-      min: 0,
-      max: 4,
-      dimension: 1,
-      type: 'piecewise',
-      pieces: colorPieces.value.map((p) => ({ value: p.value, color: p.color })),
-    },
-    calendar: {
-      top: 45,
-      left: 36,
-      right: 12,
-      range: [startDate, endDate],
-      cellSize: 13,
-      splitLine: {
-        show: false,
-      },
-      yearLabel: { show: false },
-      dayLabel: {
-        firstDay: 0,
-        nameMap: ['', 'Mon', '', 'Wed', '', 'Fri', ''],
-        margin: 10,
-        color: token.value.colorTextSecondary,
-      },
-      monthLabel: {
-        margin: 10,
-        color: token.value.colorTextSecondary,
-      },
-    },
-    series: {
-      type: 'heatmap',
-      coordinateSystem: 'calendar',
-      data: recentData,
-      itemStyle: {
-        borderRadius: 2,
-        borderWidth: 3,
-        borderColor: token.value.colorBgContainer,
-      },
-    },
-  }));
 }
 
 let hasWarnedNoUsername = false;
 
 watch(
-  [contributionData, () => token.value.colorBgContainer, isDark],
+  contributionData,
   () => {
     updateChart();
   },
@@ -619,7 +533,7 @@ watch(
                 </div>
               </Card>
             </div>
-            <EchartsUI ref="chartRef" height="160px" />
+            <ContributionGraph :data="graphData" />
           </template>
 
           <div class="mt-4">
