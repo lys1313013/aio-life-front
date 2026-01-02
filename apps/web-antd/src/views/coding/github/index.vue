@@ -8,8 +8,6 @@ import {
   BarChartOutlined,
   BranchesOutlined,
   CalendarOutlined,
-  CoffeeOutlined,
-  FileTextOutlined,
   FireOutlined,
   StarOutlined,
   ThunderboltOutlined,
@@ -45,6 +43,7 @@ const bestMonth = ref({ date: '', count: 0 });
 const dailyAverage = ref('0');
 const busiestDay = ref({ date: '', count: 0 });
 const longestStreak = ref({ days: 0, start: '', end: '' });
+const currentStreak = ref(0);
 const todayContribution = ref(0);
 
 // Repository Stats
@@ -83,7 +82,7 @@ const columns = [
     key: 'myCommits',
   },
   {
-    title: '最近更新',
+    title: '最近提交',
     dataIndex: 'pushed_at',
     key: 'pushed_at',
   },
@@ -306,25 +305,25 @@ function updateChart() {
 
   // 5. Longest Streak
   let maxStreak = 0;
-  let currentStreak = 0;
+  let tempStreak = 0;
   let maxStreakStart = '';
   let maxStreakEnd = '';
-  let currentStreakStart = '';
+  let tempStreakStart = '';
 
   windowed.forEach((item) => {
     // Streak Logic
     if (item.count > 0) {
-      if (currentStreak === 0) {
-        currentStreakStart = item.date;
+      if (tempStreak === 0) {
+        tempStreakStart = item.date;
       }
-      currentStreak++;
-      if (currentStreak > maxStreak) {
-        maxStreak = currentStreak;
-        maxStreakStart = currentStreakStart;
+      tempStreak++;
+      if (tempStreak > maxStreak) {
+        maxStreak = tempStreak;
+        maxStreakStart = tempStreakStart;
         maxStreakEnd = item.date;
       }
     } else {
-      currentStreak = 0;
+      tempStreak = 0;
     }
   });
 
@@ -333,6 +332,24 @@ function updateChart() {
     start: maxStreak > 0 ? dayjs(maxStreakStart).format('M月D日') : '-',
     end: maxStreak > 0 ? dayjs(maxStreakEnd).format('M月D日') : '-',
   };
+
+  // 6. Current Streak
+  let currentStreakCount = 0;
+  for (let i = filtered.length - 1; i >= 0; i--) {
+    const item = filtered[i];
+    if (!item) continue;
+    if (item.count > 0) {
+      currentStreakCount++;
+    } else {
+      // If it's today and count is 0, we check yesterday.
+      // If yesterday also 0, streak is 0.
+      if (item.date === today && i > 0) {
+        continue;
+      }
+      break;
+    }
+  }
+  currentStreak.value = currentStreakCount;
 }
 
 let hasWarnedNoUsername = false;
@@ -444,22 +461,23 @@ watch(
                 </div>
               </Card>
 
-              <!-- Total Contributions -->
+              <!-- Current Streak -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
                   <div
                     class="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30"
                   >
-                    <FileTextOutlined
+                    <FireOutlined
                       class="text-lg text-purple-600 dark:text-purple-400"
                     />
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">最近一年总提交</div>
-                      <span class="text-lg font-bold">{{
-                        totalContributions
-                      }}</span>
+                      <div class="text-xs text-gray-500">连续提交</div>
+                      <div class="flex items-baseline gap-1">
+                        <span class="text-lg font-bold">{{ currentStreak }}</span>
+                        <span class="text-xs text-gray-500">天</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -533,7 +551,13 @@ watch(
                 </div>
               </Card>
             </div>
-            <ContributionGraph :data="graphData" />
+            <Card
+              :bordered="false"
+              :title="`过去一年共提交 ${totalContributions} 次`"
+              class="mt-6 shadow-sm"
+            >
+              <ContributionGraph :data="graphData" />
+            </Card>
           </template>
 
           <div class="mt-4">

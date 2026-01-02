@@ -103,7 +103,7 @@ function updateChart() {
       formatter: (params: any) => {
         const date = params?.value?.[0] ?? '';
         const count = params?.value?.[2] ?? 0;
-        return `${date}<br/>Contributions: <strong>${count}</strong>`;
+        return `${date}<br/>提交 <strong>${count}</strong> 次`;
       },
       textStyle: {
         color: token.value.colorText,
