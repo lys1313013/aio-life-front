@@ -14,6 +14,7 @@ const userStore = useUserStore();
 const username = computed(() => userStore.userInfo?.leetcodeAcct);
 
 const profileLoading = ref(false);
+const contestLoading = ref(false);
 const calendarLoading = ref(false);
 const dailyQuestionLoading = ref(false);
 const totalCommits = ref(0);
@@ -29,10 +30,20 @@ type QuestionProgress = {
   numUntouchedQuestions: DifficultyStat[];
 };
 type PublicProfile = {
+  siteRanking: number;
   profile: {
     countryName?: string | null;
     reputation?: number | null;
   };
+};
+type ContestRanking = {
+  attendedContestsCount: number;
+  rating: number;
+  globalRanking: number;
+  localRanking: number;
+  globalTotalParticipants: number;
+  localTotalParticipants: number;
+  topPercentage: number;
 };
 type RecentACSubmission = {
   submissionId: string;
@@ -65,6 +76,7 @@ type UserCalendar = {
 };
 
 const userInfo = ref<PublicProfile | null>(null);
+const contestInfo = ref<ContestRanking | null>(null);
 const questionProgress = ref<QuestionProgress | null>(null);
 const dailyQuestionStatus = ref<string>('');
 const dailyQuestion = ref<DailyQuestion['todayRecord'][0]['question'] | null>(
@@ -121,6 +133,7 @@ async function fetchProfileData() {
       `
           query getUserData($userSlug: String!) {
             userProfilePublicProfile(userSlug: $userSlug) {
+              siteRanking
               profile {
                 reputation
                 countryName
@@ -151,6 +164,37 @@ async function fetchProfileData() {
     console.error(error);
   } finally {
     profileLoading.value = false;
+  }
+}
+
+async function fetchContestData() {
+  contestLoading.value = true;
+  try {
+    const res = await requestLeetCode<{ userContestRanking: ContestRanking }>(
+      `
+          query userContestRankingInfo($userSlug: String!) {
+            userContestRanking(userSlug: $userSlug) {
+              attendedContestsCount
+              rating
+              globalRanking
+              localRanking
+              globalTotalParticipants
+              localTotalParticipants
+              topPercentage
+            }
+          }
+        `,
+      { userSlug: username.value },
+      {
+        operationName: 'userContestRankingInfo',
+        path: '/leetcode-api/graphql/noj-go/',
+      },
+    );
+    contestInfo.value = res.userContestRanking;
+  } catch (error) {
+    console.error('获取竞赛信息失败', error);
+  } finally {
+    contestLoading.value = false;
   }
 }
 
@@ -265,6 +309,7 @@ async function fetchDailyQuestionData() {
 
 function fetchData() {
   fetchProfileData();
+  fetchContestData();
   fetchCalendarData();
   fetchDailyQuestionData();
 }
@@ -468,6 +513,63 @@ onMounted(() => {
 <template>
   <Page title="">
     <div class="p-4">
+      <!-- Ranking Info Card Group -->
+      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+        <Card :bordered="false" class="shadow-sm">
+          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+            全站排名
+          </div>
+          <Skeleton :active="true" :loading="profileLoading" :paragraph="{ rows: 0 }">
+            <div class="text-2xl font-bold tabular-nums">
+              {{ userInfo?.siteRanking?.toLocaleString() || '-' }}
+            </div>
+          </Skeleton>
+        </Card>
+
+        <Card :bordered="false" class="shadow-sm">
+          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+            竞赛分数
+          </div>
+          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+            <div class="text-2xl font-bold tabular-nums">
+              {{ Math.round(contestInfo?.rating || 0) || '-' }}
+            </div>
+          </Skeleton>
+        </Card>
+
+        <Card :bordered="false" class="shadow-sm">
+          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+            全球排名
+          </div>
+          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums">
+                {{ contestInfo?.globalRanking?.toLocaleString() || '-' }}
+              </span>
+              <span v-if="contestInfo?.globalTotalParticipants" class="text-xs text-gray-400">
+                / {{ contestInfo.globalTotalParticipants.toLocaleString() }}
+              </span>
+            </div>
+          </Skeleton>
+        </Card>
+
+        <Card :bordered="false" class="shadow-sm">
+          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+            全国排名
+          </div>
+          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+            <div class="flex items-baseline gap-1">
+              <span class="text-2xl font-bold tabular-nums">
+                {{ contestInfo?.localRanking?.toLocaleString() || '-' }}
+              </span>
+              <span v-if="contestInfo?.localTotalParticipants" class="text-xs text-gray-400">
+                / {{ contestInfo.localTotalParticipants.toLocaleString() }}
+              </span>
+            </div>
+          </Skeleton>
+        </Card>
+      </div>
+
       <!-- User Info Card -->
       <Card class="mb-4">
         <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -615,6 +717,7 @@ onMounted(() => {
             </span>
           </div>
         </template>
+
         <Skeleton
           :active="true"
           :loading="calendarLoading"
@@ -628,3 +731,7 @@ onMounted(() => {
     </div>
   </Page>
 </template>
+
+<style scoped>
+/* 移除之前的 skeleton-white 样式 */
+</style>
