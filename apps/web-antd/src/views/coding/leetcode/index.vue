@@ -2,15 +2,20 @@
 import { computed, onMounted, ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
-import { Card, message, Spin, theme } from 'ant-design-vue';
+import { Card, message, Skeleton, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import ContributionGraph from '../components/ContributionGraph.vue';
+import { useUserStore } from '@vben/stores';
 
 defineOptions({ name: 'LeetCode' });
 
-const username = ref('lys1313013');
-const loading = ref(false);
+const userStore = useUserStore();
+const username = computed(() => userStore.userInfo?.leetcodeAcct);
+
+const profileLoading = ref(false);
+const calendarLoading = ref(false);
+const dailyQuestionLoading = ref(false);
 const totalCommits = ref(0);
 const graphData = ref<any[]>([]);
 const { token } = theme.useToken();
@@ -27,6 +32,16 @@ type PublicProfile = {
   profile: {
     countryName?: string | null;
     reputation?: number | null;
+  };
+};
+type RecentACSubmission = {
+  submissionId: string;
+  submitTime: number;
+  question: {
+    title: string;
+    translatedTitle: string;
+    titleSlug: string;
+    questionFrontendId: string;
   };
 };
 type DailyQuestion = {
@@ -55,7 +70,7 @@ const dailyQuestionStatus = ref<string>('');
 const dailyQuestion = ref<DailyQuestion['todayRecord'][0]['question'] | null>(
   null,
 );
-const longestStreak = ref(0);
+const currentStreak = ref(0);
 const mostActiveDay = ref<{ count: number; date: string } | null>(null);
 const todaySubmissions = ref(0);
 
@@ -95,16 +110,14 @@ function getGreenWallRange() {
   return { end, requestSize: 30, start };
 }
 
-async function fetchData() {
-  loading.value = true;
+async function fetchProfileData() {
+  profileLoading.value = true;
   try {
-    const range = getGreenWallRange();
-    const [profileRes, calendarRes, dailyQuestionRes] = await Promise.all([
-      requestLeetCode<{
-        userProfilePublicProfile: PublicProfile;
-        userProfileUserQuestionProgress: QuestionProgress;
-      }>(
-        `
+    const res = await requestLeetCode<{
+      userProfilePublicProfile: PublicProfile;
+      userProfileUserQuestionProgress: QuestionProgress;
+    }>(
+      `
           query getUserData($userSlug: String!) {
             userProfilePublicProfile(userSlug: $userSlug) {
               profile {
@@ -128,10 +141,24 @@ async function fetchData() {
             }
           }
         `,
-        { userSlug: username.value },
-      ),
-      requestLeetCode<{ userCalendar: UserCalendar }>(
-        `
+      { userSlug: username.value },
+    );
+    userInfo.value = res.userProfilePublicProfile;
+    questionProgress.value = res.userProfileUserQuestionProgress;
+  } catch (error) {
+    message.error('获取用户信息失败');
+    console.error(error);
+  } finally {
+    profileLoading.value = false;
+  }
+}
+
+async function fetchCalendarData() {
+  calendarLoading.value = true;
+  try {
+    const range = getGreenWallRange();
+    const res = await requestLeetCode<{ userCalendar: UserCalendar }>(
+      `
           query userProfileCalendar($userSlug: String!, $year: Int) {
             userCalendar(userSlug: $userSlug, year: $year) {
               streak
@@ -142,12 +169,24 @@ async function fetchData() {
             }
           }
         `,
-        { userSlug: username.value },
-        {
-          operationName: 'userProfileCalendar',
-          path: '/leetcode-api/graphql/noj-go/',
-        },
-      ),
+      { userSlug: username.value },
+      {
+        operationName: 'userProfileCalendar',
+        path: '/leetcode-api/graphql/noj-go/',
+      },
+    );
+    renderGreenWall(res.userCalendar, range.start, range.end);
+  } catch (error) {
+    console.error('获取日历数据失败', error);
+  } finally {
+    calendarLoading.value = false;
+  }
+}
+
+async function fetchDailyQuestionData() {
+  dailyQuestionLoading.value = true;
+  try {
+    const [dailyQuestionRes, recentSubRes] = await Promise.allSettled([
       requestLeetCode<DailyQuestion>(
         `
           query questionOfToday {
@@ -163,21 +202,70 @@ async function fetchData() {
           }
         `,
       ),
+      requestLeetCode<{ recentACSubmissions: RecentACSubmission[] }>(
+        `
+          query recentAcSubmissions($userSlug: String!) {
+            recentACSubmissions(userSlug: $userSlug) {
+              submissionId
+              submitTime
+              question {
+                title
+                translatedTitle
+                titleSlug
+                questionFrontendId
+              }
+            }
+          }
+        `,
+        { userSlug: username.value },
+        {
+          operationName: 'recentAcSubmissions',
+          path: '/leetcode-api/graphql/noj-go/',
+        },
+      ),
     ]);
 
-    userInfo.value = profileRes.userProfilePublicProfile;
-    questionProgress.value = profileRes.userProfileUserQuestionProgress;
-    const todayRecord = dailyQuestionRes.todayRecord?.[0];
-    dailyQuestionStatus.value = todayRecord?.userStatus || 'Unknown';
-    dailyQuestion.value = todayRecord?.question || null;
+    let todayRecord: DailyQuestion['todayRecord'][0] | null = null;
+    if (dailyQuestionRes.status === 'fulfilled') {
+      todayRecord = dailyQuestionRes.value.todayRecord?.[0] || null;
+      dailyQuestionStatus.value = todayRecord?.userStatus || 'Unknown';
+      dailyQuestion.value = todayRecord?.question || null;
+    }
 
-    renderGreenWall(calendarRes.userCalendar, range.start, range.end);
+    if (
+      todayRecord &&
+      dailyQuestionStatus.value !== 'Finish' &&
+      recentSubRes.status === 'fulfilled' &&
+      recentSubRes.value.recentACSubmissions
+    ) {
+      const dailySlug = todayRecord.question.titleSlug;
+      const dailyDate = todayRecord.date; // YYYY-MM-DD
+      const startTime = new Date(`${dailyDate}T00:00:00+08:00`).getTime() / 1000;
+      const endTime = new Date(`${dailyDate}T23:59:59+08:00`).getTime() / 1000;
+
+      const isFinished = recentSubRes.value.recentACSubmissions.some((sub) => {
+        if (sub.question.titleSlug !== dailySlug) {
+          return false;
+        }
+        const ts = sub.submitTime;
+        return ts >= startTime && ts <= endTime;
+      });
+
+      if (isFinished) {
+        dailyQuestionStatus.value = 'Finish';
+      }
+    }
   } catch (error) {
-    message.error('获取 LeetCode 数据失败');
-    console.error(error);
+    console.error('获取每日一题数据失败', error);
   } finally {
-    loading.value = false;
+    dailyQuestionLoading.value = false;
   }
+}
+
+function fetchData() {
+  fetchProfileData();
+  fetchCalendarData();
+  fetchDailyQuestionData();
 }
 
 async function requestLeetCode<T>(
@@ -248,7 +336,7 @@ function renderGreenWall(
   mostActiveDay.value = { count: maxVal, date: maxDate };
 
   const sortedDates = Array.from(countByDate.keys()).sort();
-  let currentStreak = 0;
+  let tempStreak = 0;
   let maxStreak = 0;
   let prevDate: dayjs.Dayjs | null = null;
 
@@ -256,15 +344,31 @@ function renderGreenWall(
     if ((countByDate.get(dateStr) || 0) > 0) {
       const d = dayjs(dateStr);
       if (prevDate && d.diff(prevDate, 'day') === 1) {
-        currentStreak++;
+        tempStreak++;
       } else {
-        currentStreak = 1;
+        tempStreak = 1;
       }
-      maxStreak = Math.max(maxStreak, currentStreak);
+      maxStreak = Math.max(maxStreak, tempStreak);
       prevDate = d;
     }
   }
-  longestStreak.value = maxStreak;
+
+  // Calculate recent streak
+  let recentStreakVal = 0;
+  const lastDateStr = sortedDates[sortedDates.length - 1];
+  if (lastDateStr) {
+    const todayStr = dayjs().format('YYYY-MM-DD');
+    const yesterdayStr = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+
+    if (lastDateStr === todayStr || lastDateStr === yesterdayStr) {
+      let checkDate = dayjs(lastDateStr);
+      while (countByDate.has(checkDate.format('YYYY-MM-DD'))) {
+        recentStreakVal++;
+        checkDate = checkDate.subtract(1, 'day');
+      }
+    }
+  }
+  currentStreak.value = recentStreakVal;
 
   const data: { date: string; count: number }[] = [];
   let maxCount = 0;
@@ -360,63 +464,101 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page title="LeetCode 统计">
+  <Page title="">
     <div class="p-4">
-      <Spin :spinning="loading">
-        <!-- User Info Card -->
-        <Card v-if="userInfo" class="mb-4">
-          <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <Card :bordered="false" class="shadow-sm">
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                已解题
-              </div>
+      <!-- User Info Card -->
+      <Card class="mb-4">
+        <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Card :bordered="false" class="shadow-sm">
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              已解题
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="profileLoading"
+              :paragraph="{ rows: 0 }"
+            >
               <div class="text-2xl font-bold tabular-nums">
                 {{ totalSolved }}
                 <span class="text-base font-normal text-gray-400">
                   / {{ totalQuestions }}
                 </span>
               </div>
-            </Card>
-            <Card :bordered="false" class="shadow-sm">
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                声望
-              </div>
+            </Skeleton>
+          </Card>
+          <Card :bordered="false" class="shadow-sm">
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              声望
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="profileLoading"
+              :paragraph="{ rows: 0 }"
+            >
               <div class="text-2xl font-bold tabular-nums">
-                {{ userInfo.profile?.reputation ?? 0 }}
+                {{ userInfo?.profile?.reputation ?? 0 }}
               </div>
-            </Card>
-            <Card :bordered="false" class="shadow-sm">
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                最长连续打卡
+            </Skeleton>
+          </Card>
+          <Card :bordered="false" class="shadow-sm">
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              连续提交
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="calendarLoading"
+              :paragraph="{ rows: 0 }"
+            >
+              <div class="text-2xl font-bold">{{ currentStreak }} 天</div>
+            </Skeleton>
+          </Card>
+          <Card :bordered="false" class="shadow-sm">
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              最活跃的一天
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="calendarLoading"
+              :paragraph="{ rows: 0 }"
+            >
+              <div class="flex flex-col">
+                <div class="text-2xl font-bold tabular-nums">
+                  {{ mostActiveDay?.count || 0 }}
+                  <span class="text-sm font-normal text-gray-400">次提交</span>
+                </div>
+                <div class="text-xs text-gray-400">
+                  {{ mostActiveDay?.date || '-' }}
+                </div>
               </div>
-              <div class="text-2xl font-bold">{{ longestStreak }} 天</div>
-            </Card>
-            <Card :bordered="false" class="shadow-sm">
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                最活跃的一天
-              </div>
-              <div class="text-xl font-bold">
-                {{ mostActiveDay?.date || '-' }} ({{
-                  mostActiveDay?.count || 0
-                }})
-              </div>
-            </Card>
-            <Card :bordered="false" class="shadow-sm">
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                今日提交次数
-              </div>
+            </Skeleton>
+          </Card>
+          <Card :bordered="false" class="shadow-sm">
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              今日提交次数
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="calendarLoading"
+              :paragraph="{ rows: 0 }"
+            >
               <div class="text-2xl font-bold">
                 {{ todaySubmissions }}
               </div>
-            </Card>
-            <Card
-              :bordered="false"
-              class="cursor-pointer shadow-sm hover:shadow-md"
-              @click="goToDailyQuestion"
+            </Skeleton>
+          </Card>
+          <Card
+            :bordered="false"
+            class="cursor-pointer shadow-sm hover:shadow-md"
+            @click="goToDailyQuestion"
+          >
+            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+              每日一题
+            </div>
+            <Skeleton
+              :active="true"
+              :loading="dailyQuestionLoading"
+              :paragraph="{ rows: 0 }"
             >
-              <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-                每日一题
-              </div>
               <div
                 class="text-2xl font-bold"
                 :class="{
@@ -426,10 +568,12 @@ onMounted(() => {
               >
                 {{ dailyQuestionStatus === 'Finish' ? '已完成' : '未完成' }}
               </div>
-            </Card>
-          </div>
+            </Skeleton>
+          </Card>
+        </div>
 
-          <h3 class="mb-4 text-lg font-bold">做题进度</h3>
+        <h3 class="mb-4 text-lg font-bold">做题进度</h3>
+        <Skeleton :active="true" :loading="profileLoading">
           <div
             v-if="questionProgress"
             class="grid grid-cols-1 gap-4 md:grid-cols-4"
@@ -453,18 +597,24 @@ onMounted(() => {
               </div>
             </div>
           </div>
-        </Card>
+        </Skeleton>
+      </Card>
 
-        <Card
-          :bordered="false"
-          :title="`过去一年共提交 ${totalCommits} 次 `"
-          class="shadow-sm"
+      <Card
+        :bordered="false"
+        :title="`过去一年共提交 ${totalCommits} 次 `"
+        class="shadow-sm"
+      >
+        <Skeleton
+          :active="true"
+          :loading="calendarLoading"
+          :paragraph="{ rows: 4 }"
         >
           <div class="h-[220px] w-full">
             <ContributionGraph :data="graphData" />
           </div>
-        </Card>
-      </Spin>
+        </Skeleton>
+      </Card>
     </div>
   </Page>
 </template>
