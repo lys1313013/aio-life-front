@@ -406,7 +406,7 @@ const headerSlots = computed(() => {
 
       <template v-if="preferencesButtonPosition.fixed">
         <Preferences
-          class="z-100 fixed bottom-20 left-0"
+          class="z-100 fixed bottom-20 left-0 opacity-20 transition-opacity hover:opacity-100"
           @clear-preferences-and-logout="clearPreferencesAndLogout"
         />
       </template>
