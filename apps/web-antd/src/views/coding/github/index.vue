@@ -24,6 +24,8 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { getGithubContributionStats } from '#/api';
+
 import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'GithubGraph' });
@@ -176,74 +178,10 @@ async function fetchContributions(user: string) {
     loading.value = true;
     error.value = false;
 
-    const query = `
-      query {
-        user(login: "${user}") {
-          contributionsCollection {
-            contributionCalendar {
-              totalContributions
-              weeks {
-                contributionDays {
-                  contributionCount
-                  date
-                  contributionLevel
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const response = await fetch('https://api.github.com/graphql', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${githubToken.value}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch data');
-    }
-
-    const res = await response.json();
-    if (res.errors) {
-      throw new Error(res.errors[0].message);
-    }
-
-    const calendar = res.data.user.contributionsCollection.contributionCalendar;
-    const contributions = [];
-
-    const mapLevel = (level: string) => {
-      switch (level) {
-        case 'NONE':
-          return 0;
-        case 'FIRST_QUARTILE':
-          return 1;
-        case 'SECOND_QUARTILE':
-          return 2;
-        case 'THIRD_QUARTILE':
-          return 3;
-        case 'FOURTH_QUARTILE':
-          return 4;
-        default:
-          return 0;
-      }
-    };
-
-    for (const week of calendar.weeks) {
-      for (const day of week.contributionDays) {
-        contributions.push({
-          date: day.date,
-          count: day.contributionCount,
-          level: mapLevel(day.contributionLevel),
-        });
-      }
-    }
-
-    contributionData.value = { contributions };
+    const stats = await getGithubContributionStats(user, githubToken.value || '');
+    contributionData.value = { contributions: stats.contributions };
+    // currentStreak and todayContribution will be updated in updateChart
+    // but we can also use the values from stats directly if we want
   } catch (err) {
     error.value = true;
     contributionData.value = null;

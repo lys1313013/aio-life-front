@@ -10,6 +10,7 @@ interface Props {
   title?: string;
   totalTitle?: string;
   totalValue?: number | string;
+  url?: string;
   value?: number | string;
   valueColor?: string;
 }
@@ -18,15 +19,22 @@ defineOptions({
   name: 'AnalysisCard',
 });
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   icon: '',
   loading: false,
   title: '',
   totalTitle: '',
   totalValue: 0,
+  url: '',
   value: 0,
   valueColor: '',
 });
+
+function handleIconClick() {
+  if (props.url) {
+    window.open(props.url, '_blank');
+  }
+}
 </script>
 
 <template>
@@ -43,7 +51,12 @@ withDefaults(defineProps<Props>(), {
         >
           {{ value }}
         </span>
-        <VbenIcon :icon="icon" class="size-8 flex-shrink-0" />
+        <VbenIcon
+          :class="{ 'cursor-pointer hover:opacity-80': !!url }"
+          :icon="icon"
+          class="size-8 flex-shrink-0"
+          @click="handleIconClick"
+        />
       </div>
       <div class="mt-4 flex justify-between text-sm text-gray-500">
         <span>{{ totalTitle }}</span>

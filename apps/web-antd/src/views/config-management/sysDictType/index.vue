@@ -111,7 +111,11 @@ function openAddFormDrawer() {
     .open();
 }
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+// 显式指定泛型参数，避免 TS 深度实例化
+const [Grid, gridApi] = useVbenVxeGrid<RowType>({
+  formOptions: formOptions as any,
+  gridOptions: gridOptions as any,
+});
 
 const deleteRow = async (row: RowType) => {
   try {

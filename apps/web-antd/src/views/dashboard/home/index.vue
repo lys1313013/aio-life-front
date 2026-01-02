@@ -6,9 +6,11 @@ import {
   WorkbenchQuickNav,
   type WorkbenchQuickNavItem,
 } from '@vben/common-ui';
+import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
 import { getDashboardCard } from '#/api/core/dashboard';
+import { getGithubCardInfo } from '#/api/core/github';
 
 import AnalysisCard from './components/analysis-card.vue';
 
@@ -17,19 +19,39 @@ interface OverviewItem {
   title: string;
   totalTitle: string;
   totalValue: number | string;
+  url?: string;
   value: number | string;
   valueColor?: string;
 }
 
 const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
+const userStore = useUserStore();
 
 // 获取数据并设置 overviewItems
 onMounted(async () => {
   try {
     loading.value = true;
-    const res = await getDashboardCard({});
-    overviewItems.value = res;
+    const [dashboardRes, githubRes] = await Promise.allSettled([
+      getDashboardCard({}),
+      userStore.userInfo?.githubUsername && userStore.userInfo?.githubToken
+        ? getGithubCardInfo(
+            userStore.userInfo.githubUsername,
+            userStore.userInfo.githubToken,
+          )
+        : Promise.reject('No github credentials'),
+    ]);
+
+    const items: OverviewItem[] = [];
+    if (dashboardRes.status === 'fulfilled') {
+      items.push(...dashboardRes.value);
+    }
+
+    if (githubRes.status === 'fulfilled') {
+      items.push(githubRes.value);
+    }
+
+    overviewItems.value = items;
   } catch (error) {
     console.error('获取仪表盘数据失败:', error);
   } finally {
@@ -103,6 +125,7 @@ function navTo(nav: WorkbenchQuickNavItem) {
           :title="item.title"
           :total-title="item.totalTitle"
           :total-value="item.totalValue"
+          :url="item.url"
           :value="item.value"
           :value-color="item.valueColor"
         />
