@@ -71,6 +71,7 @@ const dailyQuestion = ref<DailyQuestion['todayRecord'][0]['question'] | null>(
   null,
 );
 const currentStreak = ref(0);
+const totalActiveDays = ref(0);
 const mostActiveDay = ref<{ count: number; date: string } | null>(null);
 const todaySubmissions = ref(0);
 
@@ -369,6 +370,7 @@ function renderGreenWall(
     }
   }
   currentStreak.value = recentStreakVal;
+  totalActiveDays.value = calendar.totalActiveDays;
 
   const data: { date: string; count: number }[] = [];
   let maxCount = 0;
@@ -502,14 +504,14 @@ onMounted(() => {
           </Card>
           <Card :bordered="false" class="shadow-sm">
             <div class="text-sm" :style="{ color: token.colorTextSecondary }">
-              连续提交
+              累计活跃天数
             </div>
             <Skeleton
               :active="true"
               :loading="calendarLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-2xl font-bold">{{ currentStreak }} 天</div>
+              <div class="text-2xl font-bold">{{ totalActiveDays }} 天</div>
             </Skeleton>
           </Card>
           <Card :bordered="false" class="shadow-sm">
@@ -600,11 +602,19 @@ onMounted(() => {
         </Skeleton>
       </Card>
 
-      <Card
-        :bordered="false"
-        :title="`过去一年共提交 ${totalCommits} 次 `"
-        class="shadow-sm"
-      >
+      <Card :bordered="false" class="shadow-sm">
+        <template #title>
+          <div class="flex items-center justify-between">
+            <span>过去一年共提交 {{ totalCommits }} 次</span>
+            <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+              连续提交:
+              <span class="font-medium text-purple-600 dark:text-purple-400">
+                {{ currentStreak }}
+              </span>
+              天
+            </span>
+          </div>
+        </template>
         <Skeleton
           :active="true"
           :loading="calendarLoading"

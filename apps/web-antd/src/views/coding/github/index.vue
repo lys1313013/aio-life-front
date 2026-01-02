@@ -46,6 +46,14 @@ const longestStreak = ref({ days: 0, start: '', end: '' });
 const currentStreak = ref(0);
 const todayContribution = ref(0);
 
+// Total Stars
+const totalStars = computed(() => {
+  return repoList.value.reduce(
+    (acc, repo) => acc + (repo.stargazers_count || 0),
+    0,
+  );
+});
+
 // Repository Stats
 const repoList = ref<any[]>([]);
 const reposLoading = ref(false);
@@ -432,7 +440,7 @@ watch(
                     />
                   </div>
                   <div>
-                    <div class="text-xs text-gray-500">这一年的高光月份</div>
+                    <div class="text-xs text-gray-500">最活跃的月份</div>
                     <div class="flex items-baseline gap-2">
                       <span class="text-base font-medium">{{
                         bestMonth.date
@@ -461,23 +469,16 @@ watch(
                 </div>
               </Card>
 
-              <!-- Current Streak -->
+              <!-- Total Stars -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
-                  <div
-                    class="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30"
-                  >
-                    <FireOutlined
-                      class="text-lg text-purple-600 dark:text-purple-400"
-                    />
+                  <div class="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900/30">
+                    <StarOutlined class="text-lg text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">连续提交</div>
-                      <div class="flex items-baseline gap-1">
-                        <span class="text-lg font-bold">{{ currentStreak }}</span>
-                        <span class="text-xs text-gray-500">天</span>
-                      </div>
+                      <div class="text-xs text-gray-500">总 Star 数</div>
+                      <span class="text-lg font-bold">{{ totalStars }}</span>
                     </div>
                   </div>
                 </div>
@@ -551,11 +552,19 @@ watch(
                 </div>
               </Card>
             </div>
-            <Card
-              :bordered="false"
-              :title="`过去一年共提交 ${totalContributions} 次`"
-              class="mt-6 shadow-sm"
-            >
+            <Card :bordered="false" class="mt-6 shadow-sm">
+              <template #title>
+                <div class="flex items-center justify-between">
+                  <span>过去一年共提交 {{ totalContributions }} 次</span>
+                  <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                    连续提交:
+                    <span class="font-medium text-purple-600 dark:text-purple-400">
+                      {{ currentStreak }}
+                    </span>
+                    天
+                  </span>
+                </div>
+              </template>
               <ContributionGraph :data="graphData" />
             </Card>
           </template>
