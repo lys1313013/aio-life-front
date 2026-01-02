@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'mdi:finance',
       keepAlive: true,
-      order: 900,
+      order: 2000,
       title: '财务中心',
     },
     name: 'FinanceManagement',
@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
       {
         meta: {
           icon: 'mdi:chart-areaspline',
-          title: '财务概览',
+          title: '概览',
         },
         name: 'financeDashboard',
         path: '/finance-management/dashboard',
@@ -41,7 +41,7 @@ const routes: RouteRecordRaw[] = [
       {
         meta: {
           icon: 'mdi:import',
-          title: '外部账单导入',
+          title: '账单导入',
         },
         name: 'alipayImport',
         path: '/finance-management/alipay-import',

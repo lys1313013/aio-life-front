@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'mdi:cog-outline',
       keepAlive: true,
-      order: 1000,
+      order: 9000,
       title: '配置管理',
     },
     name: 'ConfigManagement',

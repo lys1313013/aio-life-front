@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
       icon: 'lucide:code-2',
       keepAlive: true,
       order: 2000,
-      title: '编程中心',
+      title: '编程看板',
     },
     name: 'Coding',
     path: '/coding',

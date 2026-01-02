@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
       icon: 'ic:baseline-view-in-ar',
       keepAlive: true,
       order: 800,
-      title: '个人中心',
+      title: '人生足迹',
     },
     name: 'Demos',
     path: '/my-hub',
@@ -29,15 +29,6 @@ const routes: RouteRecordRaw[] = [
         name: 'todo',
         path: '/my-hub/todo',
         component: () => import('#/views/my-hub/todo/index.vue'),
-      },
-      {
-        meta: {
-          icon: 'mdi:monitor-dashboard',
-          title: '设备墙',
-        },
-        name: 'device',
-        path: '/my-hub/device',
-        component: () => import('#/views/my-hub/device/index.vue'),
       },
       {
         meta: {
