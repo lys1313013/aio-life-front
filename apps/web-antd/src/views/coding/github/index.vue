@@ -23,6 +23,7 @@ import {
   Alert,
   Card,
   message,
+  Skeleton,
   Spin,
   Table,
   Tag,
@@ -83,14 +84,14 @@ const columns = [
     key: 'forks_count',
   },
   {
-    title: '最近更新',
-    dataIndex: 'pushed_at',
-    key: 'pushed_at',
-  },
-  {
     title: '个人提交数',
     dataIndex: 'myCommits',
     key: 'myCommits',
+  },
+  {
+    title: '最近更新',
+    dataIndex: 'pushed_at',
+    key: 'pushed_at',
   },
 ];
 
@@ -434,7 +435,7 @@ watch(
   async (user) => {
     if (!user) {
       if (!hasWarnedNoUsername) {
-        message.warning('未设置 Github 用户名，无法显示贡献图');
+        message.warning('未设置 Github 用户名，无法显示提交图');
         hasWarnedNoUsername = true;
       }
       return;
@@ -449,31 +450,62 @@ watch(
 <template>
   <Page title="">
     <div class="p-4">
-      <Spin :spinning="loading" tip="加载中...">
-        <div v-if="error" class="w-full py-12 text-center">
-          <Alert
-            description="无法加载数据，请检查网络连接。"
-            message="加载失败"
-            show-icon
-            type="error"
-            class="inline-block text-left"
-          />
-        </div>
+      <div class="w-full overflow-x-auto">
+        <div class="min-w-[760px] pr-4">
+          <!-- Stats Grid -->
+          <template v-if="loading">
+            <div class="mb-6 grid grid-cols-1 gap-4 pl-2 md:grid-cols-3">
+              <Card
+                v-for="i in 6"
+                :key="i"
+                :bordered="false"
+                class="shadow-sm"
+              >
+                <div class="flex items-center gap-3">
+                  <Skeleton.Avatar active shape="circle" size="large" />
+                  <div class="w-full">
+                    <Skeleton
+                      active
+                      :paragraph="{ rows: 1, width: '60%' }"
+                      :title="{ width: '40%' }"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </div>
+            <Card :bordered="false" class="shadow-sm">
+              <Skeleton active :paragraph="{ rows: 4 }" />
+            </Card>
+          </template>
 
-        <div v-show="!error && !loading" class="w-full overflow-x-auto">
-          <div class="min-w-[760px] pr-4">
-            <!-- Stats Grid -->
+          <template v-else-if="error">
+            <div class="w-full py-12 text-center">
+              <Alert
+                description="无法加载数据，请检查网络连接。"
+                message="加载失败"
+                show-icon
+                type="error"
+                class="inline-block text-left"
+              />
+            </div>
+          </template>
+
+          <template v-else>
             <div class="mb-6 grid grid-cols-1 gap-4 pl-2 md:grid-cols-3">
               <!-- Best Month -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
                   <div class="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
-                    <CalendarOutlined class="text-lg text-blue-600 dark:text-blue-400" />
+                    <CalendarOutlined
+                      class="text-lg text-blue-600 dark:text-blue-400"
+                    />
                   </div>
                   <div>
                     <div class="text-xs text-gray-500">这一年的高光月份</div>
                     <div class="flex items-baseline gap-2">
-                      <span class="text-base font-medium">{{ bestMonth.date }}</span>
+                      <span class="text-base font-medium">{{
+                        bestMonth.date
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -482,12 +514,16 @@ watch(
               <!-- Daily Average -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-green-100 p-2 dark:bg-green-900/30">
-                    <BarChartOutlined class="text-lg text-green-600 dark:text-green-400" />
+                  <div
+                    class="rounded-full bg-green-100 p-2 dark:bg-green-900/30"
+                  >
+                    <BarChartOutlined
+                      class="text-lg text-green-600 dark:text-green-400"
+                    />
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">日均贡献</div>
+                      <div class="text-xs text-gray-500">日均提交</div>
                       <span class="text-lg font-bold">{{ dailyAverage }}</span>
                     </div>
                   </div>
@@ -497,13 +533,19 @@ watch(
               <!-- Total Contributions -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30">
-                    <FileTextOutlined class="text-lg text-purple-600 dark:text-purple-400" />
+                  <div
+                    class="rounded-full bg-purple-100 p-2 dark:bg-purple-900/30"
+                  >
+                    <FileTextOutlined
+                      class="text-lg text-purple-600 dark:text-purple-400"
+                    />
                   </div>
                   <div class="w-full">
                     <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">最近一年总贡献</div>
-                      <span class="text-lg font-bold">{{ totalContributions }}</span>
+                      <div class="text-xs text-gray-500">最近一年总提交</div>
+                      <span class="text-lg font-bold">{{
+                        totalContributions
+                      }}</span>
                     </div>
                   </div>
                 </div>
@@ -512,16 +554,24 @@ watch(
               <!-- Busiest Day -->
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-orange-100 p-2 dark:bg-orange-900/30">
-                    <ThunderboltOutlined class="text-lg text-orange-600 dark:text-orange-400" />
+                  <div
+                    class="rounded-full bg-orange-100 p-2 dark:bg-orange-900/30"
+                  >
+                    <ThunderboltOutlined
+                      class="text-lg text-orange-600 dark:text-orange-400"
+                    />
                   </div>
                   <div>
-                    <div class="text-xs text-gray-500">你最活跃的一天</div>
+                    <div class="text-xs text-gray-500">最活跃的一天</div>
                     <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{ busiestDay.count }}</span>
-                      <span class="text-xs text-gray-500">次贡献</span>
+                      <span class="mr-1 text-2xl font-bold">{{
+                        busiestDay.count
+                      }}</span>
+                      <span class="text-xs text-gray-500">次提交</span>
                     </div>
-                    <div class="text-xs text-gray-400">{{ busiestDay.date }}</div>
+                    <div class="text-xs text-gray-400">
+                      {{ busiestDay.date }}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -530,12 +580,16 @@ watch(
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
                   <div class="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
-                    <FireOutlined class="text-lg text-red-600 dark:text-red-400" />
+                    <FireOutlined
+                      class="text-lg text-red-600 dark:text-red-400"
+                    />
                   </div>
                   <div>
                     <div class="text-xs text-gray-500">最长连续打卡</div>
                     <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{ longestStreak.days }}</span>
+                      <span class="mr-1 text-2xl font-bold">{{
+                        longestStreak.days
+                      }}</span>
                       <span class="text-xs text-gray-500">天</span>
                     </div>
                     <div class="text-xs text-gray-400">
@@ -549,12 +603,16 @@ watch(
               <Card :bordered="false" class="shadow-sm">
                 <div class="flex items-center gap-3">
                   <div class="rounded-full bg-cyan-100 p-2 dark:bg-cyan-900/30">
-                    <CheckCircleOutlined class="text-lg text-cyan-600 dark:text-cyan-400" />
+                    <CheckCircleOutlined
+                      class="text-lg text-cyan-600 dark:text-cyan-400"
+                    />
                   </div>
                   <div>
-                    <div class="text-xs text-gray-500">今日贡献次数</div>
+                    <div class="text-xs text-gray-500">今日提交次数</div>
                     <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{ todayContribution }}</span>
+                      <span class="mr-1 text-2xl font-bold">{{
+                        todayContribution
+                      }}</span>
                       <span class="text-xs text-gray-500">次</span>
                     </div>
                   </div>
@@ -562,79 +620,78 @@ watch(
               </Card>
             </div>
             <EchartsUI ref="chartRef" height="160px" />
+          </template>
 
-            <div class="mt-4">
-              <h3 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
-                仓库贡献统计
-              </h3>
-              <Table
-                :columns="columns"
-                :data-source="repoList"
-                :loading="reposLoading"
-                :pagination="{ pageSize: 10 }"
-                row-key="id"
-              >
-                <template #bodyCell="{ column, record }">
-                  <template v-if="column.key === 'name'">
-                    <a
-                      :href="record.html_url"
-                      class="flex items-center gap-2 text-blue-500 hover:underline"
-                      target="_blank"
-                    >
-                      <span class="font-medium">{{ record.name }}</span>
-                      <Tag v-if="record.private" color="red">Private</Tag>
-                      <Tag v-if="record.fork" color="orange">Fork</Tag>
-                    </a>
-                    <div class="max-w-[200px] truncate text-xs text-gray-500">
-                      {{ record.description }}
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'language'">
-                    <Tag v-if="record.language" color="blue">{{
-                      record.language
-                    }}</Tag>
-                  </template>
-                  <template v-if="column.key === 'stargazers_count'">
-                    <div class="flex items-center gap-1">
-                      <StarOutlined class="text-yellow-500" />
-                      <span>{{ record.stargazers_count }}</span>
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'forks_count'">
-                    <div class="flex items-center gap-1">
-                      <BranchesOutlined class="text-gray-500" />
-                      <span>{{ record.forks_count }}</span>
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'pushed_at'">
-                    <span class="text-gray-500">
-                      {{ formatDate(record.pushed_at) }}
-                    </span>
-                  </template>
-                  <template v-if="column.key === 'myCommits'">
-                    <div
-                      v-if="record.loadingStats"
-                      class="flex items-center gap-2"
-                    >
-                      <Spin size="small" />
-                    </div>
-                    <span
-                      v-else
-                      :class="{
-                        'font-bold text-green-600':
-                          typeof record.myCommits === 'number' &&
-                          record.myCommits > 0,
-                      }"
-                    >
-                      {{ record.myCommits }}
-                    </span>
-                  </template>
+          <div class="mt-4">
+            <h3
+              class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
+            >
+              仓库提交统计
+            </h3>
+            <Table
+              :columns="columns"
+              :data-source="repoList"
+              :loading="reposLoading"
+              :pagination="{ pageSize: 10 }"
+              row-key="id"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'name'">
+                  <a
+                    :href="record.html_url"
+                    class="flex items-center gap-2 text-blue-500 hover:underline"
+                    target="_blank"
+                  >
+                    <span class="font-medium">{{ record.name }}</span>
+                    <Tag v-if="record.private" color="red">Private</Tag>
+                    <Tag v-if="record.fork" color="orange">Fork</Tag>
+                  </a>
+                  <div class="max-w-[200px] truncate text-xs text-gray-500">
+                    {{ record.description }}
+                  </div>
                 </template>
-              </Table>
-            </div>
+                <template v-if="column.key === 'language'">
+                  <Tag v-if="record.language" color="blue">{{
+                    record.language
+                  }}</Tag>
+                </template>
+                <template v-if="column.key === 'stargazers_count'">
+                  <div class="flex items-center gap-1">
+                    <StarOutlined class="text-yellow-500" />
+                    <span>{{ record.stargazers_count }}</span>
+                  </div>
+                </template>
+                <template v-if="column.key === 'forks_count'">
+                  <div class="flex items-center gap-1">
+                    <BranchesOutlined class="text-gray-500" />
+                    <span>{{ record.forks_count }}</span>
+                  </div>
+                </template>
+                <template v-if="column.key === 'pushed_at'">
+                  <span class="text-gray-500">
+                    {{ formatDate(record.pushed_at) }}
+                  </span>
+                </template>
+                <template v-if="column.key === 'myCommits'">
+                  <div v-if="record.loadingStats" class="flex items-center gap-2">
+                    <Spin size="small" />
+                  </div>
+                  <span
+                    v-else
+                    :class="{
+                      'font-bold text-green-600':
+                        typeof record.myCommits === 'number' &&
+                        record.myCommits > 0,
+                    }"
+                  >
+                    {{ record.myCommits }}
+                  </span>
+                </template>
+              </template>
+            </Table>
           </div>
         </div>
-      </Spin>
+      </div>
     </div>
   </Page>
 </template>
