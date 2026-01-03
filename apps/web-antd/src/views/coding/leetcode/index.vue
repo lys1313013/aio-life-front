@@ -511,58 +511,58 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page title="">
-    <div class="p-4">
+  <Page title="" content-class="p-0">
+    <div class="p-2 md:p-4">
       <!-- Ranking Info Card Group -->
-      <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card :bordered="false" class="shadow-sm">
-          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+      <div class="mb-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-4">
+        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
             全站排名
           </div>
           <Skeleton :active="true" :loading="profileLoading" :paragraph="{ rows: 0 }">
-            <div class="text-2xl font-bold tabular-nums">
+            <div class="text-lg font-bold tabular-nums md:text-2xl">
               {{ userInfo?.siteRanking?.toLocaleString() || '-' }}
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm">
-          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
             竞赛分数
           </div>
           <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
-            <div class="text-2xl font-bold tabular-nums">
+            <div class="text-lg font-bold tabular-nums md:text-2xl">
               {{ Math.round(contestInfo?.rating || 0) || '-' }}
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm">
-          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
             全球排名
           </div>
           <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
             <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-bold tabular-nums">
+              <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.globalRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.globalTotalParticipants" class="text-xs text-gray-400">
+              <span v-if="contestInfo?.globalTotalParticipants" class="text-[10px] text-gray-400 md:text-xs">
                 / {{ contestInfo.globalTotalParticipants.toLocaleString() }}
               </span>
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm">
-          <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
             全国排名
           </div>
           <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
             <div class="flex items-baseline gap-1">
-              <span class="text-2xl font-bold tabular-nums">
+              <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.localRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.localTotalParticipants" class="text-xs text-gray-400">
+              <span v-if="contestInfo?.localTotalParticipants" class="text-[10px] text-gray-400 md:text-xs">
                 / {{ contestInfo.localTotalParticipants.toLocaleString() }}
               </span>
             </div>
@@ -571,10 +571,10 @@ onMounted(() => {
       </div>
 
       <!-- User Info Card -->
-      <Card class="mb-4">
-        <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <Card :bordered="false" class="shadow-sm">
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+      <Card class="mb-4" :body-style="{ padding: '12px' }">
+        <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
+          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               已解题
             </div>
             <Skeleton
@@ -582,16 +582,16 @@ onMounted(() => {
               :loading="profileLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-2xl font-bold tabular-nums">
+              <div class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ totalSolved }}
-                <span class="text-base font-normal text-gray-400">
+                <span class="text-xs font-normal text-gray-400 md:text-base">
                   / {{ totalQuestions }}
                 </span>
               </div>
             </Skeleton>
           </Card>
-          <Card :bordered="false" class="shadow-sm">
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               声望
             </div>
             <Skeleton
@@ -599,13 +599,13 @@ onMounted(() => {
               :loading="profileLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-2xl font-bold tabular-nums">
+              <div class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ userInfo?.profile?.reputation ?? 0 }}
               </div>
             </Skeleton>
           </Card>
-          <Card :bordered="false" class="shadow-sm">
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               累计活跃天数
             </div>
             <Skeleton
@@ -613,11 +613,11 @@ onMounted(() => {
               :loading="calendarLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-2xl font-bold">{{ totalActiveDays }} 天</div>
+              <div class="text-lg font-bold md:text-2xl">{{ totalActiveDays }} 天</div>
             </Skeleton>
           </Card>
-          <Card :bordered="false" class="shadow-sm">
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               最活跃的一天
             </div>
             <Skeleton
@@ -626,18 +626,18 @@ onMounted(() => {
               :paragraph="{ rows: 0 }"
             >
               <div class="flex flex-col">
-                <div class="text-2xl font-bold tabular-nums">
+                <div class="text-lg font-bold tabular-nums md:text-2xl">
                   {{ mostActiveDay?.count || 0 }}
-                  <span class="text-sm font-normal text-gray-400">次提交</span>
+                  <span class="text-xs font-normal text-gray-400 md:text-sm">次提交</span>
                 </div>
-                <div class="text-xs text-gray-400">
+                <div class="text-[10px] text-gray-400 md:text-xs">
                   {{ mostActiveDay?.date || '-' }}
                 </div>
               </div>
             </Skeleton>
           </Card>
-          <Card :bordered="false" class="shadow-sm">
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               今日提交次数
             </div>
             <Skeleton
@@ -645,17 +645,18 @@ onMounted(() => {
               :loading="calendarLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-2xl font-bold">
+              <div class="text-lg font-bold md:text-2xl">
                 {{ todaySubmissions }}
               </div>
             </Skeleton>
           </Card>
           <Card
             :bordered="false"
-            class="cursor-pointer shadow-sm hover:shadow-md"
+            class="cursor-pointer bg-gray-50/50 shadow-none hover:shadow-md dark:bg-gray-800/20"
+            :body-style="{ padding: '12px' }"
             @click="goToDailyQuestion"
           >
-            <div class="text-sm" :style="{ color: token.colorTextSecondary }">
+            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               每日一题
             </div>
             <Skeleton
@@ -664,7 +665,7 @@ onMounted(() => {
               :paragraph="{ rows: 0 }"
             >
               <div
-                class="text-2xl font-bold"
+                class="text-lg font-bold md:text-2xl"
                 :class="{
                   'text-red-500': dailyQuestionStatus !== 'Finish',
                   'text-green-500': dailyQuestionStatus === 'Finish',
@@ -680,22 +681,22 @@ onMounted(() => {
         <Skeleton :active="true" :loading="profileLoading">
           <div
             v-if="questionProgress"
-            class="grid grid-cols-1 gap-4 md:grid-cols-4"
+            class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
           >
             <div
               v-for="item in progressDisplayList"
               :key="item.difficulty"
-              class="rounded-lg border p-4 text-center"
+              class="rounded-lg border p-2 text-center md:p-4"
             >
               <div
                 :style="{ color: getDifficultyColor(item.difficulty) }"
-                class="mb-2 text-lg font-bold"
+                class="mb-1 text-sm font-bold md:mb-2 md:text-lg"
               >
                 {{ getDifficultyLabel(item.difficulty) }}
               </div>
-              <div class="text-2xl font-bold">
+              <div class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ item.count }}
-                <span class="text-base font-normal text-gray-400">
+                <span class="text-xs font-normal text-gray-400 md:text-sm">
                   / {{ getTotalCount(item.difficulty) }}
                 </span>
               </div>
@@ -704,11 +705,11 @@ onMounted(() => {
         </Skeleton>
       </Card>
 
-      <Card :bordered="false" class="shadow-sm">
+      <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
         <template #title>
-          <div class="flex items-center justify-between">
-            <span>过去一年共提交 {{ totalCommits }} 次</span>
-            <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-sm md:text-base">过去一年共提交 {{ totalCommits }} 次</span>
+            <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 md:text-xs">
               连续提交:
               <span class="font-medium text-purple-600 dark:text-purple-400">
                 {{ currentStreak }}
@@ -723,7 +724,7 @@ onMounted(() => {
           :loading="calendarLoading"
           :paragraph="{ rows: 4 }"
         >
-          <div class="h-[220px] w-full">
+          <div class="h-[180px] w-full md:h-[220px]">
             <ContributionGraph :data="graphData" />
           </div>
         </Skeleton>
