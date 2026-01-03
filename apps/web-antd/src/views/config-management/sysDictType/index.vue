@@ -2,27 +2,52 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { onMounted, onUnmounted, ref } from 'vue';
 
-import { Button, Popconfirm, Tooltip } from 'ant-design-vue';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { useVbenModal } from '@vben/common-ui';
+import { usePreferences } from '@vben/preferences';
+
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  VerticalAlignTopOutlined,
+} from '@ant-design/icons-vue';
+import {
+  Button,
+  Empty,
+  FloatButton,
+  Popconfirm,
+  Spin,
+  Tag,
+  Tooltip,
+} from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/sysDictType';
 
-import FormDrawerDemo from './form-drawer-demo.vue';
+import FormModal from './form-modal.vue';
 
 interface RowType {
   dictId: any;
-  category: string;
-  color: string;
-  price: string;
-  productName: string;
-  releaseDate: string;
+  dictName: string;
+  dictType: string;
+  remark: string;
+  updateTime: string;
 }
 
-const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  connectedComponent: FormDrawerDemo,
+const { isMobile } = usePreferences();
+const tableData = ref<RowType[]>([]);
+const pagination = ref({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+});
+const loading = ref(false);
+const hasMore = ref(true);
+
+const [FormModalComponent, formModalApi] = useVbenModal({
+  connectedComponent: FormModal,
 });
 
 const formOptions: VbenFormProps = {
@@ -32,21 +57,38 @@ const formOptions: VbenFormProps = {
     {
       component: 'Input',
       componentProps: {
-        placeholder: '',
+        placeholder: '请输入字典名称',
       },
       fieldName: 'dictName',
       label: '字典名称',
     },
   ],
   // 控制表单是否显示折叠按钮
-  showCollapseButton: true,
+  showCollapseButton: false,
   submitButtonOptions: {
     content: '查询',
   },
+  wrapperClass: isMobile.value ? 'mobile-form-wrapper' : '',
   // 是否在字段值改变时提交表单
   submitOnChange: false,
   // 按下回车时是否提交表单
   submitOnEnter: true,
+  handleReset: (_values) => {
+    if (isMobile.value) {
+      pagination.value.current = 1;
+      tableData.value = [];
+      hasMore.value = true;
+      gridApi.reload();
+    }
+  },
+  handleSubmit: (_values) => {
+    if (isMobile.value) {
+      pagination.value.current = 1;
+      tableData.value = [];
+      hasMore.value = true;
+      gridApi.reload();
+    }
+  },
 };
 
 const gridOptions: VxeGridProps<RowType> = {
@@ -73,17 +115,44 @@ const gridOptions: VxeGridProps<RowType> = {
     },
   ],
   keepSource: true,
-  pagerConfig: { pageSize: 50 },
+  pagerConfig: { pageSize: 10 },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
-        return await query({
-          page: page.currentPage,
+        if (isMobile.value) {
+          loading.value = true;
+        }
+
+        // 移动端模式下，从 formApi 直接获取当前最新的表单值
+        const values = isMobile.value
+          ? await gridApi.formApi.getValues()
+          : formValues;
+
+        const res = await query({
+          page: isMobile.value ? pagination.value.current : page.currentPage,
           pageSize: page.pageSize,
           condition: {
-            ...formValues,
+            ...values,
           },
         });
+
+        if (isMobile.value) {
+          tableData.value =
+            pagination.value.current === 1
+              ? res.items
+              : [...tableData.value, ...res.items];
+          pagination.value.total = res.total;
+          hasMore.value = tableData.value.length < res.total;
+          loading.value = false;
+        } else {
+          tableData.value = res.items;
+          pagination.value = {
+            current: page.currentPage,
+            pageSize: page.pageSize,
+            total: res.total,
+          };
+        }
+        return res;
       },
     },
   },
@@ -94,8 +163,31 @@ const gridOptions: VxeGridProps<RowType> = {
   },
 };
 
-function openFormDrawer(row: RowType) {
-  formDrawerApi
+function handleScroll() {
+  if (!isMobile.value || loading.value || !hasMore.value) return;
+
+  const scrollHeight = document.documentElement.scrollHeight;
+  const scrollTop = document.documentElement.scrollTop;
+  const clientHeight = document.documentElement.clientHeight;
+
+  if (scrollTop + clientHeight >= scrollHeight - 50) {
+    pagination.value.current++;
+    gridApi.reload();
+  }
+}
+
+onMounted(() => {
+  if (isMobile.value) {
+    window.addEventListener('scroll', handleScroll);
+  }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+function openFormModal(row: RowType) {
+  formModalApi
     .setData({
       // 表单值
       values: row,
@@ -103,8 +195,8 @@ function openFormDrawer(row: RowType) {
     .open();
 }
 
-function openAddFormDrawer() {
-  formDrawerApi
+function openAddFormModal() {
+  formModalApi
     .setData({
       // 表单值
       values: { modelname: '' },
@@ -130,22 +222,68 @@ const deleteRow = async (row: RowType) => {
 };
 
 const tableReload = () => {
+  if (isMobile.value) {
+    pagination.value.current = 1;
+    tableData.value = [];
+    hasMore.value = true;
+  }
   gridApi.reload();
 };
+
+let longPressTimer: any = null;
+let isLongPress = false;
+let isMoving = false;
+const activeDeleteId = ref<string | null>(null);
+
+function handleTouchStart(item: RowType) {
+  isLongPress = false;
+  isMoving = false;
+  longPressTimer = setTimeout(() => {
+    if (!isMoving) {
+      isLongPress = true;
+      activeDeleteId.value = item.dictId;
+    }
+  }, 600); // 600ms 长按触发
+}
+
+function handleTouchEnd(item: RowType) {
+  clearTimeout(longPressTimer);
+  if (!isLongPress && !isMoving) {
+    // 如果点击了其他地方，隐藏当前的删除按钮
+    if (activeDeleteId.value) {
+      activeDeleteId.value = null;
+      return;
+    }
+    // 如果既不是长按也不是滑动，则认为是点击，触发编辑
+    openFormModal(item);
+  }
+}
+
+function handleTouchMove() {
+  isMoving = true;
+  clearTimeout(longPressTimer);
+}
+
+function handleDelete(item: RowType) {
+  deleteRow(item);
+  activeDeleteId.value = null;
+}
 </script>
 
 <template>
-  <div class="vp-raw w-full">
-    <FormDrawer @table-reload="tableReload" />
-    <Grid>
+  <div class="vp-raw w-full p-4">
+    <FormModalComponent @table-reload="tableReload" />
+
+    <!-- 桌面端展示表格，移动端通过 CSS 隐藏表格部分以保留搜索表单 -->
+    <Grid :class="{ 'mobile-grid': isMobile }">
       <template #toolbar-tools>
-        <Button class="mr-2" type="primary" @click="openAddFormDrawer">
+        <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
         </Button>
       </template>
       <template #action="{ row }">
         <Tooltip title="编辑">
-          <Button type="link" size="small" @click="openFormDrawer(row)">
+          <Button type="link" size="small" @click="openFormModal(row)">
             <template #icon><EditOutlined /></template>
           </Button>
         </Tooltip>
@@ -163,5 +301,245 @@ const tableReload = () => {
         </Popconfirm>
       </template>
     </Grid>
+
+    <!-- 移动端展示卡片列表 -->
+    <div v-if="isMobile" class="mobile-card-list mt-4 pb-20">
+      <div
+        v-if="tableData.length > 0"
+        class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-[#171717]"
+      >
+        <div
+          v-for="(item, index) in tableData"
+          :key="item.dictId"
+          class="active:scale-[0.98] relative cursor-pointer p-5 transition-transform duration-100"
+          :class="{
+            'border-t border-zinc-100 dark:border-zinc-800/50': index !== 0,
+          }"
+          @touchstart="handleTouchStart(item)"
+          @touchend="handleTouchEnd(item)"
+          @touchmove="handleTouchMove"
+        >
+          <!-- 删除按钮遮罩层 -->
+          <div
+            v-if="activeDeleteId === item.dictId"
+            class="absolute inset-0 z-10 flex items-center justify-center bg-black/5 backdrop-blur-[2px] transition-all duration-200"
+            @touchstart.stop="() => {}"
+            @click.stop="activeDeleteId = null"
+          >
+            <Popconfirm
+              title="确定要删除此项吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              placement="top"
+              @confirm="handleDelete(item)"
+              @cancel="activeDeleteId = null"
+            >
+              <Button
+                type="primary"
+                danger
+                shape="round"
+                size="large"
+                class="!flex !items-center !gap-2 shadow-lg scale-110"
+                @touchstart.stop="() => {}"
+                @click.stop="() => {}"
+              >
+                <template #icon><DeleteOutlined /></template>
+                删除
+              </Button>
+            </Popconfirm>
+          </div>
+
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex flex-col gap-1.5">
+              <span
+                class="text-[20px] font-bold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100"
+              >
+                {{ item.dictName }}
+              </span>
+              <span class="text-[12px] font-medium text-zinc-400 dark:text-zinc-500">
+                更新于 {{ item.updateTime || '刚刚' }}
+              </span>
+            </div>
+            <div class="flex flex-col items-end gap-2 pt-1">
+              <span
+                class="rounded-md bg-blue-50/80 px-2 py-0.5 font-mono text-[11px] font-bold text-blue-600 ring-1 ring-inset ring-blue-500/10 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/20"
+              >
+                {{ item.dictType }}
+              </span>
+            </div>
+          </div>
+
+          <div v-if="item.remark" class="card-content">
+            <div
+              class="relative overflow-hidden rounded-xl bg-zinc-50/50 p-3 dark:bg-zinc-800/30"
+            >
+              <div
+                class="absolute left-0 top-0 h-full w-1 bg-zinc-200 dark:bg-zinc-700"
+              ></div>
+              <span
+                class="text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400"
+              >
+                {{ item.remark }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="flex justify-center py-4">
+        <Spin size="small" tip="加载中..." />
+      </div>
+
+      <!-- 加载完毕 -->
+      <div
+        v-if="!hasMore && tableData.length > 0"
+        class="py-6 text-center text-xs text-zinc-400"
+      >
+        没有更多数据了
+      </div>
+
+      <Empty
+        v-if="!loading && tableData.length === 0"
+        class="!m-0 rounded-lg bg-white py-10 dark:bg-[#171717]"
+      />
+
+      <!-- 移动端悬浮按钮 -->
+      <FloatButton
+        type="primary"
+        :style="{ right: '25px', bottom: '25px' }"
+        @click="openAddFormModal"
+      >
+        <template #icon>
+          <PlusOutlined />
+        </template>
+      </FloatButton>
+
+      <FloatButton.BackTop
+        :visibility-height="400"
+        :style="{ right: '24px', bottom: '24px' }"
+      >
+        <template #icon>
+          <VerticalAlignTopOutlined />
+        </template>
+      </FloatButton.BackTop>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.mobile-card-list {
+  @apply flex flex-col;
+}
+.card-content {
+  @apply text-sm;
+}
+
+.mobile-card {
+  background-color: #fff;
+}
+
+:deep(.dark) .mobile-card {
+  background-color: #171717;
+}
+
+/* 移动端样式覆盖：隐藏表格主体、分页以及所有辅助组件（如滚动条、边框线等） */
+:deep(.mobile-grid .vxe-table--render-wrapper),
+:deep(.mobile-grid .vxe-table--main-wrapper),
+:deep(.mobile-grid .vxe-table--scroll-x-handle),
+:deep(.mobile-grid .vxe-table--scroll-y-handle),
+:deep(.mobile-grid .vxe-table--fixed-left-wrapper),
+:deep(.mobile-grid .vxe-table--fixed-right-wrapper),
+:deep(.mobile-grid .vxe-table--border-line),
+:deep(.mobile-grid .vxe-toolbar),
+:deep(.mobile-grid .vxe-pager),
+:deep(.mobile-grid .vben-vxe-grid__grid-wrapper),
+:deep(.mobile-grid .vxe-grid--main-wrapper),
+:deep(.mobile-grid .vxe-grid--layout-wrapper),
+:deep(.mobile-grid .vxe-table) {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+}
+
+/* 允许 Header 显示（因为搜索框在这里），但重置其最小高度 */
+:deep(.mobile-grid .vxe-grid--layout-header-wrapper) {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+/* 强制消除搜索框下方的所有间隙 */
+:deep(.mobile-grid .vxe-grid) {
+  min-height: 0 !important;
+  background: transparent !important;
+  padding-bottom: 0 !important;
+}
+
+:deep(.mobile-grid .vben-vxe-grid) {
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  background: transparent !important;
+  min-height: 0 !important;
+}
+
+/* 隐藏那个奇怪的背景分隔条 */
+:deep(.mobile-grid .bg-background-deep) {
+  display: none !important;
+}
+
+/* 统一移动端搜索表单容器上下间距，消除 pb-8 等带来的不一致 */
+:deep(.mobile-grid .relative.rounded.py-3) {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* 移动端搜索区域优化 */
+:deep(.mobile-form-wrapper) {
+  @apply !mb-4 !p-0;
+}
+
+:deep(.mobile-form-wrapper .ant-form) {
+  @apply rounded-xl border border-zinc-100 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-[#171717];
+}
+
+:deep(.mobile-form-wrapper .ant-form-item) {
+  @apply mb-2 !mr-0 flex-row items-center justify-between;
+}
+
+:deep(.mobile-form-wrapper .ant-form-item-label) {
+  @apply flex-shrink-0 !pb-0;
+}
+
+:deep(.mobile-form-wrapper .ant-form-item-control) {
+  @apply flex-grow-0;
+}
+
+:deep(.mobile-form-wrapper .ant-form-item-control-input-content) {
+  @apply flex justify-end;
+}
+
+:deep(.mobile-form-wrapper .ant-input),
+:deep(.mobile-form-wrapper .ant-select-selector) {
+  @apply !w-48 !rounded-lg;
+}
+
+:deep(.mobile-form-wrapper .vben-form-actions) {
+  @apply !mt-1 flex w-full gap-3 border-t border-zinc-100 pt-2 dark:border-zinc-800;
+}
+
+:deep(.mobile-form-wrapper .vben-form-actions > button) {
+  @apply !h-10 flex-1 !rounded-lg;
+}
+
+/* 移除卡片标题下的横线 */
+:deep(.mobile-card .ant-card-head) {
+  border-bottom: none !important;
+  min-height: 40px;
+}
+</style>

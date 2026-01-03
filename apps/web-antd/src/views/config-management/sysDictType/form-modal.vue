@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import { toRaw } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { insertOrUpdate } from '#/api/core/sysDictType';
 
 defineOptions({
-  name: 'FormDrawer',
+  name: 'FormModal',
 });
 
 const emit = defineEmits(['tableReload']);
@@ -60,29 +60,32 @@ const [Form, formApi] = useVbenForm({
   showDefaultActions: false,
   submitOnEnter: true,
 });
-const [Drawer, drawerApi] = useVbenDrawer({
+const [Modal, modalApi] = useVbenModal({
   onCancel() {
-    drawerApi.close();
+    modalApi.close();
   },
   onConfirm: async () => {
     const newVar = await formApi.submitForm();
     await insertOrUpdate(toRaw(newVar));
-    drawerApi.close();
+    modalApi.close();
     tableReload();
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
-      const { values } = drawerApi.getData<Record<string, any>>();
+      const { values } = modalApi.getData<Record<string, any>>();
       if (values) {
         formApi.setValues(values);
       }
     }
   },
-  title: '',
+  title: '字典类型',
+  centered: true,
+  contentClass: 'flex-initial',
+  class: 'sm:max-w-[500px]',
 });
 </script>
 <template>
-  <Drawer>
+  <Modal>
     <Form />
-  </Drawer>
+  </Modal>
 </template>

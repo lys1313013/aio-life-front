@@ -101,7 +101,7 @@
 .vxe-buttons--wrapper:not(:empty),
 .vxe-tools--operate:not(:empty),
 .vxe-tools--wrapper:not(:empty) {
-  padding: 0.6em 0;
+  padding: 0.4em 0;
 }
 
 .vxe-tools--operate:not(:has(button)) {
@@ -110,6 +110,7 @@
 
 .vxe-grid--layout-header-wrapper {
   overflow: visible;
+  min-height: auto !important;
 }
 
 .vxe-grid--layout-body-content-wrapper {
