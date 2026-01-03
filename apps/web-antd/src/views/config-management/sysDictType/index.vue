@@ -4,7 +4,8 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { useVbenDrawer } from '@vben/common-ui';
 
-import { Button, Popconfirm } from 'ant-design-vue';
+import { Button, Popconfirm, Tooltip } from 'ant-design-vue';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/sysDictType';
@@ -143,15 +144,22 @@ const tableReload = () => {
         </Button>
       </template>
       <template #action="{ row }">
-        <a href="#" @click="openFormDrawer(row)">编辑</a>
-        &nbsp;&nbsp;
+        <Tooltip title="编辑">
+          <Button type="link" size="small" @click="openFormDrawer(row)">
+            <template #icon><EditOutlined /></template>
+          </Button>
+        </Tooltip>
         <Popconfirm
           title="是否确认删除?"
           ok-text="是"
           cancel-text="否"
           @confirm="deleteRow(row)"
         >
-          <a href="#">删除</a>
+          <Tooltip title="删除">
+            <Button type="link" size="small" danger>
+              <template #icon><DeleteOutlined /></template>
+            </Button>
+          </Tooltip>
         </Popconfirm>
       </template>
     </Grid>
