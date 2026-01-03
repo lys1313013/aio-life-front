@@ -36,19 +36,19 @@ defineEmits(['click']);
           :class="{
             'border-r-0': index % 3 === 2,
             'border-b-0': index < 3,
-            'pb-4': index > 2,
+            'pb-2 sm:pb-4': index > 2,
             'rounded-bl-xl': index === items.length - 3,
             'rounded-br-xl': index === items.length - 1,
           }"
-          class="flex-col-center border-border group w-1/3 cursor-pointer border-r border-t py-8 hover:shadow-xl"
+          class="flex-col-center border-border group w-1/3 cursor-pointer border-r border-t py-4 hover:shadow-xl sm:py-8"
           @click="$emit('click', item)"
         >
           <VbenIcon
             :color="item.color"
             :icon="item.icon"
-            class="size-7 transition-all duration-300 group-hover:scale-125"
+            class="size-6 transition-all duration-300 group-hover:scale-125 sm:size-7"
           />
-          <span class="text-md mt-2 truncate">{{ item.title }}</span>
+          <span class="mt-1 truncate text-xs sm:mt-2 sm:text-base">{{ item.title }}</span>
         </div>
       </template>
     </CardContent>

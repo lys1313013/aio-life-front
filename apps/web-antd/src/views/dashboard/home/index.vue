@@ -16,10 +16,11 @@ import AnalysisCard from './components/analysis-card.vue';
 
 interface OverviewItem {
   icon: Component | string;
+  iconClickUrl?: string;
   title: string;
+  titleClickUrl?: string;
   totalTitle: string;
   totalValue: number | string;
-  url?: string;
   value: number | string;
   valueColor?: string;
 }
@@ -34,7 +35,7 @@ onMounted(async () => {
     loading.value = true;
     const [dashboardRes, githubRes] = await Promise.allSettled([
       getDashboardCard({}),
-      userStore.userInfo?.githubUsername && userStore.userInfo?.githubToken
+      userStore.userInfo?.githubUsername
         ? getGithubCardInfo(
             userStore.userInfo.githubUsername,
             userStore.userInfo.githubToken,
@@ -44,7 +45,12 @@ onMounted(async () => {
 
     const items: OverviewItem[] = [];
     if (dashboardRes.status === 'fulfilled') {
-      items.push(...dashboardRes.value);
+      // 兼容旧的 url 命名并转换为 iconClickUrl
+      const mappedItems = dashboardRes.value.map((item: any) => ({
+        ...item,
+        iconClickUrl: item.iconClickUrl || item.url,
+      }));
+      items.push(...mappedItems);
     }
 
     if (githubRes.status === 'fulfilled') {
@@ -112,8 +118,8 @@ function navTo(nav: WorkbenchQuickNavItem) {
 </script>
 
 <template>
-  <div class="p-5">
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+  <div class="p-3 sm:p-5">
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <template v-if="loading">
         <AnalysisCard v-for="i in 4" :key="i" loading />
       </template>
@@ -122,10 +128,11 @@ function navTo(nav: WorkbenchQuickNavItem) {
           v-for="item in overviewItems"
           :key="item.title"
           :icon="item.icon"
+          :icon-click-url="item.iconClickUrl"
           :title="item.title"
+          :title-click-url="item.titleClickUrl"
           :total-title="item.totalTitle"
           :total-value="item.totalValue"
-          :url="item.url"
           :value="item.value"
           :value-color="item.valueColor"
         />
