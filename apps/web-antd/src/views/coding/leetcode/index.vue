@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { Card, message, Skeleton, theme } from 'ant-design-vue';
@@ -86,6 +86,7 @@ const currentStreak = ref(0);
 const totalActiveDays = ref(0);
 const mostActiveDay = ref<{ count: number; date: string } | null>(null);
 const todaySubmissions = ref(0);
+const scrollContainer = ref<HTMLDivElement | null>(null);
 
 const totalSolved = computed(() => {
   const list = questionProgress.value?.numAcceptedQuestions ?? [];
@@ -505,6 +506,19 @@ function goToDailyQuestion() {
   }
 }
 
+watch(graphData, () => {
+  nextTick(() => {
+    if (scrollContainer.value) {
+      // Use setTimeout to ensure the DOM is fully updated and rendered
+      setTimeout(() => {
+        if (scrollContainer.value) {
+          scrollContainer.value.scrollLeft = scrollContainer.value.scrollWidth;
+        }
+      }, 100);
+    }
+  });
+});
+
 onMounted(() => {
   fetchData();
 });
@@ -546,7 +560,7 @@ onMounted(() => {
               <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.globalRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.globalTotalParticipants" class="text-[10px] text-gray-400 md:text-xs">
+              <span v-if="contestInfo?.globalTotalParticipants" class="text-xs text-gray-400 md:text-sm">
                 / {{ contestInfo.globalTotalParticipants.toLocaleString() }}
               </span>
             </div>
@@ -562,7 +576,7 @@ onMounted(() => {
               <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.localRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.localTotalParticipants" class="text-[10px] text-gray-400 md:text-xs">
+              <span v-if="contestInfo?.localTotalParticipants" class="text-xs text-gray-400 md:text-sm">
                 / {{ contestInfo.localTotalParticipants.toLocaleString() }}
               </span>
             </div>
@@ -573,7 +587,7 @@ onMounted(() => {
       <!-- User Info Card -->
       <Card class="mb-4" :body-style="{ padding: '12px' }">
         <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
-          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+          <div class="rounded-lg border p-3 md:p-4">
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               已解题
             </div>
@@ -589,8 +603,8 @@ onMounted(() => {
                 </span>
               </div>
             </Skeleton>
-          </Card>
-          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+          </div>
+          <div class="rounded-lg border p-3 md:p-4">
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               声望
             </div>
@@ -603,8 +617,8 @@ onMounted(() => {
                 {{ userInfo?.profile?.reputation ?? 0 }}
               </div>
             </Skeleton>
-          </Card>
-          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+          </div>
+          <div class="rounded-lg border p-3 md:p-4">
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               累计活跃天数
             </div>
@@ -615,8 +629,8 @@ onMounted(() => {
             >
               <div class="text-lg font-bold md:text-2xl">{{ totalActiveDays }} 天</div>
             </Skeleton>
-          </Card>
-          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+          </div>
+          <div class="rounded-lg border p-3 md:p-4">
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               最活跃的一天
             </div>
@@ -630,13 +644,13 @@ onMounted(() => {
                   {{ mostActiveDay?.count || 0 }}
                   <span class="text-xs font-normal text-gray-400 md:text-sm">次提交</span>
                 </div>
-                <div class="text-[10px] text-gray-400 md:text-xs">
+                <div class="text-xs text-gray-400 md:text-sm">
                   {{ mostActiveDay?.date || '-' }}
                 </div>
               </div>
             </Skeleton>
-          </Card>
-          <Card :bordered="false" class="bg-gray-50/50 shadow-none dark:bg-gray-800/20" :body-style="{ padding: '12px' }">
+          </div>
+          <div class="rounded-lg border p-3 md:p-4">
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
               今日提交次数
             </div>
@@ -649,11 +663,9 @@ onMounted(() => {
                 {{ todaySubmissions }}
               </div>
             </Skeleton>
-          </Card>
-          <Card
-            :bordered="false"
-            class="cursor-pointer bg-gray-50/50 shadow-none hover:shadow-md dark:bg-gray-800/20"
-            :body-style="{ padding: '12px' }"
+          </div>
+          <div
+            class="cursor-pointer rounded-lg border p-3 transition-shadow hover:shadow-md md:p-4"
             @click="goToDailyQuestion"
           >
             <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
@@ -674,7 +686,7 @@ onMounted(() => {
                 {{ dailyQuestionStatus === 'Finish' ? '已完成' : '未完成' }}
               </div>
             </Skeleton>
-          </Card>
+          </div>
         </div>
 
         <h3 class="mb-4 text-lg font-bold">做题进度</h3>
@@ -705,13 +717,13 @@ onMounted(() => {
         </Skeleton>
       </Card>
 
-      <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+      <Card :bordered="false" class="shadow-sm" :head-style="{ borderBottom: 'none', paddingLeft: '12px', paddingRight: '12px' }" :body-style="{ padding: '0 12px 20px 12px' }">
         <template #title>
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="text-sm md:text-base">过去一年共提交 {{ totalCommits }} 次</span>
-            <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 md:text-xs">
+            <span class="text-xs font-normal text-gray-500 dark:text-gray-400 md:text-sm">
               连续提交:
-              <span class="font-medium text-purple-600 dark:text-purple-400">
+              <span class="font-medium text-green-600 dark:text-green-500">
                 {{ currentStreak }}
               </span>
               天
@@ -724,8 +736,10 @@ onMounted(() => {
           :loading="calendarLoading"
           :paragraph="{ rows: 4 }"
         >
-          <div class="h-[180px] w-full md:h-[220px]">
-            <ContributionGraph :data="graphData" />
+          <div ref="scrollContainer" class="w-full overflow-x-auto overflow-y-hidden transition-all">
+            <div class="h-[125px] min-w-[720px] md:h-[130px]">
+              <ContributionGraph :data="graphData" height="100%" />
+            </div>
           </div>
         </Skeleton>
       </Card>
@@ -734,5 +748,29 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* 移除之前的 skeleton-white 样式 */
+/* 自定义滚动条样式，使其更简洁 */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 手机端隐藏滚动条 */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+}
 </style>

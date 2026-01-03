@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 
 import { Page } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -37,6 +37,7 @@ const loading = ref(false);
 const error = ref(false);
 const contributionData = ref<any>(null);
 const graphData = ref<any[]>([]);
+const scrollContainer = ref<HTMLDivElement | null>(null);
 
 // Stats
 const totalContributions = ref(0);
@@ -70,31 +71,37 @@ const columns = [
     title: '仓库名',
     dataIndex: 'name',
     key: 'name',
+    width: 200,
   },
   {
     title: '语言',
     dataIndex: 'language',
     key: 'language',
+    width: 100,
   },
   {
     title: 'Stars',
     dataIndex: 'stargazers_count',
     key: 'stargazers_count',
+    width: 80,
   },
   {
     title: 'Forks',
     dataIndex: 'forks_count',
     key: 'forks_count',
+    width: 80,
   },
   {
     title: '个人提交数',
     dataIndex: 'myCommits',
     key: 'myCommits',
+    width: 110,
   },
   {
     title: '最近提交',
     dataIndex: 'pushed_at',
     key: 'pushed_at',
+    width: 160,
   },
 ];
 
@@ -307,9 +314,22 @@ watch(
   },
 );
 
+watch(graphData, () => {
+  nextTick(() => {
+    if (scrollContainer.value) {
+      // Use setTimeout to ensure the DOM is fully updated and rendered
+      setTimeout(() => {
+        if (scrollContainer.value) {
+          scrollContainer.value.scrollLeft = scrollContainer.value.scrollWidth;
+        }
+      }, 100);
+    }
+  });
+});
+
 watch(
-  username,
-  async (user) => {
+  [username, githubToken],
+  async ([user]) => {
     if (!user) {
       if (!hasWarnedNoUsername) {
         message.warning('未设置 Github 用户名，无法显示提交图');
@@ -325,26 +345,28 @@ watch(
 </script>
 
 <template>
-  <Page title="">
-    <div class="p-4">
-      <div class="w-full overflow-x-auto">
-        <div class="min-w-[760px] pr-4">
+  <Page title="" content-class="p-0">
+    <div class="p-3 md:p-6">
+      <div>
+        <div>
           <!-- Stats Grid -->
           <template v-if="loading">
-            <div class="mb-6 grid grid-cols-1 gap-4 pl-2 md:grid-cols-3">
+            <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
               <Card
                 v-for="i in 6"
                 :key="i"
                 :bordered="false"
                 class="shadow-sm"
+                :body-style="{ padding: '12px' }"
               >
-                <div class="flex items-center gap-3">
-                  <Skeleton.Avatar active shape="circle" size="large" />
-                  <div class="w-full">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
+                  <Skeleton.Avatar active shape="circle" size="small" class="md:hidden" />
+                  <Skeleton.Avatar active shape="circle" size="large" class="hidden md:block" />
+                  <div class="w-full min-w-0">
                     <Skeleton
                       active
-                      :paragraph="{ rows: 1, width: '60%' }"
-                      :title="{ width: '40%' }"
+                      :paragraph="{ rows: 1, width: '100%' }"
+                      :title="{ width: '60%' }"
                     />
                   </div>
                 </div>
@@ -368,19 +390,19 @@ watch(
           </template>
 
           <template v-else>
-            <div class="mb-6 grid grid-cols-1 gap-4 pl-2 md:grid-cols-3">
+            <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
               <!-- Best Month -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-blue-100 p-2 dark:bg-blue-900/30">
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
+                  <div class="shrink-0 rounded-full bg-blue-100 p-1.5 dark:bg-blue-900/30 md:p-2">
                     <CalendarOutlined
-                      class="text-lg text-blue-600 dark:text-blue-400"
+                      class="text-base text-blue-600 dark:text-blue-400 md:text-lg"
                     />
                   </div>
-                  <div>
-                    <div class="text-xs text-gray-500">最活跃的月份</div>
-                    <div class="flex items-baseline gap-2">
-                      <span class="text-base font-medium">{{
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">最活跃的月份</div>
+                    <div class="mt-0.5">
+                      <span class="text-sm font-bold md:text-base">{{
                         bestMonth.date
                       }}</span>
                     </div>
@@ -389,58 +411,56 @@ watch(
               </Card>
 
               <!-- Daily Average -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
                   <div
-                    class="rounded-full bg-green-100 p-2 dark:bg-green-900/30"
+                    class="shrink-0 rounded-full bg-green-100 p-1.5 dark:bg-green-900/30 md:p-2"
                   >
                     <BarChartOutlined
-                      class="text-lg text-green-600 dark:text-green-400"
+                      class="text-base text-green-600 dark:text-green-400 md:text-lg"
                     />
                   </div>
-                  <div class="w-full">
-                    <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">日均提交</div>
-                      <span class="text-lg font-bold">{{ dailyAverage }}</span>
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">日均提交</div>
+                    <div class="mt-0.5">
+                      <span class="text-sm font-bold md:text-base">{{ dailyAverage }}</span>
                     </div>
                   </div>
                 </div>
               </Card>
 
               <!-- Total Stars -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-yellow-100 p-2 dark:bg-yellow-900/30">
-                    <StarOutlined class="text-lg text-yellow-600 dark:text-yellow-400" />
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
+                  <div class="shrink-0 rounded-full bg-yellow-100 p-1.5 dark:bg-yellow-900/30 md:p-2">
+                    <StarOutlined class="text-base text-yellow-600 dark:text-yellow-400 md:text-lg" />
                   </div>
-                  <div class="w-full">
-                    <div class="flex items-center justify-between">
-                      <div class="text-xs text-gray-500">总 Star 数</div>
-                      <span class="text-lg font-bold">{{ totalStars }}</span>
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">总 Star 数</div>
+                    <div class="mt-0.5">
+                      <span class="text-sm font-bold md:text-base">{{ totalStars }}</span>
                     </div>
                   </div>
                 </div>
               </Card>
 
               <!-- Busiest Day -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
                   <div
-                    class="rounded-full bg-orange-100 p-2 dark:bg-orange-900/30"
+                    class="shrink-0 rounded-full bg-orange-100 p-1.5 dark:bg-orange-900/30 md:p-2"
                   >
                     <ThunderboltOutlined
-                      class="text-lg text-orange-600 dark:text-orange-400"
+                      class="text-base text-orange-600 dark:text-orange-400 md:text-lg"
                     />
                   </div>
-                  <div>
-                    <div class="text-xs text-gray-500">最活跃的一天</div>
-                    <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{
-                        busiestDay.count
-                      }}</span>
-                      <span class="text-xs text-gray-500">次提交</span>
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">最活跃的一天</div>
+                    <div class="mt-0.5 flex items-baseline gap-1">
+                      <span class="text-sm font-bold md:text-base">{{ busiestDay.count }}</span>
+                      <span class="text-xs text-gray-500">次</span>
                     </div>
-                    <div class="text-xs text-gray-400">
+                    <div class="truncate text-xs text-gray-400">
                       {{ busiestDay.date }}
                     </div>
                   </div>
@@ -448,40 +468,38 @@ watch(
               </Card>
 
               <!-- Longest Streak -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-red-100 p-2 dark:bg-red-900/30">
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
+                  <div class="shrink-0 rounded-full bg-red-100 p-1.5 dark:bg-red-900/30 md:p-2">
                     <FireOutlined
-                      class="text-lg text-red-600 dark:text-red-400"
+                      class="text-base text-red-600 dark:text-red-400 md:text-lg"
                     />
                   </div>
-                  <div>
-                    <div class="text-xs text-gray-500">最长连续打卡</div>
-                    <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{
-                        longestStreak.days
-                      }}</span>
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">最长连续打卡</div>
+                    <div class="mt-0.5 flex items-baseline gap-1">
+                      <span class="text-sm font-bold md:text-base">{{ longestStreak.days }}</span>
                       <span class="text-xs text-gray-500">天</span>
                     </div>
-                    <div class="text-xs text-gray-400">
-                      {{ longestStreak.start }} - {{ longestStreak.end }}
+                    <div class="truncate text-xs text-gray-400">
+                      {{ longestStreak.start }}-{{ longestStreak.end }}
                     </div>
                   </div>
                 </div>
               </Card>
 
               <!-- Today's Contribution -->
-              <Card :bordered="false" class="shadow-sm">
-                <div class="flex items-center gap-3">
-                  <div class="rounded-full bg-cyan-100 p-2 dark:bg-cyan-900/30">
+              <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
+                <div class="flex items-start gap-2 md:items-center md:gap-3">
+                  <div class="shrink-0 rounded-full bg-cyan-100 p-1.5 dark:bg-cyan-900/30 md:p-2">
                     <CheckCircleOutlined
-                      class="text-lg text-cyan-600 dark:text-cyan-400"
+                      class="text-base text-cyan-600 dark:text-cyan-400 md:text-lg"
                     />
                   </div>
-                  <div>
-                    <div class="text-xs text-gray-500">今日提交次数</div>
-                    <div class="mt-1">
-                      <span class="mr-1 text-2xl font-bold">{{
+                  <div class="min-w-0">
+                    <div class="truncate text-xs text-gray-500 md:text-sm">今日提交次数</div>
+                    <div class="mt-0.5 flex items-baseline gap-1">
+                      <span class="text-sm font-bold md:text-base">{{
                         todayContribution
                       }}</span>
                       <span class="text-xs text-gray-500">次</span>
@@ -490,24 +508,28 @@ watch(
                 </div>
               </Card>
             </div>
-            <Card :bordered="false" class="mt-6 shadow-sm">
+            <Card :bordered="false" class="mb-6 shadow-sm" :head-style="{ borderBottom: 'none', paddingLeft: '12px', paddingRight: '12px' }" :body-style="{ padding: '0 12px 20px 12px' }">
               <template #title>
-                <div class="flex items-center justify-between">
-                  <span>过去一年共提交 {{ totalContributions }} 次</span>
-                  <span class="text-xs font-normal text-gray-500 dark:text-gray-400">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="text-sm md:text-base">过去一年共提交 {{ totalContributions }} 次</span>
+                  <span class="text-xs font-normal text-gray-500 dark:text-gray-400 md:text-sm">
                     连续提交:
-                    <span class="font-medium text-purple-600 dark:text-purple-400">
+                    <span class="font-medium text-green-600 dark:text-green-500">
                       {{ currentStreak }}
                     </span>
                     天
                   </span>
                 </div>
               </template>
-              <ContributionGraph :data="graphData" />
+              <div ref="scrollContainer" class="w-full overflow-x-auto overflow-y-hidden transition-all">
+                <div class="h-[125px] min-w-[720px] md:h-[130px]">
+                  <ContributionGraph :data="graphData" height="100%" />
+                </div>
+              </div>
             </Card>
           </template>
 
-          <div class="mt-4">
+          <div>
             <h3
               class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
             >
@@ -518,6 +540,7 @@ watch(
               :data-source="repoList"
               :loading="reposLoading"
               :pagination="{ pageSize: 10 }"
+              :scroll="{ x: 'max-content' }"
               row-key="id"
             >
               <template #bodyCell="{ column, record }">
@@ -580,3 +603,31 @@ watch(
     </div>
   </Page>
 </template>
+
+<style scoped>
+/* 自定义滚动条样式，使其更简洁 */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* 手机端隐藏滚动条 */
+@media (max-width: 768px) {
+  .overflow-x-auto {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .overflow-x-auto::-webkit-scrollbar {
+    display: none;
+  }
+}
+</style>

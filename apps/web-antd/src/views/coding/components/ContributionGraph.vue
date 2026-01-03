@@ -15,11 +15,14 @@ interface ContributionItem {
 
 interface Props {
   data: ContributionItem[];
+  height?: string;
 }
 
 defineOptions({ name: 'ContributionGraph' });
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  height: '130px',
+});
 const { data } = toRefs(props);
 
 const chartRef = ref<EchartsUIType>();
@@ -67,24 +70,25 @@ function updateChart() {
 
   renderEcharts(() => ({
     calendar: {
-      cellSize: 13,
+      cellSize: 12,
       dayLabel: {
         color: token.value.colorTextSecondary,
         firstDay: 0,
-        margin: 10,
+        margin: 8,
         nameMap: ['', 'Mon', '', 'Wed', '', 'Fri', ''],
       },
-      left: 36,
+      left: 32,
       monthLabel: {
         color: token.value.colorTextSecondary,
-        margin: 10,
+        margin: 8,
       },
       range: [startDate, endDate],
-      right: 12,
+      right: 10,
       splitLine: {
         show: false,
       },
-      top: 45,
+      top: 20,
+      bottom: 0,
       yearLabel: { show: false },
     },
     series: {
@@ -93,7 +97,7 @@ function updateChart() {
       itemStyle: {
         borderColor: token.value.colorBgContainer,
         borderRadius: 2,
-        borderWidth: 3,
+        borderWidth: 2,
       },
       type: 'heatmap',
     },
@@ -133,5 +137,5 @@ watch(
 </script>
 
 <template>
-  <EchartsUI ref="chartRef" height="160px" />
+  <EchartsUI ref="chartRef" :height="height" />
 </template>
