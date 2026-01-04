@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('#/views/dashboard/home/index.vue'),
         meta: {
           affixTab: true,
-          icon: 'lucide:area-chart',
+          icon: 'lucide:home',
           title: '主页',
         },
       },
