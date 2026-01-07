@@ -43,7 +43,7 @@ export default defineConfig(async () => {
 
                 const targetPath = url.replace(/^\/leetcode-api/, '');
                 const upstreamUrl = `https://leetcode.cn${targetPath}`;
-                
+
                 const cookie = req.headers['x-leetcode-cookie'];
 
                 const upstream = await fetch(upstreamUrl, {
@@ -102,6 +102,25 @@ export default defineConfig(async () => {
       },
       server: {
         proxy: {
+          '/shanbay-api': {
+            target: 'https://www.shanbay.com',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/shanbay-api/, ''),
+            headers: {
+              Referer: 'https://www.shanbay.com/',
+              Origin: 'https://www.shanbay.com',
+            },
+            configure: (proxy, options) => {
+              proxy.on('proxyReq', (proxyReq, req, res) => {
+                if (req.headers.cookie) {
+                  proxyReq.setHeader('Cookie', req.headers.cookie);
+                }
+                if (req.headers['user-agent']) {
+                  proxyReq.setHeader('User-Agent', req.headers['user-agent']);
+                }
+              });
+            },
+          },
           '/api': {
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/api/, ''),

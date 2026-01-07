@@ -11,6 +11,7 @@ import { openWindow } from '@vben/utils';
 
 import { getDashboardCard } from '#/api/core/dashboard';
 import { getGithubCardInfo } from '#/api/core/github';
+import { getShanbayCardInfo } from '#/api/core/shanbay';
 
 import AnalysisCard from './components/analysis-card.vue';
 
@@ -33,7 +34,7 @@ const userStore = useUserStore();
 onMounted(async () => {
   try {
     loading.value = true;
-    const [dashboardRes, githubRes] = await Promise.allSettled([
+    const [dashboardRes, githubRes, shanbayRes] = await Promise.allSettled([
       getDashboardCard({}),
       userStore.userInfo?.githubUsername
         ? getGithubCardInfo(
@@ -41,6 +42,9 @@ onMounted(async () => {
             userStore.userInfo.githubToken,
           )
         : Promise.reject('No github credentials'),
+      userStore.userInfo?.shanbayAcct
+        ? getShanbayCardInfo(userStore.userInfo.shanbayAcct)
+        : Promise.reject('No shanbay credentials'),
     ]);
 
     const items: OverviewItem[] = [];
@@ -55,6 +59,9 @@ onMounted(async () => {
 
     if (githubRes.status === 'fulfilled') {
       items.push(githubRes.value);
+    }
+    if (shanbayRes.status === 'fulfilled') {
+      items.push(shanbayRes.value);
     }
 
     overviewItems.value = items;

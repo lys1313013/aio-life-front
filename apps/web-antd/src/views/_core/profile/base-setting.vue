@@ -39,6 +39,11 @@ const formSchema = computed((): VbenFormSchema[] => {
       label: '力扣账号',
     },
     {
+      fieldName: 'shanbayAcct',
+      component: 'Input',
+      label: '扇贝账号',
+    },
+    {
       fieldName: 'githubUsername',
       component: 'Input',
       label: 'github用户名',
