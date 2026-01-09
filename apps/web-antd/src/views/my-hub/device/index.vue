@@ -299,6 +299,9 @@ export default {
           @click="showEditModal(item)"
         >
           <div class="card-image">
+            <div class="status-badge" :class="getStatusClass(item.status)">
+              {{ getStatusText(item.status) }}
+            </div>
             <img v-if="item.image" :src="item.image" :alt="item.name" />
             <div v-else class="default-icon">
               <svg
@@ -335,9 +338,6 @@ export default {
             <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
             <p class="usage-days">已使用: {{ item.usaDay }} 天</p>
             <p class="avg-cost">日均费用: {{ item.dailyCost }} 元/天</p>
-            <div class="status-badge" :class="getStatusClass(item.status)">
-              {{ getStatusText(item.status) }}
-            </div>
           </div>
         </div>
       </div>
@@ -432,7 +432,7 @@ export default {
   }
 
   .status-badge {
-    bottom: 5px;
+    top: 5px;
     right: 5px;
     font-size: 10px;
     padding: 1px 6px;
@@ -576,10 +576,9 @@ export default {
   height: 24px;
 }
 
-/* 修改状态标签样式到右下角 */
 .status-badge {
   position: absolute;
-  bottom: 10px;
+  top: 10px;
   right: 10px;
   padding: 2px 8px;
   border-radius: 10px;
