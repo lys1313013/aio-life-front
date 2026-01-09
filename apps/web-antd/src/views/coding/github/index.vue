@@ -12,6 +12,8 @@ import {
   StarOutlined,
   ThunderboltOutlined,
   CheckCircleOutlined,
+  ClockCircleOutlined,
+  CodeOutlined,
 } from '@ant-design/icons-vue';
 import {
   Alert,
@@ -21,6 +23,9 @@ import {
   Spin,
   Table,
   Tag,
+  List,
+  Avatar,
+  TypographyText,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -60,6 +65,10 @@ const totalStars = computed(() => {
 // Repository Stats
 const repoList = ref<any[]>([]);
 const reposLoading = ref(false);
+
+// Recent Activity
+const recentActivities = ref<any[]>([]);
+const activitiesLoading = ref(false);
 
 function formatDate(date: string) {
   if (!date) return '-';
@@ -111,12 +120,14 @@ async function fetchRepoStats(user: string, repos: any[]) {
 
   for (const repo of targetRepos) {
     try {
+      const headers = {
+        Authorization: `Bearer ${githubToken.value}`,
+      };
+
       const res = await fetch(
         `https://api.github.com/repos/${repo.full_name}/contributors?per_page=100`,
         {
-          headers: {
-            Authorization: `Bearer ${githubToken.value}`,
-          },
+          headers,
         },
       );
       if (res.status === 403) {
@@ -127,14 +138,32 @@ async function fetchRepoStats(user: string, repos: any[]) {
       }
       if (!res.ok) {
         repo.myCommits = 'Error';
-        repo.loadingStats = false;
-        continue;
+      } else {
+        const contributors = await res.json();
+        const contributor = contributors.find(
+          (c: any) => c.login.toLowerCase() === user.toLowerCase(),
+        );
+        repo.myCommits = contributor ? contributor.contributions : 0;
       }
-      const contributors = await res.json();
-      const contributor = contributors.find(
-        (c: any) => c.login.toLowerCase() === user.toLowerCase(),
-      );
-      repo.myCommits = contributor ? contributor.contributions : 0;
+
+      // Fetch source repo info if it is a fork
+      if (repo.fork) {
+        const repoRes = await fetch(
+          `https://api.github.com/repos/${repo.full_name}`,
+          {
+            headers,
+          },
+        );
+        if (repoRes.status === 403) {
+          break;
+        }
+        if (repoRes.ok) {
+          const repoData = await repoRes.json();
+          if (repoData.parent) {
+            repo.sourceStars = repoData.parent.stargazers_count;
+          }
+        }
+      }
     } catch {
       repo.myCommits = 'Error';
     } finally {
@@ -149,6 +178,43 @@ async function fetchRepoStats(user: string, repos: any[]) {
       repo.loadingStats = false;
     }
   });
+}
+
+async function fetchRecentActivity(user: string) {
+  activitiesLoading.value = true;
+  recentActivities.value = [];
+  try {
+    const res = await fetch(
+      `https://api.github.com/search/commits?q=author:${user}&sort=committer-date&order=desc&per_page=20`,
+      {
+        headers: {
+          Authorization: `Bearer ${githubToken.value}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      },
+    );
+    if (!res.ok) throw new Error('Failed to fetch commits');
+    const data = await res.json();
+    
+    const commits = data.items.map((item: any) => {
+      const repoName = item.repository.name;
+      return {
+        id: item.sha,
+        repo: repoName,
+        repoUrl: item.repository.html_url,
+        message: item.commit.message,
+        date: item.commit.author.date,
+        avatar: item.author?.avatar_url,
+        actor: item.author?.login || user,
+      };
+    });
+      
+    recentActivities.value = commits;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    activitiesLoading.value = false;
+  }
 }
 
 async function fetchRepositories(user: string) {
@@ -338,7 +404,11 @@ watch(
       return;
     }
     hasWarnedNoUsername = false;
-    await Promise.all([fetchContributions(user), fetchRepositories(user)]);
+    await Promise.all([
+      fetchContributions(user), 
+      fetchRepositories(user),
+      fetchRecentActivity(user)
+    ]);
   },
   { immediate: true },
 );
@@ -529,74 +599,123 @@ watch(
             </Card>
           </template>
 
-          <div>
-            <h3
-              class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
-            >
-              仓库提交统计
-            </h3>
-            <Table
-              :columns="columns"
-              :data-source="repoList"
-              :loading="reposLoading"
-              :pagination="{ pageSize: 10 }"
-              :scroll="{ x: 'max-content' }"
-              row-key="id"
-            >
-              <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'name'">
-                  <a
-                    :href="record.html_url"
-                    class="flex items-center gap-2 text-blue-500 hover:underline"
-                    target="_blank"
-                  >
-                    <span class="font-medium">{{ record.name }}</span>
-                    <Tag v-if="record.private" color="red">Private</Tag>
-                    <Tag v-if="record.fork" color="orange">Fork</Tag>
-                  </a>
-                  <div class="max-w-[200px] truncate text-xs text-gray-500">
-                    {{ record.description }}
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="lg:col-span-2">
+              <h3
+                class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
+              >
+                仓库提交统计
+              </h3>
+              <Table
+                :columns="columns"
+                :data-source="repoList"
+                :loading="reposLoading"
+                :pagination="{ pageSize: 10 }"
+                :scroll="{ x: 'max-content' }"
+                row-key="id"
+              >
+                <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'name'">
+                    <a
+                      :href="record.html_url"
+                      class="flex items-center gap-2 text-blue-500 hover:underline"
+                      target="_blank"
+                    >
+                      <span class="font-medium">{{ record.name }}</span>
+                      <Tag v-if="record.private" color="red">Private</Tag>
+                      <Tag v-if="record.fork" color="orange">Fork</Tag>
+                    </a>
+                    <div class="max-w-[200px] truncate text-xs text-gray-500">
+                      {{ record.description }}
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'language'">
+                    <Tag v-if="record.language" color="blue">{{
+                      record.language
+                    }}</Tag>
+                  </template>
+                  <template v-if="column.key === 'stargazers_count'">
+                    <div class="flex items-center gap-1">
+                      <StarOutlined class="text-yellow-500" />
+                      <span>
+                        {{ record.stargazers_count }}
+                        <span
+                          v-if="record.fork && record.sourceStars !== undefined"
+                          class="text-xs text-gray-400"
+                        >
+                          / {{ record.sourceStars }}
+                        </span>
+                      </span>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'forks_count'">
+                    <div class="flex items-center gap-1">
+                      <BranchesOutlined class="text-gray-500" />
+                      <span>{{ record.forks_count }}</span>
+                    </div>
+                  </template>
+                  <template v-if="column.key === 'pushed_at'">
+                    <span class="text-gray-500">
+                      {{ formatDate(record.pushed_at) }}
+                    </span>
+                  </template>
+                  <template v-if="column.key === 'myCommits'">
+                    <div v-if="record.loadingStats" class="flex items-center gap-2">
+                      <Spin size="small" />
+                    </div>
+                    <span
+                      v-else
+                      :class="{
+                        'font-bold text-green-600':
+                          typeof record.myCommits === 'number' &&
+                          record.myCommits > 0,
+                      }"
+                    >
+                      {{ record.myCommits }}
+                    </span>
+                  </template>
+                </template>
+              </Table>
+            </div>
+
+            <div class="lg:col-span-1 lg:relative">
+              <div class="flex flex-col lg:absolute lg:inset-0">
+                <h3 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
+                  最近提交明细
+                </h3>
+                <Card 
+                  :bordered="false" 
+                  class="shadow-sm flex-1 flex flex-col min-h-0" 
+                  :body-style="{ padding: '0', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }"
+                >
+                  <div v-if="activitiesLoading" class="flex justify-center p-8">
+                    <Spin />
                   </div>
-                </template>
-                <template v-if="column.key === 'language'">
-                  <Tag v-if="record.language" color="blue">{{
-                    record.language
-                  }}</Tag>
-                </template>
-                <template v-if="column.key === 'stargazers_count'">
-                  <div class="flex items-center gap-1">
-                    <StarOutlined class="text-yellow-500" />
-                    <span>{{ record.stargazers_count }}</span>
+                  <div v-else-if="recentActivities.length === 0" class="p-8 text-center text-gray-500">
+                    暂无最近动态
                   </div>
-                </template>
-                <template v-if="column.key === 'forks_count'">
-                  <div class="flex items-center gap-1">
-                    <BranchesOutlined class="text-gray-500" />
-                    <span>{{ record.forks_count }}</span>
+                  <div v-else class="flex-1 overflow-y-auto">
+                     <List item-layout="horizontal" :data-source="recentActivities">
+                      <template #renderItem="{ item }">
+                        <List.Item class="!px-4 !py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <div class="w-full">
+                            <div class="flex items-center justify-between mb-1">
+                              <a :href="item.repoUrl" target="_blank" class="font-medium text-blue-500 hover:underline truncate max-w-[200px]" :title="item.repo">
+                                {{ item.repo }}
+                              </a>
+                              <span class="text-xs text-gray-400 shrink-0">{{ formatDate(item.date) }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 break-all line-clamp-2" :title="item.message">
+                              {{ item.message }}
+                            </div>
+                          </div>
+                        </List.Item>
+                      </template>
+                    </List>
                   </div>
-                </template>
-                <template v-if="column.key === 'pushed_at'">
-                  <span class="text-gray-500">
-                    {{ formatDate(record.pushed_at) }}
-                  </span>
-                </template>
-                <template v-if="column.key === 'myCommits'">
-                  <div v-if="record.loadingStats" class="flex items-center gap-2">
-                    <Spin size="small" />
-                  </div>
-                  <span
-                    v-else
-                    :class="{
-                      'font-bold text-green-600':
-                        typeof record.myCommits === 'number' &&
-                        record.myCommits > 0,
-                    }"
-                  >
-                    {{ record.myCommits }}
-                  </span>
-                </template>
-              </template>
-            </Table>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>

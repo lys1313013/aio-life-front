@@ -116,7 +116,7 @@ export async function getGithubCardInfo(username: string, token: string) {
   return {
     icon: 'carbon:logo-github',
     iconClickUrl: `https://github.com/${username}`,
-    title: 'GitHub 提交',
+    title: 'GitHub',
     titleClickUrl: '/coding/github',
     totalTitle: '连续提交',
     totalValue: stats.currentStreak,
