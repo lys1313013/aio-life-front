@@ -54,7 +54,7 @@ export async function getShanbayCardInfo(username: string) {
     
     // 计算今日学习时间
     let totalUsedTime = 0;
-    if (latestCheckin && latestCheckin.stats) {
+    if (hasCheckedIn && latestCheckin && latestCheckin.stats) {
       Object.values(latestCheckin.stats).forEach((item) => {
         if (item && typeof item.used_time === 'number') {
           totalUsedTime += item.used_time;
