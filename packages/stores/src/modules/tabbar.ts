@@ -484,7 +484,7 @@ export const useTabbarStore = defineStore('core-tabbar', {
 
       for (const tab of this.tabs) {
         // 跳过不需要持久化的标签页
-        const keepAlive = tab.meta?.keepAlive;
+        const keepAlive = tab.meta?.keepAlive ?? true;
         if (!keepAlive) {
           continue;
         }

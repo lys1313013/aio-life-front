@@ -31,7 +31,7 @@ const getEnabledTransition = computed(() => {
 });
 
 // 页面切换动画
-function getTransitionName(_route: RouteLocationNormalizedLoaded) {
+function getTransitionName(route: RouteLocationNormalizedLoaded) {
   // 如果偏好设置未设置，则不使用动画
   const { tabbar, transition } = preferences;
   const transitionName = transition.name;
@@ -44,15 +44,10 @@ function getTransitionName(_route: RouteLocationNormalizedLoaded) {
     return transitionName;
   }
 
-  // 如果页面已经加载过，则不使用动画
-  // if (route.meta.loaded) {
-  //   return;
-  // }
   // 已经打开且已经加载过的页面不使用动画
-  // const inTabs = getCachedTabs.value.includes(route.name as string);
+  const inTabs = getCachedTabs.value.includes(route.name as string);
 
-  // return inTabs && route.meta.loaded ? undefined : transitionName;
-  return transitionName;
+  return inTabs && route.meta.loaded ? undefined : transitionName;
 }
 
 /**
