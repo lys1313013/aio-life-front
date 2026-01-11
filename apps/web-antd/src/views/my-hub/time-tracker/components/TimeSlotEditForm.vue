@@ -7,9 +7,6 @@
       layout="vertical"
       @finish="handleSave"
     >
-      <Form.Item label="标题" name="title">
-        <Input v-model:value="formState.title" placeholder="请输入时间段标题" />
-      </Form.Item>
 
       <Form.Item label="分类" name="categoryId">
         <Select v-model:value="formState.categoryId" placeholder="请选择分类" @change="(value) => handleCategoryChange(value as string)">
@@ -24,6 +21,10 @@
             </div>
           </Select.Option>
         </Select>
+      </Form.Item>
+
+      <Form.Item label="标题" name="title">
+        <Input v-model:value="formState.title" placeholder="请输入时间段标题" />
       </Form.Item>
 
       <Row :gutter="16">

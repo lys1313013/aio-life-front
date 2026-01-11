@@ -195,7 +195,7 @@ async function fetchRecentActivity(user: string) {
     );
     if (!res.ok) throw new Error('Failed to fetch commits');
     const data = await res.json();
-    
+
     const commits = data.items.map((item: any) => {
       const repoName = item.repository.name;
       return {
@@ -208,7 +208,7 @@ async function fetchRecentActivity(user: string) {
         actor: item.author?.login || user,
       };
     });
-      
+
     recentActivities.value = commits;
   } catch (e) {
     console.error(e);
@@ -405,7 +405,7 @@ watch(
     }
     hasWarnedNoUsername = false;
     await Promise.all([
-      fetchContributions(user), 
+      fetchContributions(user),
       fetchRepositories(user),
       fetchRecentActivity(user)
     ]);
@@ -546,7 +546,7 @@ watch(
                     />
                   </div>
                   <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">最长连续打卡</div>
+                    <div class="truncate text-xs text-gray-500 md:text-sm">最长连续</div>
                     <div class="mt-0.5 flex items-baseline gap-1">
                       <span class="text-sm font-bold md:text-base">{{ longestStreak.days }}</span>
                       <span class="text-xs text-gray-500">天</span>
@@ -604,7 +604,7 @@ watch(
               <h3
                 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
               >
-                仓库提交统计
+                仓库
               </h3>
               <Table
                 :columns="columns"
@@ -681,11 +681,11 @@ watch(
             <div class="lg:col-span-1 lg:relative">
               <div class="flex flex-col lg:absolute lg:inset-0">
                 <h3 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
-                  最近提交明细
+                  最近提交
                 </h3>
-                <Card 
-                  :bordered="false" 
-                  class="shadow-sm flex-1 flex flex-col min-h-0" 
+                <Card
+                  :bordered="false"
+                  class="shadow-sm flex-1 flex flex-col min-h-0"
                   :body-style="{ padding: '0', flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }"
                 >
                   <div v-if="activitiesLoading" class="flex justify-center p-8">
