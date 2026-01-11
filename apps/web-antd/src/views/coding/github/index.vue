@@ -202,6 +202,7 @@ async function fetchRecentActivity(user: string) {
         id: item.sha,
         repo: repoName,
         repoUrl: item.repository.html_url,
+        commitUrl: item.html_url,
         message: item.commit.message,
         date: item.commit.author.date,
         avatar: item.author?.avatar_url,
@@ -706,7 +707,9 @@ watch(
                               <span class="text-xs text-gray-400 shrink-0">{{ formatDate(item.date) }}</span>
                             </div>
                             <div class="text-xs text-gray-500 dark:text-gray-400 break-all line-clamp-2" :title="item.message">
-                              {{ item.message }}
+                              <a :href="item.commitUrl" target="_blank" class="hover:underline text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400">
+                                {{ item.message }}
+                              </a>
                             </div>
                           </div>
                         </List.Item>
