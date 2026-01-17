@@ -97,7 +97,7 @@
                   </div>
                 </div>
 
-                <div class="week-days-container" @touchend="handleTrackPointerUp" @touchcancel="handleTrackPointerLeave">
+                <div class="week-days-container">
                   <div
                     v-for="(day, index) in weekDays"
                     :key="index"
@@ -110,7 +110,6 @@
                       :class="getSlotClass(slot)"
                       :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
                       @mousedown="handleSlotPointerDown($event, slot)"
-                      @touchstart="handleSlotPointerDown($event, slot)"
                       @click="handleSlotClick(slot)"
                     >
                       <div class="slot-content">
@@ -168,7 +167,6 @@
                       class="time-slot"
                       :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
                       @mousedown="handleSlotPointerDown($event, slot)"
-                      @touchstart="handleSlotPointerDown($event, slot)"
                       @click="handleSlotClick(slot)"
                     >
                       <div class="slot-content">
@@ -215,10 +213,6 @@
                   @mousemove="handleTrackPointerMove"
                   @mouseup="handleTrackPointerUp"
                   @mouseleave="handleTrackPointerLeave"
-                  @touchstart="handleTrackPointerDown"
-                  @touchmove.prevent="handleTrackPointerMove"
-                  @touchend="handleTrackPointerUp"
-                  @touchcancel="handleTrackPointerLeave"
                   :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
                 >
                   <div
@@ -228,7 +222,6 @@
                     :class="getSlotClass(slot)"
                     :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
                     @mousedown="handleSlotPointerDown($event, slot)"
-                    @touchstart="handleSlotPointerDown($event, slot)"
                     @click="handleSlotClick(slot)"
                   >
                     <div class="slot-content">
@@ -242,8 +235,8 @@
                         </span>
                       </div>
                     </div>
-                    <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')" @touchstart="handleResizeStartPointer($event, slot, 'top')"></div>
-                    <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')" @touchstart="handleResizeStartPointer($event, slot, 'bottom')"></div>
+                    <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')"></div>
+                    <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')"></div>
                   </div>
                   <div
                     v-if="dragOperation"
@@ -1101,6 +1094,7 @@ const getClientY = (event: MouseEvent | TouchEvent) => {
 };
 
 const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
+  if (isMobile.value) return;
   if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
@@ -1418,6 +1412,7 @@ const handleSlotPointerDown = (
   slot: TimeSlot,
 ) => {
   event.stopPropagation();
+  if (isMobile.value) return;
 
   if (!timelineRef.value) return;
 
@@ -1450,6 +1445,7 @@ const handleResizeStartPointer = (
   direction: 'bottom' | 'top',
 ) => {
   event.stopPropagation();
+  if (isMobile.value) return;
 
   if (!timelineRef.value) return;
 
