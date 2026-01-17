@@ -18,4 +18,7 @@ export const overridesPreferences = defineOverridesPreferences({
     icpLink: 'https://beian.miit.gov.cn/',
     companySiteLink: 'https://github.com/lys1313013',
   },
+  theme: {
+    mode: 'light',
+  },
 });
