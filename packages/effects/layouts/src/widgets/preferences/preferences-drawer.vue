@@ -42,7 +42,7 @@ import {
   BuiltinTheme,
   ColorMode,
   Content,
-  Copyright,
+  // Copyright,
   FontSize,
   Footer,
   General,
@@ -139,15 +139,15 @@ const navigationAccordion = defineModel<boolean>('navigationAccordion');
 const footerEnable = defineModel<boolean>('footerEnable');
 const footerFixed = defineModel<boolean>('footerFixed');
 
-const copyrightSettingShow = defineModel<boolean>('copyrightSettingShow');
-const copyrightEnable = defineModel<boolean>('copyrightEnable');
-const copyrightCompanyName = defineModel<string>('copyrightCompanyName');
-const copyrightCompanySiteLink = defineModel<string>(
-  'copyrightCompanySiteLink',
-);
-const copyrightDate = defineModel<string>('copyrightDate');
-const copyrightIcp = defineModel<string>('copyrightIcp');
-const copyrightIcpLink = defineModel<string>('copyrightIcpLink');
+// const copyrightSettingShow = defineModel<boolean>('copyrightSettingShow');
+// const copyrightEnable = defineModel<boolean>('copyrightEnable');
+// const copyrightCompanyName = defineModel<string>('copyrightCompanyName');
+// const copyrightCompanySiteLink = defineModel<string>(
+//   'copyrightCompanySiteLink',
+// );
+// const copyrightDate = defineModel<string>('copyrightDate');
+// const copyrightIcp = defineModel<string>('copyrightIcp');
+// const copyrightIcpLink = defineModel<string>('copyrightIcpLink');
 
 const shortcutKeysEnable = defineModel<boolean>('shortcutKeysEnable');
 const shortcutKeysGlobalSearch = defineModel<boolean>(
@@ -430,7 +430,7 @@ async function handleReset() {
                 v-model:footer-fixed="footerFixed"
               />
             </Block>
-            <Block
+            <!-- <Block
               v-if="copyrightSettingShow"
               :title="$t('preferences.copyright.title')"
             >
@@ -443,7 +443,7 @@ async function handleReset() {
                 v-model:copyright-icp-link="copyrightIcpLink"
                 :disabled="!footerEnable"
               />
-            </Block>
+            </Block> -->
           </template>
 
           <template #shortcutKey>

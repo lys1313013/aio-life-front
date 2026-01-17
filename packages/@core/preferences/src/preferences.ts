@@ -165,7 +165,14 @@ class PreferenceManager {
    *  从缓存中加载偏好设置。如果缓存中没有找到对应的偏好设置，则返回默认偏好设置。
    */
   private loadCachedPreferences() {
-    return this.cache?.getItem<Preferences>(STORAGE_KEY);
+    const cached = this.cache?.getItem<Preferences>(STORAGE_KEY);
+
+    if (cached?.copyright) {
+      Reflect.deleteProperty(cached.copyright, 'icp');
+      Reflect.deleteProperty(cached.copyright, 'icpLink');
+    }
+
+    return cached;
   }
 
   /**
