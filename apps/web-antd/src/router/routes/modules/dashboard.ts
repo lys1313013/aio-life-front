@@ -12,6 +12,8 @@ const routes: RouteRecordRaw[] = [
       affixTab: true,
       icon: 'lucide:home',
       title: '主页',
+      keepAlive: true,
+      maxIdleTime: 60,
     },
   },
   {

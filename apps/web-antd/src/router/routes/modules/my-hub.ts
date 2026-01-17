@@ -16,6 +16,8 @@ const routes: RouteRecordRaw[] = [
           icon: 'mdi:history',
           title: '时迹',
           backTop: false,
+          keepAlive: true,
+          maxIdleTime: 60,
         },
         name: 'timeTracker',
         path: '/my-hub/time-tracker',

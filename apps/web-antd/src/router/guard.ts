@@ -2,7 +2,7 @@ import type { Router } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
-import { useAccessStore, useUserStore } from '@vben/stores';
+import { getTabKey, useAccessStore, useTabbarStore, useUserStore } from '@vben/stores';
 import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
@@ -120,6 +120,36 @@ function setupAccessGuard(router: Router) {
 }
 
 /**
+ * 标签页自动刷新守卫
+ * @param router
+ */
+function setupTabGuard(router: Router) {
+  router.afterEach((to, from) => {
+    const tabbarStore = useTabbarStore();
+
+    // 1. 记录离开页面的最后活跃时间
+    if (from && from.name) {
+      tabbarStore.tabLastActiveTime.set(getTabKey(from), Date.now());
+    }
+
+    // 2. 检查进入页面是否需要刷新
+    const { maxIdleTime } = to.meta;
+    const tabKey = getTabKey(to);
+
+    if (maxIdleTime && maxIdleTime > 0) {
+      const lastActiveTime = tabbarStore.tabLastActiveTime.get(tabKey);
+      if (
+        lastActiveTime &&
+        (Date.now() - lastActiveTime) / 1000 > maxIdleTime
+      ) {
+        // 超过空闲时间，触发刷新
+        tabbarStore.refresh(router);
+      }
+    }
+  });
+}
+
+/**
  * 项目守卫配置
  * @param router
  */
@@ -128,6 +158,8 @@ function createRouterGuard(router: Router) {
   setupCommonGuard(router);
   /** 权限访问 */
   setupAccessGuard(router);
+  /** 标签页自动刷新 */
+  setupTabGuard(router);
 }
 
 export { createRouterGuard };
