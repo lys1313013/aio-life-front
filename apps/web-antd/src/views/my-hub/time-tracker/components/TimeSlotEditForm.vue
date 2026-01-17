@@ -146,6 +146,40 @@
         </Col>
       </Row>
 
+      <Form.Item>
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88)">时长</span>
+          <div style="display: flex; gap: 8px; flex: 1">
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1">
+              <InputNumber
+                v-model:value="editableHours"
+                :min="0"
+                :precision="0"
+                class="input-align-right"
+                style="flex: 1"
+                placeholder="时"
+                inputmode="numeric"
+                pattern="[0-9]*"
+              />
+              <span>时</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1">
+              <InputNumber
+                v-model:value="editableMinutes"
+                :min="0"
+                :max="59"
+                :precision="0"
+                class="input-align-right"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                style="flex: 1"
+                placeholder="分"
+              />
+              <span>分</span>
+            </div>
+          </div>
+        </div>
+      </Form.Item>
 
       <!-- 运动相关字段 -->
       <template v-if="formState.categoryId === 'exercise'">
@@ -176,45 +210,10 @@
         </Row>
       </template>
 
-      <Form.Item>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88);">时长</span>
-          <div style="display: flex; gap: 8px; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-              <InputNumber
-                v-model:value="editableHours"
-                :min="0"
-                :precision="0"
-                class="input-align-right"
-                style="flex: 1"
-                placeholder="时"
-                inputmode="numeric"
-                pattern="[0-9]*"
-              />
-              <span>时</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px; flex: 1;">
-              <InputNumber
-                v-model:value="editableMinutes"
-                :min="0"
-                :max="59"
-                :precision="0"
-                class="input-align-right"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                style="flex: 1"
-                placeholder="分"
-              />
-              <span>分</span>
-            </div>
-          </div>
-        </div>
-      </Form.Item>
-
       <Form.Item label="描述" name="description">
         <Textarea
           v-model:value="formState.description"
-          placeholder="请输入时间段描述（可选）"
+          placeholder="描述信息"
           :rows="3"
         />
       </Form.Item>
@@ -241,7 +240,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber, Popconfirm } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
 import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
@@ -408,7 +407,7 @@ const rules: any = {
 
         return Promise.resolve();
       },
-      trigger: 'change'
+      trigger: 'change',
     }
   ],
   description: [
