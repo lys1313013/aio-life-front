@@ -9,7 +9,10 @@ import {
 import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
-import { getDashboardCard } from '#/api/core/dashboard';
+import {
+  getDashboardCardDetail,
+  getDashboardTasks,
+} from '#/api/core/dashboard';
 import { getGithubCardInfo } from '#/api/core/github';
 import { getShanbayCardInfo } from '#/api/core/shanbay';
 
@@ -20,10 +23,12 @@ interface OverviewItem {
   iconClickUrl?: string;
   title: string;
   titleClickUrl?: string;
-  totalTitle: string;
-  totalValue: number | string;
-  value: number | string;
+  totalTitle?: string;
+  totalValue?: number | string;
+  value?: number | string;
   valueColor?: string;
+  loading?: boolean;
+  type?: string;
 }
 
 const overviewItems = ref<OverviewItem[]>([]);
@@ -34,43 +39,143 @@ const userStore = useUserStore();
 onMounted(async () => {
   try {
     loading.value = true;
-    const [dashboardRes, githubRes, shanbayRes] = await Promise.allSettled([
-      getDashboardCard({}),
-      userStore.userInfo?.githubUsername
-        ? getGithubCardInfo(
-            userStore.userInfo.githubUsername,
-            userStore.userInfo.githubToken,
-          )
-        : Promise.reject('No github credentials'),
-      userStore.userInfo?.shanbayAcct
-        ? getShanbayCardInfo(userStore.userInfo.shanbayAcct)
-        : Promise.reject('No shanbay credentials'),
-    ]);
-
+    
+    // 1. 获取任务列表
+    const tasks = await getDashboardTasks();
+    
     const items: OverviewItem[] = [];
-    if (dashboardRes.status === 'fulfilled') {
-      // 兼容旧的 url 命名并转换为 iconClickUrl
-      const mappedItems = dashboardRes.value.map((item: any) => ({
-        ...item,
-        iconClickUrl: item.iconClickUrl || item.url,
-      }));
-      items.push(...mappedItems);
+    
+    // 2. 构建初始列表（占位符）
+    tasks.forEach((type) => {
+      items.push({
+        title: type,
+        type,
+        loading: true,
+        icon: 'svg:card',
+        totalTitle: '',
+        totalValue: '',
+        value: '',
+      });
+    });
+
+    // Github 占位
+    if (userStore.userInfo?.githubUsername) {
+      items.push({
+        title: 'GitHub',
+        type: 'GITHUB',
+        loading: true,
+        icon: 'carbon:logo-github',
+        totalTitle: '',
+        totalValue: '',
+        value: '',
+      });
     }
 
-    if (githubRes.status === 'fulfilled') {
-      items.push(githubRes.value);
-    }
-    if (shanbayRes.status === 'fulfilled') {
-      items.push(shanbayRes.value);
+    // 扇贝占位
+    if (userStore.userInfo?.shanbayAcct) {
+      items.push({
+        title: '扇贝单词',
+        type: 'SHANBAY',
+        loading: true,
+        icon: 'lucide:book-open',
+        totalTitle: '',
+        totalValue: '',
+        value: '',
+      });
     }
 
     overviewItems.value = items;
+    loading.value = false;
+
+    // 3. 并发获取详情
+    
+    // Dashboard Cards
+    tasks.forEach(async (type) => {
+      try {
+        const res = await getDashboardCardDetail(type);
+        const index = overviewItems.value.findIndex((i) => i.type === type);
+        if (index !== -1) {
+          overviewItems.value[index] = {
+            ...overviewItems.value[index],
+            ...res,
+            loading: false,
+          };
+        }
+      } catch (error) {
+        console.error(`Failed to fetch card ${type}`, error);
+      }
+    });
+
+    // Github
+    if (userStore.userInfo?.githubUsername) {
+      getGithubCardInfo(
+        userStore.userInfo.githubUsername,
+        userStore.userInfo.githubToken,
+      )
+        .then((res) => {
+          const index = overviewItems.value.findIndex((i) => i.type === 'GITHUB');
+          if (index !== -1) {
+            overviewItems.value[index] = {
+              ...overviewItems.value[index],
+              ...res,
+              loading: false,
+            };
+          }
+        })
+        .catch((err) => console.error('Github fetch failed', err));
+    }
+
+    // Shanbay
+    if (userStore.userInfo?.shanbayAcct) {
+      getShanbayCardInfo(userStore.userInfo.shanbayAcct)
+        .then((res) => {
+          const index = overviewItems.value.findIndex((i) => i.type === 'SHANBAY');
+          if (index !== -1) {
+            overviewItems.value[index] = {
+              ...overviewItems.value[index],
+              ...res,
+              loading: false,
+            };
+          }
+        })
+        .catch((err) => console.error('Shanbay fetch failed', err));
+    }
   } catch (error) {
     console.error('获取仪表盘数据失败:', error);
-  } finally {
     loading.value = false;
   }
 });
+
+async function refreshCard(item: OverviewItem) {
+  if (item.loading || !item.type) {
+    return;
+  }
+
+  try {
+    item.loading = true;
+    let res = {};
+
+    if (item.type === 'GITHUB') {
+      if (userStore.userInfo?.githubUsername) {
+        res = await getGithubCardInfo(
+          userStore.userInfo.githubUsername,
+          userStore.userInfo.githubToken,
+        );
+      }
+    } else if (item.type === 'SHANBAY') {
+      if (userStore.userInfo?.shanbayAcct) {
+        res = await getShanbayCardInfo(userStore.userInfo.shanbayAcct);
+      }
+    } else {
+      res = await getDashboardCardDetail(item.type);
+    }
+
+    Object.assign(item, res, { loading: false });
+  } catch (error) {
+    console.error(`Failed to refresh card ${item.title}`, error);
+    item.loading = false;
+  }
+}
 
 const quickNavItems: WorkbenchQuickNavItem[] = [
   {
@@ -127,13 +232,14 @@ function navTo(nav: WorkbenchQuickNavItem) {
 <template>
   <div class="p-3 sm:p-5">
     <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-      <template v-if="loading">
+      <template v-if="loading && overviewItems.length === 0">
         <AnalysisCard v-for="i in 4" :key="i" loading />
       </template>
       <template v-else>
         <AnalysisCard
           v-for="item in overviewItems"
-          :key="item.title"
+          :key="item.type || item.title"
+          :loading="item.loading"
           :icon="item.icon"
           :icon-click-url="item.iconClickUrl"
           :title="item.title"
@@ -142,6 +248,8 @@ function navTo(nav: WorkbenchQuickNavItem) {
           :total-value="item.totalValue"
           :value="item.value"
           :value-color="item.valueColor"
+          class="cursor-pointer"
+          @click="refreshCard(item)"
         />
       </template>
     </div>

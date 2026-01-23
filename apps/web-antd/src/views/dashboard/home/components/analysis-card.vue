@@ -32,14 +32,16 @@ const props = withDefaults(defineProps<Props>(), {
   valueColor: '',
 });
 
-function handleIconClick() {
+function handleIconClick(e: MouseEvent) {
   if (props.iconClickUrl) {
+    e.stopPropagation();
     window.open(props.iconClickUrl, '_blank');
   }
 }
 
-function handleTitleClick() {
+function handleTitleClick(e: MouseEvent) {
   if (props.titleClickUrl) {
+    e.stopPropagation();
     window.open(props.titleClickUrl, '_blank');
   }
 }
@@ -48,7 +50,11 @@ function handleTitleClick() {
 <template>
   <Card :body-style="{ padding: '16px' }" class="w-full">
     <template v-if="loading">
-      <Skeleton active :paragraph="{ rows: 3 }" />
+      <Skeleton
+        active
+        :paragraph="{ rows: 2, width: ['60%', '100%'] }"
+        :title="{ width: '40%' }"
+      />
     </template>
     <template v-else>
       <div
