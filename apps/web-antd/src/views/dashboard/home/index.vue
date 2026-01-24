@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, type Component } from 'vue';
+import { onMounted, ref, type Component } from 'vue';
 import { useRouter } from 'vue-router';
 
 import {
@@ -29,36 +29,11 @@ interface OverviewItem {
   valueColor?: string;
   loading?: boolean;
   type?: string;
-  refreshInterval?: number;
 }
 
 const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
 const userStore = useUserStore();
-
-// 刷新定时器
-const refreshTimers = new Map<string, any>();
-
-/**
- * 设置自动刷新
- */
-function setupAutoRefresh(item: OverviewItem) {
-  if (!item.type || !item.refreshInterval || item.refreshInterval <= 0) {
-    return;
-  }
-
-  // 清除现有定时器
-  if (refreshTimers.has(item.type)) {
-    clearInterval(refreshTimers.get(item.type));
-  }
-
-  // 设置新定时器
-  const timer = setInterval(() => {
-    refreshCard(item);
-  }, item.refreshInterval * 1000);
-
-  refreshTimers.set(item.type, timer);
-}
 
 // 获取数据并设置 overviewItems
 onMounted(async () => {
@@ -125,8 +100,6 @@ onMounted(async () => {
             ...res,
             loading: false,
           };
-          // 设置自动刷新
-          setupAutoRefresh(overviewItems.value[index]);
         }
       } catch (error) {
         console.error(`Failed to fetch card ${type}`, error);
@@ -147,8 +120,6 @@ onMounted(async () => {
               ...res,
               loading: false,
             };
-            // Github 也可以设置自动刷新，如果有 interval 的话
-            setupAutoRefresh(overviewItems.value[index]);
           }
         })
         .catch((err) => console.error('Github fetch failed', err));
@@ -165,8 +136,6 @@ onMounted(async () => {
               ...res,
               loading: false,
             };
-            // Shanbay 也可以设置自动刷新
-            setupAutoRefresh(overviewItems.value[index]);
           }
         })
         .catch((err) => console.error('Shanbay fetch failed', err));
@@ -175,12 +144,6 @@ onMounted(async () => {
     console.error('获取仪表盘数据失败:', error);
     loading.value = false;
   }
-});
-
-onUnmounted(() => {
-  // 清理所有定时器
-  refreshTimers.forEach((timer) => clearInterval(timer));
-  refreshTimers.clear();
 });
 
 async function refreshCard(item: OverviewItem) {
@@ -208,9 +171,6 @@ async function refreshCard(item: OverviewItem) {
     }
 
     Object.assign(item, res, { loading: false });
-    
-    // 刷新后重新设置定时器（重置间隔时间）
-    setupAutoRefresh(item);
   } catch (error) {
     console.error(`Failed to refresh card ${item.title}`, error);
     item.loading = false;
