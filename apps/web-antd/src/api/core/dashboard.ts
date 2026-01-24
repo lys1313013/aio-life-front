@@ -9,6 +9,7 @@ export interface DashboardCard {
   valueColor?: string;
   totalTitle?: string;
   totalValue?: string;
+  refreshInterval?: number;
 }
 
 /**
