@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { onMounted, ref, type Component } from 'vue';
+import { onMounted, onUnmounted, ref, type Component } from 'vue';
 import { useRouter } from 'vue-router';
 
 import {
@@ -29,11 +29,52 @@ interface OverviewItem {
   valueColor?: string;
   loading?: boolean;
   type?: string;
+  refreshInterval?: number;
 }
 
 const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
 const userStore = useUserStore();
+
+// 定时器管理
+const refreshTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+function clearCardTimer(type?: string) {
+  if (type && refreshTimers.has(type)) {
+    clearInterval(refreshTimers.get(type));
+    refreshTimers.delete(type);
+  }
+}
+
+function setupCardRefresh(item: OverviewItem) {
+  const { type, refreshInterval } = item;
+  if (!type) return;
+
+  // 清除旧定时器
+  clearCardTimer(type);
+
+  // 负数、空值或 0 时不设置定时刷新
+  if (
+    refreshInterval === undefined ||
+    refreshInterval === null ||
+    refreshInterval <= 0
+  ) {
+    return;
+  }
+
+  // 设置新定时器
+  const timer = setInterval(() => {
+    refreshCard(item);
+  }, refreshInterval * 1000);
+
+  refreshTimers.set(type, timer);
+}
+
+onUnmounted(() => {
+  // 清理所有定时器
+  refreshTimers.forEach((timer) => clearInterval(timer));
+  refreshTimers.clear();
+});
 
 // 获取数据并设置 overviewItems
 onMounted(async () => {
@@ -100,6 +141,7 @@ onMounted(async () => {
             ...res,
             loading: false,
           };
+          setupCardRefresh(overviewItems.value[index]);
         }
       } catch (error) {
         console.error(`Failed to fetch card ${task.type}`, error);
@@ -120,6 +162,7 @@ onMounted(async () => {
               ...res,
               loading: false,
             };
+            setupCardRefresh(overviewItems.value[index]);
           }
         })
         .catch((err) => console.error('Github fetch failed', err));
@@ -136,6 +179,7 @@ onMounted(async () => {
               ...res,
               loading: false,
             };
+            setupCardRefresh(overviewItems.value[index]);
           }
         })
         .catch((err) => console.error('Shanbay fetch failed', err));
@@ -171,6 +215,7 @@ async function refreshCard(item: OverviewItem) {
     }
 
     Object.assign(item, res, { loading: false });
+    setupCardRefresh(item);
   } catch (error) {
     console.error(`Failed to refresh card ${item.title}`, error);
     item.loading = false;
