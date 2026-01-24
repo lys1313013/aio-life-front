@@ -11,11 +11,18 @@ export interface DashboardCard {
   totalValue?: string;
 }
 
+export interface DashboardTaskItem {
+  type: string;
+  title: string;
+  totalTitle: string;
+  icon: string;
+}
+
 /**
  * Get list of dashboard tasks (card types)
  */
 export async function getDashboardTasks() {
-  return await requestClient.get<string[]>('/dashboard/tasks');
+  return await requestClient.get<DashboardTaskItem[]>('/dashboard/tasks');
 }
 
 /**

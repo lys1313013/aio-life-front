@@ -49,40 +49,42 @@ function handleTitleClick(e: MouseEvent) {
 
 <template>
   <Card :body-style="{ padding: '16px' }" class="w-full">
-    <template v-if="loading">
-      <Skeleton
-        active
-        :paragraph="{ rows: 2, width: ['60%', '100%'] }"
-        :title="{ width: '40%' }"
-      />
-    </template>
-    <template v-else>
-      <div
-        :class="{ 'cursor-pointer hover:text-primary transition-colors': !!titleClickUrl }"
-        class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
-        @click="handleTitleClick"
-      >
-        {{ title }}
-      </div>
-      <div class="flex items-center justify-between">
+    <div
+      :class="{ 'cursor-pointer hover:text-primary transition-colors': !!titleClickUrl }"
+      class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
+      @click="handleTitleClick"
+    >
+      {{ title }}
+    </div>
+    <div class="flex items-center justify-between">
+      <div class="flex items-center">
+        <template v-if="loading">
+          <Skeleton.Button active :style="{ width: '120px', height: '28px' }" />
+        </template>
         <span
+          v-else
           :style="{ color: valueColor }"
           class="text-lg font-bold sm:text-xl"
         >
           {{ value }}
         </span>
-        <VbenIcon
-          :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
-          :icon="icon"
-          class="size-6 flex-shrink-0 sm:size-8"
-          @click="handleIconClick"
-        />
       </div>
-      <div class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm">
-        <span>{{ totalTitle }}</span>
-        <span>{{ totalValue }}</span>
+      <VbenIcon
+        :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
+        :icon="icon"
+        class="size-6 flex-shrink-0 sm:size-8"
+        @click="handleIconClick"
+      />
+    </div>
+    <div class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm">
+      <span>{{ totalTitle }}</span>
+      <div class="flex items-center">
+        <template v-if="loading">
+          <Skeleton.Button active size="small" :style="{ width: '60px', height: '20px' }" />
+        </template>
+        <span v-else>{{ totalValue }}</span>
       </div>
-    </template>
+    </div>
   </Card>
 </template>
 

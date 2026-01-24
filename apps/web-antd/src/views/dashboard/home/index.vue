@@ -46,13 +46,13 @@ onMounted(async () => {
     const items: OverviewItem[] = [];
     
     // 2. 构建初始列表（占位符）
-    tasks.forEach((type) => {
+    tasks.forEach((task) => {
       items.push({
-        title: type,
-        type,
+        title: task.title,
+        type: task.type,
         loading: true,
-        icon: 'svg:card',
-        totalTitle: '',
+        icon: task.icon,
+        totalTitle: task.totalTitle,
         totalValue: '',
         value: '',
       });
@@ -65,7 +65,7 @@ onMounted(async () => {
         type: 'GITHUB',
         loading: true,
         icon: 'carbon:logo-github',
-        totalTitle: '',
+        totalTitle: '连续提交',
         totalValue: '',
         value: '',
       });
@@ -78,7 +78,7 @@ onMounted(async () => {
         type: 'SHANBAY',
         loading: true,
         icon: 'lucide:book-open',
-        totalTitle: '',
+        totalTitle: '今日学习时间',
         totalValue: '',
         value: '',
       });
@@ -90,10 +90,10 @@ onMounted(async () => {
     // 3. 并发获取详情
     
     // Dashboard Cards
-    tasks.forEach(async (type) => {
+    tasks.forEach(async (task) => {
       try {
-        const res = await getDashboardCardDetail(type);
-        const index = overviewItems.value.findIndex((i) => i.type === type);
+        const res = await getDashboardCardDetail(task.type);
+        const index = overviewItems.value.findIndex((i) => i.type === task.type);
         if (index !== -1) {
           overviewItems.value[index] = {
             ...overviewItems.value[index],
@@ -102,7 +102,7 @@ onMounted(async () => {
           };
         }
       } catch (error) {
-        console.error(`Failed to fetch card ${type}`, error);
+        console.error(`Failed to fetch card ${task.type}`, error);
       }
     });
 
