@@ -1,7 +1,5 @@
 #!/bin/bash
 
-pnpm run build
-
 # 设置严格模式
 set -euo pipefail
 
@@ -27,13 +25,16 @@ if [[ -z "$PASSWORD" ]]; then
     exit 1
 fi
 
+echo "开始构建项目..."
+pnpm run build:antd
+
 # 检查 dist 目录是否存在
 DIST_PATH="$PROJECT_DIR/apps/web-antd/dist"
 echo "检查 dist 目录: $DIST_PATH"
 
 if [[ ! -d "$DIST_PATH" ]]; then
     echo "错误: dist 目录不存在: $DIST_PATH" >&2
-    echo "请先构建项目：cd apps/web-antd && pnpm build" >&2
+    echo "请手动检查构建输出" >&2
     exit 1
 fi
 
@@ -41,7 +42,13 @@ fi
 echo "打包 dist 文件夹..."
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 ARCHIVE_NAME="dist_$TIMESTAMP.tar.gz"
-tar --no-xattrs -czf "/tmp/$ARCHIVE_NAME" -C "$PROJECT_DIR/apps/web-antd" dist
+
+# 兼容 macOS 和 Linux 的 tar 命令
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    tar --no-xattrs -czf "/tmp/$ARCHIVE_NAME" -C "$PROJECT_DIR/apps/web-antd" dist
+else
+    tar -czf "/tmp/$ARCHIVE_NAME" -C "$PROJECT_DIR/apps/web-antd" dist
+fi
 
 LOCAL_ARCHIVE_PATH="/tmp/$ARCHIVE_NAME"
 echo "创建压缩包: $LOCAL_ARCHIVE_PATH"
