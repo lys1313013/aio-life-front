@@ -32,6 +32,10 @@ const props = withDefaults(defineProps<Props>(), {
   valueColor: '',
 });
 
+const emit = defineEmits<{
+  (e: 'title-click', url: string): void;
+}>();
+
 function handleIconClick(e: MouseEvent) {
   if (props.iconClickUrl) {
     e.stopPropagation();
@@ -42,13 +46,17 @@ function handleIconClick(e: MouseEvent) {
 function handleTitleClick(e: MouseEvent) {
   if (props.titleClickUrl) {
     e.stopPropagation();
-    window.open(props.titleClickUrl, '_blank');
+    if (props.titleClickUrl.startsWith('action:')) {
+      emit('title-click', props.titleClickUrl);
+    } else {
+      window.open(props.titleClickUrl, '_blank');
+    }
   }
 }
 </script>
 
 <template>
-  <Card :body-style="{ padding: '16px' }" class="w-full">
+  <Card :body-style="{ padding: '16px' }" class="w-full select-none">
     <div
       :class="{ 'cursor-pointer hover:text-primary transition-colors': !!titleClickUrl }"
       class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"

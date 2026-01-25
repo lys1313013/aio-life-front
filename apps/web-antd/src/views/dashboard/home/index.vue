@@ -16,6 +16,7 @@ import {
 import { getGithubCardInfo } from '#/api/core/github';
 import { getShanbayCardInfo } from '#/api/core/shanbay';
 
+import TimeTrackerAddModal from '../../my-hub/time-tracker/components/TimeTrackerAddModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
 
 interface OverviewItem {
@@ -35,9 +36,37 @@ interface OverviewItem {
 const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
 const userStore = useUserStore();
+const timeTrackerModalRef = ref();
+const longPressTimer = ref<ReturnType<typeof setTimeout>>();
+const isLongPress = ref(false);
 
 // 定时器管理
 const refreshTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+function startLongPress(item: OverviewItem) {
+  if (item.title !== '时迹' && item.type !== 'TIME_TRACKER') return;
+
+  isLongPress.value = false;
+  longPressTimer.value = setTimeout(() => {
+    isLongPress.value = true;
+    timeTrackerModalRef.value?.open();
+    // 震动反馈
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  }, 500);
+}
+
+function endLongPress() {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value);
+    longPressTimer.value = undefined;
+  }
+}
+
+function cancelLongPress() {
+  endLongPress();
+}
 
 function clearCardTimer(type?: string) {
   if (type && refreshTimers.has(type)) {
@@ -237,6 +266,20 @@ async function refreshCard(item: OverviewItem) {
   }
 }
 
+function handleCardClick(item: OverviewItem) {
+  if (isLongPress.value) {
+    isLongPress.value = false;
+    return;
+  }
+  refreshCard(item);
+}
+
+function handleTitleClick(url: string) {
+  if (url === 'action:open-time-tracker-modal') {
+    timeTrackerModalRef.value?.open();
+  }
+}
+
 const quickNavItems: WorkbenchQuickNavItem[] = [
   {
     color: '#1fdaca',
@@ -287,6 +330,12 @@ function navTo(nav: WorkbenchQuickNavItem) {
     router.push(nav.url);
   }
 }
+
+function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
+  if (nav.title === '时迹' || nav.url?.includes('time-tracker')) {
+    timeTrackerModalRef.value?.open();
+  }
+}
 </script>
 
 <template>
@@ -309,7 +358,14 @@ function navTo(nav: WorkbenchQuickNavItem) {
           :value="item.value"
           :value-color="item.valueColor"
           class="cursor-pointer"
-          @click="refreshCard(item)"
+          @click="handleCardClick(item)"
+          @mousedown="startLongPress(item)"
+          @touchstart="startLongPress(item)"
+          @mouseup="endLongPress"
+          @touchend="endLongPress"
+          @mouseleave="cancelLongPress"
+          @touchmove="cancelLongPress"
+          @title-click="handleTitleClick"
         />
       </template>
     </div>
@@ -319,8 +375,10 @@ function navTo(nav: WorkbenchQuickNavItem) {
           :items="quickNavItems"
           title="快捷导航"
           @click="navTo"
+          @long-press="handleQuickNavLongPress"
         />
       </div>
     </div>
+    <TimeTrackerAddModal ref="timeTrackerModalRef" />
   </div>
 </template>

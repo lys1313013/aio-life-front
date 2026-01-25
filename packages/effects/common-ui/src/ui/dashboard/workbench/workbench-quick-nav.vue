@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
 import type { WorkbenchQuickNavItem } from '../typing';
 
 import {
@@ -22,11 +24,41 @@ withDefaults(defineProps<Props>(), {
   items: () => [],
 });
 
-defineEmits(['click']);
+const emit = defineEmits(['click', 'long-press']);
+
+const longPressTimer = ref<ReturnType<typeof setTimeout>>();
+const isLongPress = ref(false);
+
+function startLongPress(item: WorkbenchQuickNavItem) {
+  isLongPress.value = false;
+  longPressTimer.value = setTimeout(() => {
+    isLongPress.value = true;
+    emit('long-press', item);
+    // 震动反馈
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  }, 500);
+}
+
+function endLongPress() {
+  if (longPressTimer.value) {
+    clearTimeout(longPressTimer.value);
+    longPressTimer.value = undefined;
+  }
+}
+
+function handleItemClick(item: WorkbenchQuickNavItem) {
+  if (isLongPress.value) {
+    isLongPress.value = false;
+    return;
+  }
+  emit('click', item);
+}
 </script>
 
 <template>
-  <Card>
+  <Card class="select-none">
     <CardHeader class="py-4">
       <CardTitle class="text-lg">{{ title }}</CardTitle>
     </CardHeader>
@@ -41,7 +73,13 @@ defineEmits(['click']);
             'rounded-br-xl': index === items.length - 1,
           }"
           class="flex-col-center border-border group w-1/3 cursor-pointer border-r border-t py-4 hover:shadow-xl sm:py-8"
-          @click="$emit('click', item)"
+          @click="handleItemClick(item)"
+          @mousedown="startLongPress(item)"
+          @mouseleave="endLongPress"
+          @mouseup="endLongPress"
+          @touchend="endLongPress"
+          @touchmove="endLongPress"
+          @touchstart="startLongPress(item)"
         >
           <VbenIcon
             :color="item.color"

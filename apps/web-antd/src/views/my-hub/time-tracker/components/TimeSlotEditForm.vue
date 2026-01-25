@@ -311,7 +311,7 @@ onMounted(() => {
 // 连续调整相关变量
 const continuousAdjustInterval = ref<NodeJS.Timeout | null>(null);
 const continuousAdjustDirection = ref<number>(0);
-const continuousAdjustType = ref<'start' | 'end'>('start');
+const continuousAdjustType = ref<'end' | 'start'>('start');
 const initialDelay = 500; // 初始延迟500ms
 const repeatInterval = 100; // 重复间隔100ms
 
@@ -322,7 +322,7 @@ const duration = computed(() => {
   const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
 
-  return Math.max(0, endMinutes - startMinutes);
+  return Math.max(0, endMinutes - startMinutes + 1);
 });
 
 // 更新时长逻辑
@@ -339,7 +339,7 @@ const updateDuration = (val: number) => {
       ...props.slot,
       id: formState.value.id || 'temp-id',
       startTime: startMinutes,
-      endTime: startMinutes // 设置为开始时间，以便查找紧邻的下一个时间段
+      endTime: startMinutes, // 设置为开始时间，以便查找紧邻的下一个时间段
     };
 
     const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
