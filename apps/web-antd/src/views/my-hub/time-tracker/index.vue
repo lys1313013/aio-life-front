@@ -1510,14 +1510,17 @@ const handleAddSlot = async () => {
 
     // 更新时间段数据
     if (editingSlot.value && editingSlot.value.id === newSlot.id) {
-      editingSlot.value = {
-        ...editingSlot.value,
-        startTime: result.startTime,
-        endTime: result.endTime,
-        categoryId: result.categoryId,
-        title: getCategoryName(result.categoryId, config.value.categories),
-        date: result.date || currentDate,
-      };
+      const { recommend } = result;
+      if (recommend) {
+        editingSlot.value = {
+          ...editingSlot.value,
+          startTime: recommend.startTime,
+          endTime: recommend.endTime,
+          categoryId: recommend.categoryId,
+          title: getCategoryName(recommend.categoryId, config.value.categories),
+          date: recommend.date || currentDate,
+        };
+      }
     }
   } catch (error) {
     console.error('获取推荐失败', error);

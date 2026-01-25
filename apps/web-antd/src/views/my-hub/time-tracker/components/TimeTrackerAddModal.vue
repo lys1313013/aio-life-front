@@ -26,7 +26,7 @@ import dayjs from 'dayjs';
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
 import { defaultConfig, getCategoryName } from '../config';
 import { generateId, isValidSlot, hasOverlap } from '../utils';
-import { recommendNext, save, query } from '#/api/core/time-tracker';
+import { recommendNext, save } from '#/api/core/time-tracker';
 import type { TimeSlot, TimeSlotFormData } from '../types';
 
 const visible = ref(false);
@@ -69,39 +69,28 @@ const open = async () => {
   editingSlot.value = newSlot;
 
   try {
-    // Fetch existing slots for today to check overlaps
-    // Note: query returns array of slots or QueryResponse
-    const response = await query({ condition: { date: currentDate } });
-    if (Array.isArray(response)) {
-      existingSlots.value = response;
-    } else if (response && (response as any).items) {
-      existingSlots.value = (response as any).items || [];
-    } else {
-      existingSlots.value = [];
-    }
-
-    // Recommend next
+    // Recommend next and get existing records in one call
     const result = await recommendNext({ date: currentDate });
     if (result) {
-        editingSlot.value = {
-            ...newSlot,
-            startTime: result.startTime,
-            endTime: result.endTime,
-            categoryId: result.categoryId,
-            title: getCategoryName(result.categoryId, categories.value),
-            date: result.date || currentDate,
-        };
+        const { recommend, records } = result;
         
-        // If date changed, fetch slots for that date
-        if (result.date && result.date !== currentDate) {
-             const newResponse = await query({ condition: { date: result.date } });
-             if (Array.isArray(newResponse)) {
-                existingSlots.value = newResponse;
-              } else if (newResponse && (newResponse as any).items) {
-                existingSlots.value = (newResponse as any).items || [];
-              } else {
-                existingSlots.value = [];
-              }
+        // Update existing slots from the records returned
+        if (Array.isArray(records)) {
+          existingSlots.value = records;
+        } else {
+          existingSlots.value = [];
+        }
+
+        if (recommend) {
+          editingSlot.value = {
+                ...newSlot,
+                id: recommend.id || newSlot.id,
+                startTime: recommend.startTime,
+                endTime: recommend.endTime,
+                categoryId: recommend.categoryId,
+                title: getCategoryName(recommend.categoryId, categories.value),
+                date: recommend.date || currentDate,
+              };
         }
     }
   } catch (e) {

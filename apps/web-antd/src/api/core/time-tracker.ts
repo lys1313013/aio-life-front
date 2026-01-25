@@ -85,10 +85,8 @@ export async function recommendType(params: {
  * 获取推荐分类
  */
 export async function recommendNext(params: { date: string }): Promise<{
-  categoryId: string;
-  date: string;
-  endTime: number;
-  startTime: number;
+  recommend: TimeRecordEntity;
+  records: TimeRecordEntity[];
 }> {
   return await requestClient.get('/timeRecord/recommendNext', { params });
 }
