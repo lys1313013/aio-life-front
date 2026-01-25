@@ -74,6 +74,21 @@ export async function deleteByDate(data: { date: string }): Promise<void> {
 /**
  * 获取推荐分类
  */
-export async function recommendType(params: { date: string; time: number }): Promise<string> {
+export async function recommendType(params: {
+  date: string;
+  time: number;
+}): Promise<string> {
   return await requestClient.get('/timeRecord/recommendType', { params });
+}
+
+/**
+ * 获取推荐分类
+ */
+export async function recommendNext(params: { date: string }): Promise<{
+  categoryId: string;
+  date: string;
+  endTime: number;
+  startTime: number;
+}> {
+  return await requestClient.get('/timeRecord/recommendNext', { params });
 }

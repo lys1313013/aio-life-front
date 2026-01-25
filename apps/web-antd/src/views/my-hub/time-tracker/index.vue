@@ -371,15 +371,17 @@
       :footer="null"
       @cancel="handleEditCancel"
     >
-      <TimeSlotEditForm
-        v-if="editingSlot"
-        :slot="editingSlot"
-        :categories="config.categories"
-        :existing-slots="timeSlots"
-        @save="handleSaveSlot"
-        @delete="handleDeleteSlot"
-        @cancel="handleEditCancel"
-      />
+      <Spin :spinning="modalLoading" tip="">
+        <TimeSlotEditForm
+          v-if="editingSlot"
+          :slot="editingSlot"
+          :categories="config.categories"
+          :existing-slots="timeSlots"
+          @save="handleSaveSlot"
+          @delete="handleDeleteSlot"
+          @cancel="handleEditCancel"
+        />
+      </Spin>
     </Modal>
 
     <!-- 分类管理模态框 -->
@@ -455,6 +457,7 @@ import {
   deleteData,
   query,
   queryForWeek,
+  recommendNext,
   recommendType,
   save,
   update,
@@ -1353,6 +1356,7 @@ const handleTrackPointerUp = async () => {
 
     if (duration >= config.value.minSlotDuration) {
       let recommendedCategoryId = config.value.defaultCategoryId;
+
       try {
         const middleTime = Math.floor((startTime + endTime) / 2);
         const result = await recommendType({
@@ -1480,110 +1484,47 @@ const handleSlotClick = (slot: TimeSlot) => {
   showEditModal.value = true;
 };
 
-// 计算开始时间
-const calculateStartTime = (): number => {
+const modalLoading = ref(false);
+
+const handleAddSlot = async () => {
   const currentDate = getCurrentSelectedDate();
 
-  // 获取当天的时间段，按开始时间排序
-  const sameDaySlots = timeSlots.value
-    .filter((slot: TimeSlot) => slot.date === currentDate)
-    .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
-
-  // 如果没有时间段，从00:00开始
-  if (sameDaySlots.length === 0) {
-    return 0;
-  }
-
-  // 检查时间段之间的空隙
-  for (let i = 0; i < sameDaySlots.length - 1; i++) {
-    const currentSlot = sameDaySlots[i];
-    const nextSlot = sameDaySlots[i + 1];
-
-    // 计算当前时间段结束时间和下一个时间段开始时间之间的空隙大小
-    const gapSize = nextSlot!.startTime - currentSlot!.endTime - 1;
-
-    // 如果空隙大于0（允许插入较短时间段）
-    if (gapSize > 0) {
-      return currentSlot!.endTime + 1;
-    }
-  }
-
-  // 检查最后一个时间段之后是否有足够的空间
-  const lastSlot = sameDaySlots[sameDaySlots.length - 1];
-  if (lastSlot?.endTime && lastSlot.endTime <= 1439) {
-    return lastSlot.endTime + 1;
-  }
-
-  // 如果没有足够的空间，返回当天最后一个时间段的结束时间 + 1分钟
-  return Math.min((lastSlot?.endTime || 0) + 1, 1439);
-};
-
-const handleAddSlot = () => {
-  const currentDate = getCurrentSelectedDate();
-
-  // 获取当天的时间段，按开始时间排序
-  const sameDaySlots = timeSlots.value
-    .filter((slot: TimeSlot) => slot.date === currentDate)
-    .sort((a: TimeSlot, b: TimeSlot) => a.startTime - b.startTime);
-
-  // 计算智能开始时间
-  const startTime = calculateStartTime();
-
-  // 判断是否是今天
-  const today = dayjs().format('YYYY-MM-DD');
-  const isToday = currentDate === today;
-
-  // 智能计算结束时间：找到下一个时间段的开始时间，或者默认30分钟
-  // 如果是今天，最大结束时间设为当前时间；否则设为23:59（1439分钟）
-  let endTime = Math.min(startTime + 30, 1439);
-  if (isToday) {
-    // 当天直接取当前时间
-    endTime = currentTime.value;
-  }
-
-  // 查找当前空隙的下一个时间段的开始时间
-  const nextSlot = sameDaySlots.find((slot) => slot.startTime > startTime);
-  if (nextSlot && nextSlot.startTime > startTime) {
-    const availableTime = nextSlot.startTime - startTime - 1;
-    endTime = Math.min(
-      startTime + availableTime,
-      isToday ? currentTime.value : 1439,
-    );
-  }
-
-  // 默认使用当前选中的分类
+  // 先初始化一个默认的时间段，让弹窗显示出来
   const initialCategoryId = config.value.defaultCategoryId;
-
-  // 创建新的时间段对象
   const newSlot: TimeSlot = {
     id: generateId(),
-    startTime: startTime,
-    endTime,
+    startTime: 0,
+    endTime: 30,
     categoryId: initialCategoryId,
     title: getCategoryName(initialCategoryId, config.value.categories),
     description: '',
     date: currentDate,
   };
-
   editingSlot.value = newSlot;
   showEditModal.value = true;
 
-  // 异步获取推荐分类
-  const middleTime = Math.floor((startTime + endTime) / 2);
-  recommendType({ date: currentDate, time: middleTime })
-    .then((result) => {
-      // 确保当前编辑的还是同一个slot（防止用户快速关闭重新打开等情况）
-      if (result && editingSlot.value && editingSlot.value.id === newSlot.id) {
-        editingSlot.value = {
-          ...editingSlot.value,
-          categoryId: result,
-          title: getCategoryName(result, config.value.categories),
-        };
-      }
-    })
-    .catch((error) => {
-      console.error('获取推荐分类失败', error);
-    });
+  // 开始异步加载推荐数据
+  modalLoading.value = true;
+  try {
+    const result = await recommendNext({ date: currentDate });
+
+    // 更新时间段数据
+    if (editingSlot.value && editingSlot.value.id === newSlot.id) {
+      editingSlot.value = {
+        ...editingSlot.value,
+        startTime: result.startTime,
+        endTime: result.endTime,
+        categoryId: result.categoryId,
+        title: getCategoryName(result.categoryId, config.value.categories),
+        date: result.date || currentDate,
+      };
+    }
+  } catch (error) {
+    console.error('获取推荐失败', error);
+    // 失败时保持默认值，不需要额外操作
+  } finally {
+    modalLoading.value = false;
+  }
 };
 
 const handleSaveSlot = (formData: any) => {
