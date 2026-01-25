@@ -53,8 +53,9 @@ function setupCardRefresh(item: OverviewItem) {
   // 清除旧定时器
   clearCardTimer(type);
 
-  // 负数、空值或 0 时不设置定时刷新
+  // 如果页面不可见，或者没有设置刷新间隔，则不设置定时器
   if (
+    document.visibilityState === 'hidden' ||
     refreshInterval === undefined ||
     refreshInterval === null ||
     refreshInterval <= 0
@@ -70,7 +71,23 @@ function setupCardRefresh(item: OverviewItem) {
   refreshTimers.set(type, timer);
 }
 
+function handleVisibilityChange() {
+  if (document.visibilityState === 'visible') {
+    // 切换回前台时，刷新所有有刷新间隔的卡片
+    overviewItems.value.forEach((item) => {
+      if (item.refreshInterval && item.refreshInterval > 0) {
+        refreshCard(item);
+      }
+    });
+  } else {
+    // 切换到后台时，清除所有定时器
+    refreshTimers.forEach((timer) => clearInterval(timer));
+    refreshTimers.clear();
+  }
+}
+
 onUnmounted(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
   // 清理所有定时器
   refreshTimers.forEach((timer) => clearInterval(timer));
   refreshTimers.clear();
@@ -78,14 +95,12 @@ onUnmounted(() => {
 
 // 获取数据并设置 overviewItems
 onMounted(async () => {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   try {
     loading.value = true;
-    
     // 1. 获取任务列表
     const tasks = await getDashboardTasks();
-    
     const items: OverviewItem[] = [];
-    
     // 2. 构建初始列表（占位符）
     tasks.forEach((task) => {
       items.push({
@@ -129,7 +144,7 @@ onMounted(async () => {
     loading.value = false;
 
     // 3. 并发获取详情
-    
+
     // Dashboard Cards
     tasks.forEach(async (task) => {
       try {
