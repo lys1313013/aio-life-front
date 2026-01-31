@@ -114,7 +114,7 @@
                     >
                       <div class="slot-content">
                         <div class="slot-info" :style="isMobile ? { flexDirection: 'column', alignItems: 'center', gap: '0' } : {}">
-                          <span class="slot-title">{{ slot.title }}</span>
+                          <span class="slot-title">{{ getSlotTitle(slot) }}</span>
                           <span class="slot-time" :style="isMobile ? { fontSize: '10px', lineHeight: '1.2' } : { marginLeft: '4px', fontSize: '11px' }">
                             {{ formatDuration(slot.endTime - slot.startTime) }}
                           </span>
@@ -171,7 +171,7 @@
                     >
                       <div class="slot-content">
                         <div class="slot-info">
-                          <span class="slot-title">{{ slot.title }}</span>
+                          <span class="slot-title">{{ getSlotTitle(slot) }}</span>
                           <span v-if="slot.endTime - slot.startTime > 60" class="slot-time" style="margin-left: 2px; font-size: 10px;">
                             {{ formatDuration(slot.endTime - slot.startTime) }}
                           </span>
@@ -226,7 +226,7 @@
                   >
                     <div class="slot-content">
                       <div class="slot-info">
-                        <span class="slot-title">{{ slot.title }}</span>
+                        <span class="slot-title">{{ getSlotTitle(slot) }}</span>
                         <span class="slot-time">
                           {{ formatSlotTime(slot) }}
                           <span style="margin-left: 4px; opacity: 0.8">
@@ -254,10 +254,6 @@
           <div class="stats-row">
             <div class="stats-cards-group">
               <div class="stat-square-card">
-                <span class="stat-label-corner">总计</span>
-                <span class="stat-value-center">{{ filteredTimeSlots.length }}</span>
-              </div>
-              <div class="stat-square-card">
                 <span class="stat-label-corner">时长</span>
                 <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
               </div>
@@ -269,17 +265,21 @@
                 <span class="stat-label-corner">空闲</span>
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
               </div>
-              <div class="stat-square-card">
-                <span class="stat-label-corner">娱乐</span>
+              <div
+                class="stat-square-card"
+                v-for="comp in trackTimeComparisons"
+                :key="comp.id"
+              >
+                <span class="stat-label-corner">{{ comp.name }}</span>
                 <div
                   :style="{
                     position: 'absolute',
                     top: '12px',
                     right: '14px',
                     color:
-                      entertainmentComparison.diff === 0
+                      comp.diff === 0
                         ? '#8c8c8c'
-                        : entertainmentComparison.diff > 0
+                        : comp.diff > 0
                           ? token.colorError
                           : token.colorSuccess,
                     fontSize: '12px',
@@ -289,19 +289,16 @@
                     zIndex: 2,
                   }"
                 >
-                  <span
-                    v-if="entertainmentComparison.diff !== 0"
-                    style="margin-right: 2px"
-                  >
-                    {{ entertainmentComparison.diff > 0 ? '↑' : '↓' }}
+                  <span v-if="comp.diff !== 0" style="margin-right: 2px">
+                    {{ comp.diff > 0 ? '↑' : '↓' }}
                   </span>
-                  <span v-if="entertainmentComparison.diff !== 0">
-                    {{ formatDuration(entertainmentComparison.absDiff) }}
+                  <span v-if="comp.diff !== 0">
+                    {{ formatDuration(comp.absDiff) }}
                   </span>
                   <span v-else> - </span>
                 </div>
                 <div class="stat-value-center">
-                  {{ formatDuration(entertainmentComparison.currentDuration) }}
+                  {{ formatDuration(comp.currentDuration) }}
                 </div>
               </div>
             </div>
@@ -544,25 +541,34 @@ const averageDuration = computed(() => {
   return totalDuration.value / activeDaysCount;
 });
 
-const entertainmentComparison = computed(() => {
-  const entertainmentId = 'entertainment';
+const trackTimeComparisons = computed(() => {
+  const trackedCategories = config.value.categories.filter(
+    (cat) => cat.isTrackTime,
+  );
 
-  const calcDuration = (slots: TimeSlot[]) => {
+  const calcDuration = (slots: TimeSlot[], categoryId: string) => {
     return slots
-      .filter((slot) => slot.categoryId === entertainmentId)
+      .filter((slot) => slot.categoryId === categoryId)
       .reduce((total, slot) => total + (slot.endTime - slot.startTime), 0);
   };
 
-  const currentDuration = calcDuration(timeSlots.value);
-  const previousDuration = calcDuration(previousPeriodTimeSlots.value);
+  return trackedCategories.map((cat) => {
+    const currentDuration = calcDuration(timeSlots.value, cat.id);
+    const previousDuration = calcDuration(
+      previousPeriodTimeSlots.value,
+      cat.id,
+    );
 
-  const diff = currentDuration - previousDuration;
-  return {
-    diff,
-    direction: diff >= 0 ? '上升' : '下降',
-    absDiff: Math.abs(diff),
-    currentDuration,
-  };
+    const diff = currentDuration - previousDuration;
+    return {
+      id: cat.id,
+      name: cat.name,
+      diff,
+      direction: diff >= 0 ? '上升' : '下降',
+      absDiff: Math.abs(diff),
+      currentDuration,
+    };
+  });
 });
 
 const maxDuration = computed(() => {
@@ -987,6 +993,13 @@ const updateMobileTimelineHeight = () => {
   const available = Math.max(300, viewportHeight - rect.top);
   mobileTimelineHeight.value = available;
 };
+// 获取时间段显示的标题
+const getSlotTitle = (slot: TimeSlot) => {
+  if (slot.title) return slot.title;
+  const category = config.value.categories.find((cat) => cat.id === slot.categoryId);
+  return category?.name || '未知分类';
+};
+
 // 获取时间轴高度
 const getTimelineHeight = () => {
   const weekContainer = document.querySelector(
@@ -1375,7 +1388,7 @@ const handleTrackPointerUp = async () => {
         startTime,
         endTime,
         categoryId: recommendedCategoryId,
-        title: getCategoryName(recommendedCategoryId, config.value.categories),
+        title: '',
         date: selectedDate.value.format('YYYY-MM-DD'),
       };
       // 检查是否重叠
@@ -1496,7 +1509,7 @@ const handleAddSlot = async () => {
     startTime: 0,
     endTime: 30,
     categoryId: initialCategoryId,
-    title: getCategoryName(initialCategoryId, config.value.categories),
+    title: '',
     description: '',
     date: currentDate,
   };
@@ -1517,7 +1530,7 @@ const handleAddSlot = async () => {
           startTime: recommend.startTime,
           endTime: recommend.endTime,
           categoryId: recommend.categoryId,
-          title: getCategoryName(recommend.categoryId, config.value.categories),
+          title: '',
           date: recommend.date || currentDate,
         };
       }
@@ -1548,14 +1561,6 @@ const handleSaveSlot = (formData: any) => {
       exerciseTypeId: formData.exerciseTypeId,
       exerciseCount: formData.exerciseCount,
     };
-
-    // 如果用户没有修改标题，自动设置为分类名称
-    if (!newSlot.title || newSlot.title === '') {
-      newSlot.title = getCategoryName(
-        newSlot.categoryId,
-        config.value.categories,
-      );
-    }
 
     // 检查重叠时，只考虑同一天内的时间段
     const sameDaySlots = timeSlots.value.filter(

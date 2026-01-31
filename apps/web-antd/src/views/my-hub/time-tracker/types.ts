@@ -4,7 +4,7 @@ export interface TimeSlot {
   startTime: number; // 开始时间（分钟，0-1440）
   endTime: number; // 结束时间（分钟，0-1440）
   categoryId: string; // 分类ID
-  title: string; // 标题
+  title?: string; // 标题
   description?: string; // 描述
   color?: string; // 颜色
   date: string; // 日期（YYYY-MM-DD格式）
@@ -18,6 +18,7 @@ export interface TimeSlotCategory {
   name: string;
   color: string;
   description?: string;
+  isTrackTime?: boolean;
 }
 
 // 时间轴配置
@@ -34,7 +35,7 @@ export interface TimeSlotFormData {
   startTime: number;
   endTime: number;
   categoryId: string;
-  title: string;
+  title?: string;
   description?: string;
   exerciseTypeId?: string;
   exerciseCount?: number;

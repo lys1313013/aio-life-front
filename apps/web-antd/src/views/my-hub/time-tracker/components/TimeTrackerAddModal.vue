@@ -122,10 +122,6 @@ const handleSave = async (formData: TimeSlotFormData) => {
       exerciseCount: formData.exerciseCount,
     };
 
-    if (!newSlot.title) {
-         newSlot.title = getCategoryName(newSlot.categoryId, categories.value);
-    }
-
     // Filter slots for the same day to check overlap
     const sameDaySlots = existingSlots.value.filter(s => s.date === targetDate);
 

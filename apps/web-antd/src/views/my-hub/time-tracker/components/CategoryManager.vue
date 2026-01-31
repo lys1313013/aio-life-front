@@ -17,14 +17,28 @@
       <template #bodyCell="{ column, record, index }">
         <template v-if="column.key === 'color'">
           <div class="color-cell">
-            <div class="color-preview" :style="{ backgroundColor: record.color }"></div>
-            <span>{{ record.color }}</span>
+            <div
+              class="color-preview"
+              :style="{ backgroundColor: (record as TimeSlotCategory).color }"
+            ></div>
+            <span>{{ (record as TimeSlotCategory).color }}</span>
           </div>
+        </template>
+
+        <template v-else-if="column.key === 'isTrackTime'">
+          <Badge
+            :status="(record as TimeSlotCategory).isTrackTime ? 'processing' : 'default'"
+            :text="(record as TimeSlotCategory).isTrackTime ? '是' : '否'"
+          />
         </template>
 
         <template v-else-if="column.key === 'actions'">
           <div class="action-buttons">
-            <Button type="link" size="small" @click="handleEdit(record)">
+            <Button
+              type="link"
+              size="small"
+              @click="handleEdit(record as TimeSlotCategory)"
+            >
               <EditOutlined />
               编辑
             </Button>
@@ -32,7 +46,7 @@
               type="link"
               size="small"
               danger
-              @click="handleDelete(record)"
+              @click="handleDelete(record as TimeSlotCategory)"
               :disabled="categories.length <= 1"
             >
               <DeleteOutlined />
@@ -81,6 +95,11 @@
           </div>
         </Form.Item>
 
+        <Form.Item label="追踪时间" name="isTrackTime">
+          <Switch v-model:checked="formState.isTrackTime" />
+          <span style="margin-left: 8px; color: #8c8c8c; font-size: 12px">开启后将在仪表盘显示对比统计卡片</span>
+        </Form.Item>
+
         <Form.Item label="描述" name="description">
           <Textarea
             v-model:value="formState.description"
@@ -96,8 +115,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
-import { Button, Table, Modal, Form, Input, Textarea, message } from 'ant-design-vue';
-import type { FormInstance } from 'ant-design-vue';
+import { Button, Table, Modal, Form, Input, Textarea, message, Switch, Badge } from 'ant-design-vue';
+import type { FormInstance, TableColumnType } from 'ant-design-vue';
 import type { TimeSlotCategory } from '../types';
 import { generateId } from '../utils';
 
@@ -119,32 +138,39 @@ const editingCategory = ref<TimeSlotCategory | null>(null);
 const formState = reactive({
   name: '',
   color: '#1890ff',
-  description: ''
+  description: '',
+  isTrackTime: false,
 });
 
 // 表格列定义
-const columns = [
+const columns: TableColumnType<TimeSlotCategory>[] = [
   {
     title: '分类名称',
     dataIndex: 'name',
-    key: 'name'
+    key: 'name',
   },
   {
     title: '颜色',
     key: 'color',
-    width: '150px'
+    width: '120px',
+  },
+  {
+    title: '追踪',
+    key: 'isTrackTime',
+    width: '80px',
+    align: 'center',
   },
   {
     title: '描述',
     dataIndex: 'description',
     key: 'description',
-    ellipsis: true
+    ellipsis: true,
   },
   {
     title: '操作',
     key: 'actions',
-    width: '200px'
-  }
+    width: '180px',
+  },
 ];
 
 // 颜色预设
@@ -154,7 +180,7 @@ const colorPresets = [
 ];
 
 // 表单验证规则
-const rules = {
+const rules: any = {
   name: [
     { required: true, message: '请输入分类名称', trigger: 'blur' },
     { max: 20, message: '分类名称不能超过20个字符', trigger: 'blur' }
@@ -178,6 +204,7 @@ const handleAddCategory = () => {
   formState.name = '';
   formState.color = '#1890ff';
   formState.description = '';
+  formState.isTrackTime = false;
   showEditModal.value = true;
 };
 
@@ -187,6 +214,7 @@ const handleEdit = (category: TimeSlotCategory) => {
   formState.name = category.name;
   formState.color = category.color;
   formState.description = category.description || '';
+  formState.isTrackTime = !!category.isTrackTime;
   showEditModal.value = true;
 };
 
@@ -222,7 +250,8 @@ const handleSaveCategory = async () => {
         id: generateId(),
         name: formState.name,
         color: formState.color,
-        description: formState.description
+        description: formState.description,
+        isTrackTime: formState.isTrackTime,
       };
       newCategories = [...props.categories, newCategory];
     }

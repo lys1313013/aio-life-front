@@ -24,7 +24,7 @@
       </Form.Item>
 
       <Form.Item label="标题" name="title">
-        <Input v-model:value="formState.title" placeholder="请输入时间段标题" />
+        <Input v-model:value="formState.title" placeholder="标题" />
       </Form.Item>
 
       <Row :gutter="16">
@@ -269,7 +269,7 @@ interface LocalFormState {
   startTime?: dayjs.Dayjs;
   endTime?: dayjs.Dayjs;
   categoryId: string;
-  title: string;
+  title?: string;
   description?: string;
   exerciseTypeId?: string;
   exerciseCount?: number;
@@ -377,7 +377,6 @@ const editableMinutes = computed({
 // 表单验证规则
 const rules: any = {
   title: [
-    { required: true, message: '请输入标题', trigger: 'blur' },
     { max: 50, message: '标题不能超过50个字符', trigger: 'blur' }
   ],
   categoryId: [
@@ -462,10 +461,7 @@ watch(() => props.slot, (newSlot, oldSlot) => {
 
 // 处理分类变化
 const handleCategoryChange = (categoryId: string) => {
-  const selectedCategory = props.categories.find(cat => cat.id === categoryId);
-    if (selectedCategory) {
-      formState.value.title = selectedCategory.name;
-    }
+  // 不再自动填充标题，展示逻辑会处理 fallback
 };
 
 // 处理保存
