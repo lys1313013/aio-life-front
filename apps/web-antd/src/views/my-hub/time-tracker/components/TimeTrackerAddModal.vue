@@ -29,6 +29,8 @@ import { generateId, isValidSlot, hasOverlap } from '../utils';
 import { recommendNext, save } from '#/api/core/time-tracker';
 import type { TimeSlot, TimeSlotFormData } from '../types';
 
+const emit = defineEmits(['success']);
+
 const visible = ref(false);
 const loading = ref(false);
 const editingSlot = ref<TimeSlot | null>(null);
@@ -132,6 +134,7 @@ const handleSave = async (formData: TimeSlotFormData) => {
             await save(newSlot);
             message.success('记录成功');
             visible.value = false;
+            emit('success');
         } catch(e) {
             console.error(e);
             message.error('保存失败');

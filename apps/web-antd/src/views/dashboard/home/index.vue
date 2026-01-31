@@ -54,7 +54,7 @@ function startLongPress(item: OverviewItem) {
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
-  }, 500);
+  }, 200);
 }
 
 function endLongPress() {
@@ -280,6 +280,17 @@ function handleTitleClick(url: string) {
   }
 }
 
+function handleTimeTrackerSuccess() {
+  overviewItems.value.forEach((item) => {
+    if (
+      item.titleClickUrl === 'action:open-time-tracker-modal' ||
+      item.iconClickUrl === 'action:open-time-tracker-modal'
+    ) {
+      refreshCard(item);
+    }
+  });
+}
+
 const quickNavItems: WorkbenchQuickNavItem[] = [
   {
     color: '#1fdaca',
@@ -379,6 +390,9 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
         />
       </div>
     </div>
-    <TimeTrackerAddModal ref="timeTrackerModalRef" />
+    <TimeTrackerAddModal
+      ref="timeTrackerModalRef"
+      @success="handleTimeTrackerSuccess"
+    />
   </div>
 </template>
