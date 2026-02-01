@@ -64,7 +64,7 @@ const open = async () => {
     startTime: 0,
     endTime: 30,
     categoryId: initialCategoryId,
-    title: getCategoryName(initialCategoryId, categories.value),
+    title: '',
     description: '',
     date: currentDate,
   };
@@ -90,7 +90,7 @@ const open = async () => {
                 startTime: recommend.startTime,
                 endTime: recommend.endTime,
                 categoryId: recommend.categoryId,
-                title: getCategoryName(recommend.categoryId, categories.value),
+                title: '',
                 date: recommend.date || currentDate,
               };
         }
