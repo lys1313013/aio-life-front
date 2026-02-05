@@ -15,7 +15,12 @@ import {
 } from '#/api/core/dashboard';
 import { getGithubCardInfo } from '#/api/core/github';
 import { getShanbayCardInfo } from '#/api/core/shanbay';
+import {
+  ACTION_OPEN_EXERCISE_MODAL,
+  ACTION_OPEN_TIME_TRACKER_MODAL,
+} from '#/constants/action';
 
+import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
 import TimeTrackerAddModal from '../../my-hub/time-tracker/components/TimeTrackerAddModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
 
@@ -37,6 +42,7 @@ const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
 const userStore = useUserStore();
 const timeTrackerModalRef = ref();
+const exerciseModalRef = ref();
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
 const isLongPress = ref(false);
 
@@ -44,12 +50,19 @@ const isLongPress = ref(false);
 const refreshTimers = new Map<string, ReturnType<typeof setInterval>>();
 
 function startLongPress(item: OverviewItem) {
-  if (item.title !== '时迹' && item.type !== 'TIME_TRACKER') return;
+  const isTimeTracker = item.title === '时迹' || item.type === 'TIME_TRACKER';
+  const isExercise = item.title === '运动' || item.type === 'EXERCISE';
+
+  if (!isTimeTracker && !isExercise) return;
 
   isLongPress.value = false;
   longPressTimer.value = setTimeout(() => {
     isLongPress.value = true;
-    timeTrackerModalRef.value?.open();
+    if (isTimeTracker) {
+      timeTrackerModalRef.value?.open();
+    } else if (isExercise) {
+      exerciseModalRef.value?.open();
+    }
     // 震动反馈
     if (navigator.vibrate) {
       navigator.vibrate(50);
@@ -275,16 +288,29 @@ function handleCardClick(item: OverviewItem) {
 }
 
 function handleTitleClick(url: string) {
-  if (url === 'action:open-time-tracker-modal') {
+  if (url === ACTION_OPEN_TIME_TRACKER_MODAL) {
     timeTrackerModalRef.value?.open();
+  } else if (url === ACTION_OPEN_EXERCISE_MODAL) {
+    exerciseModalRef.value?.open();
   }
 }
 
 function handleTimeTrackerSuccess() {
   overviewItems.value.forEach((item) => {
     if (
-      item.titleClickUrl === 'action:open-time-tracker-modal' ||
-      item.iconClickUrl === 'action:open-time-tracker-modal'
+      item.titleClickUrl === ACTION_OPEN_TIME_TRACKER_MODAL ||
+      item.iconClickUrl === ACTION_OPEN_TIME_TRACKER_MODAL
+    ) {
+      refreshCard(item);
+    }
+  });
+}
+
+function handleExerciseSuccess() {
+  overviewItems.value.forEach((item) => {
+    if (
+      item.titleClickUrl === ACTION_OPEN_EXERCISE_MODAL ||
+      item.iconClickUrl === ACTION_OPEN_EXERCISE_MODAL
     ) {
       refreshCard(item);
     }
@@ -345,6 +371,8 @@ function navTo(nav: WorkbenchQuickNavItem) {
 function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
   if (nav.title === '时迹' || nav.url?.includes('time-tracker')) {
     timeTrackerModalRef.value?.open();
+  } else if (nav.title === '运动' || nav.url?.includes('exercise')) {
+    exerciseModalRef.value?.open();
   }
 }
 </script>
@@ -393,6 +421,10 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
     <TimeTrackerAddModal
       ref="timeTrackerModalRef"
       @success="handleTimeTrackerSuccess"
+    />
+    <ExerciseAddModal
+      ref="exerciseModalRef"
+      @success="handleExerciseSuccess"
     />
   </div>
 </template>
