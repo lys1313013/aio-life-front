@@ -38,7 +38,7 @@ const existingSlots = ref<TimeSlot[]>([]);
 const isMobile = ref(window.innerWidth < 768);
 const categories = ref(defaultConfig.categories);
 
-const title = computed(() => '快速记录');
+const title = computed(() => '新增');
 
 const updateIsMobile = () => {
   isMobile.value = window.innerWidth < 768;
@@ -75,7 +75,7 @@ const open = async () => {
     const result = await recommendNext({ date: currentDate });
     if (result) {
         const { recommend, records } = result;
-        
+
         // Update existing slots from the records returned
         if (Array.isArray(records)) {
           existingSlots.value = records;
@@ -109,7 +109,7 @@ const handleCancel = () => {
 
 const handleSave = async (formData: TimeSlotFormData) => {
     const targetDate = editingSlot.value?.date || dayjs().format('YYYY-MM-DD');
-    
+
     const newSlot: TimeSlot = {
       id: formData.id || generateId(),
       startTime: formData.startTime,
