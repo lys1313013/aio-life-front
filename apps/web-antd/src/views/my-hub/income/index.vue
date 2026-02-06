@@ -4,7 +4,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, ref } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { useVbenModal } from '@vben/common-ui';
 
 import { Button, Popconfirm } from 'ant-design-vue';
 
@@ -13,7 +13,7 @@ import { getByDictType } from '#/api/core/common';
 import { deleteData, query } from '#/api/core/income';
 
 import IncomeDashboard from './components/IncomeDashboard.vue';
-import FormDrawerDemo from './form-drawer.vue';
+import FormModalDemo from './form-modal.vue';
 
 interface RowType {
   incomeId: number | string;
@@ -52,8 +52,8 @@ onMounted(() => {
   loadIncomeTypes();
 });
 
-const [FormDrawer, formDrawerApi] = useVbenDrawer({
-  connectedComponent: FormDrawerDemo,
+const [FormModal, formModalApi] = useVbenModal({
+  connectedComponent: FormModalDemo,
 });
 
 const formOptions: VbenFormProps = {
@@ -175,8 +175,8 @@ const gridOptions: VxeGridProps<RowType> = {
   },
 };
 
-function openFormDrawer(row: RowType) {
-  formDrawerApi
+function openFormModal(row: RowType) {
+  formModalApi
     .setData({
       // 表单值
       values: row,
@@ -184,11 +184,11 @@ function openFormDrawer(row: RowType) {
     .open();
 }
 
-function openAddFormDrawer() {
-  formDrawerApi
+function openAddFormModal() {
+  formModalApi
     .setData({
       // 表单值
-      values: { modelname: '' },
+      values: {},
     })
     .open();
 }
@@ -230,18 +230,18 @@ const tableReload = async () => {
 
 <template>
   <div class="vp-raw w-full">
-    <FormDrawer @table-reload="tableReload" />
+    <FormModal @table-reload="tableReload" />
     <!-- 收入看板 -->
     <IncomeDashboard ref="dashboardRef" @year-change="handleYearChange" />
     <!-- 收入列表 -->
     <Grid>
       <template #toolbar-tools>
-        <Button class="mr-2" type="primary" @click="openAddFormDrawer">
+        <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
         </Button>
       </template>
       <template #action="{ row }">
-        <a href="javascript:;" @click="openFormDrawer(row)">编辑</a>
+        <a href="javascript:;" @click="openFormModal(row)">编辑</a>
         &nbsp;&nbsp;
         <Popconfirm
           title="是否确认删除?"

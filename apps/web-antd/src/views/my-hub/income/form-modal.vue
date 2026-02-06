@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { onMounted, ref, toRaw } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
 import { insertOrUpdate } from '#/api/core/income';
 
 defineOptions({
-  name: 'FormDrawerDemo',
+  name: 'FormModal',
 });
 
 const emit = defineEmits(['tableReload']);
@@ -43,6 +43,10 @@ const [Form, formApi] = useVbenForm({
       fieldName: 'incomeId',
       label: '主键',
       disabled: true,
+      dependencies: {
+        triggerFields: ['id'],
+        show: false,
+      },
     },
     {
       component: 'Input',
@@ -87,34 +91,35 @@ const [Form, formApi] = useVbenForm({
   showDefaultActions: false,
   submitOnEnter: true,
 });
-const [Drawer, drawerApi] = useVbenDrawer({
+const [Modal, modalApi] = useVbenModal({
   onCancel() {
-    drawerApi.close();
+    modalApi.close();
   },
   onConfirm: async () => {
-      drawerApi.lock();
-      try {
-        const newVar = await formApi.submitForm();
-        await insertOrUpdate(toRaw(newVar));
-        drawerApi.close();
-        tableReload();
-      } finally {
-        drawerApi.unlock();
-      }
-    },
+    modalApi.lock();
+    try {
+      const newVar = await formApi.submitForm();
+      await insertOrUpdate(toRaw(newVar));
+      modalApi.close();
+      tableReload();
+    } finally {
+      modalApi.unlock();
+    }
+  },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
-      const { values } = drawerApi.getData<Record<string, any>>();
+      formApi.resetForm();
+      const { values } = modalApi.getData<Record<string, any>>();
       if (values) {
         formApi.setValues(values);
       }
     }
   },
-  title: '',
+  title: '新增/编辑',
 });
 </script>
 <template>
-  <Drawer>
+  <Modal>
     <Form />
-  </Drawer>
+  </Modal>
 </template>
