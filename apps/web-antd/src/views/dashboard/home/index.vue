@@ -334,7 +334,7 @@ const quickNavItems: WorkbenchQuickNavItem[] = [
     color: '#e18525',
     icon: 'mdi:clipboard-text-clock-outline',
     title: '待办',
-    url: '/my-hub/todo',
+    url: '/task-center/todo',
   },
   {
     color: '#3fb27f',

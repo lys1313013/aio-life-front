@@ -23,15 +23,7 @@ const routes: RouteRecordRaw[] = [
         path: '/my-hub/time-tracker',
         component: () => import('#/views/my-hub/time-tracker/index.vue'),
       },
-      {
-        meta: {
-          icon: 'mdi:clipboard-text-clock-outline',
-          title: '待办',
-        },
-        name: 'todo',
-        path: '/my-hub/todo',
-        component: () => import('#/views/my-hub/todo/index.vue'),
-      },
+
       {
         meta: {
           icon: 'mdi:run-fast',
