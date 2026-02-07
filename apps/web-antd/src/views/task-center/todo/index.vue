@@ -55,14 +55,16 @@
                 </div>
                 
                 <div class="task-meta">
-                  <div class="task-tags" v-if="element.detail && element.detail.length > 20">
-                     <span class="project-tag">{{ element.detail.substring(0, 8) }}...</span>
+                  <div class="task-tags" v-if="element.detail">
+                     <span class="project-tag" :title="element.detail">
+                       {{ element.detail.length > 24 ? element.detail.substring(0, 24) + '...' : element.detail }}
+                     </span>
                   </div>
                   
                   <div class="task-props">
                      <div class="prop-item">
                       <clock-circle-outlined class="prop-icon" />
-                      <span>未完成任务数: {{ element.subTasks ? element.subTasks.filter((s: any) => !s.completed).length : 0 }}</span>
+                      <span>未完成任务数: {{ element.unCompletedCount || 0 }}</span>
                     </div>
                   </div>
                 </div>
@@ -130,6 +132,7 @@
       v-model:open="editModalVisible"
       title="编辑任务"
       @ok="handleEditOk"
+      @cancel="handleEditCancel"
     >
       <a-input
         v-model:value="editingTask.content"
@@ -153,23 +156,27 @@
             <check-circle-outlined style="margin-right: 8px" />
             明细任务
           </span>
-          <a-button type="link" size="small" @click="addSubTask">
+          <a-button type="link" size="small" @click="addDetail">
             <template #icon><plus-outlined /></template>
             添加
           </a-button>
         </div>
         
         <div class="subtasks-list">
-          <div v-for="(subTask, index) in editingTask.subTasks" :key="subTask.id" class="subtask-item">
-            <a-checkbox v-model:checked="subTask.completed" />
+          <div v-for="(detail, index) in editingTask.details" :key="detail.id" class="subtask-item">
+            <a-checkbox 
+              :checked="detail.isCompleted === 1" 
+              @update:checked="(val) => handleDetailCheck(detail, val)"
+            />
             <a-input 
-              v-model:value="subTask.content" 
+              v-model:value="detail.content" 
               :bordered="false"
               placeholder="输入任务内容..."
-              :class="{ 'subtask-completed': subTask.completed }"
+              :class="{ 'subtask-completed': detail.isCompleted === 1 }"
               style="flex: 1; margin: 0 8px"
+              @blur="handleDetailBlur(detail)"
             />
-            <a-button type="text" danger size="small" @click="removeSubTask(index)">
+            <a-button type="text" danger size="small" @click="removeDetail(index, detail)">
               <template #icon><delete-outlined /></template>
             </a-button>
           </div>
@@ -211,24 +218,26 @@ import { Button as AButton, Input as AInput, Textarea as ATextarea, Modal as AMo
 
 import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn} from '#/api/core/todo';
 
-import { getTaskList, saveTask, updateTask, deleteTask, reSortTask } from '#/api/core/todo';
+import { getTaskList, saveTask, updateTask, deleteTask, reSortTask, getTaskDetail, addTaskDetail, updateTaskDetail, deleteTaskDetail } from '#/api/core/todo';
 
 import dayjs from 'dayjs';
 import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, EditOutlined, MoreOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
 import { Modal } from 'ant-design-vue';
 
-interface SubTask {
-  id: string;
+interface Detail {
+  id: number;
+  taskId: number;
   content: string;
-  completed: boolean;
+  isCompleted: number;
 }
 
 interface Task {
   id: number;
   content: string;
   detail?: string;
-  subTasks?: SubTask[];
+  details?: Detail[];
+  unCompletedCount?: number;
   dueDate?: any;
   createdAt?: any;
   columnId?: number;
@@ -369,40 +378,106 @@ const editingTask = ref<Task>({
   id: 0,
   content: '',
   detail: '',
-  subTasks: [],
+  details: [],
   dueDate: undefined,
   createdAt: undefined,
 });
 
 // 打开编辑模态框
-const openEditModal = (task: Task) => {
+const openEditModal = async (task: Task) => {
   const dueDate = task.dueDate ? dayjs(task.dueDate) : undefined;
 
   editingTask.value = {
     ...task,
-    subTasks: task.subTasks ? [...task.subTasks] : [],
+    details: [], // 先清空，等待加载
     dueDate: dueDate,
   };
   editModalVisible.value = true;
-};
 
-const addSubTask = () => {
-  if (!editingTask.value.subTasks) {
-    editingTask.value.subTasks = [];
+  try {
+    const details = await getTaskDetail(task.id);
+    editingTask.value.details = details;
+  } catch (error) {
+    console.error('获取任务明细失败', error);
   }
-  editingTask.value.subTasks.push({
-    id: Math.random().toString(36).slice(2, 11),
-    content: '',
-    completed: false,
-  });
 };
 
-const removeSubTask = (index: number) => {
-  editingTask.value.subTasks?.splice(index, 1);
+const addDetail = async () => {
+  if (!editingTask.value.details) {
+    editingTask.value.details = [];
+  }
+  
+  // 创建新明细
+  try {
+    const newDetail = {
+      taskId: editingTask.value.id,
+      content: '',
+      isCompleted: 0,
+    };
+    const res = await addTaskDetail(newDetail);
+    // 后端返回的res应该包含生成的id
+    editingTask.value.details.push(res);
+  } catch (error) {
+    console.error('添加明细失败', error);
+  }
+};
+
+const removeDetail = async (index: number, detail: Detail) => {
+  try {
+    if (typeof detail.id === 'number') {
+      await deleteTaskDetail(detail.id);
+    }
+    editingTask.value.details?.splice(index, 1);
+  } catch (error) {
+    console.error('删除明细失败', error);
+  }
+};
+
+const handleDetailCheck = async (detail: Detail, checked: boolean) => {
+  detail.isCompleted = checked ? 1 : 0;
+  try {
+    await updateTaskDetail(detail);
+  } catch (error) {
+    console.error('更新状态失败', error);
+    // 回滚状态
+    detail.isCompleted = checked ? 0 : 1;
+  }
+};
+
+const handleDetailBlur = async (detail: Detail) => {
+  if (!detail.content) return;
+  try {
+    await updateTaskDetail(detail);
+  } catch (error) {
+    console.error('更新内容失败', error);
+  }
+};
+
+const refreshTask = async (taskId: number) => {
+  try {
+    const res = await getTaskList({ taskId });
+    if (res.items) {
+      const task = res.items.find((t: any) => t.id === taskId);
+      if (task) {
+        columns.value.forEach(col => {
+          const idx = col.tasks.findIndex(t => t.id === taskId);
+          if (idx !== -1) {
+            col.tasks[idx] = task;
+          }
+        });
+      }
+    }
+  } catch (error) {
+    console.error('刷新任务失败', error);
+  }
+};
+
+const handleEditCancel = () => {
+  refreshTask(editingTask.value.id);
 };
 
 // 编辑任务
-const handleEditOk = () => {
+const handleEditOk = async () => {
   const column = columns.value.find(col =>
     col.tasks.some(task => task.id === editingTask.value.id)
   );
@@ -415,7 +490,8 @@ const handleEditOk = () => {
       column.tasks[taskIndex] = { ...editingTask.value };
     }
   }
-  updateTask(editingTask.value);
+  await updateTask(editingTask.value);
+  await refreshTask(editingTask.value.id);
   editModalVisible.value = false;
 };
 
@@ -573,6 +649,15 @@ const handleEditColumnOk = async () => {
   border-color: v-bind('token.colorPrimary'); /* 悬浮显示主题色边框 */
 }
 
+.kanban-task:hover .delete-task-btn {
+  opacity: 1;
+}
+
+.delete-task-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
 .task-header {
   display: flex;
   justify-content: space-between;
@@ -680,6 +765,9 @@ const handleEditColumnOk = async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .subtask-item {

@@ -20,22 +20,59 @@ export async function reSortColumn(data: any) {
   return await requestClient.post('/taskColumn/reSort', data);
 }
 
+export interface Detail {
+  id: number;
+  taskId: number;
+  content: string;
+  isCompleted: number; // 0: uncompleted, 1: completed
+}
+
+export interface Task {
+  id: number;
+  columnId: number;
+  content: string;
+  detail?: string;
+  dueDate?: string;
+  details?: Detail[];
+  unCompletedCount?: number;
+}
+
+export interface TaskListResult {
+  items: Task[];
+}
+
 export async function getTaskList(data: any) {
-  return await requestClient.post('/task/query', data);
+  return await requestClient.get<TaskListResult>('/tasks', { params: data });
+}
+
+export async function getTaskDetail(taskId: number) {
+  return await requestClient.get<Detail[]>('/taskDetails', { params: { taskId } });
+}
+
+export async function addTaskDetail(data: Partial<Detail>) {
+  return await requestClient.post<Detail>('/taskDetails', data);
+}
+
+export async function updateTaskDetail(data: Partial<Detail>) {
+  return await requestClient.put<boolean>('/taskDetails', data);
+}
+
+export async function deleteTaskDetail(id: number) {
+  return await requestClient.delete<void>(`/taskDetails/${id}`);
 }
 
 export async function saveTask(data: any) {
-  return await requestClient.post('/task/save', data);
+  return await requestClient.post('/tasks/save', data);
 }
 
 export async function updateTask(data: any) {
-  return await requestClient.post('/task/update', data);
+  return await requestClient.post('/tasks/update', data);
 }
 
 export async function deleteTask(data: any) {
-  return await requestClient.post('/task/delete', data);
+  return await requestClient.post('/tasks/delete', data);
 }
 
 export async function reSortTask(data: any) {
-  return await requestClient.post('/task/reSort', data);
+  return await requestClient.post('/tasks/reSort', data);
 }
