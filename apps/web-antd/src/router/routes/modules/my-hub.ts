@@ -80,6 +80,15 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          title: '里程碑',
+          icon: 'mdi:flag-variant',
+        },
+        name: 'milestone',
+        path: '/my-hub/milestone',
+        component: () => import('#/views/my-hub/milestone/index.vue'),
+      },
+      {
+        meta: {
           title: '纪念日',
           icon: 'mdi:calendar-heart',
         },
