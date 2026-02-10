@@ -28,6 +28,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:run-fast',
           title: '运动',
+          backTop: false,
         },
         name: 'exercise',
         path: '/my-hub/exercise',
@@ -47,6 +48,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '闪念',
           icon: 'mdi:lightbulb-on-outline',
+          backTop: false,
         },
         name: 'think',
         path: '/my-hub/think',
@@ -56,6 +58,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '笔记',
           icon: 'mdi:note-text-outline',
+          backTop: false,
         },
         name: 'memo',
         path: '/my-hub/memo',
@@ -65,6 +68,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:chart-line-variant',
           title: '演出',
+          backTop: false,
         },
         name: 'performance',
         path: '/my-hub/performance',
@@ -74,6 +78,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '里程碑',
           icon: 'mdi:flag-variant',
+          backTop: false,
         },
         name: 'milestone',
         path: '/my-hub/milestone',
@@ -83,6 +88,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '纪念日',
           icon: 'mdi:calendar-heart',
+          backTop: false,
         },
         name: 'anniversary',
         path: '/my-hub/anniversary',
