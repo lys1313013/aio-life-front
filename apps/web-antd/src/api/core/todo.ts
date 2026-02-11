@@ -25,6 +25,8 @@ export interface Detail {
   taskId: number;
   content: string;
   isCompleted: number; // 0: uncompleted, 1: completed
+  startTime?: string;
+  endTime?: string;
 }
 
 export interface Task {
@@ -32,6 +34,8 @@ export interface Task {
   columnId: number;
   content: string;
   detail?: string;
+  startTime?: string;
+  endTime?: string;
   dueDate?: string;
   details?: Detail[];
   unCompletedCount?: number;

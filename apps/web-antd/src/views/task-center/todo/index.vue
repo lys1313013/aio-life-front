@@ -131,6 +131,9 @@
     <a-modal
       v-model:open="editModalVisible"
       title="编辑任务"
+      width="1000px"
+      :style="{ top: '20px' }"
+      :bodyStyle="{ height: 'calc(100vh - 150px)', overflowY: 'auto' }"
       @ok="handleEditOk"
       @cancel="handleEditCancel"
     >
@@ -143,6 +146,22 @@
           padding: '15px 0px',
         }"
       />
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="flex: 1">
+            <div style="margin-bottom: 5px; font-size: 12px; color: #666;">开始时间</div>
+            <a-date-picker show-time v-model:value="editingTask.startTime" placeholder="开始时间" style="width: 100%" />
+        </div>
+        <div style="flex: 1">
+            <div style="margin-bottom: 5px; font-size: 12px; color: #666;">结束时间</div>
+            <a-date-picker show-time v-model:value="editingTask.endTime" placeholder="结束时间" style="width: 100%" />
+        </div>
+        <div style="flex: 1">
+             <div style="margin-bottom: 5px; font-size: 12px; color: #666;">目标完成时间</div>
+             <a-date-picker show-time v-model:value="editingTask.dueDate" placeholder="目标完成时间" style="width: 100%" />
+        </div>
+      </div>
+
       <a-textarea
         v-model:value="editingTask.detail"
         placeholder="任务备注"
@@ -162,32 +181,54 @@
           </a-button>
         </div>
         
-        <div class="subtasks-list">
-          <div v-for="(detail, index) in editingTask.details" :key="detail.id" class="subtask-item">
-            <a-checkbox 
-              :checked="detail.isCompleted === 1" 
-              @update:checked="(val) => handleDetailCheck(detail, val)"
-            />
-            <a-input 
-              v-model:value="detail.content" 
-              :bordered="false"
-              placeholder="输入任务内容..."
-              :class="{ 'subtask-completed': detail.isCompleted === 1 }"
-              style="flex: 1; margin: 0 8px"
-              @blur="handleDetailBlur(detail)"
-            />
-            <a-button type="text" danger size="small" @click="removeDetail(index, detail)">
-              <template #icon><delete-outlined /></template>
-            </a-button>
-          </div>
-        </div>
+        <draggable
+          v-if="editingTask.details"
+          v-model="editingTask.details"
+          item-key="id"
+          handle=".drag-handle"
+          class="subtasks-list"
+          ghost-class="sortable-ghost"
+        >
+          <template #item="{ element: detail, index }">
+            <div class="subtask-item">
+              <holder-outlined class="drag-handle" style="cursor: move; margin-right: 8px; color: #999" />
+              <a-checkbox 
+                :checked="detail.isCompleted === 1" 
+                @update:checked="(val) => handleDetailCheck(detail, val)"
+              />
+              <a-input 
+                v-model:value="detail.content" 
+                :bordered="false"
+                placeholder="输入任务内容..."
+                :class="{ 'subtask-completed': detail.isCompleted === 1 }"
+                style="flex: 1; margin: 0 8px"
+                @blur="handleDetailBlur(detail)"
+              />
+              <a-date-picker 
+                show-time 
+                size="small" 
+                v-model:value="detail.startTime" 
+                placeholder="开始" 
+                style="width: 140px; margin-right: 4px;"
+                :bordered="false"
+                @change="handleDetailBlur(detail)"
+              />
+              <a-date-picker 
+                show-time 
+                size="small" 
+                v-model:value="detail.endTime" 
+                placeholder="结束" 
+                style="width: 140px; margin-right: 4px;"
+                :bordered="false"
+                @change="handleDetailBlur(detail)"
+              />
+              <a-button type="text" danger size="small" @click="removeDetail(index, detail)">
+                <template #icon><delete-outlined /></template>
+              </a-button>
+            </div>
+          </template>
+        </draggable>
       </div>
-
-      <a-date-picker
-        v-model:value="editingTask.dueDate"
-        placeholder="目标完成时间"
-        style="margin-top: 20px; width: 100%"
-      />
     </a-modal>
     <a-modal
       v-model:open="editColumnModalVisible"
@@ -221,7 +262,7 @@ import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn
 import { getTaskList, saveTask, updateTask, deleteTask, reSortTask, getTaskDetail, addTaskDetail, updateTaskDetail, deleteTaskDetail } from '#/api/core/todo';
 
 import dayjs from 'dayjs';
-import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, EditOutlined, MoreOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, EditOutlined, MoreOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, HolderOutlined } from '@ant-design/icons-vue';
 import { Popover as APopover } from 'ant-design-vue';
 import { Modal } from 'ant-design-vue';
 
@@ -230,6 +271,8 @@ interface Detail {
   taskId: number;
   content: string;
   isCompleted: number;
+  startTime?: any;
+  endTime?: any;
 }
 
 interface Task {
@@ -238,6 +281,8 @@ interface Task {
   detail?: string;
   details?: Detail[];
   unCompletedCount?: number;
+  startTime?: any;
+  endTime?: any;
   dueDate?: any;
   createdAt?: any;
   columnId?: number;
@@ -379,17 +424,23 @@ const editingTask = ref<Task>({
   content: '',
   detail: '',
   details: [],
+  startTime: undefined,
+  endTime: undefined,
   dueDate: undefined,
   createdAt: undefined,
 });
 
 // 打开编辑模态框
 const openEditModal = async (task: Task) => {
+  const startTime = task.startTime ? dayjs(task.startTime) : undefined;
+  const endTime = task.endTime ? dayjs(task.endTime) : undefined;
   const dueDate = task.dueDate ? dayjs(task.dueDate) : undefined;
 
   editingTask.value = {
     ...task,
     details: [], // 先清空，等待加载
+    startTime: startTime,
+    endTime: endTime,
     dueDate: dueDate,
   };
   editModalVisible.value = true;
@@ -765,8 +816,8 @@ const handleEditColumnOk = async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 500px;
-  overflow-y: auto;
+  /* max-height: 500px; */ /* Removed to allow modal body to scroll */
+  /* overflow-y: auto; */
   padding-right: 4px;
 }
 
@@ -779,6 +830,25 @@ const handleEditColumnOk = async () => {
 
 .subtask-item:hover {
   background: v-bind('token.colorFillQuaternary');
+}
+
+.subtask-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle {
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.sortable-ghost {
+  opacity: 0.5;
+  background: v-bind('token.colorFillSecondary');
 }
 
 .subtask-completed {
