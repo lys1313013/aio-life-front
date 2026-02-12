@@ -1047,14 +1047,14 @@ const getSlotStyle = (slot: TimeSlot) => {
   const style: any = {
     top: `${top}px`,
     height: `${height}px`,
-    backgroundColor: category?.color || '#d9d9d9',
+    backgroundColor: category?.color || token.value.colorFill,
     opacity: selectedFilterCategoryId.value && !isHighlighted ? 0.3 : 1,
     zIndex: isHighlighted ? 10 : 1,
   };
 
   if (isHighlighted) {
-    style.border = isFuture ? '2px dashed #1890ff' : '2px solid #1890ff';
-    style.boxShadow = '0 0 8px rgba(24, 144, 255, 0.5)';
+    style.border = isFuture ? `2px dashed ${token.value.colorPrimary}` : `2px solid ${token.value.colorPrimary}`;
+    style.boxShadow = `0 0 8px ${token.value.colorPrimary}80`; // Simple alpha approximation
   } else {
     style.border = isFuture ? '2px dashed #fff' : 'none';
     style.boxShadow = 'none';
@@ -1670,7 +1670,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .quote-text {
   font-size: 14px;
-  color: #8c8c8c;
+  color: v-bind('token.colorTextSecondary');
   letter-spacing: 0.9px;
 }
 
@@ -1707,7 +1707,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .header h2 {
   margin: 0;
-  color: #262626;
+  color: v-bind('token.colorText');
 }
 
 .date-picker-container {
@@ -1831,7 +1831,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .category-label {
   font-weight: 500;
   margin-right: 15px;
-  color: #595959;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .category-buttons {
@@ -1863,8 +1863,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .timeline-container {
   position: relative;
-  background: #fff;
-  border: 1px solid #d9d9d9;
+  background: v-bind('token.colorBgContainer');
+  border: 1px solid v-bind('token.colorBorder');
   border-radius: 6px;
   overflow: hidden;
   height: 800px; /* 设置固定高度 */
@@ -1876,8 +1876,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: grid;
   grid-template-columns: 45px 1fr;
   height: 45px;
-  border-bottom: 1px solid #d9d9d9;
-  background: #fafafa;
+  border-bottom: 1px solid v-bind('token.colorSplit');
+  background: v-bind('token.colorBgLayout');
 }
 
 .day-column-header {
@@ -1919,8 +1919,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: grid;
   grid-template-columns: 45px repeat(var(--month-day-count, 30), 1fr);
   height: 45px;
-  border-bottom: 1px solid #d9d9d9;
-  background: #fafafa;
+  border-bottom: 1px solid v-bind('token.colorSplit');
+  background: v-bind('token.colorBgLayout');
   overflow: hidden;
 }
 
@@ -1931,17 +1931,17 @@ const getDaySlots = (date: string): TimeSlot[] => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-right: 1px solid #d9d9d9;
+  border-right: 1px solid v-bind('token.colorSplit');
   transition: background-color 0.2s;
   min-width: 80px;
 }
 
 .month-day-header:hover {
-  background: #f0f0f0;
+  background: v-bind('token.controlItemBgHover');
 }
 
 .month-day-header.active {
-  background: #e6f7ff;
+  background: v-bind('token.controlItemBgActive');
   font-weight: 500;
 }
 
@@ -1960,8 +1960,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .month-day-track {
   position: relative;
-  background: #f8f9fa;
-  border-right: 1px solid #d9d9d9;
+  background: v-bind('token.colorBgContainer');
+  border-right: 1px solid v-bind('token.colorSplit');
   min-width: 80px;
 }
 
@@ -1983,13 +1983,13 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: grid;
   grid-template-columns: 45px repeat(7, 1fr);
   height: 45px;
-  border-bottom: 1px solid #d9d9d9;
-  background: #fafafa;
+  border-bottom: 1px solid v-bind('token.colorSplit');
+  background: v-bind('token.colorBgLayout');
 }
 
 .time-scale-header {
   width: 45px;
-  border-right: 1px solid #d9d9d9;
+  border-right: 1px solid v-bind('token.colorSplit');
   flex-shrink: 0;
 }
 
@@ -2000,28 +2000,28 @@ const getDaySlots = (date: string): TimeSlot[] => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-right: 1px solid #d9d9d9;
+  border-right: 1px solid v-bind('token.colorSplit');
   transition: background-color 0.2s;
 }
 
 .week-day-header:hover {
-  background: #f0f0f0;
+  background: v-bind('token.controlItemBgHover');
 }
 
 .week-day-header.active {
-  background: #e6f7ff;
+  background: v-bind('token.controlItemBgActive');
   font-weight: 500;
 }
 
 .day-name {
   font-size: 14px;
-  color: #262626;
+  color: v-bind('token.colorText');
   margin-bottom: 4px;
 }
 
 .day-date {
   font-size: 8px;
-  color: #8c8c8c;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .week-timeline-wrapper {
@@ -2038,8 +2038,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .week-day-track {
   position: relative;
-  background: #f8f9fa;
-  border-right: 1px solid #d9d9d9;
+  background: v-bind('token.colorBgContainer');
+  border-right: 1px solid v-bind('token.colorSplit');
   min-width: 0;
 }
 
@@ -2061,8 +2061,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .time-scale {
   position: relative;
   width: 45px;
-  background: #fafafa;
-  border-right: 1px solid #d9d9d9;
+  background: v-bind('token.colorBgLayout');
+  border-right: 1px solid v-bind('token.colorSplit');
   flex-shrink: 0;
 }
 
@@ -2071,7 +2071,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   left: 0;
   width: 100%;
   height: 1px;
-  background: #d9d9d9;
+  background: v-bind('token.colorSplit');
 }
 
 .hour-label {
@@ -2079,13 +2079,13 @@ const getDaySlots = (date: string): TimeSlot[] => {
   top: -8px;
   left: 5px;
   font-size: 12px;
-  color: #8c8c8c;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .timeline-track {
   position: relative;
   flex: 1;
-  background: #f8f9fa;
+  background: v-bind('token.colorBgContainer');
   cursor: crosshair;
   user-select: none;
 }
@@ -2097,11 +2097,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
   border-radius: 4px;
   cursor: move;
   transition: all 0.2s;
-  border: 1px solid white;
+  border: 1px solid v-bind('token.colorBgContainer');
 }
 
 .time-slot:hover {
-  border-color: rgba(0, 0, 0, 0.3);
+  border-color: v-bind('token.colorText');
   transform: translateX(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
