@@ -9,6 +9,7 @@ import { useVbenDrawer } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Button, Popconfirm, Card, Select, message } from 'ant-design-vue';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -1007,15 +1008,18 @@ const handleUpdateSuccess = async (updatedRow: any) => {
         </Button>
       </template>
       <template #action="{ row }">
-        <a href="javascript:void(0)" @click="openFormDrawer(row)">编辑</a>
-        &nbsp;&nbsp;
+        <Button type="link" size="small" @click="openFormDrawer(row)">
+          <template #icon><EditOutlined /></template>
+        </Button>
         <Popconfirm
           title="是否确认删除?"
           ok-text="是"
           cancel-text="否"
           @confirm="deleteRow(row)"
         >
-          <a href="javascript:void(0)">删除</a>
+          <Button type="link" size="small" danger>
+            <template #icon><DeleteOutlined /></template>
+          </Button>
         </Popconfirm>
       </template>
     </Grid>
