@@ -8,6 +8,7 @@ import { onMounted, ref, computed, nextTick, watch } from 'vue';
 import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Button, Popconfirm, Card } from 'ant-design-vue';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -591,15 +592,18 @@ const tableReload = () => {
         </Popconfirm>
       </template>
       <template #action="{ row }">
-        <a href="javascript:void(0)" @click="openFormModal(row)">编辑</a>
-        &nbsp;&nbsp;
+        <Button type="link" size="small" @click="openFormModal(row)">
+          <template #icon><EditOutlined /></template>
+        </Button>
         <Popconfirm
           title="是否确认删除?"
           ok-text="是"
           cancel-text="否"
           @confirm="deleteRow(row)"
         >
-          <a href="javascript:void(0)" style="color: red">删除</a>
+          <Button type="link" size="small" danger>
+            <template #icon><DeleteOutlined /></template>
+          </Button>
         </Popconfirm>
       </template>
       <template #mobile-card="{ row }">
@@ -620,7 +624,7 @@ const tableReload = () => {
           </div>
           <div class="card-footer">
             <Button size="small" type="link" @click="openFormModal(row)">
-              编辑
+              <template #icon><EditOutlined /></template>
             </Button>
             <Popconfirm
               title="是否确认删除?"
@@ -629,7 +633,7 @@ const tableReload = () => {
               @confirm="deleteRow(row)"
             >
               <Button size="small" type="link" danger>
-                删除
+                <template #icon><DeleteOutlined /></template>
               </Button>
             </Popconfirm>
           </div>
