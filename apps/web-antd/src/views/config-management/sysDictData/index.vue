@@ -118,21 +118,21 @@ const formOptions: VbenFormProps = {
   wrapperClass: isMobile.value ? 'mobile-form-wrapper' : '',
   submitOnChange: false, // 是否在字段值改变时提交表单
   submitOnEnter: true, // 按下回车时是否提交表单
-  handleReset: (_values) => {
+  handleReset: (values) => {
     if (isMobile.value) {
       pagination.value.current = 1;
       tableData.value = [];
       hasMore.value = true;
-      gridApi.reload();
     }
+    gridApi.reload(values);
   },
-  handleSubmit: (_values) => {
+  handleSubmit: (values) => {
     if (isMobile.value) {
       pagination.value.current = 1;
       tableData.value = [];
       hasMore.value = true;
-      gridApi.reload();
     }
+    gridApi.reload(values);
   },
 };
 
@@ -176,6 +176,8 @@ const gridOptions: VxeGridProps<RowType> = {
         const values = isMobile.value
           ? await gridApi.formApi.getValues()
           : formValues;
+        
+        console.log('Query Values:', values);
 
         const res = await query({
           page: isMobile.value ? pagination.value.current : page.currentPage,
