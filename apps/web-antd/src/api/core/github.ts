@@ -110,17 +110,3 @@ export async function getGithubContributionStats(
     totalContributions: calendar.totalContributions,
   };
 }
-
-export async function getGithubCardInfo(username: string, token: string) {
-  const stats = await getGithubContributionStats(username, token);
-  return {
-    icon: 'carbon:logo-github',
-    iconClickUrl: `https://github.com/${username}`,
-    title: 'GitHub',
-    titleClickUrl: '/coding/github',
-    totalTitle: '连续提交',
-    totalValue: stats.currentStreak,
-    value: stats.todayContribution,
-    valueColor: stats.todayContribution > 0 ? '#3fb27f' : '#ff4d4f',
-  };
-}

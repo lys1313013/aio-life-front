@@ -13,7 +13,6 @@ import {
   getDashboardCardDetail,
   getDashboardTasks,
 } from '#/api/core/dashboard';
-import { getGithubCardInfo } from '#/api/core/github';
 import { getShanbayCardInfo } from '#/api/core/shanbay';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
@@ -156,19 +155,6 @@ onMounted(async () => {
       });
     });
 
-    // Github 占位
-    if (userStore.userInfo?.githubUsername) {
-      items.push({
-        title: 'GitHub',
-        type: 'GITHUB',
-        loading: true,
-        icon: 'carbon:logo-github',
-        totalTitle: '连续提交',
-        totalValue: '',
-        value: '',
-      });
-    }
-
     // 扇贝占位
     if (userStore.userInfo?.shanbayAcct) {
       items.push({
@@ -205,26 +191,6 @@ onMounted(async () => {
       }
     });
 
-    // Github
-    if (userStore.userInfo?.githubUsername) {
-      getGithubCardInfo(
-        userStore.userInfo.githubUsername,
-        userStore.userInfo.githubToken,
-      )
-        .then((res) => {
-          const index = overviewItems.value.findIndex((i) => i.type === 'GITHUB');
-          if (index !== -1) {
-            overviewItems.value[index] = {
-              ...overviewItems.value[index],
-              ...res,
-              loading: false,
-            };
-            setupCardRefresh(overviewItems.value[index]);
-          }
-        })
-        .catch((err) => console.error('Github fetch failed', err));
-    }
-
     // Shanbay
     if (userStore.userInfo?.shanbayAcct) {
       getShanbayCardInfo(userStore.userInfo.shanbayAcct)
@@ -256,14 +222,7 @@ async function refreshCard(item: OverviewItem) {
     item.loading = true;
     let res = {};
 
-    if (item.type === 'GITHUB') {
-      if (userStore.userInfo?.githubUsername) {
-        res = await getGithubCardInfo(
-          userStore.userInfo.githubUsername,
-          userStore.userInfo.githubToken,
-        );
-      }
-    } else if (item.type === 'SHANBAY') {
+    if (item.type === 'SHANBAY') {
       if (userStore.userInfo?.shanbayAcct) {
         res = await getShanbayCardInfo(userStore.userInfo.shanbayAcct);
       }

@@ -11,7 +11,7 @@ export const defaultCategories: TimeSlotCategory[] = [
     id: 'project',
     name: '项目',
     color: '#722ed1', // purple-6
-     isTrackTime: true,
+    isTrackTime: true,
   },
   {
     id: 'study',
