@@ -3,4 +3,3 @@ export * from './menu';
 export * from './user';
 export * from './performance';
 export * from './github';
-export * from './shanbay';

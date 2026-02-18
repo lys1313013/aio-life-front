@@ -13,7 +13,6 @@ import {
   getDashboardCardDetail,
   getDashboardTasks,
 } from '#/api/core/dashboard';
-import { getShanbayCardInfo } from '#/api/core/shanbay';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
   ACTION_OPEN_TIME_TRACKER_MODAL,
@@ -155,19 +154,6 @@ onMounted(async () => {
       });
     });
 
-    // 扇贝占位
-    if (userStore.userInfo?.shanbayAcct) {
-      items.push({
-        title: '扇贝单词',
-        type: 'SHANBAY',
-        loading: true,
-        icon: 'lucide:book-open',
-        totalTitle: '今日学习时间',
-        totalValue: '',
-        value: '',
-      });
-    }
-
     overviewItems.value = items;
     loading.value = false;
 
@@ -190,23 +176,6 @@ onMounted(async () => {
         console.error(`Failed to fetch card ${task.type}`, error);
       }
     });
-
-    // Shanbay
-    if (userStore.userInfo?.shanbayAcct) {
-      getShanbayCardInfo(userStore.userInfo.shanbayAcct)
-        .then((res) => {
-          const index = overviewItems.value.findIndex((i) => i.type === 'SHANBAY');
-          if (index !== -1) {
-            overviewItems.value[index] = {
-              ...overviewItems.value[index],
-              ...res,
-              loading: false,
-            };
-            setupCardRefresh(overviewItems.value[index]);
-          }
-        })
-        .catch((err) => console.error('Shanbay fetch failed', err));
-    }
   } catch (error) {
     console.error('获取仪表盘数据失败:', error);
     loading.value = false;
@@ -220,15 +189,7 @@ async function refreshCard(item: OverviewItem) {
 
   try {
     item.loading = true;
-    let res = {};
-
-    if (item.type === 'SHANBAY') {
-      if (userStore.userInfo?.shanbayAcct) {
-        res = await getShanbayCardInfo(userStore.userInfo.shanbayAcct);
-      }
-    } else {
-      res = await getDashboardCardDetail(item.type);
-    }
+    const res = await getDashboardCardDetail(item.type);
 
     Object.assign(item, res, { loading: false });
     setupCardRefresh(item);
