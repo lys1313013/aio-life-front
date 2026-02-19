@@ -547,7 +547,7 @@ const adjustEndTime = (minutes: number) => {
   let minMinutes = 0; // 受限于开始时间
 
   if (formState.value.startTime) {
-      minMinutes = timeToMinutes(formState.value.startTime.format('HH:mm')) + 1;
+    minMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   }
 
   if (props.existingSlots && props.slot) {
