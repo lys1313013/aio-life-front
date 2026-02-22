@@ -10,6 +10,12 @@ export interface TimeSlot {
   date: string; // 日期（YYYY-MM-DD格式）
   exerciseTypeId?: string; // 运动类型ID
   exerciseCount?: number; // 运动次数
+  exercises?: ExerciseDetail[]; // 多个运动明细
+}
+
+export interface ExerciseDetail {
+  exerciseTypeId: string;
+  exerciseCount: number;
 }
 
 // 时间段分类
@@ -39,6 +45,7 @@ export interface TimeSlotFormData {
   description?: string;
   exerciseTypeId?: string;
   exerciseCount?: number;
+  exercises?: ExerciseDetail[];
 }
 
 // 拖拽操作类型

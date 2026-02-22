@@ -183,31 +183,48 @@
 
       <!-- 运动相关字段 -->
       <template v-if="formState.categoryId === 'exercise'">
-        <Row :gutter="16">
-          <Col :span="12">
-            <Form.Item label="运动类型" name="exerciseTypeId">
+        <div style="margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span>运动明细</span>
+            <Button type="link" size="small" @click="addExercise">
+              <template #icon><PlusOutlined /></template>
+              添加
+            </Button>
+          </div>
+          
+          <div v-for="(exercise, index) in formState.exercises" :key="index" style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
+            <div style="flex: 2;">
               <Select
-                v-model:value="formState.exerciseTypeId"
-                placeholder="请选择运动类型"
+                v-model:value="exercise.exerciseTypeId"
+                placeholder="运动类型"
                 :options="exerciseTypeOptions"
                 allowClear
+                style="width: 100%"
               />
-            </Form.Item>
-          </Col>
-          <Col :span="12">
-            <Form.Item label="运动数量" name="exerciseCount">
+            </div>
+            <div style="flex: 1;">
               <InputNumber
-                v-model:value="formState.exerciseCount"
+                v-model:value="exercise.exerciseCount"
                 placeholder="数量"
-                class="input-align-right"
                 style="width: 100%"
                 :min="0"
-                inputmode="numeric"
-                pattern="[0-9]*"
+                :precision="0"
               />
-            </Form.Item>
-          </Col>
-        </Row>
+            </div>
+            <Button 
+              type="text" 
+              danger 
+              size="small"
+              @click="removeExercise(index)"
+            >
+              <template #icon><DeleteOutlined /></template>
+            </Button>
+          </div>
+          
+          <div v-if="formState.exercises.length === 0" style="text-align: center; color: #999; padding: 8px; border: 1px dashed #d9d9d9; border-radius: 4px; cursor: pointer;" @click="addExercise">
+            点击添加运动明细
+          </div>
+        </div>
       </template>
 
       <Form.Item label="描述" name="description">
@@ -242,8 +259,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber, Popconfirm } from 'ant-design-vue';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
-import type { TimeSlot, TimeSlotCategory, TimeSlotFormData } from '../types';
+import type { TimeSlot, TimeSlotCategory, TimeSlotFormData, ExerciseDetail } from '../types';
 import { timeToMinutes, minutesToTime, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
 import { getByDictType } from '#/api/core/common';
 import dayjs from 'dayjs';
@@ -273,6 +291,7 @@ interface LocalFormState {
   description?: string;
   exerciseTypeId?: string;
   exerciseCount?: number;
+  exercises: ExerciseDetail[];
 }
 
 const formRef = ref<FormInstance>();
@@ -284,7 +303,8 @@ const formState = ref<LocalFormState>({
   title: '',
   description: '',
   exerciseTypeId: undefined,
-  exerciseCount: undefined
+  exerciseCount: undefined,
+  exercises: []
 });
 
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
@@ -396,8 +416,8 @@ const rules: any = {
         const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
         const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
 
-        if (endMinutes <= startMinutes) {
-          return Promise.reject(new Error('结束时间必须晚于开始时间'));
+        if (endMinutes < startMinutes) {
+          return Promise.reject(new Error('结束时间必须大于等于开始时间'));
         }
 
         if (endMinutes - startMinutes < 1) {
@@ -422,6 +442,19 @@ const minutesToTimePickerValue = (minutes: number) => {
 
 // 初始化表单
 const initializeForm = (slot: TimeSlot) => {
+  let exercises: ExerciseDetail[] = [];
+  if (slot.exercises && slot.exercises.length > 0) {
+    // Deep copy to avoid reference issues
+    exercises = JSON.parse(JSON.stringify(slot.exercises));
+  } else if (slot.exerciseTypeId) {
+    exercises = [{ exerciseTypeId: slot.exerciseTypeId, exerciseCount: slot.exerciseCount || 0 }];
+  }
+
+  // Ensure at least one empty row if category is exercise
+  if (slot.categoryId === 'exercise' && exercises.length === 0) {
+     exercises.push({ exerciseTypeId: '', exerciseCount: 0 });
+  }
+
   formState.value = {
     id: slot.id,
     startTime: minutesToTimePickerValue(slot.startTime),
@@ -430,7 +463,8 @@ const initializeForm = (slot: TimeSlot) => {
     title: slot.title,
     description: slot.description || '',
     exerciseTypeId: slot.exerciseTypeId,
-    exerciseCount: slot.exerciseCount
+    exerciseCount: slot.exerciseCount,
+    exercises
   };
 };
 
@@ -462,6 +496,9 @@ watch(() => props.slot, (newSlot, oldSlot) => {
 // 处理分类变化
 const handleCategoryChange = (categoryId: string) => {
   // 不再自动填充标题，展示逻辑会处理 fallback
+  if (categoryId === 'exercise' && formState.value.exercises.length === 0) {
+    formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: 0 }];
+  }
 };
 
 // 处理保存
@@ -481,8 +518,9 @@ const handleSave = async () => {
       categoryId: formState.value.categoryId,
       title: formState.value.title,
       description: formState.value.description,
-      exerciseTypeId: formState.value.exerciseTypeId,
-      exerciseCount: formState.value.exerciseCount
+      exerciseTypeId: formState.value.exercises?.[0]?.exerciseTypeId || formState.value.exerciseTypeId,
+      exerciseCount: formState.value.exercises?.[0]?.exerciseCount || formState.value.exerciseCount,
+      exercises: formState.value.exercises
     };
 
     emit('save', saveData);
@@ -568,6 +606,14 @@ const adjustEndTime = (minutes: number) => {
   const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
 
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
+};
+
+const addExercise = () => {
+  formState.value.exercises.push({ exerciseTypeId: '', exerciseCount: 0 });
+};
+
+const removeExercise = (index: number) => {
+  formState.value.exercises.splice(index, 1);
 };
 
 // 处理删除

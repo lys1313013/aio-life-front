@@ -67,6 +67,7 @@ const open = async () => {
     title: '',
     description: '',
     date: currentDate,
+    exercises: []
   };
   editingSlot.value = newSlot;
 
@@ -120,6 +121,7 @@ const handleSave = async (formData: TimeSlotFormData) => {
       date: targetDate,
       exerciseTypeId: formData.exerciseTypeId,
       exerciseCount: formData.exerciseCount,
+      exercises: formData.exercises,
     };
 
     // Filter slots for the same day to check overlap

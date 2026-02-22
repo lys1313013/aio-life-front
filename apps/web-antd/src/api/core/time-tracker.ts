@@ -1,5 +1,10 @@
 import { requestClient } from '#/api/request';
 
+export interface ExerciseDetail {
+  exerciseTypeId: string;
+  exerciseCount: number;
+}
+
 /**
  * 时间记录实体接口
  */
@@ -19,6 +24,7 @@ export interface TimeRecordEntity {
   updateTime: string;
   exerciseTypeId?: string;
   exerciseCount?: number;
+  exercises?: ExerciseDetail[]; // Allow sending exercises to backend
 }
 
 /**
