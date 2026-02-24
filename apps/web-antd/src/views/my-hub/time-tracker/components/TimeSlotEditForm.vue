@@ -289,8 +289,6 @@ interface LocalFormState {
   categoryId: string;
   title?: string;
   description?: string;
-  exerciseTypeId?: string;
-  exerciseCount?: number;
   exercises: ExerciseDetail[];
 }
 
@@ -302,8 +300,6 @@ const formState = ref<LocalFormState>({
   categoryId: '',
   title: '',
   description: '',
-  exerciseTypeId: undefined,
-  exerciseCount: undefined,
   exercises: []
 });
 
@@ -420,7 +416,7 @@ const rules: any = {
           return Promise.reject(new Error('结束时间必须大于等于开始时间'));
         }
 
-        if (endMinutes - startMinutes < 1) {
+        if (endMinutes - startMinutes < 0) {
           return Promise.reject(new Error('时间段不能少于1分钟'));
         }
 
@@ -446,13 +442,11 @@ const initializeForm = (slot: TimeSlot) => {
   if (slot.exercises && slot.exercises.length > 0) {
     // Deep copy to avoid reference issues
     exercises = JSON.parse(JSON.stringify(slot.exercises));
-  } else if (slot.exerciseTypeId) {
-    exercises = [{ exerciseTypeId: slot.exerciseTypeId, exerciseCount: slot.exerciseCount || 0 }];
   }
 
   // Ensure at least one empty row if category is exercise
   if (slot.categoryId === 'exercise' && exercises.length === 0) {
-     exercises.push({ exerciseTypeId: '', exerciseCount: 0 });
+     exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
   }
 
   formState.value = {
@@ -462,8 +456,6 @@ const initializeForm = (slot: TimeSlot) => {
     categoryId: slot.categoryId,
     title: slot.title,
     description: slot.description || '',
-    exerciseTypeId: slot.exerciseTypeId,
-    exerciseCount: slot.exerciseCount,
     exercises
   };
 };
@@ -489,6 +481,15 @@ watch(() => props.slot, (newSlot, oldSlot) => {
       if (newSlot.endTime !== oldSlot.endTime) {
         formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
       }
+      // 同步更新运动明细
+      if (JSON.stringify(newSlot.exercises) !== JSON.stringify(oldSlot.exercises)) {
+         if (newSlot.exercises && newSlot.exercises.length > 0) {
+           formState.value.exercises = JSON.parse(JSON.stringify(newSlot.exercises));
+         } else if (newSlot.categoryId === 'exercise' && formState.value.exercises.length === 0) {
+             // 如果是运动分类且没有明细，添加一行空明细
+             formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: undefined }];
+         }
+      }
     }
   }
 }, { immediate: true });
@@ -497,7 +498,7 @@ watch(() => props.slot, (newSlot, oldSlot) => {
 const handleCategoryChange = (categoryId: string) => {
   // 不再自动填充标题，展示逻辑会处理 fallback
   if (categoryId === 'exercise' && formState.value.exercises.length === 0) {
-    formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: 0 }];
+    formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: undefined }];
   }
 };
 
@@ -518,8 +519,6 @@ const handleSave = async () => {
       categoryId: formState.value.categoryId,
       title: formState.value.title,
       description: formState.value.description,
-      exerciseTypeId: formState.value.exercises?.[0]?.exerciseTypeId || formState.value.exerciseTypeId,
-      exerciseCount: formState.value.exercises?.[0]?.exerciseCount || formState.value.exerciseCount,
       exercises: formState.value.exercises
     };
 
@@ -609,7 +608,7 @@ const adjustEndTime = (minutes: number) => {
 };
 
 const addExercise = () => {
-  formState.value.exercises.push({ exerciseTypeId: '', exerciseCount: 0 });
+  formState.value.exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
 };
 
 const removeExercise = (index: number) => {

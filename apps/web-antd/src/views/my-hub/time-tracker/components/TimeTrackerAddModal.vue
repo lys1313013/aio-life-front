@@ -119,8 +119,6 @@ const handleSave = async (formData: TimeSlotFormData) => {
       title: formData.title,
       description: formData.description || '',
       date: targetDate,
-      exerciseTypeId: formData.exerciseTypeId,
-      exerciseCount: formData.exerciseCount,
       exercises: formData.exercises,
     };
 

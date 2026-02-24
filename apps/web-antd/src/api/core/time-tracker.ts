@@ -2,7 +2,7 @@ import { requestClient } from '#/api/request';
 
 export interface ExerciseDetail {
   exerciseTypeId: string;
-  exerciseCount: number;
+  exerciseCount?: number;
 }
 
 /**
@@ -22,8 +22,6 @@ export interface TimeRecordEntity {
   createUser: number;
   createTime: string;
   updateTime: string;
-  exerciseTypeId?: string;
-  exerciseCount?: number;
   exercises?: ExerciseDetail[]; // Allow sending exercises to backend
 }
 
@@ -47,6 +45,13 @@ export async function query(data: any): Promise<QueryResponse> {
  */
 export async function queryForWeek(data: any): Promise<TimeRecordEntity[]> {
   return await requestClient.post('/timeRecord/queryForWeek', data);
+}
+
+/**
+ * 根据ID获取详情
+ */
+export async function getById(id: string): Promise<TimeRecordEntity> {
+  return await requestClient.get(`/timeRecord/${id}`);
 }
 
 /**

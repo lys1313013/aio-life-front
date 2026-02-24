@@ -8,14 +8,12 @@ export interface TimeSlot {
   description?: string; // 描述
   color?: string; // 颜色
   date: string; // 日期（YYYY-MM-DD格式）
-  exerciseTypeId?: string; // 运动类型ID
-  exerciseCount?: number; // 运动次数
   exercises?: ExerciseDetail[]; // 多个运动明细
 }
 
 export interface ExerciseDetail {
   exerciseTypeId: string;
-  exerciseCount: number;
+  exerciseCount?: number;
 }
 
 // 时间段分类
@@ -43,8 +41,6 @@ export interface TimeSlotFormData {
   categoryId: string;
   title?: string;
   description?: string;
-  exerciseTypeId?: string;
-  exerciseCount?: number;
   exercises?: ExerciseDetail[];
 }
 

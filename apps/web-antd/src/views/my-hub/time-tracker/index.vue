@@ -1,433 +1,48 @@
-<template>
-  <div class="time-tracker">
-    <!-- 标题和操作栏 -->
-    <div class="header">
-      <div class="header-left" v-if="!isMobile">
-        <span class="quote-text">{{ currentQuote }}</span>
-      </div>
-      <div class="header-right">
-        <!-- 按钮区 -->
-        <div class="actions">
-          <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-            <template #icon><SettingOutlined /></template>
-          </Button>
-          <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
-            <template #icon><DeleteOutlined /></template>
-          </Button>
-          <CategoryFilter
-            :categories="config.categories"
-            :loading="loading"
-            :size="isMobile ? 'small' : 'middle'"
-            @filterChange="handleFilterChange"
-          />
-        </div>
-        <!-- 日期切换区 -->
-        <div class="date-picker-container">
-          <Button
-            type="default"
-            @click="goToPreviousPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><LeftOutlined /></template>
-          </Button>
-          <div class="date-picker-wrapper">
-            <span class="date-text">{{ selectedDate.format('YYYY-MM-DD') }}</span>
-            <DatePicker
-              class="hidden-date-picker"
-              v-model:value="selectedDate"
-              format="YYYY-MM-DD"
-              :allowClear="false"
-              @change="handleDateChange"
-              :disabled-date="disabledDate"
-              :disabled="loading"
-              :size="isMobile ? 'small' : 'middle'"
-            >
-              <template #suffixIcon></template>
-            </DatePicker>
-          </div>
-          <Button
-            type="default"
-            @click="goToNextPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><RightOutlined /></template>
-          </Button>
-        </div>
-        <!-- 日周月切换区 -->
-        <Radio.Group v-model:value="statMode" @change="handleStatModeChange" :disabled="loading" :size="isMobile ? 'small' : 'default'">
-          <Radio.Button value="day">日</Radio.Button>
-          <Radio.Button value="week">周</Radio.Button>
-          <Radio.Button value="month">月</Radio.Button>
-        </Radio.Group>
-      </div>
-    </div>
-
-    <div class="content-layout">
-      <div class="left-panel">
-        <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
-          <template v-if="statMode === 'week'">
-            <div class="week-timeline-container" ref="weekTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
-              <div class="week-header">
-                <div class="time-scale-header"></div>
-                <div
-                  v-for="(day, index) in weekDays"
-                  :key="index"
-                  class="week-day-header"
-                  @click="selectWeekDay(index)"
-                  :class="{ active: selectedWeekDayIndex === index }"
-                >
-                  <div class="day-name">{{ day.weekday }}</div>
-                  <div class="day-date">{{ day.date }}</div>
-                </div>
-              </div>
-
-              <div class="week-timeline-wrapper">
-                <div class="time-scale">
-                  <div
-                    v-for="hour in 24"
-                    :key="hour"
-                    class="hour-marker"
-                    :style="{ top: `${(hour / 24) * 100}%` }"
-                  >
-                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
-                  </div>
-                </div>
-
-                <div class="week-days-container">
-                  <div
-                    v-for="(day, index) in weekDays"
-                    :key="index"
-                    class="week-day-track"
-                  >
-                    <div
-                      v-for="slot in getDaySlots(day.date)"
-                      :key="slot.id"
-                      class="time-slot"
-                      :class="getSlotClass(slot)"
-                      :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                      @mousedown="handleSlotPointerDown($event, slot)"
-                      @click="handleSlotClick(slot)"
-                    >
-                      <div class="slot-content">
-                        <div class="slot-info" :style="isMobile ? { flexDirection: 'column', alignItems: 'center', gap: '0' } : {}">
-                          <span class="slot-title">{{ getSlotTitle(slot) }}</span>
-                          <span class="slot-time" :style="isMobile ? { fontSize: '10px', lineHeight: '1.2' } : { marginLeft: '4px', fontSize: '11px' }">
-                            {{ formatDuration(slot.endTime - slot.startTime) }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <template v-else-if="statMode === 'month'">
-            <div class="month-timeline-container" ref="monthTimelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px', '--month-day-count': monthDays.length } : { '--month-day-count': monthDays.length }">
-              <div class="month-header" ref="monthHeaderRef">
-                <div class="time-scale-header"></div>
-                <div
-                  v-for="(day, index) in monthDays"
-                  :key="index"
-                  class="month-day-header"
-                  @click="selectMonthDay(index)"
-                  :class="{ active: selectedMonthDayIndex === index }"
-                >
-                  <div class="day-name">{{ day.weekday }}</div>
-                  <div class="day-date">{{ day.date }}</div>
-                </div>
-              </div>
-
-              <div class="month-timeline-wrapper">
-                <div class="time-scale">
-                  <div
-                    v-for="hour in 24"
-                    :key="hour"
-                    class="hour-marker"
-                    :style="{ top: `${(hour / 24) * 100}%` }"
-                  >
-                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
-                  </div>
-                </div>
-
-                <div class="month-days-container" ref="monthDaysContainerRef" @scroll="syncMonthScroll">
-                  <div
-                    v-for="(day, index) in monthDays"
-                    :key="index"
-                    class="month-day-track"
-                  >
-                    <div
-                      v-for="slot in getDaySlots(day.date)"
-                      :key="slot.id"
-                      class="time-slot"
-                      :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                      @mousedown="handleSlotPointerDown($event, slot)"
-                      @click="handleSlotClick(slot)"
-                    >
-                      <div class="slot-content">
-                        <div class="slot-info">
-                          <span class="slot-title">{{ getSlotTitle(slot) }}</span>
-                          <span v-if="slot.endTime - slot.startTime > 60" class="slot-time" style="margin-left: 2px; font-size: 10px;">
-                            {{ formatDuration(slot.endTime - slot.startTime) }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="timeline-container" ref="timelineContainerRef" :style="isMobile ? { height: mobileTimelineHeight + 'px' } : {}">
-              <div class="day-header">
-                <div class="time-scale-header"></div>
-                <div class="day-column-header active">
-                  <div class="day-name">{{ currentDayInfo.weekday }}</div>
-                  <div class="day-date">{{ currentDayInfo.date }}</div>
-                </div>
-              </div>
-
-              <div class="timeline-body-wrapper">
-                <div class="time-scale">
-                  <div
-                    v-for="hour in 24"
-                    :key="hour"
-                    class="hour-marker"
-                    :style="{ top: `${(hour / 24) * 100}%` }"
-                  >
-                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
-                  </div>
-                </div>
-
-                <div
-                  ref="timelineRef"
-                  class="timeline-track"
-                  @mousedown="handleTrackPointerDown"
-                  @mousemove="handleTrackPointerMove"
-                  @mouseup="handleTrackPointerUp"
-                  @mouseleave="handleTrackPointerLeave"
-                  :style="{ cursor: loading ? 'not-allowed' : (isMobile ? 'default' : 'crosshair') }"
-                >
-                  <div
-                    v-for="slot in timeSlots"
-                    :key="slot.id"
-                    class="time-slot"
-                    :class="getSlotClass(slot)"
-                    :style="{ ...getSlotStyle(slot), pointerEvents: loading ? 'none' : 'auto' }"
-                    @mousedown="handleSlotPointerDown($event, slot)"
-                    @click="handleSlotClick(slot)"
-                  >
-                    <div class="slot-content">
-                      <div class="slot-info">
-                        <span class="slot-title">{{ getSlotTitle(slot) }}</span>
-                        <span class="slot-time">
-                          {{ formatSlotTime(slot) }}
-                          <span style="margin-left: 4px; opacity: 0.8">
-                            {{ formatDuration(slot.endTime - slot.startTime) }}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                    <div class="resize-handle top" @mousedown="handleResizeStartPointer($event, slot, 'top')"></div>
-                    <div class="resize-handle bottom" @mousedown="handleResizeStartPointer($event, slot, 'bottom')"></div>
-                  </div>
-                  <div
-                    v-if="dragOperation"
-                    class="drag-preview"
-                    :style="getDragPreviewStyle()"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </template>
-        </Spin>
-      </div>
-      <div class="right-panel">
-        <div>
-          <div class="stats-row">
-            <div class="stats-cards-group">
-              <div class="stat-square-card">
-                <span class="stat-label-corner">时长</span>
-                <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
-              </div>
-              <div class="stat-square-card" v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId">
-                <span class="stat-label-corner">平均</span>
-                <span class="stat-value-center">{{ formatDuration(Math.round(averageDuration)) }}</span>
-              </div>
-              <div class="stat-square-card" v-if="!selectedFilterCategoryId" :style="freeTimeCardStyle">
-                <span class="stat-label-corner">空闲</span>
-                <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
-              </div>
-              <div
-                class="stat-square-card"
-                v-for="comp in trackTimeComparisons"
-                :key="comp.id"
-              >
-                <span class="stat-label-corner">{{ comp.name }}</span>
-                <div
-                  :style="{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '14px',
-                    color:
-                      comp.diff === 0
-                        ? '#8c8c8c'
-                        : comp.diff > 0
-                          ? token.colorError
-                          : token.colorSuccess,
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 'normal',
-                    zIndex: 2,
-                  }"
-                >
-                  <span v-if="comp.diff !== 0" style="margin-right: 2px">
-                    {{ comp.diff > 0 ? '↑' : '↓' }}
-                  </span>
-                  <span v-if="comp.diff !== 0">
-                    {{ formatDuration(comp.absDiff) }}
-                  </span>
-                  <span v-else> - </span>
-                </div>
-                <div class="stat-value-center">
-                  {{ formatDuration(comp.currentDuration) }}
-                </div>
-              </div>
-            </div>
-            <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
-            <DailyCategoryBarChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
-            />
-            <!-- 默认显示分类柱状图 -->
-            <TimeCategoryBarChart
-              v-if="!selectedFilterCategoryId || statMode === 'day'"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-            />
-            <DailyStatsPieChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
-            />
-            <TimeCategoryPieChart
-              v-if="statMode === 'day' && !selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-            />
-            <TimeCategoryStackedAreaChart
-              v-if="(statMode === 'week' || statMode === 'month') && !selectedFilterCategoryId"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="isMobile" class="floating-add-button mobile">
-      <Button
-        type="primary"
-        shape="circle"
-        @click="handleAddSlot"
-        :disabled="loading"
-        :size="'large'"
-        class="add-button"
-      >
-        <template #icon><PlusOutlined /></template>
-      </Button>
-    </div>
-    <div v-else class="floating-btn" @click="handleAddSlot">
-      <PlusOutlined style="font-size: 24px; color: white" />
-    </div>
-
-    <!-- 时间段编辑模态框 -->
-    <Modal
-      v-model:open="showEditModal"
-      :title="editModalTitle"
-      :width="isMobile ? '95vw' : 600"
-      :footer="null"
-      @cancel="handleEditCancel"
-    >
-      <Spin :spinning="modalLoading" tip="">
-        <TimeSlotEditForm
-          v-if="editingSlot"
-          :slot="editingSlot"
-          :categories="config.categories"
-          :existing-slots="timeSlots"
-          @save="handleSaveSlot"
-          @delete="handleDeleteSlot"
-          @cancel="handleEditCancel"
-        />
-      </Spin>
-    </Modal>
-
-    <!-- 分类管理模态框 -->
-    <Modal
-      v-model:open="showCategoryModal"
-      title="分类管理"
-      :width="isMobile ? '95vw' : 800"
-      :footer="null"
-    >
-      <CategoryManager
-        :categories="config.categories"
-        @update="handleCategoriesUpdate"
-      />
-    </Modal>
-
-    <!-- 删除确认弹窗 -->
-    <Modal
-      v-model:open="showDeleteConfirmModal"
-      title="确认删除"
-      :width="isMobile ? '95vw' : 400"
-      :mask-closable="false"
-      @ok="confirmResetData"
-      @cancel="cancelDelete"
-    >
-      <div style="text-align: center; padding: 20px 0;">
-        <p style="font-size: 16px; margin-bottom: 10px;">确定要删除当前数据吗？</p>
-        <p style="color: #ff4d4f; font-size: 14px;">此操作不可恢复，请谨慎操作！</p>
-      </div>
-      <template #footer>
-        <div style="text-align: center;">
-          <Button @click="cancelDelete" :disabled="loading">取消</Button>
-          <Button type="primary" danger @click="confirmResetData" :loading="loading">确认删除</Button>
-        </div>
-      </template>
-    </Modal>
-
-
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
-import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons-vue';
-import { Button, Modal, message, DatePicker, Spin, Radio, theme } from 'ant-design-vue';
-import dayjs from 'dayjs';
-import weekOfYear from 'dayjs/plugin/weekOfYear';
-import isoWeek from 'dayjs/plugin/isoWeek';
-import type { TimeSlot, TimeSlotCategory, DragOperation } from './types';
+import type { DragOperation, TimeSlot, TimeSlotCategory } from './types';
 
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+
+import {
+  DeleteOutlined,
+  LeftOutlined,
+  PlusOutlined,
+  RightOutlined,
+  SettingOutlined,
+} from '@ant-design/icons-vue';
+import {
+  Button,
+  DatePicker,
+  message,
+  Modal,
+  Radio,
+  Spin,
+  theme,
+} from 'ant-design-vue';
+import dayjs from 'dayjs';
+import isoWeek from 'dayjs/plugin/isoWeek';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+
+import {
+  deleteByDate,
+  deleteData,
+  getById,
+  query,
+  queryForWeek,
+  recommendNext,
+  recommendType,
+  save,
+  update,
+} from '#/api/core/time-tracker';
+
+import CategoryFilter from './components/CategoryFilter.vue';
+import CategoryManager from './components/CategoryManager.vue';
+import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
+import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
+import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
+import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
+import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaChart.vue';
+import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
 import { defaultConfig } from './config';
 import {
   formatDuration,
@@ -439,26 +54,8 @@ import {
   getTimeFromPosition,
   hasOverlap,
   isValidSlot,
-  snapToGrid
+  snapToGrid,
 } from './utils';
-import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
-import CategoryManager from './components/CategoryManager.vue';
-import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
-import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaChart.vue';
-import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
-import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
-import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
-import CategoryFilter from './components/CategoryFilter.vue';
-import {
-  deleteByDate,
-  deleteData,
-  query,
-  queryForWeek,
-  recommendNext,
-  recommendType,
-  save,
-  update,
-} from '#/api/core/time-tracker';
 
 // 扩展dayjs插件
 dayjs.extend(weekOfYear);
@@ -996,7 +593,9 @@ const updateMobileTimelineHeight = () => {
 // 获取时间段显示的标题
 const getSlotTitle = (slot: TimeSlot) => {
   if (slot.title) return slot.title;
-  const category = config.value.categories.find((cat) => cat.id === slot.categoryId);
+  const category = config.value.categories.find(
+    (cat) => cat.id === slot.categoryId,
+  );
   return category?.name || '未知分类';
 };
 
@@ -1053,7 +652,9 @@ const getSlotStyle = (slot: TimeSlot) => {
   };
 
   if (isHighlighted) {
-    style.border = isFuture ? `2px dashed ${token.value.colorPrimary}` : `2px solid ${token.value.colorPrimary}`;
+    style.border = isFuture
+      ? `2px dashed ${token.value.colorPrimary}`
+      : `2px solid ${token.value.colorPrimary}`;
     style.boxShadow = `0 0 8px ${token.value.colorPrimary}80`; // Simple alpha approximation
   } else {
     style.border = isFuture ? '2px dashed #fff' : 'none';
@@ -1490,14 +1091,30 @@ const handleResizeStartPointer = (
   window.addEventListener('touchend', handleTrackPointerUp);
 };
 
-const handleSlotClick = (slot: TimeSlot) => {
+const modalLoading = ref(false);
+
+const handleSlotClick = async (slot: TimeSlot) => {
   if (dragOperation.value) return; // 防止拖拽后触发点击
 
   editingSlot.value = { ...slot };
   showEditModal.value = true;
-};
 
-const modalLoading = ref(false);
+  modalLoading.value = true;
+  try {
+    const detail = await getById(slot.id);
+    if (detail && editingSlot.value && editingSlot.value.id === slot.id) {
+      editingSlot.value = {
+        ...editingSlot.value,
+        ...detail,
+        exercises: detail.exercises || [],
+      };
+    }
+  } catch (error) {
+    console.error('获取详情失败', error);
+  } finally {
+    modalLoading.value = false;
+  }
+};
 
 const handleAddSlot = async () => {
   const currentDate = getCurrentSelectedDate();
@@ -1558,8 +1175,7 @@ const handleSaveSlot = (formData: any) => {
       title: formData.title,
       description: formData.description || '',
       date: currentDate,
-      exerciseTypeId: formData.exerciseTypeId,
-      exerciseCount: formData.exerciseCount,
+      exercises: formData.exercises,
     };
 
     // 检查重叠时，只考虑同一天内的时间段
@@ -1567,10 +1183,7 @@ const handleSaveSlot = (formData: any) => {
       (slot: TimeSlot) => slot.date === currentDate,
     );
 
-    if (
-      isValidSlot(newSlot) &&
-      !hasOverlap(sameDaySlots, newSlot)
-    ) {
+    if (isValidSlot(newSlot) && !hasOverlap(sameDaySlots, newSlot)) {
       timeSlots.value.push(newSlot);
       save(newSlot as any);
       showEditModal.value = false;
@@ -1587,10 +1200,7 @@ const handleSaveSlot = (formData: any) => {
         slot.date === updatedSlot.date && slot.id !== formData.id,
     );
 
-    if (
-      isValidSlot(updatedSlot) &&
-      !hasOverlap(sameDaySlots, updatedSlot)
-    ) {
+    if (isValidSlot(updatedSlot) && !hasOverlap(sameDaySlots, updatedSlot)) {
       timeSlots.value[index] = updatedSlot;
       update(updatedSlot)
         .then(() => {
@@ -1646,6 +1256,552 @@ const getDaySlots = (date: string): TimeSlot[] => {
   return timeSlots.value.filter((slot: TimeSlot) => slot.date === date);
 };
 </script>
+
+<template>
+  <div class="time-tracker">
+    <!-- 标题和操作栏 -->
+    <div class="header">
+      <div class="header-left" v-if="!isMobile">
+        <span class="quote-text">{{ currentQuote }}</span>
+      </div>
+      <div class="header-right">
+        <!-- 按钮区 -->
+        <div class="actions">
+          <Button
+            type="primary"
+            @click="showCategoryModal = true"
+            :disabled="loading"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><SettingOutlined /></template>
+          </Button>
+          <Button
+            type="primary"
+            danger
+            @click="openDeleteConfirmModal"
+            :disabled="loading"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><DeleteOutlined /></template>
+          </Button>
+          <CategoryFilter
+            :categories="config.categories"
+            :loading="loading"
+            :size="isMobile ? 'small' : 'middle'"
+            @filter-change="handleFilterChange"
+          />
+        </div>
+        <!-- 日期切换区 -->
+        <div class="date-picker-container">
+          <Button
+            type="default"
+            @click="goToPreviousPeriod"
+            :disabled="loading"
+            class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><LeftOutlined /></template>
+          </Button>
+          <div class="date-picker-wrapper">
+            <span class="date-text">{{
+              selectedDate.format('YYYY-MM-DD')
+            }}</span>
+            <DatePicker
+              class="hidden-date-picker"
+              v-model:value="selectedDate"
+              format="YYYY-MM-DD"
+              :allow-clear="false"
+              @change="handleDateChange"
+              :disabled-date="disabledDate"
+              :disabled="loading"
+              :size="isMobile ? 'small' : 'middle'"
+            >
+              <template #suffixIcon></template>
+            </DatePicker>
+          </div>
+          <Button
+            type="default"
+            @click="goToNextPeriod"
+            :disabled="loading"
+            class="date-nav-button"
+            :size="isMobile ? 'small' : 'middle'"
+          >
+            <template #icon><RightOutlined /></template>
+          </Button>
+        </div>
+        <!-- 日周月切换区 -->
+        <Radio.Group
+          v-model:value="statMode"
+          @change="handleStatModeChange"
+          :disabled="loading"
+          :size="isMobile ? 'small' : 'default'"
+        >
+          <Radio.Button value="day">日</Radio.Button>
+          <Radio.Button value="week">周</Radio.Button>
+          <Radio.Button value="month">月</Radio.Button>
+        </Radio.Group>
+      </div>
+    </div>
+
+    <div class="content-layout">
+      <div class="left-panel">
+        <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
+          <template v-if="statMode === 'week'">
+            <div
+              class="week-timeline-container"
+              ref="weekTimelineContainerRef"
+              :style="isMobile ? { height: `${mobileTimelineHeight}px` } : {}"
+            >
+              <div class="week-header">
+                <div class="time-scale-header"></div>
+                <div
+                  v-for="(day, index) in weekDays"
+                  :key="index"
+                  class="week-day-header"
+                  @click="selectWeekDay(index)"
+                  :class="{ active: selectedWeekDayIndex === index }"
+                >
+                  <div class="day-name">{{ day.weekday }}</div>
+                  <div class="day-date">{{ day.date }}</div>
+                </div>
+              </div>
+
+              <div class="week-timeline-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  </div>
+                </div>
+
+                <div class="week-days-container">
+                  <div
+                    v-for="(day, index) in weekDays"
+                    :key="index"
+                    class="week-day-track"
+                  >
+                    <div
+                      v-for="slot in getDaySlots(day.date)"
+                      :key="slot.id"
+                      class="time-slot"
+                      :class="getSlotClass(slot)"
+                      :style="{
+                        ...getSlotStyle(slot),
+                        pointerEvents: loading ? 'none' : 'auto',
+                      }"
+                      @mousedown="handleSlotPointerDown($event, slot)"
+                      @click="handleSlotClick(slot)"
+                    >
+                      <div class="slot-content">
+                        <div
+                          class="slot-info"
+                          :style="
+                            isMobile
+                              ? {
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: '0',
+                                }
+                              : {}
+                          "
+                        >
+                          <span class="slot-title">{{
+                            getSlotTitle(slot)
+                          }}</span>
+                          <span
+                            class="slot-time"
+                            :style="
+                              isMobile
+                                ? { fontSize: '10px', lineHeight: '1.2' }
+                                : { marginLeft: '4px', fontSize: '11px' }
+                            "
+                          >
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="statMode === 'month'">
+            <div
+              class="month-timeline-container"
+              ref="monthTimelineContainerRef"
+              :style="
+                isMobile
+                  ? {
+                      height: `${mobileTimelineHeight}px`,
+                      '--month-day-count': monthDays.length,
+                    }
+                  : { '--month-day-count': monthDays.length }
+              "
+            >
+              <div class="month-header" ref="monthHeaderRef">
+                <div class="time-scale-header"></div>
+                <div
+                  v-for="(day, index) in monthDays"
+                  :key="index"
+                  class="month-day-header"
+                  @click="selectMonthDay(index)"
+                  :class="{ active: selectedMonthDayIndex === index }"
+                >
+                  <div class="day-name">{{ day.weekday }}</div>
+                  <div class="day-date">{{ day.date }}</div>
+                </div>
+              </div>
+
+              <div class="month-timeline-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  </div>
+                </div>
+
+                <div
+                  class="month-days-container"
+                  ref="monthDaysContainerRef"
+                  @scroll="syncMonthScroll"
+                >
+                  <div
+                    v-for="(day, index) in monthDays"
+                    :key="index"
+                    class="month-day-track"
+                  >
+                    <div
+                      v-for="slot in getDaySlots(day.date)"
+                      :key="slot.id"
+                      class="time-slot"
+                      :style="{
+                        ...getSlotStyle(slot),
+                        pointerEvents: loading ? 'none' : 'auto',
+                      }"
+                      @mousedown="handleSlotPointerDown($event, slot)"
+                      @click="handleSlotClick(slot)"
+                    >
+                      <div class="slot-content">
+                        <div class="slot-info">
+                          <span class="slot-title">{{
+                            getSlotTitle(slot)
+                          }}</span>
+                          <span
+                            v-if="slot.endTime - slot.startTime > 60"
+                            class="slot-time"
+                            style="margin-left: 2px; font-size: 10px"
+                          >
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <div
+              class="timeline-container"
+              ref="timelineContainerRef"
+              :style="isMobile ? { height: `${mobileTimelineHeight}px` } : {}"
+            >
+              <div class="day-header">
+                <div class="time-scale-header"></div>
+                <div class="day-column-header active">
+                  <div class="day-name">{{ currentDayInfo.weekday }}</div>
+                  <div class="day-date">{{ currentDayInfo.date }}</div>
+                </div>
+              </div>
+
+              <div class="timeline-body-wrapper">
+                <div class="time-scale">
+                  <div
+                    v-for="hour in 24"
+                    :key="hour"
+                    class="hour-marker"
+                    :style="{ top: `${(hour / 24) * 100}%` }"
+                  >
+                    <span class="hour-label" v-if="hour < 24">{{ hour.toString().padStart(2, '0') }}:00</span>
+                  </div>
+                </div>
+
+                <div
+                  ref="timelineRef"
+                  class="timeline-track"
+                  @mousedown="handleTrackPointerDown"
+                  @mousemove="handleTrackPointerMove"
+                  @mouseup="handleTrackPointerUp"
+                  @mouseleave="handleTrackPointerLeave"
+                  :style="{
+                    cursor: loading
+                      ? 'not-allowed'
+                      : isMobile
+                        ? 'default'
+                        : 'crosshair',
+                  }"
+                >
+                  <div
+                    v-for="slot in timeSlots"
+                    :key="slot.id"
+                    class="time-slot"
+                    :class="getSlotClass(slot)"
+                    :style="{
+                      ...getSlotStyle(slot),
+                      pointerEvents: loading ? 'none' : 'auto',
+                    }"
+                    @mousedown="handleSlotPointerDown($event, slot)"
+                    @click="handleSlotClick(slot)"
+                  >
+                    <div class="slot-content">
+                      <div class="slot-info">
+                        <span class="slot-title">{{ getSlotTitle(slot) }}</span>
+                        <span class="slot-time">
+                          {{ formatSlotTime(slot) }}
+                          <span style="margin-left: 4px; opacity: 0.8">
+                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      class="resize-handle top"
+                      @mousedown="handleResizeStartPointer($event, slot, 'top')"
+                    ></div>
+                    <div
+                      class="resize-handle bottom"
+                      @mousedown="
+                        handleResizeStartPointer($event, slot, 'bottom')
+                      "
+                    ></div>
+                  </div>
+                  <div
+                    v-if="dragOperation"
+                    class="drag-preview"
+                    :style="getDragPreviewStyle()"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </Spin>
+      </div>
+      <div class="right-panel">
+        <div>
+          <div class="stats-row">
+            <div class="stats-cards-group">
+              <div class="stat-square-card">
+                <span class="stat-label-corner">时长</span>
+                <span class="stat-value-center">{{
+                  formatDuration(totalDuration)
+                }}</span>
+              </div>
+              <div
+                class="stat-square-card"
+                v-if="
+                  (statMode === 'week' || statMode === 'month') &&
+                  selectedFilterCategoryId
+                "
+              >
+                <span class="stat-label-corner">平均</span>
+                <span class="stat-value-center">{{
+                  formatDuration(Math.round(averageDuration))
+                }}</span>
+              </div>
+              <div
+                class="stat-square-card"
+                v-if="!selectedFilterCategoryId"
+                :style="freeTimeCardStyle"
+              >
+                <span class="stat-label-corner">空闲</span>
+                <span class="stat-value-center">{{
+                  formatDuration(freeTime)
+                }}</span>
+              </div>
+              <div
+                class="stat-square-card"
+                v-for="comp in trackTimeComparisons"
+                :key="comp.id"
+              >
+                <span class="stat-label-corner">{{ comp.name }}</span>
+                <div
+                  :style="{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '14px',
+                    color:
+                      comp.diff === 0
+                        ? '#8c8c8c'
+                        : comp.diff > 0
+                          ? token.colorError
+                          : token.colorSuccess,
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontWeight: 'normal',
+                    zIndex: 2,
+                  }"
+                >
+                  <span v-if="comp.diff !== 0" style="margin-right: 2px">
+                    {{ comp.diff > 0 ? '↑' : '↓' }}
+                  </span>
+                  <span v-if="comp.diff !== 0">
+                    {{ formatDuration(comp.absDiff) }}
+                  </span>
+                  <span v-else> - </span>
+                </div>
+                <div class="stat-value-center">
+                  {{ formatDuration(comp.currentDuration) }}
+                </div>
+              </div>
+            </div>
+            <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
+            <DailyCategoryBarChart
+              v-if="
+                (statMode === 'week' || statMode === 'month') &&
+                selectedFilterCategoryId
+              "
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
+            <!-- 默认显示分类柱状图 -->
+            <TimeCategoryBarChart
+              v-if="!selectedFilterCategoryId || statMode === 'day'"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <DailyStatsPieChart
+              v-if="
+                (statMode === 'week' || statMode === 'month') &&
+                selectedFilterCategoryId
+              "
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-id="selectedFilterCategoryId"
+            />
+            <TimeCategoryPieChart
+              v-if="statMode === 'day' && !selectedFilterCategoryId"
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+            />
+            <TimeCategoryStackedAreaChart
+              v-if="
+                (statMode === 'week' || statMode === 'month') &&
+                !selectedFilterCategoryId
+              "
+              :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isMobile" class="floating-add-button mobile">
+      <Button
+        type="primary"
+        shape="circle"
+        @click="handleAddSlot"
+        :disabled="loading"
+        size="large"
+        class="add-button"
+      >
+        <template #icon><PlusOutlined /></template>
+      </Button>
+    </div>
+    <div v-else class="floating-btn" @click="handleAddSlot">
+      <PlusOutlined style="font-size: 24px; color: white" />
+    </div>
+
+    <!-- 时间段编辑模态框 -->
+    <Modal
+      v-model:open="showEditModal"
+      :title="editModalTitle"
+      :width="isMobile ? '95vw' : 600"
+      :footer="null"
+      @cancel="handleEditCancel"
+    >
+      <Spin :spinning="modalLoading" tip="">
+        <template #[editingSlot]>
+          <TimeSlotEditForm
+            v-if="editingSlot"
+            :categories="config.categories"
+            :existing-slots="timeSlots"
+            @save="handleSaveSlot"
+            @delete="handleDeleteSlot"
+            @cancel="handleEditCancel"
+          />
+        </template>
+      </Spin>
+    </Modal>
+
+    <!-- 分类管理模态框 -->
+    <Modal
+      v-model:open="showCategoryModal"
+      title="分类管理"
+      :width="isMobile ? '95vw' : 800"
+      :footer="null"
+    >
+      <CategoryManager
+        :categories="config.categories"
+        @update="handleCategoriesUpdate"
+      />
+    </Modal>
+
+    <!-- 删除确认弹窗 -->
+    <Modal
+      v-model:open="showDeleteConfirmModal"
+      title="确认删除"
+      :width="isMobile ? '95vw' : 400"
+      :mask-closable="false"
+      @ok="confirmResetData"
+      @cancel="cancelDelete"
+    >
+      <div style="text-align: center; padding: 20px 0">
+        <p style="font-size: 16px; margin-bottom: 10px">
+          确定要删除当前数据吗？
+        </p>
+        <p style="color: #ff4d4f; font-size: 14px">
+          此操作不可恢复，请谨慎操作！
+        </p>
+      </div>
+      <template #footer>
+        <div style="text-align: center">
+          <Button @click="cancelDelete" :disabled="loading">取消</Button>
+          <Button
+            type="primary"
+            danger
+            @click="confirmResetData"
+            :loading="loading"
+          >
+            确认删除
+          </Button>
+        </div>
+      </template>
+    </Modal>
+  </div>
+</template>
 
 <style scoped>
 .time-tracker {
@@ -2106,8 +2262,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-小尺寸时间段优化
-.time-slot.is-small .slot-content {
+小尺寸时间段优化 .time-slot.is-small .slot-content {
   padding: 0 4px;
 }
 
@@ -2144,7 +2299,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
   transform: scale(0.85);
   transform-origin: center center;
 }
-
 
 .slot-content {
   padding: 8px;
