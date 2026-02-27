@@ -1,6 +1,6 @@
 <script>
 // 添加moment导入
-import { PlusOutlined } from '@ant-design/icons-vue';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -32,6 +32,7 @@ export default {
     ASelectOption: Select.Option,
     ACard: Card,
     PlusOutlined,
+    DeleteOutlined,
   },
   data() {
     return {
@@ -214,7 +215,7 @@ export default {
     },
     async handleDelete(item) {
       try {
-        await deleteData({ id: item.id });
+        await deleteData(item.id);
         await this.query();
       } catch (error) {
         console.error('删除失败:', error);
@@ -318,8 +319,6 @@ export default {
                 />
               </svg>
             </div>
-          </div>
-          <div class="card-content">
             <APopconfirm
               title="确定要删除这个设备吗？"
               ok-text="确定"
@@ -331,8 +330,12 @@ export default {
                 type="text"
                 danger
                 @click.stop
-              />
+              >
+                <DeleteOutlined />
+              </AButton>
             </APopconfirm>
+          </div>
+          <div class="card-content">
             <h3>{{ item.name }}</h3>
             <p class="price">价格: {{ item.purchasePrice }}</p>
             <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
@@ -425,11 +428,7 @@ export default {
     display: none;
   }
 
-  .delete-btn {
-    top: 0;
-    right: 0;
-    padding: 4px;
-  }
+
 
   .status-badge {
     top: 5px;
@@ -478,9 +477,25 @@ export default {
 
 .delete-btn {
   position: absolute;
-  top: 10px;
+  bottom: 10px;
   right: 10px;
-  z-index: 1;
+  z-index: 2;
+  opacity: 0;
+  transition: all 0.3s ease;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0;
+}
+
+.electronics-card:hover .delete-btn {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 .card-content h3 {
@@ -616,5 +631,15 @@ export default {
 .total-static .ant-card span:first-child {
   font-weight: bold;
   font-size: 18px;
+}
+
+@media screen and (max-width: 768px) {
+  .delete-btn {
+    opacity: 1;
+    width: 28px;
+    height: 28px;
+    bottom: 5px;
+    right: 5px;
+  }
 }
 </style>

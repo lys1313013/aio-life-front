@@ -17,6 +17,6 @@ export async function insertOrUpdate(data: any) {
 /**
  * 删除
  */
-export async function deleteData(data: any) {
-  return await requestClient.post('/device/delete', data);
+export async function deleteData(id: number | string) {
+  return await requestClient.delete(`/device/${id}`);
 }
