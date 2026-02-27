@@ -1,44 +1,66 @@
 # AIO Life (All In One Life)
 
-> 记录生活的所有数据 (Record all life data)
+> 记录、统计、分析人生的所有数据
 
 [![Vben Admin](https://img.shields.io/badge/Based%20on-Vue%20Vben%20Admin-blue)](https://github.com/vbenjs/vue-vben-admin)
 
-## 📖 简介 (Introduction)
+## 简介
 
-**AIO Life** 是一个基于 [Vue Vben Admin 5.0](https://github.com/vbenjs/vue-vben-admin) 构建的一站式个人生活数据管理平台。旨在帮助你记录和分析生活中的各类数据，从财务状况到娱乐活动，从待办事项到时间追踪，全方位掌握生活节奏。
+**AIO Life** 是一款 All-in-One 人生管理系统，致力于全方位记录、统计与分析生活数据。通过主动录入与第三方同步，实现人生痕迹的全面数字化，助您洞察规律，掌控生活节奏。
 
-## ✨ 功能特性 (Features)
+## 功能
 
-### 📊 仪表盘 (Dashboard)
-- **分析页 (Analytics)**: 数据概览与可视化分析
-- **工作台 (Workspace)**: 个人工作台与常用功能快捷入口
+### 首页
 
-### 💰 财务管理 (Finance)
-- **收支概览**: 财务状况一目了然，多维度统计
-- **支出管理 (Expense)**: 记录日常开销，支持支付宝账单导入
-- **收入管理 (Income)**: 记录各类收入来源
+- **当前状态**：数据来自于时迹
+- **今日运动**：查询本地数据库获取当日运动状态
+- **github**: 调用 github接口查询提交记录
+- **leetcode**: 查询每日一题是否完成，点击可跳转到对应题目
+- **扇贝单词**：调用扇贝单词的接口获取当天是否打卡
+- ![img.png](images/img.png)
 
-### 🏃 生活与健康 (Life & Health)
-- **运动记录 (Exercise)**: 追踪运动数据，保持健康生活
-- **设备管理 (Device)**: 个人数码设备管理
-- **纪念日 (Anniversary)**: 重要日子提醒与记录
-- **演出记录 (Performance)**: 演唱会、音乐节等演出观看记录
+### 任务中心
+- **待办**
 
-### 📺 娱乐生活 (Entertainment)
-- **Bilibili 视频**: 记录 Bilibili 视频观看进度与时长统计
+### 记录
+- **时迹**: 记录每天的时间花费
+![img_1.png](images/img_1.png)
 
-### ✅ 效率工具 (Productivity)
-- **待办事项 (Todo)**: 任务管理与追踪，支持看板视图
-- **时间追踪 (Time Tracker)**: 记录时间投入，分析时间利用率
-- **备忘录 (Memo)**: 快速记录日常琐事
-- **思考笔记 (Think)**: 随时记录灵感与想法 (闪念笔记)
+![img_2.png](images/img_2.png)
+- **运动**：记录日常运动
 
-### � 编程 (Coding)
-- **GitHub**: 个人 GitHub 数据统计与仓库概览
+- **视频观看**: 通过浏览器插件实现在 B站观看视频时自动同步指定的视频进度
+![img_6.png](images/img_6.png)
+- **闪念**: 随时记录灵感与想法
+- **笔记**: 随便写点啥
 
-### �🛠 系统管理 (System)
-- **字典管理**: 系统数据字典配置 (SysDict)
+### 财务中心
+- 概览
+![img_9.png](images/img_9.png)
+- 收入
+![img_8.png](images/img_8.png)
+- 支出
+![img_7.png](images/img_7.png)
+- 导入：支持支付宝和微信账单导入
+
+### 物品中心
+- **设备墙** 
+![img_5.png](images/img_5.png)
+
+### 编程 (Coding)
+- **GitHub**: GitHub 数据统计
+![img_3.png](images/img_3.png)
+- **Leetcode**：Leetcode数据统计
+![img_4.png](images/img_4.png)
+### 配置管理 (System)
+- **字典类型**: 维护字典类型
+- **字典数据**: 维护字典数据
+
+
+
+> 因为前端基本都是拿 AI 写的，所以样式不太统一。
+
+
 
 ## 🛠 技术栈 (Tech Stack)
 
