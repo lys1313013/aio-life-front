@@ -1,4 +1,4 @@
-# AIO Life (All In One Life)
+# AIO Life
 
 > 记录、统计、分析人生的所有数据
 
@@ -17,60 +17,81 @@
 - **github**: 调用 github接口查询提交记录
 - **leetcode**: 查询每日一题是否完成，点击可跳转到对应题目
 - **扇贝单词**：调用扇贝单词的接口获取当天是否打卡
-- ![img.png](images/img.png)
 
 ### 任务中心
 - **待办**
 
 ### 记录
 - **时迹**: 记录每天的时间花费
-![img_1.png](images/img_1.png)
-
-![img_2.png](images/img_2.png)
 - **运动**：记录日常运动
-
 - **视频观看**: 通过浏览器插件实现在 B站观看视频时自动同步指定的视频进度
-![img_6.png](images/img_6.png)
 - **闪念**: 随时记录灵感与想法
-- **笔记**: 随便写点啥
+- **笔记**: 随便记点啥
+- **里程碑**：记录生活关键节点
 
 ### 财务中心
-- 概览
-![img_9.png](images/img_9.png)
-- 收入
-![img_8.png](images/img_8.png)
-- 支出
-![img_7.png](images/img_7.png)
-- 导入：支持支付宝和微信账单导入
+- **概览**
+- **收入**
+- **支出**
+- **账单导入**：支持支付宝和微信账单导入
 
 ### 物品中心
-- **设备墙** 
-![img_5.png](images/img_5.png)
+- **设备墙**
 
-### 编程 (Coding)
-- **GitHub**: GitHub 数据统计
-![img_3.png](images/img_3.png)
-- **Leetcode**：Leetcode数据统计
-![img_4.png](images/img_4.png)
-### 配置管理 (System)
+### 编程看板
+- **GitHub 看板**: GitHub 数据统计
+- **Leetcode 看板**：Leetcode数据统计
+### 配置管理
 - **字典类型**: 维护字典类型
 - **字典数据**: 维护字典数据
 
 
+## 截图展示
+### 首页
 
-> 因为前端基本都是拿 AI 写的，所以样式不太统一。
+![img.png](images/img.png)
+
+### 时迹
+
+![img_1.png](images/img_1.png)
+![img_2.png](images/img_2.png)
+
+### 设备墙
+
+![img_5.png](images/img_5.png)
+
+### Github 
+
+![img_3.png](images/img_3.png)
+
+### leetcode
+
+![img_4.png](images/img_4.png)
+
+### 视频观看
+
+![img_6.png](images/img_6.png)
+
+### 财务概览
+
+![img_9.png](images/img_9.png)
+
+### 收入
+
+![img_8.png](images/img_8.png)
+
+### 支出
+
+![img_7.png](images/img_7.png)
 
 
-
-## 🛠 技术栈 (Tech Stack)
+## 技术栈
 
 - **Frontend**: [Vue 3](https://vuejs.org/), [Vite](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)
 - **UI Framework**: [Ant Design Vue](https://antdv.com/), [Tailwind CSS](https://tailwindcss.com/)
-- **State Management**: [Pinia](https://pinia.vuejs.org/)
-- **Mock Server**: [Nitro](https://nitro.unjs.io/)
 - **Charts**: [ECharts](https://echarts.apache.org/)
 
-## 🚀 快速开始 (Getting Started)
+## 快速开始
 
 ### 环境准备
 
@@ -100,3 +121,13 @@ pnpm run dev
 # 构建应用
 pnpm run build
 ```
+
+## 开源与贡献
+
+### 贡献流程
+
+1. **Fork 仓库** ➜ 点击 GitHub 右上角 `Fork` 按钮。
+2. **创建分支** ➜ 推荐使用有意义的分支名，如 `feature/data-scraper-optimization`。
+3. **提交代码** ➜ 确保代码可读性高，符合规范。
+4. **提交 Pull Request（PR）** ➜ 详细描述您的更改内容，并关联相关 issue（如有）。
+5. **等待审核** ➜ 维护者会进行代码审核并合并。
