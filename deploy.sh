@@ -57,9 +57,12 @@ echo "开始部署到服务器: $SERVER_IP"
 echo "本地文件: $LOCAL_ARCHIVE_PATH"
 echo "远程路径: /projects/front/$ARCHIVE_NAME"
 
+# 导出密码供 sshpass 使用，避免命令行参数传递密码的问题
+export SSHPASS="$PASSWORD"
+
 # 创建远程目录（如果不存在）
 echo "创建远程目录..."
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "$USERNAME@$SERVER_IP" \
+sshpass -e ssh -o StrictHostKeyChecking=no "$USERNAME@$SERVER_IP" \
     "mkdir -p /projects/front"
 
 # 上传压缩包
@@ -70,8 +73,8 @@ if rsync --help | grep -q "--info"; then
     PROGRESS_FLAG="--info=progress2"
 fi
 
-RSYNC_CMD="sshpass -p '$PASSWORD' rsync -e 'ssh -o StrictHostKeyChecking=no' $PROGRESS_FLAG '$LOCAL_ARCHIVE_PATH' '$USERNAME@$SERVER_IP:/projects/front/$ARCHIVE_NAME'"
-eval $RSYNC_CMD
+# 使用 sshpass -e 直接传递环境变量中的密码
+sshpass -e rsync -e 'ssh -o StrictHostKeyChecking=no' $PROGRESS_FLAG "$LOCAL_ARCHIVE_PATH" "$USERNAME@$SERVER_IP:/projects/front/$ARCHIVE_NAME"
 
 # 检查上传是否成功
 if [[ $? -ne 0 ]]; then
@@ -83,7 +86,7 @@ fi
 
 # 在远程服务器上解压文件
 echo "在远程服务器上解压文件..."
-sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no "$USERNAME@$SERVER_IP" \
+sshpass -e ssh -o StrictHostKeyChecking=no "$USERNAME@$SERVER_IP" \
     "cd /projects/front && tar -xzf $ARCHIVE_NAME && rm -f $ARCHIVE_NAME"
 
 # 检查解压是否成功
