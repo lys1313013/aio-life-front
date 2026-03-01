@@ -6,10 +6,15 @@ import { computed, h, ref } from 'vue';
 
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
+import { message } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
+
+import { registerApi, sendEmailCodeApi } from '#/api';
 
 defineOptions({ name: 'Register' });
 
 const loading = ref(false);
+const router = useRouter();
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -21,6 +26,60 @@ const formSchema = computed((): VbenFormSchema[] => {
       fieldName: 'username',
       label: $t('authentication.username'),
       rules: z.string().min(1, { message: $t('authentication.usernameTip') }),
+    },
+    {
+      component: 'VbenInput',
+      componentProps: {
+        placeholder: $t('authentication.email'),
+      },
+      fieldName: 'email',
+      label: $t('authentication.email'),
+      rules: z.string().email({ message: $t('authentication.emailTip') }),
+    },
+    {
+      component: 'VbenPinInput',
+      componentProps: {
+        codeLength: 6,
+        createText: (countdown: number) => {
+          const text =
+            countdown > 0
+              ? $t('authentication.sendText', [countdown])
+              : $t('authentication.sendCode');
+          return text;
+        },
+        placeholder: $t('authentication.code'),
+      },
+      dependencies: {
+        triggerFields: ['email'],
+        componentProps(values) {
+          return {
+            handleSendCode: async () => {
+              const { email } = values;
+              if (!email) {
+                message.warning($t('authentication.emailTip'));
+                throw new Error('Email is required');
+              }
+              // 简单校验邮箱格式
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                message.warning($t('authentication.emailTip'));
+                throw new Error('Email format is invalid');
+              }
+              try {
+                await sendEmailCodeApi(email);
+                message.success($t('authentication.sendCodeSuccess'));
+              } catch (error) {
+                // message.error($t('authentication.sendCodeFailed'));
+                throw error;
+              }
+            },
+          };
+        },
+      },
+      fieldName: 'code',
+      label: $t('authentication.code'),
+      rules: z.string().length(6, {
+        message: $t('authentication.codeTip', [6]),
+      }),
     },
     {
       component: 'VbenInputPassword',
@@ -81,9 +140,17 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit(value: Recordable<any>) {
-  // eslint-disable-next-line no-console
-  console.log('register submit:', value);
+async function handleSubmit(value: Recordable<any>) {
+  try {
+    loading.value = true;
+    await registerApi(value);
+    message.success($t('authentication.registerSuccess'));
+    router.push('/auth/login');
+  } catch (error) {
+    // console.error('register error:', error);
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 

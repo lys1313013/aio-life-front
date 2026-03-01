@@ -33,14 +33,6 @@ const [Form, formApi] = useVbenForm({
       },
     },
     {
-      component: 'InputPassword',
-      fieldName: 'password',
-      label: '密码',
-      componentProps: {
-        placeholder: '留空则不修改(新增默认123456)',
-      },
-    },
-    {
       component: 'Input',
       fieldName: 'nickname',
       label: '昵称',

@@ -21,6 +21,21 @@ export namespace AuthApi {
     oldPassword?: string;
     newPassword?: string;
   }
+
+  /** 注册接口参数 */
+  export interface RegisterParams {
+    username?: string;
+    password?: string;
+    email?: string;
+    code?: string;
+  }
+
+  /** 重置密码接口参数 */
+  export interface ResetPasswordParams {
+    email?: string;
+    password?: string;
+    code?: string;
+  }
 }
 
 /**
@@ -28,6 +43,34 @@ export namespace AuthApi {
  */
 export async function loginApi(data: AuthApi.LoginParams) {
   return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+}
+
+/**
+ * 注册
+ */
+export async function registerApi(data: AuthApi.RegisterParams) {
+  return requestClient.post('/auth/register', data);
+}
+
+/**
+ * 发送邮箱验证码
+ */
+export async function sendEmailCodeApi(email: string) {
+  return requestClient.get('/auth/sendEmailCode', { params: { email } });
+}
+
+/**
+ * 发送重置密码验证码
+ */
+export async function sendResetPasswordCodeApi(email: string) {
+  return requestClient.get('/auth/sendResetPasswordCode', { params: { email } });
+}
+
+/**
+ * 重置密码
+ */
+export async function resetPasswordApi(data: AuthApi.ResetPasswordParams) {
+  return requestClient.post('/auth/resetPassword', data);
 }
 
 /**

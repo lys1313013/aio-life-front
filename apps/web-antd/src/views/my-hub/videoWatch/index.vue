@@ -24,7 +24,8 @@ import {
 
 import {
   deleteBilibiliVideo,
-  insertOrUpdateBilibiliVideo,
+  insertBVideo,
+  updateBiVideo,
   parseBilibiliUrl,
   query,
   getStatusCount,
@@ -204,7 +205,11 @@ export default {
         message.error('请输入B站视频URL');
         return;
       }
-      await insertOrUpdateBilibiliVideo(this.newVideo);
+      if (this.newVideo.id) {
+        await updateBiVideo(this.newVideo.id, this.newVideo);
+      } else {
+        await insertBVideo(this.newVideo);
+      }
       message.success('保存成功');
       this.query();
       this.visible = false;
@@ -275,7 +280,7 @@ export default {
 
     async handleDelete(video) {
       try {
-        await deleteBilibiliVideo({ id: video.id });
+        await deleteBilibiliVideo(video.id);
         message.success('删除成功');
         await this.query();
       } catch (error) {
@@ -528,7 +533,7 @@ export default {
                   <!-- 删除按钮 (悬浮显示) -->
                   <div class="absolute top-1.5 sm:top-2.5 right-1.5 sm:right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 z-30">
                     <APopconfirm
-                      title="确定要删除这个视频吗？"
+                      title="确定要删除吗？"
                       @confirm="handleDelete(video)"
                     >
                       <AButton

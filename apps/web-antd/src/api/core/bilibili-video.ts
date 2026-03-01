@@ -48,9 +48,9 @@ export interface BilibiliVideo {
   };
   pages?: Array<{
     cid: number;
+    duration: number;
     page: number;
     part: string;
-    duration: number;
   }>;
 }
 
@@ -58,32 +58,39 @@ export interface BilibiliVideo {
  * 查询学习视频列表
  */
 export async function query(data: any) {
-  return await requestClient.post('/bilibili-video/query', data);
+  return await requestClient.post('/b-video/query', data);
 }
 
 /**
  * 查询各个状态的数量
  */
 export async function getStatusCount(data: any) {
-  return await requestClient.get('/bilibili-video/getStatusCount', data);
+  return await requestClient.get('/b-video/getStatusCount', data);
 }
 
 /**
- * 新增或更新学习视频
+ * 新增学习视频
  */
-export async function insertOrUpdateBilibiliVideo(data: BilibiliVideo) {
-  return await requestClient.post('/bilibili-video/insertOrUpdate', data);
+export async function insertBVideo(data: BilibiliVideo) {
+  return await requestClient.post('/b-video', data);
+}
+
+/**
+ * 更新学习视频
+ */
+export async function updateBiVideo(id: string, data: BilibiliVideo) {
+  return await requestClient.put(`/b-video/${id}`, data);
 }
 
 /**
  * 删除学习视频
  */
-export async function deleteBilibiliVideo(data: any) {
-  return await requestClient.post('/bilibili-video/delete', data);
+export async function deleteBilibiliVideo(id: string) {
+  return await requestClient.delete(`/b-video/${id}`);
 }
 
 export async function statistics(data: any) {
-  return await requestClient.get('/bilibili-video/statistics', data);
+  return await requestClient.get('/b-video/statistics', data);
 }
 
 /**

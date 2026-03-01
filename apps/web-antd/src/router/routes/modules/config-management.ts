@@ -7,6 +7,7 @@ const routes: RouteRecordRaw[] = [
       keepAlive: true,
       order: 9,
       title: '配置管理',
+      authority: ['admin'],
     },
     name: 'ConfigManagement',
     path: '/config-management',

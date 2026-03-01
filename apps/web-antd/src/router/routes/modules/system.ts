@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
       keepAlive: true,
       order: 10,
       title: '系统管理',
-      roles: ['admin'],
+      authority: ['admin'],
     },
     name: 'System',
     path: '/system',

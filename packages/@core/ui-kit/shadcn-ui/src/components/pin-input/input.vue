@@ -30,6 +30,7 @@ const modelValue = defineModel<string>();
 
 const inputValue = ref<string[]>([]);
 const countdown = ref(0);
+const isLoading = ref(false);
 
 const btnText = computed(() => {
   const countdownValue = countdown.value;
@@ -37,7 +38,7 @@ const btnText = computed(() => {
 });
 
 const btnLoading = computed(() => {
-  return loading || countdown.value > 0;
+  return loading || isLoading.value || countdown.value > 0;
 });
 
 watch(
@@ -59,13 +60,19 @@ function handleComplete(e: string[]) {
 async function handleSend(e: Event) {
   try {
     e?.preventDefault();
+    if (loading || countdown.value > 0 || isLoading.value) {
+      return;
+    }
+    isLoading.value = true;
+    await handleSendCode();
     countdown.value = maxTime;
     startCountdown();
-    await handleSendCode();
   } catch (error) {
     console.error('Failed to send code:', error);
     // Consider emitting an error event or showing a notification
     emit('sendError', error);
+  } finally {
+    isLoading.value = false;
   }
 }
 
