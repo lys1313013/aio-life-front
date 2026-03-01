@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'mdi:clipboard-text-clock-outline',
       title: '任务中心',
-      order: 750,
+      order: 1,
     },
     name: 'TaskCenter',
     path: '/task-center',

@@ -7,11 +7,12 @@ import dayjs from 'dayjs';
 
 import ContributionGraph from '../components/ContributionGraph.vue';
 import { useUserStore } from '@vben/stores';
+import { getUserBindListApi } from '#/api/core/user-bind';
 
 defineOptions({ name: 'LeetCode' });
 
 const userStore = useUserStore();
-const username = computed(() => userStore.userInfo?.leetcodeAcct);
+const username = ref('');
 
 const profileLoading = ref(false);
 const contestLoading = ref(false);
@@ -519,8 +520,19 @@ watch(graphData, () => {
   });
 });
 
-onMounted(() => {
-  fetchData();
+onMounted(async () => {
+  try {
+    const binds = await getUserBindListApi();
+    const leetcodeBind = binds.find(item => item.platform === 'leetcode');
+    if (leetcodeBind && leetcodeBind.platformUsername) {
+      username.value = leetcodeBind.platformUsername;
+      fetchData();
+    } else {
+      message.warning('未绑定 LeetCode 账号，无法显示相关信息');
+    }
+  } catch (e) {
+    console.error('获取绑定信息失败', e);
+  }
 });
 </script>
 

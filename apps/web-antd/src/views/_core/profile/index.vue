@@ -7,7 +7,7 @@ import { useUserStore } from '@vben/stores';
 import ProfileBase from './base-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
-import ProfileSecuritySetting from './security-setting.vue';
+import UserBindSetting from './user-bind.vue';
 
 const userStore = useUserStore();
 
@@ -19,17 +19,17 @@ const tabs = ref([
     value: 'basic',
   },
   {
-    label: '安全设置',
-    value: 'security',
+    label: '账号绑定',
+    value: 'bind',
   },
   {
     label: '修改密码',
     value: 'password',
   },
-  {
-    label: '新消息提醒',
-    value: 'notice',
-  },
+  // {
+  //   label: '新消息提醒',
+  //   value: 'notice',
+  // },
 ]);
 </script>
 <template>
@@ -41,7 +41,7 @@ const tabs = ref([
   >
     <template #content>
       <ProfileBase v-if="tabsValue === 'basic'" />
-      <ProfileSecuritySetting v-if="tabsValue === 'security'" />
+      <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />
     </template>

@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'lucide:package',
       keepAlive: true,
-      order: 3000,
+      order: 5,
       title: '物品中心',
     },
     name: 'Goods',

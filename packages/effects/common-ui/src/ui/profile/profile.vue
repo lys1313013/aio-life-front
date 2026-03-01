@@ -37,7 +37,7 @@ const tabsValue = defineModel<string>('modelValue');
             {{ userInfo?.realName ?? '' }}
           </span>
           <span class="text-foreground/80 text-sm">
-            {{ userInfo?.username ?? '' }}
+            {{ userInfo?.introduction || userInfo?.username || '' }}
           </span>
         </div>
         <Separator class="my-4" />

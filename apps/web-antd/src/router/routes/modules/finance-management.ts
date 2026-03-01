@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'mdi:finance',
       keepAlive: true,
-      order: 2000,
+      order: 4,
       title: '财务中心',
     },
     name: 'FinanceManagement',

@@ -30,14 +30,15 @@ import {
 import dayjs from 'dayjs';
 
 import { getGithubContributionStats } from '#/api';
+import { getUserBindListApi } from '#/api/core/user-bind';
 
 import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'GithubGraph' });
 
 const userStore = useUserStore();
-const username = computed(() => userStore.userInfo?.githubUsername);
-const githubToken = computed(() => userStore.userInfo?.githubToken);
+const username = ref('');
+const githubToken = ref('');
 const loading = ref(false);
 const error = ref(false);
 const contributionData = ref<any>(null);
@@ -395,21 +396,30 @@ watch(graphData, () => {
 });
 
 watch(
-  [username, githubToken],
-  async ([user]) => {
-    if (!user) {
-      if (!hasWarnedNoUsername) {
-        message.warning('未设置 Github 用户名，无法显示提交图');
-        hasWarnedNoUsername = true;
+  () => userStore.userInfo,
+  async () => {
+    try {
+      const binds = await getUserBindListApi(true); // 获取Token
+      const githubBind = binds.find(item => item.platform === 'github');
+      if (githubBind && githubBind.platformUsername) {
+        username.value = githubBind.platformUsername;
+        githubToken.value = githubBind.accessToken || '';
+        
+        hasWarnedNoUsername = false;
+        await Promise.all([
+          fetchContributions(username.value),
+          fetchRepositories(username.value),
+          fetchRecentActivity(username.value)
+        ]);
+      } else {
+        if (!hasWarnedNoUsername) {
+          message.warning('未绑定 Github 账号，无法显示相关信息');
+          hasWarnedNoUsername = true;
+        }
       }
-      return;
+    } catch (e) {
+      console.error('获取绑定信息失败', e);
     }
-    hasWarnedNoUsername = false;
-    await Promise.all([
-      fetchContributions(user),
-      fetchRepositories(user),
-      fetchRecentActivity(user)
-    ]);
   },
   { immediate: true },
 );

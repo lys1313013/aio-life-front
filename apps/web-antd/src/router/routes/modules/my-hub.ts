@@ -5,8 +5,8 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'ic:baseline-view-in-ar',
       keepAlive: true,
-      order: 800,
-      title: '足迹',
+      order: 2,
+      title: '记录',
     },
     name: 'Demos',
     path: '/my-hub',

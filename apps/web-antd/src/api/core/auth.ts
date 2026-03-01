@@ -16,6 +16,11 @@ export namespace AuthApi {
     data: string;
     status: number;
   }
+
+  export interface ChangePasswordParams {
+    oldPassword?: string;
+    newPassword?: string;
+  }
 }
 
 /**
@@ -48,4 +53,11 @@ export async function logoutApi() {
  */
 export async function getAccessCodesApi() {
   return requestClient.get<string[]>('/auth/codes');
+}
+
+/**
+ * 修改密码
+ */
+export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
+  return requestClient.post('/auth/change-password', data);
 }

@@ -6,9 +6,12 @@ import type { VbenFormSchema } from '#/adapter/form';
 import { computed, onMounted, ref } from 'vue';
 
 import { ProfileBaseSetting } from '@vben/common-ui';
+import { message } from 'ant-design-vue';
 
-import { getUserInfoApi } from '#/api';
+import { getUserInfoApi, type UpdateUserParams, updateUserInfoApi } from '#/api';
+import { useAuthStore } from '#/store/auth';
 
+const authStore = useAuthStore();
 const profileBaseSettingRef = ref();
 
 const MOCK_ROLES_OPTIONS: BasicOption[] = [
@@ -34,19 +37,9 @@ const formSchema = computed((): VbenFormSchema[] => {
       label: '昵称',
     },
     {
-      fieldName: 'leetcodeAcct',
+      fieldName: 'email',
       component: 'Input',
-      label: '力扣账号',
-    },
-    {
-      fieldName: 'shanbayAcct',
-      component: 'Input',
-      label: '扇贝账号',
-    },
-    {
-      fieldName: 'githubUsername',
-      component: 'Input',
-      label: 'github用户名',
+      label: '邮箱',
     },
     {
       fieldName: 'introduction',
@@ -56,11 +49,26 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
+const handleSubmit = async (values: any) => {
+  try {
+    await updateUserInfoApi(values as UpdateUserParams);
+    message.success('更新成功');
+    const data = await authStore.fetchUserInfo();
+    profileBaseSettingRef.value.getFormApi().setValues(data);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 onMounted(async () => {
   const data = await getUserInfoApi();
   profileBaseSettingRef.value.getFormApi().setValues(data);
 });
 </script>
 <template>
-  <ProfileBaseSetting ref="profileBaseSettingRef" :form-schema="formSchema" />
+  <ProfileBaseSetting
+    ref="profileBaseSettingRef"
+    :form-schema="formSchema"
+    @submit="handleSubmit"
+  />
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { VbenFormSchema } from '#/adapter/form';
+import { changePasswordApi } from '#/api/core/auth';
 
 import { computed, ref } from 'vue';
 
@@ -52,8 +53,13 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit() {
-  message.success('密码修改成功');
+function handleSubmit(values: any) {
+  changePasswordApi({
+    newPassword: values.newPassword,
+    oldPassword: values.oldPassword,
+  }).then(() => {
+    message.success('密码修改成功');
+  });
 }
 </script>
 <template>
