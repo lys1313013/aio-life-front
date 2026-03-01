@@ -38,7 +38,7 @@ const btnText = computed(() => {
 });
 
 const btnLoading = computed(() => {
-  return loading || isLoading.value || countdown.value > 0;
+  return loading || isLoading.value;
 });
 
 watch(
@@ -115,7 +115,7 @@ const pinType = 'text' as const;
         />
       </PinInputGroup>
       <VbenButton
-        :disabled="disabled"
+        :disabled="disabled || countdown > 0"
         :loading="btnLoading"
         class="flex-grow"
         size="lg"

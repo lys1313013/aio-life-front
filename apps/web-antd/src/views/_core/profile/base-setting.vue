@@ -40,6 +40,9 @@ const formSchema = computed((): VbenFormSchema[] => {
       fieldName: 'email',
       component: 'Input',
       label: '邮箱',
+      componentProps: {
+        disabled: true,
+      },
     },
     {
       fieldName: 'introduction',
