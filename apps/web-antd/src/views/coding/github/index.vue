@@ -41,6 +41,7 @@ const username = ref('');
 const githubToken = ref('');
 const loading = ref(false);
 const error = ref(false);
+const errorMessage = ref('');
 const contributionData = ref<any>(null);
 const graphData = ref<any[]>([]);
 const scrollContainer = ref<HTMLDivElement | null>(null);
@@ -121,9 +122,10 @@ async function fetchRepoStats(user: string, repos: any[]) {
 
   for (const repo of targetRepos) {
     try {
-      const headers = {
-        Authorization: `Bearer ${githubToken.value}`,
-      };
+      const headers: HeadersInit = {};
+      if (githubToken.value) {
+        headers.Authorization = `Bearer ${githubToken.value}`;
+      }
 
       const res = await fetch(
         `https://api.github.com/repos/${repo.full_name}/contributors?per_page=100`,
@@ -185,13 +187,17 @@ async function fetchRecentActivity(user: string) {
   activitiesLoading.value = true;
   recentActivities.value = [];
   try {
+    const headers: HeadersInit = {
+      Accept: 'application/vnd.github.v3+json',
+    };
+    if (githubToken.value) {
+      headers.Authorization = `Bearer ${githubToken.value}`;
+    }
+
     const res = await fetch(
       `https://api.github.com/search/commits?q=author:${user}&sort=committer-date&order=desc&per_page=20`,
       {
-        headers: {
-          Authorization: `Bearer ${githubToken.value}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
+        headers,
       },
     );
     if (!res.ok) throw new Error('Failed to fetch commits');
@@ -223,12 +229,15 @@ async function fetchRepositories(user: string) {
   reposLoading.value = true;
   repoList.value = [];
   try {
+    const headers: HeadersInit = {};
+    if (githubToken.value) {
+      headers.Authorization = `Bearer ${githubToken.value}`;
+    }
+
     const res = await fetch(
       `https://api.github.com/users/${user}/repos?sort=pushed&per_page=100`,
       {
-        headers: {
-          Authorization: `Bearer ${githubToken.value}`,
-        },
+        headers,
       },
     );
     if (!res.ok) throw new Error('Failed to fetch repos');
@@ -257,10 +266,12 @@ async function fetchContributions(user: string) {
     contributionData.value = { contributions: stats.contributions };
     // currentStreak and todayContribution will be updated in updateChart
     // but we can also use the values from stats directly if we want
-  } catch (err) {
+  } catch (err: any) {
     error.value = true;
     contributionData.value = null;
     console.error(err);
+    errorMessage.value = err.message || '无法加载数据，请检查网络连接。';
+    // message.warning(errorMessage.value); // Alert 已经显示了，这里就不弹窗了，或者保留弹窗也可以
   } finally {
     loading.value = false;
   }
@@ -461,7 +472,7 @@ watch(
           <template v-else-if="error">
             <div class="w-full py-12 text-center">
               <Alert
-                description="无法加载数据，请检查网络连接。"
+                :description="errorMessage"
                 message="加载失败"
                 show-icon
                 type="error"

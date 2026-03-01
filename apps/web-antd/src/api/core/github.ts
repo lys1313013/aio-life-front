@@ -30,16 +30,24 @@ export async function getGithubContributionStats(
       }
     `;
 
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch('https://api.github.com/graphql', {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ query }),
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('GitHub API 调用受限，请在个人中心绑定github Token');
+    }
     throw new Error('Failed to fetch GitHub data');
   }
 
