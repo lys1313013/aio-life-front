@@ -19,7 +19,7 @@ import {
 } from '#/constants/action';
 
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
-import TimeTrackerAddModal from '../../my-hub/time-tracker/components/TimeTrackerAddModal.vue';
+import TimeTrackerAddModal from '../../time-management/time-tracker/components/TimeTrackerAddModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
 
 interface OverviewItem {
@@ -242,7 +242,7 @@ const quickNavItems: WorkbenchQuickNavItem[] = [
     color: '#1fdaca',
     icon: 'mdi:history',
     title: '时迹',
-    url: '/my-hub/time-tracker',
+    url: '/time-management/time-tracker',
   },
   {
     color: '#bf0c2c',

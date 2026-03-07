@@ -27,6 +27,7 @@ import TimeSlotEditForm from './TimeSlotEditForm.vue';
 import { defaultConfig, getCategoryName } from '../config';
 import { generateId, isValidSlot, hasOverlap } from '../utils';
 import { recommendNext, save } from '#/api/core/time-tracker';
+import { listCategories } from '#/api/core/time-tracker-category';
 import type { TimeSlot, TimeSlotFormData } from '../types';
 
 const emit = defineEmits(['success']);
@@ -38,6 +39,24 @@ const existingSlots = ref<TimeSlot[]>([]);
 const isMobile = ref(window.innerWidth < 768);
 const categories = ref(defaultConfig.categories);
 
+// 加载分类配置
+const loadCategories = async () => {
+  try {
+    const data = await listCategories();
+    if (data) {
+      categories.value = data.map((cat) => ({
+        id: cat.code,
+        name: cat.name,
+        color: cat.color,
+        description: cat.description,
+        isTrackTime: !!cat.isTrackTime,
+      }));
+    }
+  } catch (error) {
+    console.error('加载分类配置失败:', error);
+  }
+};
+
 const title = computed(() => '新增');
 
 const updateIsMobile = () => {
@@ -46,6 +65,7 @@ const updateIsMobile = () => {
 
 onMounted(() => {
   window.addEventListener('resize', updateIsMobile);
+  loadCategories();
 });
 
 onUnmounted(() => {
@@ -58,7 +78,11 @@ const open = async () => {
   const currentDate = dayjs().format('YYYY-MM-DD');
 
   // Initialize new slot
-  const initialCategoryId = defaultConfig.defaultCategoryId;
+  let initialCategoryId = defaultConfig.defaultCategoryId;
+  if (categories.value.length > 0 && !categories.value.find(c => c.id === initialCategoryId)) {
+    initialCategoryId = categories.value[0]?.id || initialCategoryId;
+  }
+
   const newSlot: TimeSlot = {
     id: generateId(),
     startTime: 0,

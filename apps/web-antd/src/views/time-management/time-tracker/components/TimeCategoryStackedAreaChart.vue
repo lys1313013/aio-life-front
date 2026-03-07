@@ -1,9 +1,7 @@
 <template>
-  <Card class="chart-card">
-    <div class="chart-container">
-      <EchartsUI ref="chartRef" />
-    </div>
-  </Card>
+  <div class="chart-container">
+    <EchartsUI ref="chartRef" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -18,6 +16,7 @@ interface Props {
   categories: TimeSlotCategory[];
   selectedDate: dayjs.Dayjs;
   statMode: 'day' | 'week' | 'month';
+  selectedFilterCategoryIds?: string[] | null;
 }
 
 const props = defineProps<Props>();
@@ -29,8 +28,13 @@ const chartData = computed(() => {
   const xAxisData: string[] = [];
   const seriesData: Record<string, number[]> = {};
 
+  // 过滤分类列表，如果设置了过滤，只保留对应的分类
+  const filteredCategories = (props.selectedFilterCategoryIds && props.selectedFilterCategoryIds.length > 0)
+    ? props.categories.filter(c => props.selectedFilterCategoryIds?.includes(c.id))
+    : props.categories;
+
   // 初始化系列数据容器
-  props.categories.forEach(cat => {
+  filteredCategories.forEach(cat => {
     seriesData[cat.id] = [];
   });
 
@@ -41,17 +45,21 @@ const chartData = computed(() => {
     }
 
     // 初始化24小时的数据
-    props.categories.forEach(cat => {
+    filteredCategories.forEach(cat => {
       seriesData[cat.id] = new Array(24).fill(0);
     });
 
     // 填充数据
     props.timeSlots.forEach(slot => {
+      // 检查分类过滤
+      if (props.selectedFilterCategoryIds && props.selectedFilterCategoryIds.length > 0 && !props.selectedFilterCategoryIds.includes(slot.categoryId)) {
+        return;
+      }
+
       const startHour = Math.floor(slot.startTime / 60);
       const endHour = Math.floor(slot.endTime / 60);
       
-      // 简单的处理：将时长分配给开始小时（或者更精确的分割）
-      // 这里采用精确分割：如果跨越小时，分配给对应的小时
+      // 精确分割：如果跨越小时，分配给对应的小时
       for (let h = startHour; h <= endHour; h++) {
         const hourStart = h * 60;
         const hourEnd = (h + 1) * 60;
@@ -61,10 +69,6 @@ const chartData = computed(() => {
         
         if (overlapEnd > overlapStart) {
           const duration = overlapEnd - overlapStart;
-          // 确保 seriesData[slot.categoryId] 存在
-          if (!seriesData[slot.categoryId]) {
-            seriesData[slot.categoryId] = new Array(24).fill(0);
-          }
           const arr = seriesData[slot.categoryId];
           if (arr && arr[h] !== undefined) {
             arr[h] = (arr[h] || 0) + duration;
@@ -108,20 +112,20 @@ const chartData = computed(() => {
       }
 
       // 初始化当天数据
-      props.categories.forEach(cat => {
-        if (!seriesData[cat.id]) {
-          seriesData[cat.id] = [];
-        }
+      filteredCategories.forEach(cat => {
         const arr = seriesData[cat.id];
-        // 如果是新的一天，push 0
         if (arr && arr.length <= i) {
           arr.push(0);
         }
       });
 
       // 统计当天数据
-      // 优化：预先将slots按日期分组可能更快，但这里数据量不大，直接遍历也可
-      const daySlots = props.timeSlots.filter(slot => slot.date === dateStr);
+      const daySlots = props.timeSlots.filter(slot => {
+        const matchesDate = slot.date === dateStr;
+        const matchesCategory = !props.selectedFilterCategoryIds || props.selectedFilterCategoryIds.length === 0 || props.selectedFilterCategoryIds.includes(slot.categoryId);
+        return matchesDate && matchesCategory;
+      });
+
       daySlots.forEach(slot => {
         const duration = slot.endTime - slot.startTime + 1;
         const arr = seriesData[slot.categoryId];
@@ -134,16 +138,17 @@ const chartData = computed(() => {
 
   return {
     xAxisData,
-    seriesData
+    seriesData,
+    filteredCategories
   };
 });
 
 const renderChart = () => {
   if (!chartRef.value) return;
 
-  const { xAxisData, seriesData } = chartData.value;
+  const { xAxisData, seriesData, filteredCategories } = chartData.value;
 
-  const series = props.categories.map(category => {
+  const series = filteredCategories.map(category => {
     return {
       name: category.name,
       type: 'line',
@@ -160,10 +165,6 @@ const renderChart = () => {
       smooth: false
     };
   }).filter(s => {
-    // 只显示有数据的系列，或者显示所有？
-    // 堆叠图通常显示所有或者至少图例里有
-    // 这里为了整洁，只显示有数据的？不，堆叠图如果缺了中间的层会塌陷吗？
-    // Echarts处理得很好。保留所有分类可以让图例完整。
     const hasData = s.data && s.data.some((val: number) => val > 0);
     return hasData;
   });
@@ -193,14 +194,14 @@ const renderChart = () => {
       }
     },
     legend: {
-      data: props.categories.map(c => c.name),
       type: 'scroll',
       top: 0
     },
     grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
+      left: '20px',
+      right: '20px',
+      top: '40px',
+      bottom: '10px',
       containLabel: true
     },
     xAxis: [
@@ -214,7 +215,9 @@ const renderChart = () => {
       {
         type: 'value',
         name: '时长(分)',
-        max: props.statMode === 'day' ? 60 : 1450
+        // 如果没有选择特定分类，且不是日模式，固定为 1440 分钟（24小时）以展示全天占比
+        // 如果选择了特定分类，则让 ECharts 自动计算最大值，以便更清晰地观察趋势
+        max: (props.statMode !== 'day' && (!props.selectedFilterCategoryIds || props.selectedFilterCategoryIds.length === 0)) ? 1440 : undefined
       }
     ],
     series: series
@@ -224,7 +227,7 @@ const renderChart = () => {
 };
 
 watch(
-  [() => props.timeSlots, () => props.statMode, () => props.selectedDate],
+  [() => props.timeSlots, () => props.statMode, () => props.selectedDate, () => props.selectedFilterCategoryIds],
   () => {
     renderChart();
   },
@@ -237,12 +240,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.chart-card {
-  min-width: 400px;
-  flex: 2;
-}
 .chart-container {
-  height: 300px;
+  height: 100%;
   width: 100%;
 }
 </style>

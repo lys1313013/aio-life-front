@@ -20,7 +20,7 @@ interface Props {
   categories: TimeSlotCategory[];
   selectedDate: dayjs.Dayjs;
   statMode: 'month' | 'week';
-  selectedFilterCategoryId: null | string;
+  selectedFilterCategoryIds: null | string[];
 }
 
 const props = defineProps<Props>();
@@ -28,12 +28,9 @@ const props = defineProps<Props>();
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 
-const selectedFilterCategory = computed(() => {
-  if (!props.selectedFilterCategoryId) return null;
-  return (
-    props.categories.find((cat) => cat.id === props.selectedFilterCategoryId) ||
-    null
-  );
+const selectedFilterCategories = computed(() => {
+  if (!props.selectedFilterCategoryIds || props.selectedFilterCategoryIds.length === 0) return [];
+  return props.categories.filter((cat) => props.selectedFilterCategoryIds?.includes(cat.id));
 });
 
 // 按天统计时长
@@ -62,8 +59,9 @@ const dailyStatsData = computed(() => {
   // 统计每天的时长
   props.timeSlots.forEach((slot) => {
     if (
-      props.selectedFilterCategoryId &&
-      slot.categoryId !== props.selectedFilterCategoryId
+      props.selectedFilterCategoryIds &&
+      props.selectedFilterCategoryIds.length > 0 &&
+      !props.selectedFilterCategoryIds.includes(slot.categoryId)
     ) {
       return;
     }
@@ -155,7 +153,7 @@ const renderPieChart = () => {
 };
 
 watch(
-  [dailyStatsData, () => props.selectedFilterCategoryId],
+  [dailyStatsData, () => props.selectedFilterCategoryIds],
   () => {
     renderPieChart();
   },

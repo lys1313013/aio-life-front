@@ -14,6 +14,7 @@ interface Props {
   timeSlots: TimeSlot[];
   categories: TimeSlotCategory[];
   selectedDate: dayjs.Dayjs;
+  selectedFilterCategoryIds?: string[] | null;
 }
 
 const props = defineProps<Props>();
@@ -24,6 +25,10 @@ const { renderEcharts } = useEcharts(chartRef);
 const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
   props.timeSlots.forEach(slot => {
+    // 如果有分类过滤，且当前 slot 不属于过滤分类，则跳过
+    if (props.selectedFilterCategoryIds && props.selectedFilterCategoryIds.length > 0 && !props.selectedFilterCategoryIds.includes(slot.categoryId)) {
+      return;
+    }
     const duration = slot.endTime - slot.startTime + 1;
     durations[slot.categoryId] = (durations[slot.categoryId] || 0) + duration;
   });
@@ -130,20 +135,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card class="bar-chart-card">
-    <div class="bar-chart-container">
-      <EchartsUI ref="chartRef" />
-    </div>
-  </Card>
+  <div class="bar-chart-container">
+    <EchartsUI ref="chartRef" />
+  </div>
 </template>
 
 <style scoped>
-.bar-chart-card {
-  min-width: 400px;
-  flex: 2;
-}
 .bar-chart-container {
-  height: 300px;
+  height: 100%;
   width: 100%;
 }
 </style>

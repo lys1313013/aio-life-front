@@ -8,7 +8,7 @@
       <div class="header-right">
         <!-- 按钮区 -->
         <div class="actions">
-          <Button type="primary" @click="showCategoryModal = true" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
+          <Button type="primary" @click="router.push('/time-management/time-tracker/category-config')" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
             <template #icon><SettingOutlined /></template>
           </Button>
           <Button type="primary" danger @click="openDeleteConfirmModal" :disabled="loading" :size="isMobile ? 'small' : 'middle'">
@@ -18,6 +18,7 @@
             :categories="config.categories"
             :loading="loading"
             :size="isMobile ? 'small' : 'middle'"
+            multiple
             @filterChange="handleFilterChange"
           />
         </div>
@@ -257,11 +258,11 @@
                 <span class="stat-label-corner">时长</span>
                 <span class="stat-value-center">{{ formatDuration(totalDuration) }}</span>
               </div>
-              <div class="stat-square-card" v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId">
+              <div class="stat-square-card" v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryIds.length > 0">
                 <span class="stat-label-corner">平均</span>
                 <span class="stat-value-center">{{ formatDuration(Math.round(averageDuration)) }}</span>
               </div>
-              <div class="stat-square-card" v-if="!selectedFilterCategoryId" :style="freeTimeCardStyle">
+              <div class="stat-square-card" v-if="selectedFilterCategoryIds.length === 0" :style="freeTimeCardStyle">
                 <span class="stat-label-corner">空闲</span>
                 <span class="stat-value-center">{{ formatDuration(freeTime) }}</span>
               </div>
@@ -304,40 +305,43 @@
             </div>
             <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
             <DailyCategoryBarChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryIds.length > 0"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
               :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
             />
             <!-- 默认显示分类柱状图 -->
             <TimeCategoryBarChart
-              v-if="!selectedFilterCategoryId || statMode === 'day'"
+              v-if="selectedFilterCategoryIds.length === 0 || statMode === 'day'"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
             />
             <DailyStatsPieChart
-              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryId"
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryIds.length > 0"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
               :stat-mode="statMode"
-              :selected-filter-category-id="selectedFilterCategoryId"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
             />
             <TimeCategoryPieChart
-              v-if="statMode === 'day' && !selectedFilterCategoryId"
+              v-if="statMode === 'day' && selectedFilterCategoryIds.length === 0"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
             />
             <TimeCategoryStackedAreaChart
-              v-if="(statMode === 'week' || statMode === 'month') && !selectedFilterCategoryId"
+              v-if="(statMode === 'week' || statMode === 'month') && selectedFilterCategoryIds.length === 0"
               :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
               :stat-mode="statMode"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
             />
           </div>
         </div>
@@ -381,18 +385,7 @@
       </Spin>
     </Modal>
 
-    <!-- 分类管理模态框 -->
-    <Modal
-      v-model:open="showCategoryModal"
-      title="分类管理"
-      :width="isMobile ? '95vw' : 800"
-      :footer="null"
-    >
-      <CategoryManager
-        :categories="config.categories"
-        @update="handleCategoriesUpdate"
-      />
-    </Modal>
+
 
     <!-- 删除确认弹窗 -->
     <Modal
@@ -423,6 +416,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { SettingOutlined, PlusOutlined, LeftOutlined, RightOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import { Button, Modal, message, DatePicker, Spin, Radio, theme } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isoWeek from 'dayjs/plugin/isoWeek';
@@ -442,7 +436,6 @@ import {
   snapToGrid,
 } from './utils';
 import TimeSlotEditForm from './components/TimeSlotEditForm.vue';
-import CategoryManager from './components/CategoryManager.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
@@ -460,6 +453,7 @@ import {
   save,
   update,
 } from '#/api/core/time-tracker';
+import { listCategories } from '#/api/core/time-tracker-category';
 
 // 扩展dayjs插件
 dayjs.extend(weekOfYear);
@@ -467,6 +461,7 @@ dayjs.extend(isoWeek);
 
 const { useToken } = theme;
 const { token } = useToken();
+const router = useRouter();
 
 // 响应式数据
 const timelineRef = ref<HTMLElement>();
@@ -479,9 +474,8 @@ const mobileTimelineHeight = ref<number>(800);
 const timeSlots = ref<TimeSlot[]>([]);
 const previousPeriodTimeSlots = ref<TimeSlot[]>([]);
 const dragOperation = ref<DragOperation | null>(null);
-const selectedFilterCategoryId = ref<null | string>(null);
+const selectedFilterCategoryIds = ref<string[]>([]);
 const showEditModal = ref(false);
-const showCategoryModal = ref(false);
 const editingSlot = ref<null | TimeSlot>(null);
 const currentTime = ref(0);
 const selectedDate = ref(dayjs());
@@ -511,14 +505,42 @@ const showDeleteConfirmModal = ref(false);
 // 配置
 const config = ref(defaultConfig);
 
+// 加载分类配置
+const loadCategories = async () => {
+  try {
+    const data = await listCategories();
+    if (data) {
+      config.value.categories = data.map((cat) => ({
+        id: cat.code,
+        name: cat.name,
+        color: cat.color,
+        description: cat.description,
+        isTrackTime: !!cat.isTrackTime,
+      }));
+
+      // 如果当前默认分类不在新加载的分类中，则将第一个分类设为默认分类
+      if (
+        config.value.categories.length > 0 &&
+        !config.value.categories.find(
+          (cat) => cat.id === config.value.defaultCategoryId,
+        )
+      ) {
+        config.value.defaultCategoryId = config.value.categories[0]?.id || '';
+      }
+    }
+  } catch (error) {
+    console.error('加载分类配置失败:', error);
+  }
+};
+
 // 计算属性
 // 筛选后的时间槽
 const filteredTimeSlots = computed(() => {
-  if (!selectedFilterCategoryId.value) {
+  if (selectedFilterCategoryIds.value.length === 0) {
     return timeSlots.value;
   }
   return timeSlots.value.filter(
-    (slot) => slot.categoryId === selectedFilterCategoryId.value,
+    (slot) => selectedFilterCategoryIds.value.includes(slot.categoryId),
   );
 });
 
@@ -756,8 +778,9 @@ const editModalTitle = computed(() => {
 });
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   currentQuote.value = quotes[Math.floor(Math.random() * quotes.length)] || '';
+  await loadCategories();
   loadData();
   startCurrentTimeUpdater();
   updateIsMobile();
@@ -892,8 +915,8 @@ const cancelDelete = () => {
 };
 
 // 日期处理函数
-const handleFilterChange = (categoryId: null | string) => {
-  selectedFilterCategoryId.value = categoryId;
+const handleFilterChange = (categoryIds: string[] | null) => {
+  selectedFilterCategoryIds.value = categoryIds || [];
 };
 
 const handleDateChange = () => {
@@ -1035,8 +1058,8 @@ const getSlotStyle = (slot: TimeSlot) => {
   );
 
   // 高亮显示选中的分类
-  const isHighlighted = selectedFilterCategoryId.value
-    ? slot.categoryId === selectedFilterCategoryId.value
+  const isHighlighted = selectedFilterCategoryIds.value.length > 0
+    ? selectedFilterCategoryIds.value.includes(slot.categoryId)
     : false;
 
   // 判断是否是未来的时间段
@@ -1049,7 +1072,7 @@ const getSlotStyle = (slot: TimeSlot) => {
     top: `${top}px`,
     height: `${height}px`,
     backgroundColor: category?.color || token.value.colorFill,
-    opacity: selectedFilterCategoryId.value && !isHighlighted ? 0.3 : 1,
+    opacity: selectedFilterCategoryIds.value.length > 0 && !isHighlighted ? 0.3 : 1,
     zIndex: isHighlighted ? 10 : 1,
   };
 
@@ -1640,12 +1663,6 @@ const handleDeleteSlot = async (slotId: string) => {
 const handleEditCancel = () => {
   showEditModal.value = false;
   editingSlot.value = null;
-};
-
-const handleCategoriesUpdate = (categories: TimeSlotCategory[]) => {
-  config.value.categories = categories;
-  showCategoryModal.value = false;
-  message.success('分类更新成功');
 };
 
 // 工具函数

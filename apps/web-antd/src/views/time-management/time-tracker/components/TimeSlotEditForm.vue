@@ -182,7 +182,7 @@
       </Form.Item>
 
       <!-- 运动相关字段 -->
-      <template v-if="formState.categoryId === 'exercise'">
+      <template v-if="isExerciseCategory">
         <div style="margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span>运动明细</span>
@@ -304,6 +304,14 @@ const formState = ref<LocalFormState>({
 });
 
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
+
+// 判断是否为运动分类
+const isExerciseCategory = computed(() => {
+  const categoryId = formState.value.categoryId;
+  if (!categoryId) return false;
+  const category = props.categories.find((c) => c.id === categoryId);
+  return category?.name === '运动' || categoryId === 'exercise';
+});
 
 // 加载运动类型
 const loadExerciseTypes = async () => {
@@ -445,8 +453,12 @@ const initializeForm = (slot: TimeSlot) => {
   }
 
   // Ensure at least one empty row if category is exercise
-  if (slot.categoryId === 'exercise' && exercises.length === 0) {
-     exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
+  const isExercise =
+    slot.categoryId === 'exercise' ||
+    props.categories.find((c) => c.id === slot.categoryId)?.name === '运动';
+
+  if (isExercise && exercises.length === 0) {
+    exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
   }
 
   formState.value = {
@@ -482,13 +494,22 @@ watch(() => props.slot, (newSlot, oldSlot) => {
         formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
       }
       // 同步更新运动明细
-      if (JSON.stringify(newSlot.exercises) !== JSON.stringify(oldSlot.exercises)) {
-         if (newSlot.exercises && newSlot.exercises.length > 0) {
-           formState.value.exercises = JSON.parse(JSON.stringify(newSlot.exercises));
-         } else if (newSlot.categoryId === 'exercise' && formState.value.exercises.length === 0) {
-             // 如果是运动分类且没有明细，添加一行空明细
-             formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: undefined }];
-         }
+      if (
+        JSON.stringify(newSlot.exercises) !== JSON.stringify(oldSlot.exercises)
+      ) {
+        if (newSlot.exercises && newSlot.exercises.length > 0) {
+          formState.value.exercises = JSON.parse(
+            JSON.stringify(newSlot.exercises),
+          );
+        } else if (
+          isExerciseCategory.value &&
+          formState.value.exercises.length === 0
+        ) {
+          // 如果是运动分类且没有明细，添加一行空明细
+          formState.value.exercises = [
+            { exerciseTypeId: '', exerciseCount: undefined },
+          ];
+        }
       }
     }
   }
@@ -497,8 +518,10 @@ watch(() => props.slot, (newSlot, oldSlot) => {
 // 处理分类变化
 const handleCategoryChange = (categoryId: string) => {
   // 不再自动填充标题，展示逻辑会处理 fallback
-  if (categoryId === 'exercise' && formState.value.exercises.length === 0) {
-    formState.value.exercises = [{ exerciseTypeId: '', exerciseCount: undefined }];
+  if (isExerciseCategory.value && formState.value.exercises.length === 0) {
+    formState.value.exercises = [
+      { exerciseTypeId: '', exerciseCount: undefined },
+    ];
   }
 };
 

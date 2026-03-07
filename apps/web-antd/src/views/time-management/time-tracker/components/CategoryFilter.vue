@@ -9,7 +9,7 @@
               type="link" 
               size="small" 
               @click="clearFilter"
-              :disabled="!selectedFilterCategoryId"
+              :disabled="selectedFilterCategoryIds.length === 0"
             >
               清除筛选
             </Button>
@@ -19,12 +19,12 @@
               v-for="category in categories"
               :key="category.id"
               class="category-item"
-              :class="{ active: selectedFilterCategoryId === category.id }"
+              :class="{ active: isSelected(category.id) }"
               @click="toggleCategoryFilter(category.id)"
             >
               <div class="color-indicator" :style="{ backgroundColor: category.color }"></div>
               <span class="category-name">{{ category.name }}</span>
-              <CheckOutlined v-if="selectedFilterCategoryId === category.id" class="check-icon" />
+              <CheckOutlined v-if="isSelected(category.id)" class="check-icon" />
             </div>
           </div>
         </div>
@@ -33,12 +33,12 @@
         type="default" 
         :disabled="loading" 
         :size="size" 
-        :class="{ 'filter-active': selectedFilterCategoryId }"
+        :class="{ 'filter-active': selectedFilterCategoryIds.length > 0 }"
       >
         <template #icon>
           <FilterOutlined />
         </template>
-        <span v-if="selectedFilterCategoryId" class="filter-badge"></span>
+        <span v-if="selectedFilterCategoryIds.length > 0" class="filter-badge"></span>
       </Button>
     </Popover>
   </div>
@@ -54,34 +54,49 @@ interface Props {
   categories: TimeSlotCategory[];
   loading?: boolean;
   size?: 'small' | 'middle' | 'large';
+  multiple?: boolean;
 }
 
 interface Emits {
-  (e: 'filterChange', categoryId: string | null): void;
+  (e: 'filterChange', categoryIds: string[] | null): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  size: 'middle'
+  size: 'middle',
+  multiple: false
 });
 
 const emit = defineEmits<Emits>();
 
-const selectedFilterCategoryId = ref<string | null>(null);
+const selectedFilterCategoryIds = ref<string[]>([]);
+
+const isSelected = (categoryId: string) => {
+  return selectedFilterCategoryIds.value.includes(categoryId);
+};
 
 const toggleCategoryFilter = (categoryId: string) => {
-  if (selectedFilterCategoryId.value === categoryId) {
-    selectedFilterCategoryId.value = null;
-    emit('filterChange', null);
+  if (props.multiple) {
+    const index = selectedFilterCategoryIds.value.indexOf(categoryId);
+    if (index > -1) {
+      selectedFilterCategoryIds.value.splice(index, 1);
+    } else {
+      selectedFilterCategoryIds.value.push(categoryId);
+    }
   } else {
-    selectedFilterCategoryId.value = categoryId;
-    emit('filterChange', categoryId);
+    if (isSelected(categoryId)) {
+      selectedFilterCategoryIds.value = [];
+    } else {
+      selectedFilterCategoryIds.value = [categoryId];
+    }
   }
+  
+  emit('filterChange', selectedFilterCategoryIds.value.length > 0 ? selectedFilterCategoryIds.value : null);
 };
 
 // 暴露方法供父组件调用
 const clearFilter = () => {
-  selectedFilterCategoryId.value = null;
+  selectedFilterCategoryIds.value = [];
   emit('filterChange', null);
 };
 

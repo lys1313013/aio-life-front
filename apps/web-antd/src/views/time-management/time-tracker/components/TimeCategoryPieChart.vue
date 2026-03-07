@@ -1,9 +1,7 @@
 <template>
-  <Card class="pie-chart-card">
-    <div class="pie-chart-container">
-      <EchartsUI ref="chartRef" />
-    </div>
-  </Card>
+  <div class="pie-chart-container">
+    <EchartsUI ref="chartRef" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -19,6 +17,7 @@ interface Props {
   timeSlots: TimeSlot[];
   categories: TimeSlotCategory[];
   selectedDate: dayjs.Dayjs;
+  selectedFilterCategoryIds?: string[] | null;
 }
 
 const props = defineProps<Props>();
@@ -31,6 +30,10 @@ const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
 
   props.timeSlots.forEach(slot => {
+    // 如果有分类过滤，且当前 slot 不属于过滤分类，则跳过
+    if (props.selectedFilterCategoryIds && props.selectedFilterCategoryIds.length > 0 && !props.selectedFilterCategoryIds.includes(slot.categoryId)) {
+      return;
+    }
     const duration = slot.endTime - slot.startTime + 1;
     if (durations[slot.categoryId] !== undefined) {
       durations[slot.categoryId] = (durations[slot.categoryId] || 0) + duration;
@@ -88,8 +91,8 @@ const renderPieChart = () => {
       {
         name: '时间分类',
         type: 'pie' as const,
-        radius: ['30%', '80%'],
-        center: ['50%', '50%'],
+        radius: ['40%', '70%'],
+        center: ['40%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 10,
@@ -152,9 +155,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-
 .pie-chart-container {
-  height: 300px;
+  height: 100%;
   width: 100%;
 }
 </style>

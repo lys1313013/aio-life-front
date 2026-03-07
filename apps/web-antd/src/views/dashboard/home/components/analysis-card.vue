@@ -14,6 +14,8 @@ interface Props {
   totalValue?: number | string;
   value?: number | string;
   valueColor?: string;
+  diffValue?: string;
+  diffColor?: string;
 }
 
 defineOptions({
@@ -30,6 +32,8 @@ const props = withDefaults(defineProps<Props>(), {
   totalValue: 0,
   value: 0,
   valueColor: '',
+  diffValue: '',
+  diffColor: '',
 });
 
 const emit = defineEmits<{
@@ -77,14 +81,18 @@ function handleTitleClick(e: MouseEvent) {
           {{ value }}
         </span>
       </div>
+      <div v-if="diffValue" :style="{ color: diffColor }" class="flex items-center text-xs font-normal">
+        {{ diffValue }}
+      </div>
       <VbenIcon
+        v-else-if="icon"
         :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
         :icon="icon"
         class="size-6 flex-shrink-0 sm:size-8"
         @click="handleIconClick"
       />
     </div>
-    <div class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm">
+    <div v-if="totalTitle" class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm">
       <span>{{ totalTitle }}</span>
       <div class="flex items-center">
         <template v-if="loading">

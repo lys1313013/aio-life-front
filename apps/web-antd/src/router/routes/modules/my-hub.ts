@@ -5,25 +5,12 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'ic:baseline-view-in-ar',
       keepAlive: true,
-      order: 2,
+      order: 3,
       title: '记录',
     },
     name: 'Demos',
     path: '/my-hub',
     children: [
-      {
-        meta: {
-          icon: 'mdi:history',
-          title: '时迹',
-          backTop: false,
-          keepAlive: true,
-          maxIdleTime: 60,
-        },
-        name: 'timeTracker',
-        path: '/my-hub/time-tracker',
-        component: () => import('#/views/my-hub/time-tracker/index.vue'),
-      },
-
       {
         meta: {
           icon: 'mdi:run-fast',

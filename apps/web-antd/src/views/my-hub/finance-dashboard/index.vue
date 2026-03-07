@@ -60,7 +60,7 @@ const getCommonChartConfig = (title: string) => ({
     trigger: 'axis' as const,
     axisPointer: { type: 'shadow' as const }
   },
-  legend: { data: ['收入', '支出', '结余'] },
+  legend: {},
   grid: {
     left: '3%',
     right: '4%',
