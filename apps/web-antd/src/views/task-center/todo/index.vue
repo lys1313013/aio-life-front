@@ -188,6 +188,7 @@
           handle=".drag-handle"
           class="subtasks-list"
           ghost-class="sortable-ghost"
+          @end="onDetailDragEnd"
         >
           <template #item="{ element: detail, index }">
             <div class="subtask-item">
@@ -222,14 +223,61 @@
                 :bordered="false"
                 @change="handleDetailBlur(detail)"
               />
-              <a-button type="text" danger size="small" @click="removeDetail(index, detail)">
-                <template #icon><delete-outlined /></template>
-              </a-button>
+              <a-popconfirm
+                title="确定要删除这条明细吗?"
+                ok-text="确定"
+                cancel-text="取消"
+                @confirm="removeDetail(index, detail)"
+              >
+                <a-button type="text" danger size="small">
+                  <template #icon><delete-outlined /></template>
+                </a-button>
+              </a-popconfirm>
             </div>
           </template>
         </draggable>
       </div>
     </a-modal>
+
+    <!-- 添加明细任务弹窗 -->
+    <a-modal
+      v-model:open="addDetailModalVisible"
+      title="添加明细任务"
+      @ok="handleAddDetailOk"
+      @cancel="addDetailModalVisible = false"
+    >
+      <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px 0;">
+        <div>
+          <div style="margin-bottom: 5px; font-size: 12px; color: #666;">任务内容</div>
+          <a-input
+            v-model:value="newDetail.content"
+            placeholder="输入任务内容..."
+            auto-focus
+          />
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1">
+            <div style="margin-bottom: 5px; font-size: 12px; color: #666;">开始时间</div>
+            <a-date-picker
+              show-time
+              v-model:value="newDetail.startTime"
+              placeholder="开始时间"
+              style="width: 100%"
+            />
+          </div>
+          <div style="flex: 1">
+            <div style="margin-bottom: 5px; font-size: 12px; color: #666;">结束时间</div>
+            <a-date-picker
+              show-time
+              v-model:value="newDetail.endTime"
+              placeholder="结束时间"
+              style="width: 100%"
+            />
+          </div>
+        </div>
+      </div>
+    </a-modal>
+
     <a-modal
       v-model:open="editColumnModalVisible"
       title="编辑"
@@ -259,7 +307,7 @@ import { Button as AButton, Input as AInput, Textarea as ATextarea, Modal as AMo
 
 import { getTaskColumnList, saveColumn, updateColumn, deleteColumn, reSortColumn} from '#/api/core/todo';
 
-import { getTaskList, saveTask, updateTask, deleteTask, reSortTask, getTaskDetail, addTaskDetail, updateTaskDetail, deleteTaskDetail } from '#/api/core/todo';
+import { getTaskList, saveTask, updateTask, deleteTask, reSortTask, getTaskDetail, addTaskDetail, updateTaskDetail, deleteTaskDetail, reSortTaskDetail } from '#/api/core/todo';
 
 import dayjs from 'dayjs';
 import { PlusOutlined, DeleteOutlined, CheckCircleOutlined, EditOutlined, MoreOutlined, CalendarOutlined, ClockCircleOutlined, UserOutlined, HolderOutlined } from '@ant-design/icons-vue';
@@ -413,6 +461,15 @@ const onColumnDragEnd = (event: any) => {
   reSortColumn(sortedData);
 };
 
+const onDetailDragEnd = () => {
+  if (!editingTask.value.details) return;
+  const sortedData = editingTask.value.details.map((detail, index) => ({
+    id: detail.id,
+    sort: index + 1,
+  }));
+  reSortTaskDetail(sortedData);
+};
+
 const formatDate = (date: any) => {
   if (!date) return '';
   return dayjs(date).format('YYYY-MM-DD HH:mm');
@@ -428,6 +485,13 @@ const editingTask = ref<Task>({
   endTime: undefined,
   dueDate: undefined,
   createdAt: undefined,
+});
+
+const addDetailModalVisible = ref(false);
+const newDetail = ref<any>({
+  content: '',
+  startTime: undefined,
+  endTime: undefined,
 });
 
 // 打开编辑模态框
@@ -453,21 +517,33 @@ const openEditModal = async (task: Task) => {
   }
 };
 
-const addDetail = async () => {
+const addDetail = () => {
+  newDetail.value = {
+    content: '',
+    startTime: undefined,
+    endTime: undefined,
+  };
+  addDetailModalVisible.value = true;
+};
+
+const handleAddDetailOk = async () => {
+  if (!newDetail.value.content?.trim()) {
+    return;
+  }
+  
   if (!editingTask.value.details) {
     editingTask.value.details = [];
   }
-  
-  // 创建新明细
+
   try {
-    const newDetail = {
+    const res = await addTaskDetail({
+      ...newDetail.value,
       taskId: editingTask.value.id,
-      content: '',
       isCompleted: 0,
-    };
-    const res = await addTaskDetail(newDetail);
-    // 后端返回的res应该包含生成的id
-    editingTask.value.details.push(res);
+    });
+    // Add to the beginning of the list to solve the "find it at the bottom" issue
+    editingTask.value.details.unshift(res);
+    addDetailModalVisible.value = false;
   } catch (error) {
     console.error('添加明细失败', error);
   }

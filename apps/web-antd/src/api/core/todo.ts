@@ -65,6 +65,10 @@ export async function deleteTaskDetail(id: number) {
   return await requestClient.delete<void>(`/taskDetails/${id}`);
 }
 
+export async function reSortTaskDetail(data: any) {
+  return await requestClient.post('/taskDetails/reSort', data);
+}
+
 export async function saveTask(data: any) {
   return await requestClient.post('/tasks/save', data);
 }

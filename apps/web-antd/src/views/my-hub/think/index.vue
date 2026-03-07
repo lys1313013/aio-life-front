@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, toRaw } from 'vue';
 import { query as queryThink, save as saveThink, update as updateThink, deleteData as deleteThink } from '#/api/core/think';
-import { Button, Card, Modal, Input, Form, Empty, Space, message, Tag, Popconfirm } from 'ant-design-vue';
+import { Button, Card, Modal, Input, Form, Empty, Space, message, Tag, Popconfirm, Spin } from 'ant-design-vue';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 interface Event {
@@ -19,6 +19,7 @@ interface Thought {
 }
 
 const thoughts = ref<Thought[]>([]);
+const loading = ref(false);
 
 const showModal = ref(false);
 const currentEditId = ref<null | number>(null);
@@ -172,20 +173,27 @@ const formatDate = (dateString: string) => {
 
 // 生命周期
 const loadThoughts = async () => {
-  const res = await queryThink({ page: 1, pageSize: 50, condition: {} });
-  const list = (res && (res.items ?? res)) || [];
-  thoughts.value = list.map((t: any) => ({
-    ...t,
-    content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
-    events: Array.isArray(t?.events)
-      ? t.events.map((e: any) => ({
-          ...e,
-          create_time: e?.create_time ?? e?.createTime ?? new Date().toISOString(),
-        }))
-      : [],
-    date: t?.date ?? new Date().toISOString(),
-    createTime: t?.createTime ?? t?.create_time ?? new Date().toISOString(),
-  })).sort((a: Thought, b: Thought) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+  loading.value = true;
+  try {
+    const res = await queryThink({ page: 1, pageSize: 50, condition: {} });
+    const list = (res && (res.items ?? res)) || [];
+    thoughts.value = list.map((t: any) => ({
+      ...t,
+      content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
+      events: Array.isArray(t?.events)
+        ? t.events.map((e: any) => ({
+            ...e,
+            create_time: e?.create_time ?? e?.createTime ?? new Date().toISOString(),
+          }))
+        : [],
+      date: t?.date ?? new Date().toISOString(),
+      createTime: t?.createTime ?? t?.create_time ?? new Date().toISOString(),
+    })).sort((a: Thought, b: Thought) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
+  } catch (error) {
+    message.error('加载失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
 onMounted(async () => {
@@ -207,32 +215,34 @@ onMounted(async () => {
       </div>
     </div>
 
-    <template v-if="thoughts.length === 0">
-      <div class="empty-wrap">
-        <Empty description="还没有任何思考记录">
-          <Button type="primary" @click="openAddModal">
-            <template #icon><PlusOutlined /></template>
-            添加新思考
-          </Button>
-        </Empty>
-      </div>
-    </template>
-
-    <div v-else class="cards-grid">
-      <Card
-        v-for="thought in thoughts"
-        :key="thought.id"
-        hoverable
-        class="thought-card"
-        @click="openEditModal(thought.id)"
-      >
-        <div class="card-content">{{ thought.content }}</div>
-        <div class="card-footer">
-          <span class="card-date">{{ formatDate(thought.createTime) }}</span>
-          <Tag color="blue">事件 {{ (thought.events || []).length }}</Tag>
+    <Spin :spinning="loading">
+      <template v-if="thoughts.length === 0">
+        <div class="empty-wrap">
+          <Empty description="还没有任何思考记录">
+            <Button type="primary" @click="openAddModal">
+              <template #icon><PlusOutlined /></template>
+              添加新思考
+            </Button>
+          </Empty>
         </div>
-      </Card>
-    </div>
+      </template>
+
+      <div v-else class="cards-grid">
+        <Card
+          v-for="thought in thoughts"
+          :key="thought.id"
+          hoverable
+          class="thought-card"
+          @click="openEditModal(thought.id)"
+        >
+          <div class="card-content">{{ thought.content }}</div>
+          <div class="card-footer">
+            <span class="card-date">{{ formatDate(thought.createTime) }}</span>
+            <Tag color="blue">事件 {{ (thought.events || []).length }}</Tag>
+          </div>
+        </Card>
+      </div>
+    </Spin>
 
     <Modal v-model:open="showModal" :title="modalTitle" :footer="null" :maskClosable="false" @cancel="closeCardModal">
       <Form layout="vertical">
