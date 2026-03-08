@@ -6,16 +6,17 @@
       @end="onColumnDragEnd"
       item-key="id"
       class="columns-container"
+      handle=".column-header"
     >
       <template #item="{ element: column, index }">
-        <div class="kanban-column" :style="{ backgroundColor: token[getColumnStyle(index).bgToken as keyof typeof token] as string }">
+        <div class="kanban-column" :style="{ backgroundColor: getColumnStyle(column, index).bg }">
           <div class="column-header">
             <div class="header-left">
               <span 
                 class="column-title-tag"
                 :style="{ 
-                  backgroundColor: token[getColumnStyle(index).headerBgToken as keyof typeof token] as string,
-                  color: token[getColumnStyle(index).headerColorToken as keyof typeof token] as string
+                  backgroundColor: getColumnStyle(column, index).headerBg,
+                  color: getColumnStyle(column, index).headerColor
                 }"
                 @click="openEditColumnModal(column)"
               >
@@ -52,25 +53,6 @@
               <div class="kanban-task" :data-task-id="element.id" @click="openEditModal(element)">
                 <div class="task-header">
                   <span class="task-title">{{ element.content }}</span>
-                </div>
-                
-                <div class="task-meta">
-                  <div class="task-tags" v-if="element.detail">
-                     <span class="project-tag" :title="element.detail">
-                       {{ element.detail.length > 24 ? element.detail.substring(0, 24) + '...' : element.detail }}
-                     </span>
-                  </div>
-                  
-                  <div class="task-props">
-                     <div class="prop-item">
-                      <clock-circle-outlined class="prop-icon" />
-                      <span>未完成任务数: {{ element.unCompletedCount || 0 }}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="task-footer">
-                  <span class="due-date">{{ formatDate(element.dueDate) }}</span>
                   <a-popconfirm
                     title="确定要删除这个任务吗?"
                     ok-text="确定"
@@ -87,6 +69,20 @@
                       <template #icon><delete-outlined /></template>
                     </a-button>
                   </a-popconfirm>
+                </div>
+                
+                <div class="task-meta" v-if="element.detail">
+                  <div class="task-detail-text">
+                    {{ element.detail.length > 50 ? element.detail.substring(0, 50) + '...' : element.detail }}
+                  </div>
+                </div>
+
+                <div class="task-footer">
+                  <div class="footer-left">
+                    <clock-circle-outlined class="prop-icon" />
+                    <span class="uncompleted-count">待办: {{ element.unCompletedCount || 0 }}</span>
+                  </div>
+                  <span class="due-date">{{ formatDate(element.dueDate) }}</span>
                 </div>
               </div>
             </template>
@@ -340,27 +336,31 @@ const { useToken } = theme;
 const { token } = useToken();
 
 // 预定义列主题颜色（仿照设计图）
-  const columnThemes = [
-    { bg: 'colorFillQuaternary', headerBg: 'colorFillSecondary', headerColor: 'colorText', label: '待办' }, // 灰
-    { bg: 'colorFillQuaternary', headerBg: 'colorPrimaryBg', headerColor: 'colorPrimary', label: '进行中' },   // 蓝
-    { bg: 'colorFillQuaternary', headerBg: 'colorSuccessBg', headerColor: 'colorSuccess', label: '已完成' },   // 绿
-    { bg: 'colorFillQuaternary', headerBg: 'colorErrorBg', headerColor: 'colorError', label: '阻塞' },       // 红
-  ];
+const columnThemes = [
+  { bg: '#eff3f9', headerBg: '#dae5f5', headerColor: '#5285c5', label: '未开始' }, // 蓝
+  { bg: '#fff9e6', headerBg: '#fff2cc', headerColor: '#d4a017', label: '修复中' }, // 黄
+  { bg: '#f0f0ff', headerBg: '#e6e6ff', headerColor: '#6c5ce7', label: '验证中' }, // 紫
+  { bg: '#eff9ef', headerBg: '#dcf0dc', headerColor: '#4b9e4b', label: '已完成' }, // 绿
+];
 
-  // 获取列样式的辅助函数
-  const getColumnStyle = (index: number) => {
-    const themeIndex = index % columnThemes.length;
-    const currentTheme = columnThemes[themeIndex] ?? columnThemes[0];
-    // 使用 token 中的颜色值，确保支持夜间模式
-    // 注意：这里需要动态构建 style 对象，因为 v-bind 在 script 中不能直接用，
-    // 但我们可以利用 computed 或者直接在 template 中绑定 style
-    if (!currentTheme) return { bgToken: 'colorFillQuaternary', headerBgToken: 'colorFillSecondary', headerColorToken: 'colorText' };
-    return {
-      bgToken: currentTheme.bg,
-      headerBgToken: currentTheme.headerBg,
-      headerColorToken: currentTheme.headerColor
-    };
+// 获取列样式的辅助函数
+const getColumnStyle = (column: any, index: number) => {
+  const themeIndex = index % columnThemes.length;
+  const currentTheme = columnThemes[themeIndex] || columnThemes[0] || { bg: '#eff3f9', headerBg: '#dae5f5', headerColor: '#5285c5' };
+  
+  // 优先使用列自身配置的 bgColor
+  const bg = column.bgColor || currentTheme.bg;
+  
+  // 如果是自定义背景色，标题标签使用半透明遮罩以适应各种背景，否则使用主题配套颜色
+  const headerBg = column.bgColor ? 'rgba(0, 0, 0, 0.06)' : currentTheme.headerBg;
+  const headerColor = column.bgColor ? 'rgba(0, 0, 0, 0.65)' : currentTheme.headerColor;
+
+  return {
+    bg,
+    headerBg,
+    headerColor
   };
+};
 
 const columns = ref<Array<{
   id: number;
@@ -674,36 +674,48 @@ const handleEditColumnOk = async () => {
 .kanban-board {
   padding: 20px;
   height: calc(100vh - 40px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 自定义横向滚动条样式 */
+.kanban-board::-webkit-scrollbar {
+  height: 8px;
+}
+
+.kanban-board::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-board::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.kanban-board::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .columns-container {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   height: 100%;
-  padding: 10px;
-  cursor: move;
+  padding: 10px 10px 20px 10px; /* 底部留出滚动条空间 */
+  width: max-content;
+  min-width: 100%;
 }
 
 .kanban-column {
-  /* 添加拖拽时的视觉效果 */
-  transition: transform 0.2s ease;
-}
-
-/* 拖拽时的样式 */
-.kanban-column.sortable-ghost {
-  opacity: 0.5;
-}
-
-.kanban-column {
-  flex: 1;
+  flex: 0 0 300px;
   min-width: 300px;
-  max-width: 400px;
+  max-width: 300px;
   border-radius: 12px;
   padding: 12px;
   display: flex;
   flex-direction: column;
-  transition: background-color 0.3s;
-  /* border: 1px solid v-bind('token.colorSplit'); */ /* 移除边框，使用背景色区分 */
+  transition: all 0.3s;
 }
 
 .column-header {
@@ -711,7 +723,12 @@ const handleEditColumnOk = async () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  padding: 0 4px;
+  padding: 4px;
+  cursor: grab;
+}
+
+.column-header:active {
+  cursor: grabbing;
 }
 
 .header-left {
@@ -721,68 +738,57 @@ const handleEditColumnOk = async () => {
 }
 
 .column-title-tag {
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 14px;
-  color: v-bind('token.colorText');
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .column-title-tag:hover {
-  opacity: 0.8;
+  filter: brightness(0.9);
 }
 
 .task-count {
-  font-size: 14px;
-  color: v-bind('token.colorTextSecondary');
+  font-size: 13px;
+  font-weight: 500;
+  color: #8c8c8c;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
 }
 
 .more-btn {
-  color: v-bind('token.colorTextSecondary');
-  opacity: 0.6;
-}
-
-.more-btn:hover {
-  opacity: 1;
-  color: v-bind('token.colorText');
+  color: #8c8c8c;
 }
 
 .task-list {
   flex: 1;
-  min-height: 100px;
+  min-height: 50px;
   padding: 4px;
   overflow-y: auto;
 }
 
 .kanban-task {
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  background: v-bind('token.colorBgContainer'); /* 纯白背景 */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* 极淡的阴影 */
-  border: 1px solid transparent;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .kanban-task:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: v-bind('token.colorPrimary'); /* 悬浮显示主题色边框 */
-}
-
-.kanban-task:hover .delete-task-btn {
-  opacity: 1;
-}
-
-.delete-task-btn {
-  opacity: 0;
-  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .task-header {
@@ -794,74 +800,75 @@ const handleEditColumnOk = async () => {
 .task-title {
   font-weight: 600;
   font-size: 14px;
-  color: v-bind('token.colorText');
+  color: #262626;
   line-height: 1.5;
+  flex: 1;
+}
+
+.delete-task-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-left: 4px;
+}
+
+.kanban-task:hover .delete-task-btn {
+  opacity: 1;
 }
 
 .task-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 4px;
 }
 
-.project-tag {
-  display: inline-block;
-  padding: 2px 6px;
-  background: v-bind('token.colorFillQuaternary');
-  border-radius: 4px;
+.task-detail-text {
   font-size: 12px;
-  color: v-bind('token.colorTextSecondary');
-}
-
-.task-props {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.prop-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: v-bind('token.colorTextSecondary');
-}
-
-.prop-icon {
-  font-size: 14px;
-  opacity: 0.7;
+  color: #8c8c8c;
+  line-height: 1.6;
+  background: #f8f9fa;
+  padding: 6px 10px;
+  border-radius: 6px;
+  word-break: break-all;
 }
 
 .task-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: none; /* 移除分割线 */
-  padding-top: 0;
   margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8c8c8c;
+  font-size: 12px;
 }
 
 .due-date {
-  font-size: 12px;
-  color: v-bind('token.colorTextQuaternary');
+  font-size: 11px;
+  color: #bfbfbf;
 }
 
 .add-task-wrapper {
-  margin-top: 8px;
-  padding: 0 4px;
+  margin-top: 4px;
+  display: flex;
+  justify-content: center;
 }
 
 .simple-add-btn {
-  height: 40px;
-  border-radius: 6px;
-  color: v-bind('token.colorTextSecondary');
-  font-size: 16px;
-  transition: all 0.3s;
+  height: 32px;
+  color: #bfbfbf;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .simple-add-btn:hover {
-  background: v-bind('token.colorFillQuaternary');
-  color: v-bind('token.colorText');
+  background: rgba(0, 0, 0, 0.02);
+  color: #8c8c8c;
 }
 
 /* 隐藏不必要的样式 */
