@@ -8,7 +8,7 @@ import {
   EditOutlined,
   PlusOutlined,
 } from '@ant-design/icons-vue';
-import { Button, Popconfirm, message } from 'ant-design-vue';
+import { Button, Popconfirm, message, Badge } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getUserListApi, deleteUserApi } from '#/api/system/user';
@@ -22,6 +22,7 @@ interface RowType {
   role: string;
   email: string;
   createTime: string;
+  isOnline: boolean;
 }
 
 const [FormModalComponent, formModalApi] = useVbenModal({
@@ -57,6 +58,13 @@ const gridOptions: VxeGridProps<RowType> = {
     { field: 'nickname', title: '昵称' },
     { field: 'role', title: '角色' },
     { field: 'email', title: '邮箱' },
+    { field: 'createTime', title: '创建时间', width: 180 },
+    {
+      field: 'isOnline',
+      slots: { default: 'isOnline' },
+      title: '是否在线',
+      width: 100,
+    },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -82,7 +90,6 @@ const gridOptions: VxeGridProps<RowType> = {
     },
   },
   toolbarConfig: {
-    search: true,
     custom: true,
     slots: {
         tools: 'toolbar-tools',
@@ -123,6 +130,9 @@ function handleReload() {
           <PlusOutlined />
           新增用户
         </Button>
+      </template>
+      <template #isOnline="{ row }">
+        <Badge :color="row.isOnline ? 'green' : 'gray'" :text="row.isOnline ? '在线' : '离线'" />
       </template>
       <template #action="{ row }">
         <Button type="link" size="small" @click="openFormModal(row)">
