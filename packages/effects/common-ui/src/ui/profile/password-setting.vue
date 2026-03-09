@@ -49,8 +49,10 @@ defineExpose({
 <template>
   <div>
     <Form />
-    <VbenButton type="submit" class="mt-4" @click="handleSubmit">
-      更新密码
-    </VbenButton>
+    <div class="mt-4 flex justify-end">
+      <VbenButton type="submit" @click="handleSubmit">
+        更新密码
+      </VbenButton>
+    </div>
   </div>
 </template>

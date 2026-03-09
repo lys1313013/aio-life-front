@@ -8,6 +8,7 @@ import ProfileBase from './base-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import UserBindSetting from './user-bind.vue';
+import ApiKeySetting from './api-key-setting.vue';
 
 const userStore = useUserStore();
 
@@ -26,6 +27,10 @@ const tabs = ref([
     label: '修改密码',
     value: 'password',
   },
+  {
+    label: 'API Key',
+    value: 'api-key',
+  },
   // {
   //   label: '新消息提醒',
   //   value: 'notice',
@@ -43,6 +48,7 @@ const tabs = ref([
       <ProfileBase v-if="tabsValue === 'basic'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
+      <ApiKeySetting v-if="tabsValue === 'api-key'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />
     </template>
   </Profile>

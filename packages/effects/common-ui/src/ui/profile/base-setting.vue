@@ -49,8 +49,10 @@ defineExpose({
 <template>
   <div @keydown.enter.prevent="handleSubmit">
     <Form />
-    <VbenButton type="submit" class="mt-4" @click="handleSubmit">
-      更新基本信息
-    </VbenButton>
+    <div class="mt-4 flex justify-end">
+      <VbenButton type="submit" @click="handleSubmit">
+        更新基本信息
+      </VbenButton>
+    </div>
   </div>
 </template>

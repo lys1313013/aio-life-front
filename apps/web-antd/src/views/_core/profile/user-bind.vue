@@ -79,7 +79,7 @@ onMounted(() => {
 
 <template>
   <div class="p-4">
-    <div class="mb-4">
+    <div class="mb-4 flex justify-end">
       <Button type="primary" @click="handleAdd">新增绑定</Button>
     </div>
     
