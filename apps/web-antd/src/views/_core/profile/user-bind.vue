@@ -115,8 +115,21 @@ onMounted(() => {
         <Form.Item label="账号/用户名" required>
           <Input v-model:value="formState.platformUsername" />
         </Form.Item>
-        <Form.Item label="Access Token">
+        <Form.Item v-if="formState.platform === 'github'" label="Access Token">
           <Input.Password v-model:value="formState.accessToken" placeholder="若不修改请留空" />
+          <template #extra>
+            <span class="text-xs text-gray-500">
+              注：只需读取公开仓库的权限 (public_repo)。
+              <a
+                class="text-blue-500"
+                href="https://github.com/settings/tokens/new"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                生成token
+              </a>
+            </span>
+          </template>
         </Form.Item>
       </Form>
     </Modal>
