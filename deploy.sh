@@ -69,7 +69,7 @@ sshpass -e ssh -o StrictHostKeyChecking=no "$USERNAME@$SERVER_IP" \
 echo "上传压缩包..."
 # 使用 rsync 显示进度条
 PROGRESS_FLAG="--progress"
-if rsync --help | grep -q "--info"; then
+if rsync --help | grep -q -- "--info"; then
     PROGRESS_FLAG="--info=progress2"
 fi
 
