@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { NotificationItem } from '@vben/layouts';
 
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
@@ -15,71 +15,26 @@ import {
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
+import {
+  createMessageApi,
+  getMessageListApi,
+  markAllAsReadApi,
+  markAsReadApi,
+} from '#/api/core/message';
+import { getUserBasicInfoApi } from '#/api/core/user';
+import { formatDate } from '@vben/utils';
 import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
 
-const notifications = ref<NotificationItem[]>([
-  {
-    id: 1,
-    avatar: 'https://avatar.vercel.sh/vercel.svg?text=VB',
-    date: '3小时前',
-    isRead: true,
-    message: '描述信息描述信息描述信息',
-    title: '收到了 14 份新周报',
-  },
-  {
-    id: 2,
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '刚刚',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '朱偏右 回复了你',
-  },
-  {
-    id: 3,
-    avatar: 'https://avatar.vercel.sh/1',
-    date: '2024-01-01',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '曲丽丽 评论了你',
-  },
-  {
-    id: 4,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '代办提醒',
-  },
-  {
-    id: 5,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '跳转Workspace示例',
-    link: '/workspace',
-  },
-  {
-    id: 6,
-    avatar: 'https://avatar.vercel.sh/satori',
-    date: '1天前',
-    isRead: false,
-    message: '描述信息描述信息描述信息',
-    title: '跳转外部链接示例',
-    link: 'https://doc.vben.pro',
-  },
-]);
+const notifications = ref<NotificationItem[]>([]);
 
 const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
-const showDot = computed(() =>
-  notifications.value.some((item) => !item.isRead),
-);
+const showDot = computed(() => notifications.value.length > 0);
 
 const menus = computed(() => [
   {
@@ -126,23 +81,92 @@ async function handleLogout() {
   await authStore.logout(false);
 }
 
-function handleNoticeClear() {
-  notifications.value = [];
+async function fetchNotifications() {
+  try {
+    const messages = await getMessageListApi();
+    const myId = String(userStore.userInfo?.userId || userStore.userInfo?.id || '');
+    if (!myId) return;
+
+    // Filter unread messages for current user
+    const unreadMsgs = messages.filter(
+      (m) => String(m.receiverId) === myId && !m.isRead,
+    );
+
+    // Fetch sender avatars (with simple caching to avoid duplicate requests)
+    const avatarCache = new Map<string, string>();
+    const notificationsWithAvatar = await Promise.all(unreadMsgs.map(async (msg) => {
+      let avatarUrl = msg.avatar || '';
+      const senderId = String(msg.senderId);
+      
+      if (!avatarUrl && senderId) {
+        if (avatarCache.has(senderId)) {
+          avatarUrl = avatarCache.get(senderId) || '';
+        } else {
+          try {
+            const userInfo = await getUserBasicInfoApi(senderId);
+            avatarUrl = userInfo.avatar || '';
+            avatarCache.set(senderId, avatarUrl);
+          } catch {
+            // Ignore error, keep empty avatar
+            avatarCache.set(senderId, '');
+          }
+        }
+      }
+
+      return {
+        id: msg.id,
+        avatar: avatarUrl,
+        date: formatDate(msg.createTime),
+        isRead: false,
+        message: msg.content,
+        title: msg.title || `User ${msg.senderId}`,
+        link: `/message?userId=${msg.senderId}`,
+      };
+    }));
+
+    notifications.value = notificationsWithAvatar;
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+  }
 }
 
-function markRead(id: number | string) {
-  const item = notifications.value.find((item) => item.id === id);
-  if (item) {
-    item.isRead = true;
+// Fetch on mount
+onMounted(() => {
+  fetchNotifications();
+  // Poll every 30 seconds
+  setInterval(fetchNotifications, 30000);
+});
+
+async function handleNoticeClear() {
+  try {
+    await markAllAsReadApi();
+    await fetchNotifications();
+  } catch (error) {
+    console.error('Failed to clear notifications:', error);
+  }
+}
+
+async function markRead(id: number | string) {
+  try {
+    await markAsReadApi(String(id));
+    await fetchNotifications();
+  } catch (error) {
+    console.error('Failed to mark as read:', error);
   }
 }
 
 function remove(id: number | string) {
+  // Just remove from list locally for now, as there's no delete API that fits "remove from notification list" without deleting message
   notifications.value = notifications.value.filter((item) => item.id !== id);
 }
 
-function handleMakeAll() {
-  notifications.value.forEach((item) => (item.isRead = true));
+async function handleMakeAll() {
+  try {
+    await markAllAsReadApi();
+    await fetchNotifications();
+  } catch (error) {
+    console.error('Failed to mark all as read:', error);
+  }
 }
 watch(
   () => ({
@@ -183,9 +207,11 @@ watch(
         :dot="showDot"
         :notifications="notifications"
         @clear="handleNoticeClear"
-        @read="(item) => item.id && markRead(item.id)"
-        @remove="(item) => item.id && remove(item.id)"
         @make-all="handleMakeAll"
+        @read="(item) => item.id && markRead(item.id)"
+        @refresh="fetchNotifications"
+        @remove="(item) => item.id && remove(item.id)"
+        @view-all="() => router.push('/message')"
       />
     </template>
     <template #extra>

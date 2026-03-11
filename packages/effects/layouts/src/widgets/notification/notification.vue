@@ -39,6 +39,7 @@ const emit = defineEmits<{
   read: [NotificationItem];
   remove: [NotificationItem];
   viewAll: [];
+  refresh: [];
 }>();
 
 const router = useRouter();
@@ -46,6 +47,13 @@ const [open, toggle] = useToggle();
 
 function close() {
   open.value = false;
+}
+
+function handleBellClick() {
+  toggle();
+  if (open.value) {
+    emit('refresh');
+  }
 }
 
 function handleViewAll() {
@@ -92,7 +100,7 @@ function navigateTo(
     content-class="relative right-2 w-[360px] p-0"
   >
     <template #trigger>
-      <div class="flex-center mr-2 h-full" @click.stop="toggle()">
+      <div class="flex-center mr-2 h-full" @click.stop="handleBellClick()">
         <VbenIconButton class="bell-button text-foreground relative">
           <span
             v-if="dot"
