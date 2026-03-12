@@ -5,7 +5,10 @@ import { ref, watch } from 'vue';
 
 import { formatDate, formatDateTime } from '@vben/utils';
 
-import { Avatar, Button, Input } from 'ant-design-vue';
+import { Avatar, Button, Input, Modal, message } from 'ant-design-vue';
+import { ArrowLeftOutlined } from '@ant-design/icons-vue';
+
+import { deleteMessageApi } from '#/api/core/message';
 
 const props = defineProps<{
   messages: Message[];
@@ -14,20 +17,63 @@ const props = defineProps<{
   myId: string;
   myAvatar?: string;
   loading?: boolean;
+  isMobile?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'send', content: string): void;
+  (e: 'delete', id: string): void;
+  (e: 'back'): void;
 }>();
 
 const inputContent = ref('');
 const listRef = ref<HTMLDivElement>();
+
+const contextMenuVisible = ref(false);
+const contextMenuPosition = ref({ x: 0, y: 0 });
+const selectedMessage = ref<Message | null>(null);
+const deleteModalVisible = ref(false);
+const deleteLoading = ref(false);
 
 const handleSend = () => {
   if (!inputContent.value.trim()) return;
   emit('send', inputContent.value);
   inputContent.value = '';
 };
+
+const handleContextMenu = (e: MouseEvent, msg: Message) => {
+  e.preventDefault();
+  selectedMessage.value = msg;
+  contextMenuPosition.value = { x: e.clientX, y: e.clientY };
+  contextMenuVisible.value = true;
+};
+
+const closeContextMenu = () => {
+  contextMenuVisible.value = false;
+};
+
+const openDeleteConfirm = () => {
+  closeContextMenu();
+  deleteModalVisible.value = true;
+};
+
+const handleDeleteMessage = async () => {
+  if (!selectedMessage.value) return;
+
+  deleteLoading.value = true;
+  try {
+    await deleteMessageApi(selectedMessage.value.id);
+    message.success('删除成功');
+    emit('delete', selectedMessage.value.id);
+    deleteModalVisible.value = false;
+  } catch (error) {
+    message.error('删除失败');
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
+document.addEventListener('click', closeContextMenu);
 
 // Auto scroll to bottom when messages change
 watch(
@@ -48,6 +94,9 @@ watch(
     <!-- Header -->
     <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
       <div class="flex items-center gap-3">
+        <Button v-if="isMobile" type="text" class="!px-0 mr-2" @click="emit('back')">
+          <ArrowLeftOutlined class="text-lg" />
+        </Button>
         <span class="font-medium text-lg">{{ targetName || `User ${targetId}` }}</span>
       </div>
       <div class="text-gray-400 text-sm">
@@ -90,6 +139,7 @@ watch(
                   ? 'bg-[#95EC69] text-black border border-[#7CD958]'
                   : 'bg-white text-gray-800 border border-gray-100'
               "
+              @contextmenu="handleContextMenu($event, msg)"
             >
               {{ msg.content }}
             </div>
@@ -113,7 +163,7 @@ watch(
     </div>
 
     <!-- Input Area -->
-    <div class="p-4 bg-white border-t border-gray-100">
+    <div class="bg-white border-t border-gray-100" :class="isMobile ? 'p-2' : 'p-4'">
       <div class="relative">
         <Input.TextArea
           v-model:value="inputContent"
@@ -131,5 +181,35 @@ watch(
         </div>
       </div>
     </div>
+
+    <!-- Context Menu -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenuVisible"
+        class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]"
+        :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+        @click.stop
+      >
+        <div
+          class="px-4 py-2 text-sm text-red-500 cursor-pointer hover:bg-red-50"
+          @click="openDeleteConfirm"
+        >
+          删除
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Delete Confirmation Modal -->
+    <Modal
+      v-model:open="deleteModalVisible"
+      title="确认删除"
+      :confirm-loading="deleteLoading"
+      @ok="handleDeleteMessage"
+    >
+      <p>确定要删除这条消息吗？删除后无法恢复。</p>
+    </Modal>
   </div>
 </template>
+
+<style scoped>
+</style>

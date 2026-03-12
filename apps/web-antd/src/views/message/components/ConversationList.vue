@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Message } from '#/api/core/message';
 
-import { computed } from 'vue';
+import { computed, nextTick, watch } from 'vue';
 
 import { formatDate } from '@vben/utils';
 
@@ -28,6 +28,22 @@ const emit = defineEmits<{
 const handleSelect = (userId: string) => {
   emit('select', userId);
 };
+
+// Scroll to selected user
+watch(
+  () => props.selectedUserId,
+  (newId) => {
+    if (newId) {
+      nextTick(() => {
+        const el = document.getElementById(`conversation-${newId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -37,6 +53,7 @@ const handleSelect = (userId: string) => {
       <List item-layout="horizontal" :data-source="conversations">
         <template #renderItem="{ item }">
           <ListItem
+            :id="`conversation-${item.userId}`"
             class="cursor-pointer hover:bg-gray-50 transition-colors px-4 !py-3"
             :class="{ 'bg-blue-50': selectedUserId === item.userId }"
             @click="handleSelect(item.userId)"

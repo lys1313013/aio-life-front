@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       icon: 'ant-design:message-outlined',
       title: '消息中心',
       hideInMenu: true,
+      fullPathKey: false,
     },
   },
 ];

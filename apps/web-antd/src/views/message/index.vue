@@ -4,7 +4,10 @@ import type { Message } from '#/api/core/message';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
+import { usePreferences } from '@vben/preferences';
 import { useUserStore } from '@vben/stores';
+
+import { message as antMessage } from 'ant-design-vue';
 
 import {
   createMessageApi,
@@ -20,10 +23,12 @@ import ConversationList from './components/ConversationList.vue';
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const { isMobile } = usePreferences();
 
 const messages = ref<Message[]>([]);
 const loading = ref(false);
 const activeMenu = ref('my-messages');
+const tempConversation = ref<any>(null);
 
 // Mock menu items
 const menuItems = [
@@ -64,13 +69,64 @@ const markConversationAsRead = async (senderId: string) => {
   }
 };
 
+const checkUser = async (userId: string) => {
+  const existing = messages.value.some(
+    (m) =>
+      String(m.senderId) === userId || String(m.receiverId) === userId,
+  );
+
+  if (existing) {
+    tempConversation.value = null;
+    return;
+  }
+
+  // Try cache first
+  if (userCache.value.has(userId)) {
+    const info = userCache.value.get(userId);
+    tempConversation.value = {
+      userId,
+      username: info?.nickname || `User ${userId}`,
+      avatar: info?.avatar,
+      lastMessage: '',
+      time: new Date().toISOString(),
+      unreadCount: 0,
+    };
+    return;
+  }
+
+  try {
+    const info = await getUserBasicInfoApi(userId);
+    if (info) {
+      userCache.value.set(userId, {
+        nickname: info.nickname,
+        avatar: info.avatar,
+      });
+      tempConversation.value = {
+        userId,
+        username: info.nickname || `User ${userId}`,
+        avatar: info.avatar,
+        lastMessage: '',
+        time: new Date().toISOString(),
+        unreadCount: 0,
+      };
+    } else {
+      throw new Error('User not found');
+    }
+  } catch (error) {
+    antMessage.error('用户不存在');
+    router.replace({ query: { ...route.query, userId: undefined } });
+    tempConversation.value = null;
+  }
+};
+
 // Fetch messages
 const fetchMessages = async () => {
   try {
     loading.value = true;
     messages.value = await getMessageListApi();
     if (selectedUserId.value) {
-      markConversationAsRead(selectedUserId.value);
+      await markConversationAsRead(selectedUserId.value);
+      await checkUser(selectedUserId.value);
     }
   } finally {
     loading.value = false;
@@ -78,12 +134,18 @@ const fetchMessages = async () => {
 };
 
 const userCache = ref(new Map<string, { nickname: string; avatar: string }>());
+const fetchingUserIds = new Set<string>();
+
+// Cache for conversation objects to prevent unnecessary re-renders
+const conversationCache = new Map<string, any>();
 
 // Fetch user info helper
-const getUserInfo = async (userId: string) => {
-  if (userCache.value.has(userId)) {
-    return userCache.value.get(userId);
+const fetchUserInfo = async (userId: string) => {
+  if (userCache.value.has(userId) || fetchingUserIds.has(userId)) {
+    return;
   }
+
+  fetchingUserIds.add(userId);
   try {
     const info = await getUserBasicInfoApi(userId);
     const data = {
@@ -91,9 +153,11 @@ const getUserInfo = async (userId: string) => {
       avatar: info.avatar || '',
     };
     userCache.value.set(userId, data);
-    return data;
   } catch (e) {
-    return { nickname: `User ${userId}`, avatar: '' };
+    // Cache basic info on error to prevent retry loops
+    userCache.value.set(userId, { nickname: `User ${userId}`, avatar: '' });
+  } finally {
+    fetchingUserIds.delete(userId);
   }
 };
 
@@ -122,24 +186,63 @@ const conversations = computed(() => {
     const unreadCount = msgs.filter((m) => String(m.receiverId) === String(myId.value) && !m.isRead).length;
 
     // Trigger fetch user info if not in cache
-    if (!userCache.value.has(userId)) {
-      getUserInfo(userId);
-    }
     const userInfo = userCache.value.get(userId);
+    
+    const username = userInfo?.nickname || `User ${userId}`;
+    const avatar = userInfo?.avatar;
+    const lastMessage = lastMsg.content;
+    const time = lastMsg.createTime;
 
-    return {
+    // Check cache to return stable object reference
+    const cached = conversationCache.get(userId);
+    if (
+      cached &&
+      cached.username === username &&
+      cached.avatar === avatar &&
+      cached.lastMessage === lastMessage &&
+      cached.time === time &&
+      cached.unreadCount === unreadCount
+    ) {
+      return cached;
+    }
+
+    const newConversation = {
       userId,
-      username: userInfo?.nickname || `User ${userId}`,
-      avatar: userInfo?.avatar,
-      lastMessage: lastMsg.content,
-      time: lastMsg.createTime,
+      username,
+      avatar,
+      lastMessage,
+      time,
       unreadCount,
     };
+    conversationCache.set(userId, newConversation);
+    return newConversation;
   }).filter((item) => item !== null);
 
+  if (
+    tempConversation.value &&
+    !list.some((c) => c?.userId === tempConversation.value.userId)
+  ) {
+    list.push(tempConversation.value);
+  }
+
   // Sort conversations by last message time
-  return list.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  return list.sort(
+    (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
+  );
 });
+
+// Watch conversations to fetch user info
+watch(
+  () => conversations.value,
+  (newConversations) => {
+    newConversations.forEach((c) => {
+      if (!userCache.value.has(c.userId)) {
+        fetchUserInfo(c.userId);
+      }
+    });
+  },
+  { immediate: true, deep: true },
+);
 
 // Current chat messages
 const currentChatMessages = computed(() => {
@@ -158,14 +261,18 @@ const handleSelectConversation = (userId: string) => {
   router.push({ query: { ...route.query, userId } });
 };
 
+const handleBack = () => {
+  router.push({ query: { ...route.query, userId: undefined } });
+};
+
 watch(
   () => selectedUserId.value,
-  (newId) => {
+  async (newId) => {
     if (newId) {
-      markConversationAsRead(newId);
+      await markConversationAsRead(newId);
+      await checkUser(newId);
     }
   },
-  { immediate: true }
 );
 
 // Handle sending message
@@ -176,8 +283,8 @@ const handleSendMessage = async (content: string) => {
     const newMessages = await createMessageApi({
       receiverId: selectedUserId.value,
       content,
-      title: 'Chat Message', // Optional title
-      type: 1, // Assume 1 is chat
+      title: 'Chat Message',
+      type: 1,
     });
     
     if (newMessages) {
@@ -186,10 +293,15 @@ const handleSendMessage = async (content: string) => {
       } else {
         messages.value.push(newMessages);
       }
+      tempConversation.value = null;
     }
   } catch (error) {
     console.error('Failed to send message:', error);
   }
+};
+
+const handleDeleteMessage = (id: string) => {
+  messages.value = messages.value.filter((m) => m.id !== id);
 };
 
 // Initial fetch
@@ -202,10 +314,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-[calc(100vh-100px)] p-4">
-    <div class="flex h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+  <div :class="[isMobile ? 'h-[calc(100vh-48px)] p-0' : 'h-[calc(100vh-100px)] p-4']">
+    <div 
+      class="flex h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
+      :class="{'rounded-none border-0': isMobile}"
+    >
       <!-- Left Sidebar: Menu -->
-      <div class="w-48 bg-gray-50/50 border-r border-gray-100 flex flex-col py-2">
+      <div v-if="!isMobile" class="w-48 bg-gray-50/50 border-r border-gray-100 flex flex-col py-2">
         <div class="px-4 py-3 font-bold text-lg text-gray-800 flex items-center gap-2">
            <span class="i-ant-design:message-filled text-blue-500"></span>
            消息中心
@@ -229,7 +344,11 @@ onMounted(() => {
       </div>
 
       <!-- Middle Sidebar: Conversation List -->
-      <div class="w-72 border-r border-gray-100 flex flex-col bg-white">
+      <div 
+        v-if="!isMobile || !selectedUserId" 
+        class="border-r border-gray-100 flex flex-col bg-white"
+        :class="isMobile ? 'flex-1 w-full' : 'w-72'"
+      >
         <ConversationList
           :conversations="conversations"
           :selected-user-id="selectedUserId"
@@ -238,7 +357,7 @@ onMounted(() => {
       </div>
 
       <!-- Right Content: Chat Window -->
-      <div class="flex-1 flex flex-col bg-white">
+      <div v-if="!isMobile || selectedUserId" class="flex-1 flex flex-col bg-white">
         <!-- Debug Info (Temporary) -->
         <div v-if="false" class="bg-yellow-100 p-2 text-xs">
           myId: {{ myId }} ({{ typeof myId }}) <br>
@@ -255,7 +374,10 @@ onMounted(() => {
           :my-id="myId"
           :my-avatar="userStore.userInfo?.avatar"
           :loading="loading"
+          :is-mobile="isMobile"
           @send="handleSendMessage"
+          @delete="handleDeleteMessage"
+          @back="handleBack"
         />
         <div v-else class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-50/30">
           <div class="i-ant-design:message-outlined text-6xl opacity-20 mb-4"></div>
