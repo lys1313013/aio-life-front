@@ -35,3 +35,14 @@ export interface UpdateUserParams {
 export async function updateUserInfoApi(params: UpdateUserParams) {
   return requestClient.put('/users', params);
 }
+
+/**
+ * 上传头像
+ */
+export async function uploadAvatarApi(file: FormData) {
+  return requestClient.post<string>('/users/avatar/upload', file, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}

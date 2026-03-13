@@ -118,6 +118,15 @@ const withDefaultPlaceholder = <T extends Component>(
   });
 };
 
+const getBase64 = (file: File) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.addEventListener('load', () => resolve(reader.result));
+    reader.addEventListener('error', (error) => reject(error));
+  });
+};
+
 const withPreviewUpload = () => {
   return defineComponent({
     name: Upload.name,
@@ -138,6 +147,12 @@ const withPreviewUpload = () => {
 
       const handleChange = async (event: UploadChangeParam) => {
         fileList.value = event.fileList;
+        // 如果是图片且没有预览图，尝试生成
+        for (const file of fileList.value) {
+          if (!file.url && !file.preview && file.originFileObj) {
+            file.preview = (await getBase64(file.originFileObj)) as string;
+          }
+        }
         emit('change', event);
         emit(
           'update:modelValue',
@@ -158,6 +173,67 @@ const withPreviewUpload = () => {
           return null;
         }
 
+        // 判断是否为单图上传模式（picture-card 且 maxCount=1）
+        const isPictureCard =
+          attrs.listType === 'picture-card' ||
+          attrs['list-type'] === 'picture-card';
+        const isMaxCountOne = attrs.maxCount && Number(attrs.maxCount) === 1;
+        const isAvatarMode = isPictureCard && isMaxCountOne;
+
+        // 如果是单图上传模式且有文件，渲染文件预览（点击可替换）
+        if (
+          isAvatarMode &&
+          fileList.value &&
+          fileList.value.length > 0 &&
+          fileList.value[0]
+        ) {
+          const file = fileList.value[0];
+          const imageUrl = file.url || file.preview || file.thumbUrl;
+          return h(
+            'div',
+            {
+              style: {
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                overflow: 'hidden',
+                position: 'relative',
+                borderRadius: attrs.rounded ? '50%' : undefined,
+              },
+            },
+            [
+              imageUrl
+                ? h('img', {
+                    src: imageUrl,
+                    style: {
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: attrs.rounded ? '50%' : undefined,
+                    },
+                    alt: 'avatar',
+                  })
+                : h(
+                    'div',
+                    { style: { color: '#ccc' } },
+                    file.status === 'uploading' ? 'Uploading...' : placeholder,
+                  ),
+            ],
+          );
+        }
+
+        // 如果已经达到最大上传数量，不渲染上传按钮（非单图模式）
+        if (
+          !isAvatarMode &&
+          attrs.maxCount &&
+          fileList.value &&
+          fileList.value.length >= Number(attrs.maxCount)
+        ) {
+          return null;
+        }
+
         // 否则渲染默认上传按钮
         return isEmpty(slots)
           ? createDefaultSlotsWithUpload(listType, placeholder)
@@ -172,8 +248,14 @@ const withPreviewUpload = () => {
         },
       );
 
-      return () =>
-        h(
+      return () => {
+        const isPictureCard =
+          attrs.listType === 'picture-card' ||
+          attrs['list-type'] === 'picture-card';
+        const isMaxCountOne = attrs.maxCount && Number(attrs.maxCount) === 1;
+        const isAvatarMode = isPictureCard && isMaxCountOne;
+
+        return h(
           Upload,
           {
             ...props,
@@ -181,9 +263,13 @@ const withPreviewUpload = () => {
             fileList: fileList.value,
             onChange: handleChange,
             onPreview: handlePreview,
+            showUploadList: isAvatarMode
+              ? false
+              : attrs.showUploadList ?? attrs['show-upload-list'],
           },
           renderUploadButton(),
         );
+      };
     },
   });
 };
@@ -260,14 +346,6 @@ const previewImage = async (
     PreviewGroup,
   ]);
 
-  const getBase64 = (file: File) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.addEventListener('load', () => resolve(reader.result));
-      reader.addEventListener('error', (error) => reject(error));
-    });
-  };
   // 从fileList中过滤出所有图片文件
   const imageFiles = (unref(fileList) || []).filter((element) =>
     isImageFile(element),
