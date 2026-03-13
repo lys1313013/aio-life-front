@@ -45,6 +45,7 @@ const formSchema = computed((): VbenFormSchema[] => {
           formData.append('file', file);
           try {
             const url = await uploadAvatarApi(formData);
+            file.url = url;
             onSuccess(url, file);
           } catch (error) {
             onError(error);

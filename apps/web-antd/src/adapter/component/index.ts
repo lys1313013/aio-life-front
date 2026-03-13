@@ -189,39 +189,44 @@ const withPreviewUpload = () => {
         ) {
           const file = fileList.value[0];
           const imageUrl = file.url || file.preview || file.thumbUrl;
-          return h(
-            'div',
-            {
-              style: {
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                overflow: 'hidden',
-                position: 'relative',
-                borderRadius: attrs.rounded ? '50%' : undefined,
-              },
-            },
-            [
-              imageUrl
-                ? h('img', {
-                    src: imageUrl,
-                    style: {
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: attrs.rounded ? '50%' : undefined,
-                    },
-                    alt: 'avatar',
-                  })
-                : h(
-                    'div',
-                    { style: { color: '#ccc' } },
-                    file.status === 'uploading' ? 'Uploading...' : placeholder,
-                  ),
-            ],
-          );
+          return {
+            default: () =>
+              h(
+                'div',
+                {
+                  style: {
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    borderRadius: attrs.rounded ? '50%' : undefined,
+                  },
+                },
+                [
+                  imageUrl
+                    ? h('img', {
+                        src: imageUrl,
+                        style: {
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: attrs.rounded ? '50%' : undefined,
+                        },
+                        alt: 'avatar',
+                      })
+                    : h(
+                        'div',
+                        { style: { color: '#ccc' } },
+                        file.status === 'uploading'
+                          ? 'Uploading...'
+                          : placeholder,
+                      ),
+                ],
+              ),
+          };
         }
 
         // 如果已经达到最大上传数量，不渲染上传按钮（非单图模式）
