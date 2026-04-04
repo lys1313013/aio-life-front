@@ -6,7 +6,6 @@ import { useVbenDrawer } from '@vben/common-ui';
 import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
 import { insertOrUpdate } from '#/api/core/expense';
-
 import { PAY_TYPE_OPTIONS } from '#/constants/expense';
 
 defineOptions({
@@ -26,7 +25,8 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
-const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
+const payTypeOptions =
+  ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
 
 async function loadDictOptions() {
   try {
@@ -234,8 +234,8 @@ const [Drawer, drawerApi] = useVbenDrawer({
 <style scoped>
 .continuous-mode-switch {
   position: absolute;
-  left: 16px;
   bottom: 16px;
+  left: 16px;
   z-index: 10;
 }
 </style>

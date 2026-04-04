@@ -1,11 +1,33 @@
 <script setup lang="ts">
+import type { UserBindEntity } from '#/api/core/user-bind';
+
 import { onMounted, ref } from 'vue';
-import { Button, Form, Input, Modal, Popconfirm, Select, Table, message } from 'ant-design-vue';
-import { getUserBindListApi, addUserBindApi, updateUserBindApi, deleteUserBindApi, type UserBindEntity } from '#/api/core/user-bind';
+
+import {
+  Button,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Table,
+} from 'ant-design-vue';
+
+import {
+  addUserBindApi,
+  deleteUserBindApi,
+  getUserBindListApi,
+  updateUserBindApi,
+} from '#/api/core/user-bind';
 
 const columns = [
   { title: '平台', dataIndex: 'platform', key: 'platform' },
-  { title: '账号/用户名', dataIndex: 'platformUsername', key: 'platformUsername' },
+  {
+    title: '账号/用户名',
+    dataIndex: 'platformUsername',
+    key: 'platformUsername',
+  },
   { title: '绑定时间', dataIndex: 'createTime', key: 'createTime' },
   { title: '操作', key: 'action' },
 ];
@@ -37,7 +59,11 @@ const fetchList = async () => {
 };
 
 const handleAdd = () => {
-  formState.value = { platform: 'github', platformUsername: '', accessToken: '' };
+  formState.value = {
+    platform: 'github',
+    platformUsername: '',
+    accessToken: '',
+  };
   modalVisible.value = true;
 };
 
@@ -51,7 +77,7 @@ const handleDelete = async (id: number) => {
     await deleteUserBindApi(id);
     message.success('删除成功');
     fetchList();
-  } catch (error) {
+  } catch {
     // error handled by request interceptor usually
   }
 };
@@ -59,11 +85,9 @@ const handleDelete = async (id: number) => {
 const handleOk = async () => {
   modalLoading.value = true;
   try {
-    if (formState.value.id) {
-      await updateUserBindApi(formState.value);
-    } else {
-      await addUserBindApi(formState.value);
-    }
+    await (formState.value.id
+      ? updateUserBindApi(formState.value)
+      : addUserBindApi(formState.value));
     message.success('保存成功');
     modalVisible.value = false;
     fetchList();
@@ -82,17 +106,19 @@ onMounted(() => {
     <div class="mb-4 flex justify-end">
       <Button type="primary" @click="handleAdd">新增绑定</Button>
     </div>
-    
+
     <Table
       :columns="columns"
-      :dataSource="data"
+      :data-source="data"
       :loading="loading"
       :scroll="{ x: 'max-content' }"
-      rowKey="id"
+      row-key="id"
     >
       <template #bodyCell="{ column, record, text }">
         <template v-if="column.key === 'action'">
-          <Button type="link" size="small" @click="handleEdit(record)">编辑</Button>
+          <Button type="link" size="small" @click="handleEdit(record)">
+            编辑
+          </Button>
           <Popconfirm
             title="确定要删除此绑定吗？"
             ok-text="确定"
@@ -103,7 +129,10 @@ onMounted(() => {
           </Popconfirm>
         </template>
         <template v-else-if="column.key === 'platform'">
-          {{ platformOptions.find(p => p.value === record.platform)?.label || record.platform }}
+          {{
+            platformOptions.find((p) => p.value === record.platform)?.label ||
+            record.platform
+          }}
         </template>
         <template v-else>
           {{ text }}
@@ -115,17 +144,23 @@ onMounted(() => {
       v-model:open="modalVisible"
       title="绑定账号"
       @ok="handleOk"
-      :confirmLoading="modalLoading"
+      :confirm-loading="modalLoading"
     >
       <Form layout="vertical" :model="formState">
         <Form.Item label="平台" required>
-          <Select v-model:value="formState.platform" :options="platformOptions" />
+          <Select
+            v-model:value="formState.platform"
+            :options="platformOptions"
+          />
         </Form.Item>
         <Form.Item label="账号/用户名" required>
           <Input v-model:value="formState.platformUsername" />
         </Form.Item>
         <Form.Item v-if="formState.platform === 'github'" label="Access Token">
-          <Input.Password v-model:value="formState.accessToken" placeholder="若不修改请留空" />
+          <Input.Password
+            v-model:value="formState.accessToken"
+            placeholder="若不修改请留空"
+          />
           <template #extra>
             <span class="text-xs text-gray-500">
               注：只需读取公开仓库的权限 (public_repo)。

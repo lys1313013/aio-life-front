@@ -270,7 +270,7 @@ const withPreviewUpload = () => {
             onPreview: handlePreview,
             showUploadList: isAvatarMode
               ? false
-              : attrs.showUploadList ?? attrs['show-upload-list'],
+              : (attrs.showUploadList ?? attrs['show-upload-list']),
           },
           renderUploadButton(),
         );

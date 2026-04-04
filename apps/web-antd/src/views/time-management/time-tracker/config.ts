@@ -1,7 +1,12 @@
-import { createIconifyIcon } from '@vben/icons';
+import type {
+  MergedCategory,
+  TimeSlotCategory,
+  TimeTrackerConfig,
+} from './types';
 
-import type { TimeTrackerConfig, TimeSlotCategory, MergedCategory } from './types';
 import type { TimeTrackerCategoryEntity } from '#/api/core/time-tracker-category';
+
+import { createIconifyIcon } from '@vben/icons';
 
 // 默认时间段分类
 export const defaultCategories: TimeSlotCategory[] = [];
@@ -88,41 +93,64 @@ export function isPublicCategory(category: TimeTrackerCategoryEntity): boolean {
 }
 
 // 判断是否为私有分类
-export function isPrivateCategory(category: TimeTrackerCategoryEntity): boolean {
+export function isPrivateCategory(
+  category: TimeTrackerCategoryEntity,
+): boolean {
   return category.userId !== '0' && !category.templateId;
 }
 
 // 获取分类颜色（考虑覆盖）
-export function getCategoryColor(categoryId: string, categories: (TimeSlotCategory | MergedCategory)[]): string {
-  const category = categories.find(cat => cat.id === categoryId);
+export function getCategoryColor(
+  categoryId: string,
+  categories: (MergedCategory | TimeSlotCategory)[],
+): string {
+  const category = categories.find((cat) => cat.id === categoryId);
   if (!category) return '#d9d9d9';
-  
+
   // 如果有颜色覆盖，使用覆盖后的颜色
-  if ('isOverridden' in category && category.isOverridden && (category as MergedCategory).overrideFields?.color) {
+  if (
+    'isOverridden' in category &&
+    category.isOverridden &&
+    (category as MergedCategory).overrideFields?.color
+  ) {
     return (category as MergedCategory).overrideFields!.color!;
   }
   return category.color;
 }
 
 // 获取分类名称（考虑覆盖）
-export function getCategoryName(categoryId: string, categories: (TimeSlotCategory | MergedCategory)[]): string {
-  const category = categories.find(cat => cat.id === categoryId);
+export function getCategoryName(
+  categoryId: string,
+  categories: (MergedCategory | TimeSlotCategory)[],
+): string {
+  const category = categories.find((cat) => cat.id === categoryId);
   if (!category) return '未知';
-  
+
   // 如果有名称覆盖，使用覆盖后的名称
-  if ('isOverridden' in category && category.isOverridden && (category as MergedCategory).overrideFields?.name) {
+  if (
+    'isOverridden' in category &&
+    category.isOverridden &&
+    (category as MergedCategory).overrideFields?.name
+  ) {
     return (category as MergedCategory).overrideFields!.name!;
   }
   return category.name;
 }
 
 // 获取分类图标（考虑覆盖）
-export function getCategoryIconById(categoryId: string, categories: (TimeSlotCategory | MergedCategory)[]): string | undefined {
-  const category = categories.find(cat => cat.id === categoryId);
+export function getCategoryIconById(
+  categoryId: string,
+  categories: (MergedCategory | TimeSlotCategory)[],
+): string | undefined {
+  const category = categories.find((cat) => cat.id === categoryId);
   if (!category) return undefined;
-  
+
   // 如果有图标覆盖，使用覆盖后的图标
-  if ('isOverridden' in category && category.isOverridden && (category as MergedCategory).overrideFields?.icon) {
+  if (
+    'isOverridden' in category &&
+    category.isOverridden &&
+    (category as MergedCategory).overrideFields?.icon
+  ) {
     return (category as MergedCategory).overrideFields!.icon!;
   }
   return category.icon;
@@ -132,11 +160,11 @@ export function getCategoryIconById(categoryId: string, categories: (TimeSlotCat
 export function mergeCategoriesWithOverrides(
   publicCategories: TimeTrackerCategoryEntity[],
   privateCategories: TimeTrackerCategoryEntity[],
-  overrideRecords: TimeTrackerCategoryEntity[]
+  overrideRecords: TimeTrackerCategoryEntity[],
 ): MergedCategory[] {
   // 1. 构建覆盖 Map: templateId -> overrideRecord
   const overrideMap = new Map<string, TimeTrackerCategoryEntity>();
-  overrideRecords.forEach(record => {
+  overrideRecords.forEach((record) => {
     if (record.templateId) {
       overrideMap.set(record.templateId.toString(), record);
     }
@@ -145,9 +173,9 @@ export function mergeCategoriesWithOverrides(
   const result: MergedCategory[] = [];
 
   // 2. 处理公共分类
-  publicCategories.forEach(pubCat => {
+  publicCategories.forEach((pubCat) => {
     const override = overrideMap.get(pubCat.id!);
-    
+
     if (override?.isDeleted === 1) {
       // 公共分类被用户隐藏，生成隐藏标记
       result.push({
@@ -166,7 +194,7 @@ export function mergeCategoriesWithOverrides(
     }
 
     const isOverridden = !!override && override.isDeleted !== 1;
-    
+
     result.push({
       id: pubCat.id!,
       name: override?.name || pubCat.name,
@@ -179,17 +207,20 @@ export function mergeCategoriesWithOverrides(
       originalName: pubCat.name,
       isOverridden,
       isHidden: false,
-      overrideFields: isOverridden ? {
-        name: override?.name !== pubCat.name ? override.name : undefined,
-        color: override?.color !== pubCat.color ? override.color : undefined,
-        icon: override?.icon !== pubCat.icon ? override.icon : undefined,
-        sort: override?.sort !== pubCat.sort ? override.sort : undefined,
-      } : undefined,
+      overrideFields: isOverridden
+        ? {
+            name: override?.name === pubCat.name ? undefined : override.name,
+            color:
+              override?.color === pubCat.color ? undefined : override.color,
+            icon: override?.icon === pubCat.icon ? undefined : override.icon,
+            sort: override?.sort === pubCat.sort ? undefined : override.sort,
+          }
+        : undefined,
     });
   });
 
   // 3. 添加私有分类
-  privateCategories.forEach(privCat => {
+  privateCategories.forEach((privCat) => {
     result.push({
       id: privCat.id!,
       name: privCat.name,
@@ -210,7 +241,7 @@ export function mergeCategoriesWithOverrides(
 export function generateOverrideRecord(
   publicCategory: TimeTrackerCategoryEntity,
   currentUserId: string,
-  changes: Partial<TimeTrackerCategoryEntity>
+  changes: Partial<TimeTrackerCategoryEntity>,
 ): TimeTrackerCategoryEntity {
   return {
     userId: currentUserId,
@@ -228,7 +259,7 @@ export function generateOverrideRecord(
 // 生成隐藏记录
 export function generateHideRecord(
   publicCategory: TimeTrackerCategoryEntity,
-  currentUserId: string
+  currentUserId: string,
 ): TimeTrackerCategoryEntity {
   return {
     userId: currentUserId,

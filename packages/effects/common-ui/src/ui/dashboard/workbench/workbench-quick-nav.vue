@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-
 import type { WorkbenchQuickNavItem } from '../typing';
+
+import { ref } from 'vue';
 
 import {
   Card,
@@ -86,7 +86,9 @@ function handleItemClick(item: WorkbenchQuickNavItem) {
             :icon="item.icon"
             class="size-6 transition-all duration-300 group-hover:scale-125 sm:size-7"
           />
-          <span class="mt-1 truncate text-xs sm:mt-2 sm:text-base">{{ item.title }}</span>
+          <span class="mt-1 truncate text-xs sm:mt-2 sm:text-base">{{
+            item.title
+          }}</span>
         </div>
       </template>
     </CardContent>

@@ -24,16 +24,16 @@ export interface CheckResult {
   mbtiType?: string;
   predictions?: Record<string, number>;
   traitOrderConscious?: {
-    hero?: string;
-    parent?: string;
     child?: string;
+    hero?: string;
     inferior?: string;
+    parent?: string;
   };
   traitOrderShadow?: {
-    nemesis?: string;
     critic?: string;
-    trickster?: string;
     demon?: string;
+    nemesis?: string;
+    trickster?: string;
   };
   matches?: string[];
   resultsPage?: string;

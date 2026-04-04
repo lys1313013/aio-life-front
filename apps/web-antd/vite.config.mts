@@ -19,7 +19,10 @@ export default defineConfig(async () => {
               }
 
               if (req.method === 'OPTIONS') {
-                res.setHeader('Access-Control-Allow-Headers', 'content-type, x-leetcode-cookie');
+                res.setHeader(
+                  'Access-Control-Allow-Headers',
+                  'content-type, x-leetcode-cookie',
+                );
                 res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
                 res.statusCode = 204;
                 res.end();
@@ -64,7 +67,7 @@ export default defineConfig(async () => {
                   upstream.headers.get('content-type') || 'application/json',
                 );
                 res.end(text);
-              })().catch((err) => {
+              })().catch((error) => {
                 if (!res.headersSent) {
                   res.statusCode = 502;
                   res.setHeader('Content-Type', 'application/json');
@@ -73,8 +76,8 @@ export default defineConfig(async () => {
                       errors: [
                         {
                           message:
-                            err instanceof Error
-                              ? err.message
+                            error instanceof Error
+                              ? error.message
                               : 'Upstream request failed',
                         },
                       ],
@@ -82,7 +85,7 @@ export default defineConfig(async () => {
                   );
                   return;
                 }
-                next(err);
+                next(error);
               });
             });
           },
@@ -93,8 +96,28 @@ export default defineConfig(async () => {
           output: {
             manualChunks: {
               'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],
-              'vendor-core': ['vue', 'vue-router', 'pinia', '@vueuse/core', 'dayjs'],
-              'vendor-vben': ['@vben/access', '@vben/common-ui', '@vben/constants', '@vben/hooks', '@vben/icons', '@vben/layouts', '@vben/locales', '@vben/preferences', '@vben/request', '@vben/stores', '@vben/styles', '@vben/types', '@vben/utils'],
+              'vendor-core': [
+                'vue',
+                'vue-router',
+                'pinia',
+                '@vueuse/core',
+                'dayjs',
+              ],
+              'vendor-vben': [
+                '@vben/access',
+                '@vben/common-ui',
+                '@vben/constants',
+                '@vben/hooks',
+                '@vben/icons',
+                '@vben/layouts',
+                '@vben/locales',
+                '@vben/preferences',
+                '@vben/request',
+                '@vben/stores',
+                '@vben/styles',
+                '@vben/types',
+                '@vben/utils',
+              ],
             },
           },
         },

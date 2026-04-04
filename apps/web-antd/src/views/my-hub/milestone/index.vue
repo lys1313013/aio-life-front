@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import type { Rule } from 'ant-design-vue/es/form';
 
-import { PlusOutlined, 
-  SearchOutlined,
-  EditOutlined,
+import type { MilestoneEntity } from '#/api/core/milestone';
+
+import { computed, onMounted, ref } from 'vue';
+
+import {
   DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  SearchOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button as AButton,
@@ -14,22 +19,20 @@ import {
   FormItem as AFormItem,
   Input as AInput,
   Modal as AModal,
+  Popconfirm as APopconfirm,
   RangePicker as ARangePicker,
   Select as ASelect,
   SelectOption as ASelectOption,
-  Textarea as ATextarea,
   Tag as ATag,
-  message,
-  Popconfirm as APopconfirm,
+  Textarea as ATextarea,
 } from 'ant-design-vue';
-import type { Rule } from 'ant-design-vue/es/form';
 import dayjs, { Dayjs } from 'dayjs';
-import { 
-  queryMilestone, 
-  createMilestone, 
-  updateMilestone, 
+
+import {
+  createMilestone,
   deleteMilestone,
-  type MilestoneEntity 
+  queryMilestone,
+  updateMilestone,
 } from '#/api/core/milestone';
 
 // Types
@@ -150,7 +153,10 @@ const isNewMonth = (items: Milestone[], index: number) => {
   if (!current) return false;
   if (index === 0) return true;
   const prev = items[index - 1];
-  return !prev || dayjs(current.date).format('MM月') !== dayjs(prev.date).format('MM月');
+  return (
+    !prev ||
+    dayjs(current.date).format('MM月') !== dayjs(prev.date).format('MM月')
+  );
 };
 
 // 加载数据
@@ -248,11 +254,9 @@ const handleSave = async () => {
       ),
     };
 
-    if (formState.value.id) {
-      await updateMilestone(payload);
-    } else {
-      await createMilestone(payload);
-    }
+    await (formState.value.id
+      ? updateMilestone(payload)
+      : createMilestone(payload));
 
     modalVisible.value = false;
     loadData();
@@ -392,21 +396,25 @@ const getTypeLabel = (type: string) => {
         <div class="ml-3 border-l-2 border-gray-200 dark:border-gray-700">
           <div v-for="(item, index) in group.items" :key="item.id">
             <!-- Month Header within the timeline -->
-            <div 
-              v-if="isNewMonth(group.items, index)" 
+            <div
+              v-if="isNewMonth(group.items, index)"
               class="relative mb-6 mt-10 flex items-center first:mt-0"
             >
-              <div class="absolute left-[-2px] h-0.5 w-4 bg-gray-300 dark:bg-gray-600"></div>
-              <div class="pl-8 text-sm font-bold text-blue-500 uppercase tracking-wider">
+              <div
+                class="absolute left-[-2px] h-0.5 w-4 bg-gray-300 dark:bg-gray-600"
+              ></div>
+              <div
+                class="pl-8 text-sm font-bold uppercase tracking-wider text-blue-500"
+              >
                 {{ dayjs(item.date).format('MM月') }}
               </div>
             </div>
 
             <!-- Item -->
-            <div class="relative pl-8 py-4 group">
+            <div class="group relative py-4 pl-8">
               <!-- Dot -->
               <div
-                class="absolute left-[-9px] top-8 w-4 h-4 rounded-full border-2 border-white dark:border-[#151515] shadow-sm z-10"
+                class="absolute left-[-9px] top-8 z-10 h-4 w-4 rounded-full border-2 border-white shadow-sm dark:border-[#151515]"
                 :class="getTypeColor(item.type)"
               ></div>
 
@@ -425,10 +433,12 @@ const getTypeLabel = (type: string) => {
                       {{ getTypeLabel(item.type) }}
                     </ATag>
                   </div>
-                  <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <AButton 
-                      type="text" 
-                      size="small" 
+                  <div
+                    class="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <AButton
+                      type="text"
+                      size="small"
                       @click.stop="handleEdit(item)"
                     >
                       <template #icon><EditOutlined /></template>
@@ -437,11 +447,7 @@ const getTypeLabel = (type: string) => {
                       title="确定要删除这条记录吗？"
                       @confirm="handleDelete(item.id)"
                     >
-                      <AButton 
-                        type="text" 
-                        danger 
-                        size="small"
-                      >
+                      <AButton type="text" danger size="small">
                         <template #icon><DeleteOutlined /></template>
                       </AButton>
                     </APopconfirm>

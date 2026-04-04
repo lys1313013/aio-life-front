@@ -1,8 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, toRaw } from 'vue';
-import { query as queryThink, save as saveThink, update as updateThink, deleteData as deleteThink } from '#/api/core/think';
-import { Button, Card, Modal, Input, Form, Empty, Space, message, Tag, Popconfirm, Spin } from 'ant-design-vue';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import {
+  Button,
+  Card,
+  Empty,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Space,
+  Spin,
+  Tag,
+} from 'ant-design-vue';
+
+import {
+  deleteData as deleteThink,
+  query as queryThink,
+  save as saveThink,
+  update as updateThink,
+} from '#/api/core/think';
 
 interface Event {
   id: number;
@@ -63,7 +82,10 @@ const openEditModal = (id: number) => {
       evs.length > 0
         ? evs.map((e) => ({
             ...e,
-            create_time: (e as any)?.create_time ?? (e as any)?.createTime ?? new Date().toISOString(),
+            create_time:
+              (e as any)?.create_time ??
+              (e as any)?.createTime ??
+              new Date().toISOString(),
           }))
         : [
             {
@@ -106,7 +128,9 @@ const saveCard = async () => {
     return;
   }
 
-  const validEvents = form.events.filter((event) => event.content.trim() !== '');
+  const validEvents = form.events.filter(
+    (event) => event.content.trim() !== '',
+  );
 
   const payload = {
     id: currentEditId.value,
@@ -122,18 +146,25 @@ const saveCard = async () => {
 
     const normalized = {
       ...saved,
-      content: saved?.content ?? saved?.text ?? saved?.title ?? saved?.summary ?? form.content.trim(),
+      content:
+        saved?.content ??
+        saved?.text ??
+        saved?.title ??
+        saved?.summary ??
+        form.content.trim(),
       events: Array.isArray(saved?.events)
         ? (saved as any).events.map((e: any) => ({
             ...e,
-            create_time: e?.create_time ?? e?.createTime ?? new Date().toISOString(),
+            create_time:
+              e?.create_time ?? e?.createTime ?? new Date().toISOString(),
           }))
         : validEvents.map((e) => ({
             ...e,
             create_time: e?.create_time ?? new Date().toISOString(),
           })),
       date: saved?.date ?? new Date().toISOString(),
-      createTime: saved?.createTime ?? saved?.create_time ?? new Date().toISOString(),
+      createTime:
+        saved?.createTime ?? saved?.create_time ?? new Date().toISOString(),
     };
 
     if (currentEditId.value === null) {
@@ -144,7 +175,7 @@ const saveCard = async () => {
     }
 
     closeCardModal();
-  } catch (e) {
+  } catch {
     message.error('保存失败');
   }
 };
@@ -155,7 +186,7 @@ const handleDelete = async (id: number) => {
     thoughts.value = thoughts.value.filter((t) => t.id !== id);
     message.success('删除成功');
     closeCardModal();
-  } catch (e) {
+  } catch {
     message.error('删除失败');
   }
 };
@@ -177,19 +208,25 @@ const loadThoughts = async () => {
   try {
     const res = await queryThink({ page: 1, pageSize: 50, condition: {} });
     const list = (res && (res.items ?? res)) || [];
-    thoughts.value = list.map((t: any) => ({
-      ...t,
-      content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
-      events: Array.isArray(t?.events)
-        ? t.events.map((e: any) => ({
-            ...e,
-            create_time: e?.create_time ?? e?.createTime ?? new Date().toISOString(),
-          }))
-        : [],
-      date: t?.date ?? new Date().toISOString(),
-      createTime: t?.createTime ?? t?.create_time ?? new Date().toISOString(),
-    })).sort((a: Thought, b: Thought) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
-  } catch (error) {
+    thoughts.value = list
+      .map((t: any) => ({
+        ...t,
+        content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
+        events: Array.isArray(t?.events)
+          ? t.events.map((e: any) => ({
+              ...e,
+              create_time:
+                e?.create_time ?? e?.createTime ?? new Date().toISOString(),
+            }))
+          : [],
+        date: t?.date ?? new Date().toISOString(),
+        createTime: t?.createTime ?? t?.create_time ?? new Date().toISOString(),
+      }))
+      .sort(
+        (a: Thought, b: Thought) =>
+          new Date(b.createTime).getTime() - new Date(a.createTime).getTime(),
+      );
+  } catch {
     message.error('加载失败');
   } finally {
     loading.value = false;
@@ -244,17 +281,36 @@ onMounted(async () => {
       </div>
     </Spin>
 
-    <Modal v-model:open="showModal" :title="modalTitle" :footer="null" :maskClosable="false" @cancel="closeCardModal">
+    <Modal
+      v-model:open="showModal"
+      :title="modalTitle"
+      :footer="null"
+      :mask-closable="false"
+      @cancel="closeCardModal"
+    >
       <Form layout="vertical">
         <Form.Item label="思考内容" required>
-          <Input.TextArea v-model:value="form.content" :rows="4" placeholder="写下你的思考..." />
+          <Input.TextArea
+            v-model:value="form.content"
+            :rows="4"
+            placeholder="写下你的思考..."
+          />
         </Form.Item>
 
         <Form.Item label="关联事件">
-          <div v-for="event in [...form.events].reverse()" :key="event.id" class="event-item">
+          <div
+            v-for="event in [...form.events].reverse()"
+            :key="event.id"
+            class="event-item"
+          >
             <div class="event-row">
               <Input v-model:value="event.content" placeholder="事件..." />
-              <Button type="text" danger @click="removeEventById(event.id)" v-if="form.events.length > 1">
+              <Button
+                type="text"
+                danger
+                @click="removeEventById(event.id)"
+                v-if="form.events.length > 1"
+              >
                 <template #icon><DeleteOutlined /></template>
               </Button>
             </div>
@@ -266,7 +322,12 @@ onMounted(async () => {
           </Button>
         </Form.Item>
 
-        <div class="form-actions" :style="{ justifyContent: currentEditId ? 'space-between' : 'flex-end' }">
+        <div
+          class="form-actions"
+          :style="{
+            justifyContent: currentEditId ? 'space-between' : 'flex-end',
+          }"
+        >
           <Popconfirm
             v-if="currentEditId"
             title="确定要删除这条思考吗？"
@@ -290,134 +351,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.think-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 24px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
-  border: 1px solid rgba(230, 244, 255, 0.8);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f1f1f;
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  color: #666;
-  font-size: 14px;
-}
-
-.empty-wrap {
-  background: #fff;
-  border: 1px dashed #d9d9d9;
-  border-radius: 12px;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.thought-card {
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  transition: all 0.3s ease;
-  background: #fff;
-}
-
-.thought-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
-  border-color: #e6f4ff;
-}
-
-.thought-card :deep(.ant-card-body) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 20px;
-}
-
-.card-content {
-  flex: 1;
-  font-size: 15px;
-  color: #262626;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 6;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid #f5f5f5;
-}
-
-.card-date {
-  font-size: 12px;
-  color: #999;
-}
-
-.event-item {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 8px;
-}
-
-.event-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.event-time {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #999;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
-}
-
 /* Mobile Adaptation */
 @media (max-width: 768px) {
   .think-page {
@@ -452,8 +385,136 @@ onMounted(async () => {
   }
 
   .card-content {
-    font-size: 14px;
     -webkit-line-clamp: 4;
+    font-size: 14px;
   }
+}
+
+.think-page {
+  max-width: 1200px;
+  padding: 24px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+  border: 1px solid rgb(230 244 255 / 80%);
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 2%);
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1f1f1f;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #666;
+}
+
+.empty-wrap {
+  padding: 60px 20px;
+  text-align: center;
+  background: #fff;
+  border: 1px dashed #d9d9d9;
+  border-radius: 12px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.thought-card {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.thought-card:hover {
+  border-color: #e6f4ff;
+  box-shadow: 0 12px 24px rgb(0 0 0 / 6%);
+  transform: translateY(-4px);
+}
+
+.thought-card :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 20px;
+}
+
+.card-content {
+  display: -webkit-box;
+  flex: 1;
+  margin-bottom: 16px;
+  overflow: hidden;
+  -webkit-line-clamp: 6;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #262626;
+  -webkit-box-orient: vertical;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #f5f5f5;
+}
+
+.card-date {
+  font-size: 12px;
+  color: #999;
+}
+
+.event-item {
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.event-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.event-time {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
 }
 </style>

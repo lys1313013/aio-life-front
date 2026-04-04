@@ -51,7 +51,9 @@ export async function getTaskList(data: any) {
 }
 
 export async function getTaskDetail(taskId: number) {
-  return await requestClient.get<Detail[]>('/taskDetails', { params: { taskId } });
+  return await requestClient.get<Detail[]>('/taskDetails', {
+    params: { taskId },
+  });
 }
 
 export async function addTaskDetail(data: Partial<Detail>) {
@@ -62,7 +64,7 @@ export async function updateTaskDetail(data: Partial<Detail>) {
   return await requestClient.put<boolean>('/taskDetails', data);
 }
 
-export async function deleteTaskDetail(id: string | number) {
+export async function deleteTaskDetail(id: number | string) {
   return await requestClient.delete<void>(`/taskDetails/${id}`);
 }
 

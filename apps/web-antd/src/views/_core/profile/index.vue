@@ -4,13 +4,13 @@ import { ref } from 'vue';
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
+import ApiKeySetting from './api-key-setting.vue';
 import ProfileBase from './base-setting.vue';
+import LLMSetting from './llm-setting.vue';
+import MbtiSetting from './mbti-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import UserBindSetting from './user-bind.vue';
-import ApiKeySetting from './api-key-setting.vue';
-import LLMSetting from './llm-setting.vue';
-import MbtiSetting from './mbti-setting.vue';
 
 const userStore = useUserStore();
 

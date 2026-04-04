@@ -61,18 +61,24 @@ export async function getGithubContributionStats(
 
   const mapLevel = (level: string) => {
     switch (level) {
-      case 'NONE':
-        return 0;
-      case 'FIRST_QUARTILE':
+      case 'FIRST_QUARTILE': {
         return 1;
-      case 'SECOND_QUARTILE':
-        return 2;
-      case 'THIRD_QUARTILE':
-        return 3;
-      case 'FOURTH_QUARTILE':
+      }
+      case 'FOURTH_QUARTILE': {
         return 4;
-      default:
+      }
+      case 'NONE': {
         return 0;
+      }
+      case 'SECOND_QUARTILE': {
+        return 2;
+      }
+      case 'THIRD_QUARTILE': {
+        return 3;
+      }
+      default: {
+        return 0;
+      }
     }
   };
 

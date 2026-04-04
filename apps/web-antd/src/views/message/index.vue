@@ -1,41 +1,36 @@
 <script setup lang="ts">
+import type { ChatMessage as AIChatMessage, ChatSession } from '#/api/core/llm';
 import type { Message } from '#/api/core/message';
 
-import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { usePreferences } from '@vben/preferences';
 import { useUserStore } from '@vben/stores';
 
 import { message as antMessage } from 'ant-design-vue';
+import { marked } from 'marked';
 
+import {
+  chatWithLLMApi,
+  chatWithLLMStreamApi,
+  createChatSessionApi,
+  deleteChatSessionApi,
+  getChatHistoryApi,
+  getChatSessionsApi,
+  summarizeTimeRecordsApi,
+  updateChatSessionApi,
+} from '#/api/core/llm';
 import {
   createMessageApi,
   getMessageListApi,
   markAsReadApi,
 } from '#/api/core/message';
-
-import {
-  chatWithLLMApi,
-  summarizeTimeRecordsApi,
-  chatWithLLMStreamApi,
-  getChatSessionsApi,
-  createChatSessionApi,
-  deleteChatSessionApi,
-  getChatHistoryApi,
-  updateChatSessionApi,
-  clearChatHistoryApi,
-  type ChatSession,
-  type ChatMessage as AIChatMessage,
-} from '#/api/core/llm';
-
-import { marked } from 'marked';
-
 import { getUserBasicInfoApi } from '#/api/core/user';
 
+import ChatSessionList from './components/ChatSessionList.vue';
 import ChatWindow from './components/ChatWindow.vue';
 import ConversationList from './components/ConversationList.vue';
-import ChatSessionList from './components/ChatSessionList.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -50,7 +45,11 @@ const tempConversation = ref<any>(null);
 
 // Menu items
 const menuItems = [
-  { key: 'my-messages', label: '我的消息', icon: 'i-ant-design:message-outlined' },
+  {
+    key: 'my-messages',
+    label: '我的消息',
+    icon: 'i-ant-design:message-outlined',
+  },
   { key: 'ai-chat', label: 'AI 对话', icon: 'i-ant-design:robot-outlined' },
 ];
 
@@ -68,7 +67,9 @@ const handleMenuClick = (key: string) => {
 // AI chat state
 const isAIChat = computed(() => activeMenu.value === 'ai-chat');
 const aiSessions = ref<ChatSession[]>([]);
-const selectedConversationId = ref<string | undefined>(route.query.conversationId as string);
+const selectedConversationId = ref<string | undefined>(
+  route.query.conversationId as string,
+);
 const aiChatMessages = ref<AIChatMessage[]>([]);
 const aiChatLoading = ref(false);
 const aiChatInput = ref('');
@@ -80,7 +81,11 @@ const summarizeLoading = ref(false);
 const fetchAISessions = async () => {
   try {
     aiSessions.value = await getChatSessionsApi();
-    if (aiSessions.value.length > 0 && !selectedConversationId.value && !isMobile.value) {
+    if (
+      aiSessions.value.length > 0 &&
+      !selectedConversationId.value &&
+      !isMobile.value
+    ) {
       handleSelectSession(aiSessions.value[0]?.id as string);
     }
   } catch (error) {
@@ -117,7 +122,7 @@ const handleCreateSession = async () => {
 const handleDeleteSession = async (conversationId: string) => {
   try {
     await deleteChatSessionApi(conversationId);
-    aiSessions.value = aiSessions.value.filter(s => s.id !== conversationId);
+    aiSessions.value = aiSessions.value.filter((s) => s.id !== conversationId);
     if (selectedConversationId.value === conversationId) {
       if (aiSessions.value.length > 0) {
         handleSelectSession(aiSessions.value[0]?.id as string);
@@ -130,10 +135,13 @@ const handleDeleteSession = async (conversationId: string) => {
   }
 };
 
-const handleUpdateSessionTitle = async (conversationId: string, title: string) => {
+const handleUpdateSessionTitle = async (
+  conversationId: string,
+  title: string,
+) => {
   try {
     await updateChatSessionApi(conversationId, title);
-    const session = aiSessions.value.find(s => s.id === conversationId);
+    const session = aiSessions.value.find((s) => s.id === conversationId);
     if (session) {
       session.title = title;
     }
@@ -142,11 +150,15 @@ const handleUpdateSessionTitle = async (conversationId: string, title: string) =
   }
 };
 
-watch(activeMenu, (newMenu) => {
-  if (newMenu === 'ai-chat') {
-    fetchAISessions();
-  }
-}, { immediate: true });
+watch(
+  activeMenu,
+  (newMenu) => {
+    if (newMenu === 'ai-chat') {
+      fetchAISessions();
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   () => route.query.conversationId,
@@ -192,13 +204,13 @@ const markConversationAsRead = async (senderId: string) => {
     (m) =>
       String(m.senderId) === senderId &&
       String(m.receiverId) === myId.value &&
-      !m.isRead
+      !m.isRead,
   );
 
   if (unreadMessages.length > 0) {
     try {
       await Promise.all(unreadMessages.map((msg) => markAsReadApi(msg.id)));
-      unreadMessages.forEach(msg => msg.isRead = true);
+      unreadMessages.forEach((msg) => (msg.isRead = true));
     } catch (error) {
       console.error('Failed to mark messages as read:', error);
     }
@@ -207,8 +219,7 @@ const markConversationAsRead = async (senderId: string) => {
 
 const checkUser = async (userId: string) => {
   const existing = messages.value.some(
-    (m) =>
-      String(m.senderId) === userId || String(m.receiverId) === userId,
+    (m) => String(m.senderId) === userId || String(m.receiverId) === userId,
   );
 
   if (existing) {
@@ -247,7 +258,7 @@ const checkUser = async (userId: string) => {
     } else {
       throw new Error('User not found');
     }
-  } catch (error) {
+  } catch {
     antMessage.error('用户不存在');
     router.replace({ query: { ...route.query, userId: undefined } });
     tempConversation.value = null;
@@ -267,7 +278,7 @@ const fetchMessages = async () => {
   }
 };
 
-const userCache = ref(new Map<string, { nickname: string; avatar: string }>());
+const userCache = ref(new Map<string, { avatar: string; nickname: string }>());
 const fetchingUserIds = new Set<string>();
 
 const conversationCache = new Map<string, any>();
@@ -285,7 +296,7 @@ const fetchUserInfo = async (userId: string) => {
       avatar: info.avatar || '',
     };
     userCache.value.set(userId, data);
-  } catch (e) {
+  } catch {
     userCache.value.set(userId, { nickname: `User ${userId}`, avatar: '' });
   } finally {
     fetchingUserIds.delete(userId);
@@ -296,53 +307,63 @@ const conversations = computed(() => {
   const groups = new Map<string, Message[]>();
 
   messages.value.forEach((msg) => {
-    const otherId = String(msg.senderId) === String(myId.value) ? String(msg.receiverId) : String(msg.senderId);
+    const otherId =
+      String(msg.senderId) === String(myId.value)
+        ? String(msg.receiverId)
+        : String(msg.senderId);
     if (!groups.has(otherId)) {
       groups.set(otherId, []);
     }
     groups.get(otherId)?.push(msg);
   });
 
-  const list = Array.from(groups.entries()).map(([userId, msgs]) => {
-    msgs.sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime());
-    const lastMsg = msgs[0];
+  const list = [...groups.entries()]
+    .map(([userId, msgs]) => {
+      msgs.sort(
+        (a, b) =>
+          new Date(b.createTime).getTime() - new Date(a.createTime).getTime(),
+      );
+      const lastMsg = msgs[0];
 
-    if (!lastMsg) {
-      return null;
-    }
+      if (!lastMsg) {
+        return null;
+      }
 
-    const unreadCount = msgs.filter((m) => String(m.receiverId) === String(myId.value) && !m.isRead).length;
+      const unreadCount = msgs.filter(
+        (m) => String(m.receiverId) === String(myId.value) && !m.isRead,
+      ).length;
 
-    const userInfo = userCache.value.get(userId);
+      const userInfo = userCache.value.get(userId);
 
-    const username = userInfo?.nickname || `User ${userId}`;
-    const avatar = userInfo?.avatar;
-    const lastMessage = lastMsg.content;
-    const time = lastMsg.createTime;
+      const username = userInfo?.nickname || `User ${userId}`;
+      const avatar = userInfo?.avatar;
+      const lastMessage = lastMsg.content;
+      const time = lastMsg.createTime;
 
-    const cached = conversationCache.get(userId);
-    if (
-      cached &&
-      cached.username === username &&
-      cached.avatar === avatar &&
-      cached.lastMessage === lastMessage &&
-      cached.time === time &&
-      cached.unreadCount === unreadCount
-    ) {
-      return cached;
-    }
+      const cached = conversationCache.get(userId);
+      if (
+        cached &&
+        cached.username === username &&
+        cached.avatar === avatar &&
+        cached.lastMessage === lastMessage &&
+        cached.time === time &&
+        cached.unreadCount === unreadCount
+      ) {
+        return cached;
+      }
 
-    const newConversation = {
-      userId,
-      username,
-      avatar,
-      lastMessage,
-      time,
-      unreadCount,
-    };
-    conversationCache.set(userId, newConversation);
-    return newConversation;
-  }).filter((item) => item !== null);
+      const newConversation = {
+        userId,
+        username,
+        avatar,
+        lastMessage,
+        time,
+        unreadCount,
+      };
+      conversationCache.set(userId, newConversation);
+      return newConversation;
+    })
+    .filter((item) => item !== null);
 
   if (
     tempConversation.value &&
@@ -373,10 +394,15 @@ const currentChatMessages = computed(() => {
   return messages.value
     .filter(
       (m) =>
-        (String(m.senderId) === String(myId.value) && String(m.receiverId) === String(selectedUserId.value)) ||
-        (String(m.senderId) === String(selectedUserId.value) && String(m.receiverId) === String(myId.value)),
+        (String(m.senderId) === String(myId.value) &&
+          String(m.receiverId) === String(selectedUserId.value)) ||
+        (String(m.senderId) === String(selectedUserId.value) &&
+          String(m.receiverId) === String(myId.value)),
     )
-    .sort((a, b) => new Date(a.createTime).getTime() - new Date(b.createTime).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.createTime).getTime() - new Date(b.createTime).getTime(),
+    );
 });
 
 const handleSelectConversation = (userId: string) => {
@@ -384,7 +410,9 @@ const handleSelectConversation = (userId: string) => {
 };
 
 const handleBack = () => {
-  router.push({ query: { ...route.query, userId: undefined, conversationId: undefined } });
+  router.push({
+    query: { ...route.query, userId: undefined, conversationId: undefined },
+  });
 };
 
 watch(
@@ -435,7 +463,9 @@ const handleDeleteConversation = async (userId: string) => {
 
   try {
     loading.value = true;
-    await Promise.all(conversationMessages.map((msg) => deleteMessageApi(msg.id)));
+    await Promise.all(
+      conversationMessages.map((msg) => deleteMessageApi(msg.id)),
+    );
     messages.value = messages.value.filter(
       (m) => String(m.senderId) !== userId && String(m.receiverId) !== userId,
     );
@@ -462,7 +492,9 @@ const handleAISendMessage = async () => {
   // If no session selected, create one first
   if (!selectedConversationId.value) {
     try {
-      const newSession = await createChatSessionApi(content.slice(0, 20) || '新会话');
+      const newSession = await createChatSessionApi(
+        content.slice(0, 20) || '新会话',
+      );
       aiSessions.value.unshift(newSession);
       selectedConversationId.value = newSession.id;
       handleSelectSession(newSession.id);
@@ -517,7 +549,9 @@ const handleAISendMessage = async () => {
         updateContext();
 
         // Update session title if it's the first message
-        const currentSession = aiSessions.value.find(s => s.id === selectedConversationId.value);
+        const currentSession = aiSessions.value.find(
+          (s) => s.id === selectedConversationId.value,
+        );
         if (currentSession && currentSession.title === '新会话') {
           handleUpdateSessionTitle(currentSession.id, content.slice(0, 30));
         }
@@ -531,7 +565,7 @@ const handleAISendMessage = async () => {
         }
         isStreaming.value = false;
         aiChatLoading.value = false;
-      }
+      },
     ).start();
   } catch (error) {
     console.error('Failed to send message to AI:', error);
@@ -542,9 +576,12 @@ const handleAISendMessage = async () => {
 };
 
 const updateContext = () => {
-  aiChatContext.value = aiChatMessages.value.slice(-10).map(msg => {
-    return `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`;
-  }).join('\n');
+  aiChatContext.value = aiChatMessages.value
+    .slice(-10)
+    .map((msg) => {
+      return `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`;
+    })
+    .join('\n');
 };
 
 const handleSummarizeTimeRecords = async (type: 'today' | 'week') => {
@@ -553,7 +590,9 @@ const handleSummarizeTimeRecords = async (type: 'today' | 'week') => {
 
     // If no session selected, create one first
     if (!selectedConversationId.value) {
-      const newSession = await createChatSessionApi(`${type === 'today' ? '今日' : '本周'}时迹总结`);
+      const newSession = await createChatSessionApi(
+        `${type === 'today' ? '今日' : '本周'}时迹总结`,
+      );
       aiSessions.value.unshift(newSession);
       selectedConversationId.value = newSession.id;
       handleSelectSession(newSession.id);
@@ -573,8 +612,11 @@ const handleSummarizeTimeRecords = async (type: 'today' | 'week') => {
     aiChatMessages.value.push(summaryMessage);
 
     // Also save this summary to the database as a message
-    await chatWithLLMApi(`请记录以下总结：\n${summary}`, undefined, selectedConversationId.value);
-
+    await chatWithLLMApi(
+      `请记录以下总结：\n${summary}`,
+      undefined,
+      selectedConversationId.value,
+    );
   } catch (error) {
     console.error('Failed to summarize time records:', error);
     antMessage.error('总结时迹记录失败，请检查大模型配置');
@@ -592,12 +634,17 @@ const renderMarkdown = (content: string) => {
 
 const chatMessagesContainer = ref<HTMLElement | null>(null);
 
-watch(aiChatMessages, async () => {
-  await nextTick();
-  if (chatMessagesContainer.value) {
-    chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
-  }
-}, { deep: true });
+watch(
+  aiChatMessages,
+  async () => {
+    await nextTick();
+    if (chatMessagesContainer.value) {
+      chatMessagesContainer.value.scrollTop =
+        chatMessagesContainer.value.scrollHeight;
+    }
+  },
+  { deep: true },
+);
 
 // Context Menu for AI Messages
 const aiMessageContextMenuVisible = ref(false);
@@ -617,7 +664,9 @@ const closeAiMessageContextMenu = () => {
 
 const handleDeleteAiMessage = () => {
   if (selectedAiMessage.value) {
-    aiChatMessages.value = aiChatMessages.value.filter(m => m.id !== selectedAiMessage.value?.id);
+    aiChatMessages.value = aiChatMessages.value.filter(
+      (m) => m.id !== selectedAiMessage.value?.id,
+    );
     // Since there's no single message delete API for AI, we just update local state
     // and maybe the user will add it later.
     antMessage.success('已从本地移除消息');
@@ -637,21 +686,30 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div :class="[isMobile ? 'h-[calc(100vh-48px)] p-0' : 'h-[calc(100vh-100px)] p-4']">
+  <div
+    :class="[
+      isMobile ? 'h-[calc(100vh-48px)] p-0' : 'h-[calc(100vh-100px)] p-4',
+    ]"
+  >
     <div
-      class="flex h-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100"
-      :class="{'rounded-none border-0': isMobile}"
+      class="flex h-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
+      :class="{ 'rounded-none border-0': isMobile }"
     >
-      <div v-if="!isMobile" class="w-48 bg-gray-50/50 border-r border-gray-100 flex flex-col py-2">
-        <div class="px-4 py-3 font-bold text-lg text-gray-800 flex items-center gap-2">
-           <span class="i-ant-design:message-filled text-blue-500"></span>
-           消息中心
+      <div
+        v-if="!isMobile"
+        class="flex w-48 flex-col border-r border-gray-100 bg-gray-50/50 py-2"
+      >
+        <div
+          class="flex items-center gap-2 px-4 py-3 text-lg font-bold text-gray-800"
+        >
+          <span class="i-ant-design:message-filled text-blue-500"></span>
+          消息中心
         </div>
-        <div class="flex-1 space-y-1 px-2 mt-2">
+        <div class="mt-2 flex-1 space-y-1 px-2">
           <div
             v-for="item in menuItems"
             :key="item.key"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all text-sm font-medium"
+            class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
             :class="
               activeMenu === item.key
                 ? 'bg-blue-50 text-blue-600'
@@ -667,16 +725,23 @@ onUnmounted(() => {
 
       <div
         v-if="!isMobile || (!selectedUserId && !selectedConversationId)"
-        class="border-r border-gray-100 flex flex-col bg-white"
-        :class="isMobile ? 'flex-1 w-full' : 'w-72'"
+        class="flex flex-col border-r border-gray-100 bg-white"
+        :class="isMobile ? 'w-full flex-1' : 'w-72'"
       >
         <!-- Mobile Switcher -->
-        <div v-if="isMobile" class="flex border-b border-gray-100 bg-gray-50/30">
+        <div
+          v-if="isMobile"
+          class="flex border-b border-gray-100 bg-gray-50/30"
+        >
           <div
             v-for="item in menuItems"
             :key="item.key"
-            class="flex-1 text-center py-3.5 font-medium transition-all cursor-pointer flex items-center justify-center gap-2"
-            :class="activeMenu === item.key ? 'text-blue-600 border-b-2 border-blue-600 bg-white' : 'text-gray-500 hover:bg-gray-50'"
+            class="flex flex-1 cursor-pointer items-center justify-center gap-2 py-3.5 text-center font-medium transition-all"
+            :class="
+              activeMenu === item.key
+                ? 'border-b-2 border-blue-600 bg-white text-blue-600'
+                : 'text-gray-500 hover:bg-gray-50'
+            "
             @click="handleMenuClick(item.key)"
           >
             <span :class="item.icon" class="text-lg"></span>
@@ -701,42 +766,65 @@ onUnmounted(() => {
         />
       </div>
 
-      <div v-if="!isMobile || selectedUserId || (isAIChat && selectedConversationId)" class="flex-1 flex flex-col bg-white">
-        <div v-if="isAIChat && selectedConversationId" class="flex-1 flex flex-col">
-          <div class="border-b border-gray-100 px-4 py-3 flex items-center justify-between">
+      <div
+        v-if="
+          !isMobile || selectedUserId || (isAIChat && selectedConversationId)
+        "
+        class="flex flex-1 flex-col bg-white"
+      >
+        <div
+          v-if="isAIChat && selectedConversationId"
+          class="flex flex-1 flex-col"
+        >
+          <div
+            class="flex items-center justify-between border-b border-gray-100 px-4 py-3"
+          >
             <div class="flex items-center gap-3">
               <button
                 v-if="isMobile"
-                class="p-1 -ml-1 text-gray-400 hover:text-gray-600"
+                class="-ml-1 p-1 text-gray-400 hover:text-gray-600"
                 @click="handleBack"
               >
                 <span class="i-ant-design:left-outlined text-lg"></span>
               </button>
-              <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <span class="i-ant-design:robot-outlined text-blue-500 text-lg"></span>
+              <div
+                class="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100"
+              >
+                <span
+                  class="i-ant-design:robot-outlined text-lg text-blue-500"
+                ></span>
               </div>
               <div>
                 <h3 class="font-medium text-gray-800">
-                  {{ aiSessions.find(s => s.id === selectedConversationId)?.title || 'AI 助手' }}
+                  {{
+                    aiSessions.find((s) => s.id === selectedConversationId)
+                      ?.title || 'AI 助手'
+                  }}
                 </h3>
                 <p class="text-xs text-gray-500">智能对话与时迹分析</p>
               </div>
             </div>
             <div class="flex gap-2">
               <button
-                class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="rounded-lg bg-green-100 px-3 py-1 text-sm text-green-800 transition-colors hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
                 @click="handleSummarizeTimeRecords('today')"
                 :disabled="summarizeLoading || isStreaming"
               >
-                <span v-if="summarizeLoading" class="i-ant-design:loading-3-quarters-outlined animate-spin mr-1"></span>
+                <span
+                  v-if="summarizeLoading"
+                  class="i-ant-design:loading-3-quarters-outlined mr-1 animate-spin"
+                ></span>
                 总结今日
               </button>
               <button
-                class="px-3 py-1 text-sm bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="rounded-lg bg-green-100 px-3 py-1 text-sm text-green-800 transition-colors hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
                 @click="handleSummarizeTimeRecords('week')"
                 :disabled="summarizeLoading || isStreaming"
               >
-                <span v-if="summarizeLoading" class="i-ant-design:loading-3-quarters-outlined animate-spin mr-1"></span>
+                <span
+                  v-if="summarizeLoading"
+                  class="i-ant-design:loading-3-quarters-outlined mr-1 animate-spin"
+                ></span>
                 总结本周
               </button>
             </div>
@@ -744,8 +832,8 @@ onUnmounted(() => {
 
           <div
             ref="chatMessagesContainer"
-            class="flex-1 overflow-y-auto min-h-0"
-            :class="isMobile ? 'px-3 py-2 space-y-3' : 'p-4 space-y-4'"
+            class="min-h-0 flex-1 overflow-y-auto"
+            :class="isMobile ? 'space-y-3 px-3 py-2' : 'space-y-4 p-4'"
           >
             <div
               v-for="msg in aiChatMessages"
@@ -755,27 +843,47 @@ onUnmounted(() => {
               @contextmenu="handleAiMessageContextMenu($event, msg)"
             >
               <div
-                class="max-w-[70%] p-3 rounded-lg"
-                :class="msg.role === 'user' ? 'bg-blue-100 text-gray-800' : 'bg-gray-100 text-gray-800'"
+                class="max-w-[70%] rounded-lg p-3"
+                :class="
+                  msg.role === 'user'
+                    ? 'bg-blue-100 text-gray-800'
+                    : 'bg-gray-100 text-gray-800'
+                "
               >
                 <div
                   v-if="msg.role !== 'user' && msg.content"
                   v-html="renderMarkdown(msg.content)"
                   class="prose prose-sm max-w-none"
                 ></div>
-                <div v-else-if="msg.role !== 'user' && !msg.content" class="flex items-center gap-1.5 py-1 px-1">
-                  <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                  <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                  <div class="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                <div
+                  v-else-if="msg.role !== 'user' && !msg.content"
+                  class="flex items-center gap-1.5 px-1 py-1"
+                >
+                  <div
+                    class="h-2 w-2 animate-bounce rounded-full bg-blue-400 [animation-delay:-0.3s]"
+                  ></div>
+                  <div
+                    class="h-2 w-2 animate-bounce rounded-full bg-blue-400 [animation-delay:-0.15s]"
+                  ></div>
+                  <div
+                    class="h-2 w-2 animate-bounce rounded-full bg-blue-400"
+                  ></div>
                 </div>
                 <p v-else>{{ msg.content }}</p>
-                <p class="text-xs text-gray-500 mt-1">{{ new Date(msg.createTime).toLocaleTimeString() }}</p>
+                <p class="mt-1 text-xs text-gray-500">
+                  {{ new Date(msg.createTime).toLocaleTimeString() }}
+                </p>
               </div>
             </div>
-            <div v-if="aiChatMessages.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400">
-              <div class="i-ant-design:robot-outlined text-6xl opacity-20 mb-4"></div>
+            <div
+              v-if="aiChatMessages.length === 0"
+              class="flex h-full flex-col items-center justify-center text-gray-400"
+            >
+              <div
+                class="i-ant-design:robot-outlined mb-4 text-6xl opacity-20"
+              ></div>
               <p>开始与 AI 助手对话</p>
-              <p class="text-sm mt-2">可以尝试让 AI 总结你的时迹记录</p>
+              <p class="mt-2 text-sm">可以尝试让 AI 总结你的时迹记录</p>
             </div>
           </div>
 
@@ -784,17 +892,20 @@ onUnmounted(() => {
               <input
                 v-model="aiChatInput"
                 type="text"
-                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="输入消息..."
                 @keyup.enter="handleAISendMessage"
                 :disabled="isStreaming"
               />
               <button
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                class="rounded-lg bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
                 @click="handleAISendMessage"
                 :disabled="aiChatLoading || !aiChatInput.trim() || isStreaming"
               >
-                <span v-if="aiChatLoading" class="i-ant-design:loading-3-quarters-outlined animate-spin"></span>
+                <span
+                  v-if="aiChatLoading"
+                  class="i-ant-design:loading-3-quarters-outlined animate-spin"
+                ></span>
                 <span v-else>发送</span>
               </button>
             </div>
@@ -805,7 +916,9 @@ onUnmounted(() => {
           v-else-if="selectedUserId"
           :messages="currentChatMessages"
           :target-id="selectedUserId"
-          :target-name="userCache.get(selectedUserId)?.nickname || `User ${selectedUserId}`"
+          :target-name="
+            userCache.get(selectedUserId)?.nickname || `User ${selectedUserId}`
+          "
           :my-id="myId"
           :my-avatar="userStore.userInfo?.avatar"
           :loading="loading"
@@ -815,8 +928,13 @@ onUnmounted(() => {
           @delete="handleDeleteMessage"
           @back="handleBack"
         />
-        <div v-else class="flex flex-col items-center justify-center h-full text-gray-400 bg-gray-50/30">
-          <div class="i-ant-design:message-outlined text-6xl opacity-20 mb-4"></div>
+        <div
+          v-else
+          class="flex h-full flex-col items-center justify-center bg-gray-50/30 text-gray-400"
+        >
+          <div
+            class="i-ant-design:message-outlined mb-4 text-6xl opacity-20"
+          ></div>
           <p>选择一个会话开始聊天</p>
         </div>
       </div>
@@ -826,12 +944,15 @@ onUnmounted(() => {
     <Teleport to="body">
       <div
         v-if="aiMessageContextMenuVisible"
-        class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]"
-        :style="{ left: aiMessageContextMenuPosition.x + 'px', top: aiMessageContextMenuPosition.y + 'px' }"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        :style="{
+          left: `${aiMessageContextMenuPosition.x}px`,
+          top: `${aiMessageContextMenuPosition.y}px`,
+        }"
         @click.stop
       >
         <div
-          class="px-4 py-2 text-sm text-red-500 cursor-pointer hover:bg-red-50 flex items-center gap-2"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50"
           @click="handleDeleteAiMessage"
         >
           <span class="i-ant-design:delete-outlined"></span>
@@ -846,83 +967,102 @@ onUnmounted(() => {
 .prose {
   max-width: none;
 }
+
 .prose :deep(p) {
-  margin-bottom: 0.75rem;
   margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
 }
+
 .prose :deep(h1) {
-  font-size: 1.5rem;
-  font-weight: 700;
   margin-top: 1.25rem;
   margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
+
 .prose :deep(h2) {
-  font-size: 1.25rem;
-  font-weight: 600;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
-}
-.prose :deep(h3) {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
+}
+
+.prose :deep(h3) {
   margin-top: 0.875rem;
   margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
+
 .prose :deep(code) {
-  background-color: #f3f4f6;
   padding: 0.125rem 0.375rem;
-  border-radius: 0.375rem;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
   font-size: 0.875rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  background-color: #f3f4f6;
+  border-radius: 0.375rem;
 }
+
 .prose :deep(pre) {
-  background-color: #1f2937;
-  color: #e5e7eb;
   padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
   margin: 0.75rem 0;
+  overflow-x: auto;
+  color: #e5e7eb;
+  background-color: #1f2937;
+  border-radius: 0.5rem;
 }
+
 .prose :deep(pre code) {
-  background-color: transparent;
   padding: 0;
+  background-color: transparent;
 }
+
 .prose :deep(ul) {
   padding-left: 1.5rem;
   margin: 0.5rem 0;
 }
+
 .prose :deep(ol) {
   padding-left: 1.5rem;
   margin: 0.5rem 0;
 }
+
 .prose :deep(li) {
   margin: 0.25rem 0;
 }
+
 .prose :deep(blockquote) {
-  border-left: 4px solid #3b82f6;
   padding-left: 1rem;
   margin: 0.75rem 0;
-  color: #4b5563;
   font-style: italic;
+  color: #4b5563;
+  border-left: 4px solid #3b82f6;
 }
+
 .prose :deep(a) {
   color: #3b82f6;
   text-decoration: underline;
 }
+
 .prose :deep(a:hover) {
   color: #1d4ed8;
 }
+
 .prose :deep(table) {
   width: 100%;
-  border-collapse: collapse;
   margin: 0.75rem 0;
+  border-collapse: collapse;
 }
-.prose :deep(th), .prose :deep(td) {
-  border: 1px solid #d1d5db;
+
+.prose :deep(th),
+.prose :deep(td) {
   padding: 0.5rem;
+  border: 1px solid #d1d5db;
 }
+
 .prose :deep(th) {
-  background-color: #f3f4f6;
   font-weight: 600;
+  background-color: #f3f4f6;
 }
 </style>

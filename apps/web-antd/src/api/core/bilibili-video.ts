@@ -23,18 +23,18 @@ export interface BilibiliVideo {
   aid?: string; // AV号
   description?: string; // 视频描述
   owner?: {
+    face: string; // UP主头像
     mid: number; // UP主ID
     name: string; // UP主名称
-    face: string; // UP主头像
   };
   stat?: {
-    view: number; // 播放量
-    danmaku: number; // 弹幕数
-    reply: number; // 评论数
-    favorite: number; // 收藏数
     coin: number; // 投币数
-    share: number; // 分享数
+    danmaku: number; // 弹幕数
+    favorite: number; // 收藏数
     like: number; // 点赞数
+    reply: number; // 评论数
+    share: number; // 分享数
+    view: number; // 播放量
   };
   pubdate?: string; // 发布时间
   ctime?: string; // 创建时间
@@ -42,9 +42,9 @@ export interface BilibiliVideo {
   tname_v2?: string; // 新版分区名称
   copyright?: number; // 版权信息
   dimension?: {
-    width: number;
     height: number;
     rotate: number;
+    width: number;
   };
   pages?: Array<{
     cid: number;
@@ -128,7 +128,7 @@ function parseEpisodeFromUrl(url: string): number {
   // 匹配p=数字格式的参数
   const episodeMatch = url.match(/[?&]p=(\d+)/);
   if (episodeMatch && episodeMatch[1]) {
-    return parseInt(episodeMatch[1], 10);
+    return Number.parseInt(episodeMatch[1], 10);
   }
   return 1; // 默认第一集
 }
@@ -136,7 +136,10 @@ function parseEpisodeFromUrl(url: string): number {
 /**
  * 计算学习进度（当前集数到以前的时长 / 视频总时长）
  */
-function calculateProgress(currentEpisode: number, totalEpisodes: number): number {
+function calculateProgress(
+  currentEpisode: number,
+  totalEpisodes: number,
+): number {
   if (totalEpisodes <= 0 || currentEpisode <= 0) {
     return 0;
   }
@@ -147,14 +150,22 @@ function calculateProgress(currentEpisode: number, totalEpisodes: number): numbe
 
   // 计算进度百分比：当前集数到以前的时长占总时长的比例
   // 假设每集时长相等，进度 = (当前集数 - 1) / 总集数 * 100
-  const progress = Math.max(0, Math.min(100, ((currentEpisode - 1) / totalEpisodes) * 100));
+  const progress = Math.max(
+    0,
+    Math.min(100, ((currentEpisode - 1) / totalEpisodes) * 100),
+  );
   return Math.round(progress);
 }
 
 /**
  * 计算已观看视频时长（秒）
  */
-function calculateWatchedDuration(currentEpisode: number, totalEpisodes: number, totalDurationSeconds: number, pages?: Array<{page: number, duration: number}>): number {
+function calculateWatchedDuration(
+  currentEpisode: number,
+  totalEpisodes: number,
+  totalDurationSeconds: number,
+  pages?: Array<{ duration: number; page: number }>,
+): number {
   if (totalEpisodes <= 0 || currentEpisode <= 0 || totalDurationSeconds <= 0) {
     return 0;
   }
@@ -174,7 +185,13 @@ function calculateWatchedDuration(currentEpisode: number, totalEpisodes: number,
   }
 
   // 如果没有分P时长数据，假设每集时长相等
-  const watchedSeconds = Math.max(0, Math.min(totalDurationSeconds, ((currentEpisode - 1) / totalEpisodes) * totalDurationSeconds));
+  const watchedSeconds = Math.max(
+    0,
+    Math.min(
+      totalDurationSeconds,
+      ((currentEpisode - 1) / totalEpisodes) * totalDurationSeconds,
+    ),
+  );
   return Math.round(watchedSeconds);
 }
 
@@ -186,11 +203,9 @@ function formatDuration(seconds: number): string {
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
 
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  } else {
-    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
+  return hours > 0
+    ? `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    : `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 /**
@@ -207,13 +222,13 @@ export async function parseBilibiliUrl(url: string) {
   let aid = '';
 
   // 匹配BV号格式
-  const bvMatch = url.match(/[Bb][Vv]([a-zA-Z0-9]{10})/);
+  const bvMatch = url.match(/BV([a-z0-9]{10})/i);
   if (bvMatch) {
     bvid = bvMatch[0];
   }
 
   // 匹配av号格式
-  const avMatch = url.match(/[Aa][Vv](\d+)/);
+  const avMatch = url.match(/AV(\d+)/i);
   if (avMatch) {
     aid = avMatch[1];
   }
@@ -231,11 +246,19 @@ export async function parseBilibiliUrl(url: string) {
       const currentEpisode = parseEpisodeFromUrl(url);
 
       // 自动计算学习进度
-      const progress = calculateProgress(currentEpisode, videoInfo.episodes || 1);
+      const progress = calculateProgress(
+        currentEpisode,
+        videoInfo.episodes || 1,
+      );
 
       // 计算已观看视频时长（秒）
       const totalDurationSeconds = videoInfo.duration || 0;
-      const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, videoInfo.episodes || 1, totalDurationSeconds, videoInfo.pages);
+      const watchedDurationSeconds = calculateWatchedDuration(
+        currentEpisode,
+        videoInfo.episodes || 1,
+        totalDurationSeconds,
+        videoInfo.pages,
+      );
       const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
 
       // 清理URL参数，只保留p和t参数
@@ -251,7 +274,7 @@ export async function parseBilibiliUrl(url: string) {
           watchedDuration: watchedDurationSeconds,
           watchedDurationFormatted,
         },
-        message: '解析成功'
+        message: '解析成功',
       };
     }
 
@@ -262,11 +285,19 @@ export async function parseBilibiliUrl(url: string) {
       const currentEpisode = parseEpisodeFromUrl(url);
 
       // 自动计算学习进度
-      const progress = calculateProgress(currentEpisode, corsResult.data.episodes || 1);
+      const progress = calculateProgress(
+        currentEpisode,
+        corsResult.data.episodes || 1,
+      );
 
       // 计算已观看视频时长（秒）
       const totalDurationSeconds = corsResult.data.duration || 0;
-      const watchedDurationSeconds = calculateWatchedDuration(currentEpisode, corsResult.data.episodes || 1, totalDurationSeconds, corsResult.data.pages);
+      const watchedDurationSeconds = calculateWatchedDuration(
+        currentEpisode,
+        corsResult.data.episodes || 1,
+        totalDurationSeconds,
+        corsResult.data.pages,
+      );
       const watchedDurationFormatted = formatDuration(watchedDurationSeconds);
 
       // 清理URL参数，只保留p和t参数
@@ -280,19 +311,18 @@ export async function parseBilibiliUrl(url: string) {
           currentEpisode,
           progress,
           watchedDuration: watchedDurationSeconds,
-          watchedDurationFormatted
+          watchedDurationFormatted,
         },
-        message: '解析成功'
+        message: '解析成功',
       };
     }
 
     return corsResult;
-
   } catch (error) {
     console.error('B站API调用失败:', error);
     return {
       success: false,
-      message: '解析失败：' + (error instanceof Error ? error.message : '未知错误')
+      message: `解析失败：${error instanceof Error ? error.message : '未知错误'}`,
     };
   }
 }
@@ -306,7 +336,7 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
     const script = document.createElement('script');
 
     // 生成回调函数名
-    const callbackName = 'bilibiliCallback_' + Date.now();
+    const callbackName = `bilibiliCallback_${Date.now()}`;
 
     // 构建JSONP URL
     let jsonpUrl = '';
@@ -319,7 +349,7 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
     // 设置全局回调函数
     (window as any)[callbackName] = (data: any) => {
       // 清理script标签
-      document.head.removeChild(script);
+      script.remove();
       delete (window as any)[callbackName];
 
       if (data && data.code === 0) {
@@ -331,10 +361,10 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
 
     // 设置超时处理
     const timeout = setTimeout(() => {
-      document.head.removeChild(script);
+      script.remove();
       delete (window as any)[callbackName];
       resolve(null);
-    }, 10000);
+    }, 10_000);
 
     // 修改回调函数以清除超时
     const originalCallback = (window as any)[callbackName];
@@ -344,7 +374,7 @@ async function parseWithJsonp(bvid: string, aid: string): Promise<any> {
     };
 
     script.src = jsonpUrl;
-    document.head.appendChild(script);
+    document.head.append(script);
   });
 }
 
@@ -366,9 +396,10 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
   const response = await fetch(proxyUrl, {
     method: 'GET',
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Referer': 'https://www.bilibili.com'
-    }
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      Referer: 'https://www.bilibili.com',
+    },
   });
 
   if (!response.ok) {
@@ -384,7 +415,7 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
   return {
     success: true,
     data: formatVideoInfo(result.data),
-    message: '解析成功'
+    message: '解析成功',
   };
 }
 
@@ -401,26 +432,30 @@ function formatVideoInfo(data: any) {
     bvid: data.bvid || '',
     aid: data.aid || '',
     description: data.desc || '',
-    owner: data.owner ? {
-      mid: data.owner.mid,
-      name: data.owner.name,
-      face: data.owner.face
-    } : null,
-    stat: data.stat ? {
-      view: data.stat.view,
-      danmaku: data.stat.danmaku,
-      reply: data.stat.reply,
-      favorite: data.stat.favorite,
-      coin: data.stat.coin,
-      share: data.stat.share,
-      like: data.stat.like
-    } : null,
+    owner: data.owner
+      ? {
+          mid: data.owner.mid,
+          name: data.owner.name,
+          face: data.owner.face,
+        }
+      : null,
+    stat: data.stat
+      ? {
+          view: data.stat.view,
+          danmaku: data.stat.danmaku,
+          reply: data.stat.reply,
+          favorite: data.stat.favorite,
+          coin: data.stat.coin,
+          share: data.stat.share,
+          like: data.stat.like,
+        }
+      : null,
     pubdate: data.pubdate ? new Date(data.pubdate * 1000).toLocaleString() : '',
     ctime: data.ctime ? new Date(data.ctime * 1000).toLocaleString() : '',
     tname: data.tname || '',
     tname_v2: data.tname_v2 || '',
     copyright: data.copyright || 1,
     dimension: data.dimension || null,
-    pages: data.pages || []
+    pages: data.pages || [],
   };
 }

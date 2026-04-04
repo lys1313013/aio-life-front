@@ -93,15 +93,15 @@ interface RouteMeta {
    */
   loaded?: boolean;
   /**
-   * 标签页最大打开数量
-   * @default -1
-   */
-  maxNumOfOpenTab?: number;
-  /**
    * 页面在后台的最长空闲时间（秒），超过此时间后切换回该页面将自动刷新
    * @default 0
    */
   maxIdleTime?: number;
+  /**
+   * 标签页最大打开数量
+   * @default -1
+   */
+  maxNumOfOpenTab?: number;
   /**
    * 菜单可以看到，但是访问会被重定向到403
    */

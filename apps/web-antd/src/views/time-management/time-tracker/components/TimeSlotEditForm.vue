@@ -1,277 +1,51 @@
-<template>
-  <div class="time-slot-edit-form">
-    <Form
-      ref="formRef"
-      :model="formState"
-      :rules="rules"
-      layout="vertical"
-      @finish="handleSave"
-    >
-
-      <Form.Item label="分类" name="categoryId">
-        <Select v-model:value="formState.categoryId" placeholder="请选择分类" @change="handleCategoryChange">
-          <Select.Option
-            v-for="category in visibleCategories"
-            :key="category.id"
-            :value="category.id"
-          >
-            <div class="category-option">
-              <span class="color-dot" :style="{ backgroundColor: getDisplayColor(category) }"></span>
-              <component v-if="getDisplayIcon(category)" :is="getDisplayIcon(category)" class="category-icon" />
-              <span class="flex-1 truncate category-name">{{ getDisplayName(category) }}</span>
-            </div>
-          </Select.Option>
-        </Select>
-      </Form.Item>
-
-      <Form.Item label="标题" name="title">
-        <Input v-model:value="formState.title" placeholder="标题" />
-      </Form.Item>
-
-      <Row :gutter="16">
-        <Col :span="12">
-          <Form.Item label="开始时间" name="startTime">
-            <div class="time-control-group">
-              <TimePicker
-                v-model:value="formState.startTime"
-                format="HH:mm"
-                style="width: 100%"
-                placeholder="选择开始时间"
-              />
-              <div class="time-adjust-buttons">
-                <Button
-                  size="small"
-                  @click="adjustStartTime(-1)"
-                  @mousedown="startContinuousAdjust(-1, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-1, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.startTime"
-                >-1</Button>
-                <Button
-                  size="small"
-                  @click="adjustStartTime(1)"
-                  @mousedown="startContinuousAdjust(1, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(1, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.startTime"
-                >+1</Button>
-                <Button
-                  size="small"
-                  @click="adjustStartTime(-30)"
-                  @mousedown="startContinuousAdjust(-30, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-30, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.startTime"
-                >-30</Button>
-                <Button
-                  size="small"
-                  @click="adjustStartTime(30)"
-                  @mousedown="startContinuousAdjust(30, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(30, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.startTime"
-                >+30</Button>
-              </div>
-            </div>
-          </Form.Item>
-        </Col>
-        <Col :span="12">
-          <Form.Item label="结束时间" name="endTime">
-            <div class="time-control-group">
-              <TimePicker
-                v-model:value="formState.endTime"
-                format="HH:mm"
-                style="width: 100%"
-                placeholder="选择结束时间"
-              />
-              <div class="time-adjust-buttons">
-                <Button
-                  size="small"
-                  @click="adjustEndTime(-1)"
-                  @mousedown="startContinuousAdjust(-1, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-1, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.endTime"
-                >-1</Button>
-                <Button
-                  size="small"
-                  @click="adjustEndTime(1)"
-                  @mousedown="startContinuousAdjust(1, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(1, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.endTime"
-                >+1</Button>
-                <Button
-                  size="small"
-                  @click="adjustEndTime(-30)"
-                  @mousedown="startContinuousAdjust(-30, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-30, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.endTime"
-                >-30</Button>
-                <Button
-                  size="small"
-                  @click="adjustEndTime(30)"
-                  @mousedown="startContinuousAdjust(30, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(30, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
-                  :disabled="!formState.endTime"
-                >+30</Button>
-              </div>
-            </div>
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Form.Item>
-        <div style="display: flex; align-items: center; gap: 8px">
-          <span style="flex-shrink: 0; color: rgba(0, 0, 0, 0.88)">时长</span>
-          <div style="display: flex; gap: 8px; flex: 1">
-            <div style="display: flex; align-items: center; gap: 4px; flex: 1">
-              <InputNumber
-                v-model:value="editableHours"
-                :min="0"
-                :precision="0"
-                class="input-align-right"
-                style="flex: 1"
-                placeholder="时"
-                inputmode="numeric"
-                pattern="[0-9]*"
-              />
-              <span>时</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 4px; flex: 1">
-              <InputNumber
-                v-model:value="editableMinutes"
-                :min="0"
-                :max="59"
-                :precision="0"
-                class="input-align-right"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                style="flex: 1"
-                placeholder="分"
-              />
-              <span>分</span>
-            </div>
-          </div>
-        </div>
-      </Form.Item>
-
-      <!-- 运动相关字段 -->
-      <template v-if="isExerciseCategory">
-        <div style="margin-bottom: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span>运动明细</span>
-            <Button type="link" size="small" @click="addExercise">
-              <template #icon><PlusOutlined /></template>
-              添加
-            </Button>
-          </div>
-          
-          <div v-for="(exercise, index) in formState.exercises" :key="index" style="margin-bottom: 8px; display: flex; gap: 8px; align-items: center;">
-            <div style="flex: 2;">
-              <Select
-                v-model:value="exercise.exerciseTypeId"
-                placeholder="运动类型"
-                :options="exerciseTypeOptions"
-                allowClear
-                style="width: 100%"
-              />
-            </div>
-            <div style="flex: 1;">
-              <InputNumber
-                v-model:value="exercise.exerciseCount"
-                placeholder="数量"
-                style="width: 100%"
-                :min="0"
-                :precision="0"
-              />
-            </div>
-            <Button 
-              type="text" 
-              danger 
-              size="small"
-              @click="removeExercise(index)"
-            >
-              <template #icon><DeleteOutlined /></template>
-            </Button>
-          </div>
-          
-          <div v-if="formState.exercises.length === 0" style="text-align: center; color: #999; padding: 8px; border: 1px dashed #d9d9d9; border-radius: 4px; cursor: pointer;" @click="addExercise">
-            点击添加运动明细
-          </div>
-        </div>
-      </template>
-
-      <Form.Item label="描述" name="description">
-        <Textarea
-          v-model:value="formState.description"
-          placeholder="描述信息"
-          :rows="3"
-        />
-      </Form.Item>
-
-      <Form.Item>
-        <div class="form-actions">
-          <Popconfirm
-            v-if="isExistingSlot"
-            title="确定要删除此时间段吗？"
-            ok-text="确定"
-            cancel-text="取消"
-            @confirm="handleDelete"
-          >
-            <Button danger>删除</Button>
-          </Popconfirm>
-          <div style="margin-left: auto">
-            <Button @click="$emit('cancel')">取消</Button>
-            <Button type="primary" html-type="submit">保存</Button>
-          </div>
-        </div>
-      </Form.Item>
-    </Form>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { Form, Input, Select, TimePicker, Button, message, Row, Col, Textarea, InputNumber, Popconfirm } from 'ant-design-vue';
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
-import type { TimeSlot, TimeSlotCategory, MergedCategory, TimeSlotFormData, ExerciseDetail } from '../types';
-import { timeToMinutes, minutesToTime, getAboveSlotEndTime, getBelowSlotStartTime } from '../utils';
-import { getByDictType } from '#/api/core/common';
-import { getCategoryColor, getCategoryName, getCategoryIconById } from '../config';
+
+import type {
+  ExerciseDetail,
+  MergedCategory,
+  TimeSlot,
+  TimeSlotCategory,
+  TimeSlotFormData,
+} from '../types';
+
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+
 import { createIconifyIcon } from '@vben/icons';
+
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import {
+  Button,
+  Col,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Popconfirm,
+  Row,
+  Select,
+  Textarea,
+  TimePicker,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+import { getByDictType } from '#/api/core/common';
+
+import {
+  getCategoryColor,
+  getCategoryIconById,
+  getCategoryName,
+} from '../config';
+import {
+  getAboveSlotEndTime,
+  getBelowSlotStartTime,
+  minutesToTime,
+  timeToMinutes,
+} from '../utils';
 
 interface Props {
   slot: TimeSlot;
-  categories: (TimeSlotCategory | MergedCategory)[];
+  categories: (MergedCategory | TimeSlotCategory)[];
   existingSlots?: TimeSlot[];
 }
 
@@ -286,21 +60,21 @@ const emit = defineEmits<Emits>();
 
 // 分类计算属性
 const visibleCategories = computed(() => {
-  return props.categories.filter(c => !('isHidden' in c && c.isHidden));
+  return props.categories.filter((c) => !('isHidden' in c && c.isHidden));
 });
 
 // 获取显示颜色
-const getDisplayColor = (category: TimeSlotCategory | MergedCategory) => {
+const getDisplayColor = (category: MergedCategory | TimeSlotCategory) => {
   return getCategoryColor(category.id, props.categories);
 };
 
 // 获取显示名称
-const getDisplayName = (category: TimeSlotCategory | MergedCategory) => {
+const getDisplayName = (category: MergedCategory | TimeSlotCategory) => {
   return getCategoryName(category.id, props.categories);
 };
 
 // 获取显示图标
-const getDisplayIcon = (category: TimeSlotCategory | MergedCategory) => {
+const getDisplayIcon = (category: MergedCategory | TimeSlotCategory) => {
   const iconName = getCategoryIconById(category.id, props.categories);
   if (iconName) {
     try {
@@ -332,7 +106,7 @@ const formState = ref<LocalFormState>({
   categoryId: '',
   title: '',
   description: '',
-  exercises: []
+  exercises: [],
 });
 
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
@@ -349,7 +123,7 @@ const isExerciseCategory = computed(() => {
 const isExistingSlot = computed(() => {
   if (!formState.value.id) return false;
   if (props.existingSlots) {
-    return props.existingSlots.some(slot => slot.id === formState.value.id);
+    return props.existingSlots.some((slot) => slot.id === formState.value.id);
   }
   return true; // 如果没有提供 existingSlots，默认如果 id 存在则认为是已有的
 });
@@ -361,7 +135,7 @@ const loadExerciseTypes = async () => {
     if (res && res.dictDetailList) {
       exerciseTypeOptions.value = res.dictDetailList.map((item: any) => ({
         label: item.label,
-        value: item.value
+        value: item.value,
       }));
     }
   } catch (error) {
@@ -407,14 +181,21 @@ const updateDuration = (val: number) => {
       endTime: startMinutes, // 设置为开始时间，以便查找紧邻的下一个时间段
     };
 
-    const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
+    const belowStartTime = getBelowSlotStartTime(
+      props.existingSlots,
+      tempSlot,
+      tempSlot.id,
+    );
     if (belowStartTime !== null) {
       maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
     }
   }
 
   // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
-  const finalEndMinutes = Math.max(startMinutes + 1, Math.min(maxMinutes, proposedEndMinutes));
+  const finalEndMinutes = Math.max(
+    startMinutes + 1,
+    Math.min(maxMinutes, proposedEndMinutes),
+  );
 
   formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
 };
@@ -426,7 +207,7 @@ const editableHours = computed({
     const currentMinutes = duration.value % 60;
     const totalMinutes = (val || 0) * 60 + currentMinutes;
     updateDuration(totalMinutes);
-  }
+  },
 });
 
 // 计算分钟（可编辑）
@@ -436,20 +217,14 @@ const editableMinutes = computed({
     const currentHours = Math.floor(duration.value / 60);
     const totalMinutes = currentHours * 60 + (val || 0);
     updateDuration(totalMinutes);
-  }
+  },
 });
 
 // 表单验证规则
 const rules: any = {
-  title: [
-    { max: 50, message: '标题不能超过50个字符', trigger: 'blur' }
-  ],
-  categoryId: [
-    { required: true, message: '请选择分类', trigger: 'change' }
-  ],
-  startTime: [
-    { required: true, message: '请选择开始时间', trigger: 'change' }
-  ],
+  title: [{ max: 50, message: '标题不能超过50个字符', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
+  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
   endTime: [
     { required: true, message: '请选择结束时间', trigger: 'change' },
     {
@@ -458,8 +233,12 @@ const rules: any = {
           return Promise.resolve();
         }
 
-        const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-        const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+        const startMinutes = timeToMinutes(
+          formState.value.startTime.format('HH:mm'),
+        );
+        const endMinutes = timeToMinutes(
+          formState.value.endTime.format('HH:mm'),
+        );
 
         if (endMinutes < startMinutes) {
           return Promise.reject(new Error('结束时间必须大于等于开始时间'));
@@ -472,11 +251,11 @@ const rules: any = {
         return Promise.resolve();
       },
       trigger: 'change',
-    }
+    },
   ],
   description: [
-    { max: 200, message: '描述不能超过200个字符', trigger: 'blur' }
-  ]
+    { max: 200, message: '描述不能超过200个字符', trigger: 'blur' },
+  ],
 };
 
 // 将分钟数转换为时间选择器值
@@ -509,52 +288,59 @@ const initializeForm = (slot: TimeSlot) => {
     categoryId: slot.categoryId,
     title: slot.title,
     description: slot.description || '',
-    exercises
+    exercises,
   };
 };
 
 // 监听props变化
-watch(() => props.slot, (newSlot, oldSlot) => {
-  if (newSlot) {
-    // 如果是新打开的或者切换了时间段，完全重新初始化
-    if (!oldSlot || newSlot.id !== oldSlot.id) {
-      initializeForm(newSlot);
-    } else {
-      // 如果是同一个时间段的更新（如异步获取推荐分类），只更新变化的字段
-      if (newSlot.categoryId !== oldSlot.categoryId) {
-        formState.value.categoryId = newSlot.categoryId;
-      }
-      if (newSlot.title !== oldSlot.title) {
-        formState.value.title = newSlot.title;
-      }
-      // 同步更新时间字段
-      if (newSlot.startTime !== oldSlot.startTime) {
-        formState.value.startTime = minutesToTimePickerValue(newSlot.startTime);
-      }
-      if (newSlot.endTime !== oldSlot.endTime) {
-        formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
-      }
-      // 同步更新运动明细
-      if (
-        JSON.stringify(newSlot.exercises) !== JSON.stringify(oldSlot.exercises)
-      ) {
-        if (newSlot.exercises && newSlot.exercises.length > 0) {
-          formState.value.exercises = JSON.parse(
-            JSON.stringify(newSlot.exercises),
+watch(
+  () => props.slot,
+  (newSlot, oldSlot) => {
+    if (newSlot) {
+      // 如果是新打开的或者切换了时间段，完全重新初始化
+      if (!oldSlot || newSlot.id !== oldSlot.id) {
+        initializeForm(newSlot);
+      } else {
+        // 如果是同一个时间段的更新（如异步获取推荐分类），只更新变化的字段
+        if (newSlot.categoryId !== oldSlot.categoryId) {
+          formState.value.categoryId = newSlot.categoryId;
+        }
+        if (newSlot.title !== oldSlot.title) {
+          formState.value.title = newSlot.title;
+        }
+        // 同步更新时间字段
+        if (newSlot.startTime !== oldSlot.startTime) {
+          formState.value.startTime = minutesToTimePickerValue(
+            newSlot.startTime,
           );
-        } else if (
-          isExerciseCategory.value &&
-          formState.value.exercises.length === 0
+        }
+        if (newSlot.endTime !== oldSlot.endTime) {
+          formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
+        }
+        // 同步更新运动明细
+        if (
+          JSON.stringify(newSlot.exercises) !==
+          JSON.stringify(oldSlot.exercises)
         ) {
-          // 如果是运动分类且没有明细，添加一行空明细
-          formState.value.exercises = [
-            { exerciseTypeId: '', exerciseCount: undefined },
-          ];
+          if (newSlot.exercises && newSlot.exercises.length > 0) {
+            formState.value.exercises = JSON.parse(
+              JSON.stringify(newSlot.exercises),
+            );
+          } else if (
+            isExerciseCategory.value &&
+            formState.value.exercises.length === 0
+          ) {
+            // 如果是运动分类且没有明细，添加一行空明细
+            formState.value.exercises = [
+              { exerciseTypeId: '', exerciseCount: undefined },
+            ];
+          }
         }
       }
     }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
 // 处理分类变化
 const handleCategoryChange = () => {
@@ -583,7 +369,7 @@ const handleSave = async () => {
       categoryId: formState.value.categoryId,
       title: formState.value.title,
       description: formState.value.description,
-      exercises: formState.value.exercises
+      exercises: formState.value.exercises,
     };
 
     emit('save', saveData);
@@ -596,7 +382,9 @@ const handleSave = async () => {
 const adjustStartTime = (minutes: number) => {
   if (!formState.value.startTime) return;
 
-  const currentMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
+  const currentMinutes = timeToMinutes(
+    formState.value.startTime.format('HH:mm'),
+  );
   const proposedMinutes = currentMinutes + minutes;
 
   // 获取上下界限
@@ -609,12 +397,18 @@ const adjustStartTime = (minutes: number) => {
       ...props.slot,
       id: formState.value.id || 'temp-id',
       startTime: currentMinutes,
-      endTime: formState.value.endTime ? timeToMinutes(formState.value.endTime.format('HH:mm')) : currentMinutes + 30
+      endTime: formState.value.endTime
+        ? timeToMinutes(formState.value.endTime.format('HH:mm'))
+        : currentMinutes + 30,
     };
 
     // 获取上方最近的时间段结束时间
     // 注意：这里我们要找的是在这个slot开始时间之前最近的一个结束时间
-    const aboveEndTime = getAboveSlotEndTime(props.existingSlots, tempSlot, tempSlot.id);
+    const aboveEndTime = getAboveSlotEndTime(
+      props.existingSlots,
+      tempSlot,
+      tempSlot.id,
+    );
     if (aboveEndTime !== null) {
       // 限制：必须 > 上一个的结束时间。如果上一个结束是10:30，这里只能是10:31
       minMinutes = aboveEndTime + 1;
@@ -632,7 +426,10 @@ const adjustStartTime = (minutes: number) => {
   if (minMinutes > maxMinutes) return;
 
   // 限制范围
-  const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
+  const newMinutes = Math.max(
+    minMinutes,
+    Math.min(maxMinutes, proposedMinutes),
+  );
 
   formState.value.startTime = minutesToTimePickerValue(newMinutes);
 };
@@ -652,27 +449,39 @@ const adjustEndTime = (minutes: number) => {
   }
 
   if (props.existingSlots && props.slot) {
-      const tempSlot = {
-        ...props.slot,
-        id: formState.value.id || 'temp-id',
-        startTime: formState.value.startTime ? timeToMinutes(formState.value.startTime.format('HH:mm')) : 0,
-        endTime: currentMinutes
-      };
+    const tempSlot = {
+      ...props.slot,
+      id: formState.value.id || 'temp-id',
+      startTime: formState.value.startTime
+        ? timeToMinutes(formState.value.startTime.format('HH:mm'))
+        : 0,
+      endTime: currentMinutes,
+    };
 
-      const belowStartTime = getBelowSlotStartTime(props.existingSlots, tempSlot, tempSlot.id);
-      if (belowStartTime !== null) {
-          // 限制：必须 < 下一个的开始时间。如果下一个开始是11:00，这里只能是10:59
-          maxMinutes = belowStartTime - 1;
-      }
+    const belowStartTime = getBelowSlotStartTime(
+      props.existingSlots,
+      tempSlot,
+      tempSlot.id,
+    );
+    if (belowStartTime !== null) {
+      // 限制：必须 < 下一个的开始时间。如果下一个开始是11:00，这里只能是10:59
+      maxMinutes = belowStartTime - 1;
+    }
   }
 
-  const newMinutes = Math.max(minMinutes, Math.min(maxMinutes, proposedMinutes));
+  const newMinutes = Math.max(
+    minMinutes,
+    Math.min(maxMinutes, proposedMinutes),
+  );
 
   formState.value.endTime = minutesToTimePickerValue(newMinutes);
 };
 
 const addExercise = () => {
-  formState.value.exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
+  formState.value.exercises.push({
+    exerciseTypeId: '',
+    exerciseCount: undefined,
+  });
 };
 
 const removeExercise = (index: number) => {
@@ -687,7 +496,7 @@ const handleDelete = () => {
 };
 
 // 开始连续调整
-const startContinuousAdjust = (direction: number, type: 'start' | 'end') => {
+const startContinuousAdjust = (direction: number, type: 'end' | 'start') => {
   // 设置连续调整参数
   continuousAdjustDirection.value = direction;
   continuousAdjustType.value = type;
@@ -738,6 +547,320 @@ onUnmounted(() => {
 });
 </script>
 
+<template>
+  <div class="time-slot-edit-form">
+    <Form
+      ref="formRef"
+      :model="formState"
+      :rules="rules"
+      layout="vertical"
+      @finish="handleSave"
+    >
+      <Form.Item label="分类" name="categoryId">
+        <Select
+          v-model:value="formState.categoryId"
+          placeholder="请选择分类"
+          @change="handleCategoryChange"
+        >
+          <Select.Option
+            v-for="category in visibleCategories"
+            :key="category.id"
+            :value="category.id"
+          >
+            <div class="category-option">
+              <span
+                class="color-dot"
+                :style="{ backgroundColor: getDisplayColor(category) }"
+              ></span>
+              <component
+                v-if="getDisplayIcon(category)"
+                :is="getDisplayIcon(category)"
+                class="category-icon"
+              />
+              <span class="category-name flex-1 truncate">{{
+                getDisplayName(category)
+              }}</span>
+            </div>
+          </Select.Option>
+        </Select>
+      </Form.Item>
+
+      <Form.Item label="标题" name="title">
+        <Input v-model:value="formState.title" placeholder="标题" />
+      </Form.Item>
+
+      <Row :gutter="16">
+        <Col :span="12">
+          <Form.Item label="开始时间" name="startTime">
+            <div class="time-control-group">
+              <TimePicker
+                v-model:value="formState.startTime"
+                format="HH:mm"
+                style="width: 100%"
+                placeholder="选择开始时间"
+              />
+              <div class="time-adjust-buttons">
+                <Button
+                  size="small"
+                  @click="adjustStartTime(-1)"
+                  @mousedown="startContinuousAdjust(-1, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-1, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >
+                  -1
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(1)"
+                  @mousedown="startContinuousAdjust(1, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(1, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >
+                  +1
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(-30)"
+                  @mousedown="startContinuousAdjust(-30, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-30, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >
+                  -30
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustStartTime(30)"
+                  @mousedown="startContinuousAdjust(30, 'start')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(30, 'start')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.startTime"
+                >
+                  +30
+                </Button>
+              </div>
+            </div>
+          </Form.Item>
+        </Col>
+        <Col :span="12">
+          <Form.Item label="结束时间" name="endTime">
+            <div class="time-control-group">
+              <TimePicker
+                v-model:value="formState.endTime"
+                format="HH:mm"
+                style="width: 100%"
+                placeholder="选择结束时间"
+              />
+              <div class="time-adjust-buttons">
+                <Button
+                  size="small"
+                  @click="adjustEndTime(-1)"
+                  @mousedown="startContinuousAdjust(-1, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-1, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >
+                  -1
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(1)"
+                  @mousedown="startContinuousAdjust(1, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(1, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >
+                  +1
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(-30)"
+                  @mousedown="startContinuousAdjust(-30, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(-30, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >
+                  -30
+                </Button>
+                <Button
+                  size="small"
+                  @click="adjustEndTime(30)"
+                  @mousedown="startContinuousAdjust(30, 'end')"
+                  @mouseup="stopContinuousAdjust"
+                  @mouseleave="stopContinuousAdjust"
+                  @touchstart="startContinuousAdjust(30, 'end')"
+                  @touchend="stopContinuousAdjust"
+                  @touchcancel="stopContinuousAdjust"
+                  :disabled="!formState.endTime"
+                >
+                  +30
+                </Button>
+              </div>
+            </div>
+          </Form.Item>
+        </Col>
+      </Row>
+
+      <Form.Item>
+        <div style="display: flex; gap: 8px; align-items: center">
+          <span style="flex-shrink: 0; color: rgb(0 0 0 / 88%)">时长</span>
+          <div style="display: flex; flex: 1; gap: 8px">
+            <div style="display: flex; flex: 1; gap: 4px; align-items: center">
+              <InputNumber
+                v-model:value="editableHours"
+                :min="0"
+                :precision="0"
+                class="input-align-right"
+                style="flex: 1"
+                placeholder="时"
+                inputmode="numeric"
+                pattern="[0-9]*"
+              />
+              <span>时</span>
+            </div>
+            <div style="display: flex; flex: 1; gap: 4px; align-items: center">
+              <InputNumber
+                v-model:value="editableMinutes"
+                :min="0"
+                :max="59"
+                :precision="0"
+                class="input-align-right"
+                inputmode="numeric"
+                pattern="[0-9]*"
+                style="flex: 1"
+                placeholder="分"
+              />
+              <span>分</span>
+            </div>
+          </div>
+        </div>
+      </Form.Item>
+
+      <!-- 运动相关字段 -->
+      <template v-if="isExerciseCategory">
+        <div style="margin-bottom: 16px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 8px;
+            "
+          >
+            <span>运动明细</span>
+            <Button type="link" size="small" @click="addExercise">
+              <template #icon><PlusOutlined /></template>
+              添加
+            </Button>
+          </div>
+
+          <div
+            v-for="(exercise, index) in formState.exercises"
+            :key="index"
+            style="
+              display: flex;
+              gap: 8px;
+              align-items: center;
+              margin-bottom: 8px;
+            "
+          >
+            <div style="flex: 2">
+              <Select
+                v-model:value="exercise.exerciseTypeId"
+                placeholder="运动类型"
+                :options="exerciseTypeOptions"
+                allow-clear
+                style="width: 100%"
+              />
+            </div>
+            <div style="flex: 1">
+              <InputNumber
+                v-model:value="exercise.exerciseCount"
+                placeholder="数量"
+                style="width: 100%"
+                :min="0"
+                :precision="0"
+              />
+            </div>
+            <Button
+              type="text"
+              danger
+              size="small"
+              @click="removeExercise(index)"
+            >
+              <template #icon><DeleteOutlined /></template>
+            </Button>
+          </div>
+
+          <div
+            v-if="formState.exercises.length === 0"
+            style="
+              padding: 8px;
+              color: #999;
+              text-align: center;
+              cursor: pointer;
+              border: 1px dashed #d9d9d9;
+              border-radius: 4px;
+            "
+            @click="addExercise"
+          >
+            点击添加运动明细
+          </div>
+        </div>
+      </template>
+
+      <Form.Item label="描述" name="description">
+        <Textarea
+          v-model:value="formState.description"
+          placeholder="描述信息"
+          :rows="3"
+        />
+      </Form.Item>
+
+      <Form.Item>
+        <div class="form-actions">
+          <Popconfirm
+            v-if="isExistingSlot"
+            title="确定要删除此时间段吗？"
+            ok-text="确定"
+            cancel-text="取消"
+            @confirm="handleDelete"
+          >
+            <Button danger>删除</Button>
+          </Popconfirm>
+          <div style="margin-left: auto">
+            <Button @click="$emit('cancel')">取消</Button>
+            <Button type="primary" html-type="submit">保存</Button>
+          </div>
+        </div>
+      </Form.Item>
+    </Form>
+  </div>
+</template>
+
 <style scoped>
 .time-slot-edit-form {
   padding: 10px 0;
@@ -745,21 +868,21 @@ onUnmounted(() => {
 
 .category-option {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
 }
 
 .color-dot {
+  flex-shrink: 0;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  flex-shrink: 0;
 }
 
 .category-icon {
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
-  flex-shrink: 0;
   color: #666;
 }
 
@@ -769,10 +892,10 @@ onUnmounted(() => {
 
 .duration-display {
   padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
   font-weight: 500;
   color: #262626;
+  background: #f5f5f5;
+  border-radius: 4px;
 }
 
 .time-control-group {
@@ -783,16 +906,16 @@ onUnmounted(() => {
 
 .time-adjust-buttons {
   display: flex;
-  gap: 4px;
   flex-wrap: wrap;
+  gap: 4px;
 }
 
 .time-adjust-buttons .ant-btn {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
-  padding: 2px 4px;
   height: auto;
+  padding: 2px 4px;
+  font-size: 12px;
   line-height: 1.2;
 }
 

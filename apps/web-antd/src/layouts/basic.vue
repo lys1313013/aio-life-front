@@ -14,16 +14,15 @@ import {
 } from '@vben/layouts';
 import { preferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
+import { formatDate } from '@vben/utils';
 
 import {
-  createMessageApi,
   getMessageListApi,
   getUnreadCountApi,
   markAllAsReadApi,
   markAsReadApi,
 } from '#/api/core/message';
 import { getUserBasicInfoApi } from '#/api/core/user';
-import { formatDate } from '@vben/utils';
 import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
@@ -89,7 +88,9 @@ const avatarCache = new Map<string, string>();
 async function fetchNotifications() {
   try {
     const messages = await getMessageListApi();
-    const myId = String(userStore.userInfo?.userId || userStore.userInfo?.id || '');
+    const myId = String(
+      userStore.userInfo?.userId || userStore.userInfo?.id || '',
+    );
     if (!myId) return;
 
     // Filter unread messages for current user
@@ -97,35 +98,37 @@ async function fetchNotifications() {
       (m) => String(m.receiverId) === myId && !m.isRead,
     );
 
-    const notificationsWithAvatar = await Promise.all(unreadMsgs.map(async (msg) => {
-      let avatarUrl = msg.avatar || '';
-      const senderId = String(msg.senderId);
-      
-      if (!avatarUrl && senderId) {
-        if (avatarCache.has(senderId)) {
-          avatarUrl = avatarCache.get(senderId) || '';
-        } else {
-          try {
-            const userInfo = await getUserBasicInfoApi(senderId);
-            avatarUrl = userInfo.avatar || '';
-            avatarCache.set(senderId, avatarUrl);
-          } catch {
-            // Ignore error, keep empty avatar
-            avatarCache.set(senderId, '');
+    const notificationsWithAvatar = await Promise.all(
+      unreadMsgs.map(async (msg) => {
+        let avatarUrl = msg.avatar || '';
+        const senderId = String(msg.senderId);
+
+        if (!avatarUrl && senderId) {
+          if (avatarCache.has(senderId)) {
+            avatarUrl = avatarCache.get(senderId) || '';
+          } else {
+            try {
+              const userInfo = await getUserBasicInfoApi(senderId);
+              avatarUrl = userInfo.avatar || '';
+              avatarCache.set(senderId, avatarUrl);
+            } catch {
+              // Ignore error, keep empty avatar
+              avatarCache.set(senderId, '');
+            }
           }
         }
-      }
 
-      return {
-        id: msg.id,
-        avatar: avatarUrl,
-        date: formatDate(msg.createTime),
-        isRead: false,
-        message: msg.content,
-        title: msg.title || `User ${msg.senderId}`,
-        link: `/message?userId=${msg.senderId}`,
-      };
-    }));
+        return {
+          id: msg.id,
+          avatar: avatarUrl,
+          date: formatDate(msg.createTime),
+          isRead: false,
+          message: msg.content,
+          title: msg.title || `User ${msg.senderId}`,
+          link: `/message?userId=${msg.senderId}`,
+        };
+      }),
+    );
 
     notifications.value = notificationsWithAvatar;
     unreadCount.value = notificationsWithAvatar.length;
@@ -138,7 +141,7 @@ async function fetchUnreadCount() {
   try {
     const res = await getUnreadCountApi();
     const newCount = res?.count || 0;
-    
+
     if (newCount > 0 && newCount !== notifications.value.length) {
       await fetchNotifications();
     } else if (newCount === 0) {
@@ -154,7 +157,7 @@ async function fetchUnreadCount() {
 onMounted(() => {
   fetchUnreadCount();
   // Poll every 30 seconds
-  setInterval(fetchUnreadCount, 30000);
+  setInterval(fetchUnreadCount, 30_000);
 });
 
 async function handleNoticeClear() {

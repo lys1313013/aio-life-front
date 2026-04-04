@@ -240,7 +240,7 @@ function handleClosed() {
       :append-to="getAppendTo"
       :class="
         cn(
-          'left-0 right-0 top-[10vh] mx-auto flex max-h-[90%] w-[calc(100%-2rem)] sm:w-[520px] flex-col p-0',
+          'left-0 right-0 top-[10vh] mx-auto flex max-h-[90%] w-[calc(100%-2rem)] flex-col p-0 sm:w-[520px]',
           shouldFullscreen ? 'rounded-none' : 'rounded-[var(--radius)]',
           modalClass,
           {

@@ -17,7 +17,7 @@ withDefaults(defineProps<Props>(), {
 const getDayOfYear = () => {
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
-const diff = now.getTime() - start.getTime();
+  const diff = now.getTime() - start.getTime();
   const oneDay = 1000 * 60 * 60 * 24;
   return Math.floor(diff / oneDay);
 };
@@ -48,10 +48,10 @@ const stats = [
       <div
         v-for="(stat, index) in stats"
         :key="index"
+        class="flex flex-col justify-center text-right"
         :class="{
-          'flex flex-col justify-center text-right': true,
           'mx-12 md:mx-16': index === 1,
-          'mr-4 md:mr-10': index === 2
+          'mr-4 md:mr-10': index === 2,
         }"
       >
         <span class="text-foreground/80">{{ stat.name }}</span>

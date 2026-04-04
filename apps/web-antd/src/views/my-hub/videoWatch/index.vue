@@ -1,11 +1,11 @@
 <script>
 import {
-  PlusOutlined,
-  DeleteOutlined,
-  VideoCameraOutlined,
-  HistoryOutlined,
-  ClockCircleOutlined,
   CaretRightOutlined,
+  ClockCircleOutlined,
+  DeleteOutlined,
+  HistoryOutlined,
+  PlusOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -18,18 +18,18 @@ import {
   Popconfirm,
   Progress,
   Select,
-  Tag,
   Tabs,
+  Tag,
 } from 'ant-design-vue';
 
 import {
   deleteBilibiliVideo,
+  getStatusCount,
   insertBVideo,
-  updateBiVideo,
   parseBilibiliUrl,
   query,
-  getStatusCount,
   statistics,
+  updateBiVideo,
 } from '#/api/core/bilibili-video';
 
 export default {
@@ -175,13 +175,15 @@ export default {
 
     handleImageError(event) {
       event.target.style.display = 'none';
-      const fallback = event.target.parentElement.querySelector('.fallback-icon');
+      const fallback =
+        event.target.parentElement.querySelector('.fallback-icon');
       if (fallback) fallback.style.display = 'flex';
     },
 
     handleImageLoad(event) {
       event.target.style.display = 'block';
-      const fallback = event.target.parentElement.querySelector('.fallback-icon');
+      const fallback =
+        event.target.parentElement.querySelector('.fallback-icon');
       if (fallback) fallback.style.display = 'none';
     },
 
@@ -205,11 +207,9 @@ export default {
         message.error('请输入B站视频URL');
         return;
       }
-      if (this.newVideo.id) {
-        await updateBiVideo(this.newVideo.id, this.newVideo);
-      } else {
-        await insertBVideo(this.newVideo);
-      }
+      await (this.newVideo.id
+        ? updateBiVideo(this.newVideo.id, this.newVideo)
+        : insertBVideo(this.newVideo));
       message.success('保存成功');
       this.query();
       this.visible = false;
@@ -420,51 +420,94 @@ export default {
 </script>
 
 <template>
-  <div class="p-0 sm:p-4 min-h-full bg-background/50">
+  <div class="min-h-full bg-background/50 p-0 sm:p-4">
     <!-- 学习进度统计卡片 -->
-    <div class="px-2 sm:px-0 py-4 sm:py-0 mb-2 sm:mb-6">
-      <div class="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-6">
+    <div class="mb-2 px-2 py-4 sm:mb-6 sm:px-0 sm:py-0">
+      <div class="grid grid-cols-2 gap-2 sm:gap-6 md:grid-cols-2">
         <!-- 数量统计卡片 -->
-        <div class="group bg-card hover:bg-accent/5 p-3 sm:p-6 rounded-xl border border-border/60 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-          <div class="flex items-center sm:items-start justify-between mb-0 sm:mb-4">
-            <div class="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-primary/10 text-primary text-lg sm:text-2xl group-hover:scale-110 transition-transform duration-300">
+        <div
+          class="group rounded-xl border border-border/60 bg-card p-3 shadow-sm transition-all duration-300 hover:border-primary/20 hover:bg-accent/5 hover:shadow-md sm:p-6"
+        >
+          <div
+            class="mb-0 flex items-center justify-between sm:mb-4 sm:items-start"
+          >
+            <div
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-lg text-primary transition-transform duration-300 group-hover:scale-110 sm:h-12 sm:w-12 sm:text-2xl"
+            >
               <VideoCameraOutlined />
             </div>
             <div class="text-right">
-              <div class="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider mb-0 sm:mb-1">学习总数</div>
-              <div class="text-xl sm:text-3xl font-bold text-foreground tabular-nums leading-tight">{{ learningStats.totalCount }}</div>
+              <div
+                class="mb-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:mb-1 sm:text-xs"
+              >
+                学习总数
+              </div>
+              <div
+                class="text-xl font-bold tabular-nums leading-tight text-foreground sm:text-3xl"
+              >
+                {{ learningStats.totalCount }}
+              </div>
             </div>
           </div>
-          <div class="hidden sm:flex flex-wrap gap-2 pt-4 border-t border-border/40">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-success/10 text-success">
-              <span class="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span>
+          <div
+            class="hidden flex-wrap gap-2 border-t border-border/40 pt-4 sm:flex"
+          >
+            <span
+              class="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success"
+            >
+              <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-success"></span>
               {{ learningStats.studiedCount }} 已完成
             </span>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary">
-              <span class="bg-primary mr-1.5 h-1.5 w-1.5 rounded-full"></span>
+            <span
+              class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary"
+            >
+              <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary"></span>
               {{ learningStats.unstudiedCount }} 进行中
             </span>
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted text-muted-foreground">
-              <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 mr-1.5"></span>
+            <span
+              class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
+            >
+              <span
+                class="mr-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
+              ></span>
               {{ learningStats.notStartedCount }} 未开始
             </span>
           </div>
         </div>
 
         <!-- 时长统计卡片 -->
-        <div class="group bg-card hover:bg-accent/5 p-3 sm:p-6 rounded-xl border border-border/60 shadow-sm transition-all duration-300 hover:shadow-md hover:border-orange-500/20">
-          <div class="flex items-center sm:items-start justify-between mb-0 sm:mb-4">
-            <div class="w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-orange-500/10 text-orange-500 text-lg sm:text-2xl group-hover:scale-110 transition-transform duration-300">
+        <div
+          class="group rounded-xl border border-border/60 bg-card p-3 shadow-sm transition-all duration-300 hover:border-orange-500/20 hover:bg-accent/5 hover:shadow-md sm:p-6"
+        >
+          <div
+            class="mb-0 flex items-center justify-between sm:mb-4 sm:items-start"
+          >
+            <div
+              class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-lg text-orange-500 transition-transform duration-300 group-hover:scale-110 sm:h-12 sm:w-12 sm:text-2xl"
+            >
               <ClockCircleOutlined />
             </div>
             <div class="text-right">
-              <div class="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider mb-0 sm:mb-1">已学时长</div>
-              <div class="text-xl sm:text-2xl font-bold text-foreground tabular-nums leading-tight">{{ formatLearningTime(learningStats.studiedSeconds) }}</div>
+              <div
+                class="mb-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:mb-1 sm:text-xs"
+              >
+                已学时长
+              </div>
+              <div
+                class="text-xl font-bold tabular-nums leading-tight text-foreground sm:text-2xl"
+              >
+                {{ formatLearningTime(learningStats.studiedSeconds) }}
+              </div>
             </div>
           </div>
-          <div class="hidden sm:flex items-center justify-between pt-4 border-t border-border/40 text-[11px]">
-            <span class="text-muted-foreground font-medium">剩余预估</span>
-            <span class="text-orange-600 dark:text-orange-400 font-bold tabular-nums">{{ formatLearningTime(learningStats.unstudiedSeconds) }}</span>
+          <div
+            class="hidden items-center justify-between border-t border-border/40 pt-4 text-[11px] sm:flex"
+          >
+            <span class="font-medium text-muted-foreground">剩余预估</span>
+            <span
+              class="font-bold tabular-nums text-orange-600 dark:text-orange-400"
+              >{{ formatLearningTime(learningStats.unstudiedSeconds) }}</span
+            >
           </div>
         </div>
       </div>
@@ -472,31 +515,32 @@ export default {
 
     <div class="px-0 sm:px-0">
       <ATabs
-        v-model:activeKey="tabKey"
+        v-model:active-key="tabKey"
         @change="onTabChange"
         type="line"
         class="custom-tabs"
       >
-        <ATabPane
-          v-for="tab in tabList"
-          :key="tab.key"
-        >
+        <ATabPane v-for="tab in tabList" :key="tab.key">
           <template #tab>
-            <span class="flex items-center gap-0.5 sm:gap-2 px-0 sm:px-1">
+            <span class="flex items-center gap-0.5 px-0 sm:gap-2 sm:px-1">
               <span class="text-[13px] sm:text-sm">{{ tab.tab }}</span>
-              <span class="inline-flex items-center justify-center min-w-[16px] sm:min-w-[20px] h-3.5 sm:h-5 bg-muted px-1 sm:px-1.5 rounded-full text-[8px] sm:text-[10px] text-muted-foreground font-bold tabular-nums">
+              <span
+                class="inline-flex h-3.5 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[8px] font-bold tabular-nums text-muted-foreground sm:h-5 sm:min-w-[20px] sm:px-1.5 sm:text-[10px]"
+              >
                 {{ videoCounts[tab.key] || 0 }}
               </span>
             </span>
           </template>
 
-          <div class="mt-2 sm:mt-6 px-2 sm:px-0 pb-6">
+          <div class="mt-2 px-2 pb-6 sm:mt-6 sm:px-0">
             <!-- 视频列表 -->
-            <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-5">
+            <div
+              class="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+            >
               <div
                 v-for="(video, index) in videos"
                 :key="index"
-                class="group relative bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 hover:-translate-y-0.1 hover:shadow-lg hover:border-primary/30 cursor-pointer"
+                class="hover:-translate-y-0.1 group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
                 @click="showEditModal(video)"
               >
                 <!-- 封面图区域 -->
@@ -505,33 +549,44 @@ export default {
                     v-if="video.cover"
                     :src="getImageUrl(video.cover)"
                     :alt="video.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     @error="handleImageError"
                     @load="handleImageLoad"
                     @click.stop="goToBilibiliVideo(video)"
                   />
-                  <div class="fallback-icon w-full h-full flex items-center justify-center bg-muted/30" @click.stop="goToBilibiliVideo(video)">
-                    <VideoCameraOutlined class="text-3xl sm:text-4xl text-muted-foreground opacity-20" />
+                  <div
+                    class="fallback-icon flex h-full w-full items-center justify-center bg-muted/30"
+                    @click.stop="goToBilibiliVideo(video)"
+                  >
+                    <VideoCameraOutlined
+                      class="text-3xl text-muted-foreground opacity-20 sm:text-4xl"
+                    />
                   </div>
 
                   <!-- 底部渐变遮罩 -->
-                   <div class="absolute inset-x-0 bottom-0 h-1/5 bg-gradient-to-t from-black/50 via-black/30 to-transparent pointer-events-none z-10"></div>
+                  <div
+                    class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-1/5 bg-gradient-to-t from-black/50 via-black/30 to-transparent"
+                  ></div>
 
-                   <!-- 时长标签 -->
-                   <div class="absolute bottom-1 right-1 text-white text-[10px] sm:text-[11px] font-medium tabular-nums z-20">
-                     {{ formatDuration(video.duration) || '未知' }}
-                   </div>
+                  <!-- 时长标签 -->
+                  <div
+                    class="absolute bottom-1 right-1 z-20 text-[10px] font-medium tabular-nums text-white sm:text-[11px]"
+                  >
+                    {{ formatDuration(video.duration) || '未知' }}
+                  </div>
 
                   <!-- 状态角标 -->
                   <div
-                    class="absolute top-1.5 sm:top-2.5 left-1.5 sm:left-2.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[9px] sm:text-[10px] font-bold rounded shadow-md backdrop-blur-sm z-20"
+                    class="absolute left-1.5 top-1.5 z-20 rounded px-1.5 py-0.5 text-[9px] font-bold shadow-md backdrop-blur-sm sm:left-2.5 sm:top-2.5 sm:px-2.5 sm:py-1 sm:text-[10px]"
                     :class="getStatusBgClass(video.status)"
                   >
                     {{ getStatusText(video.status) }}
                   </div>
 
                   <!-- 删除按钮 (悬浮显示) -->
-                  <div class="absolute top-1.5 sm:top-2.5 right-1.5 sm:right-2.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 z-30">
+                  <div
+                    class="absolute right-1.5 top-1.5 z-30 translate-x-2 transform opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 sm:right-2.5 sm:top-2.5"
+                  >
                     <APopconfirm
                       title="确定要删除吗？"
                       @confirm="handleDelete(video)"
@@ -540,7 +595,7 @@ export default {
                         size="small"
                         danger
                         shape="circle"
-                        class="bg-background/80 dark:bg-black/60 backdrop-blur-md border-none shadow-lg hover:scale-110 active:scale-90"
+                        class="border-none bg-background/80 shadow-lg backdrop-blur-md hover:scale-110 active:scale-90 dark:bg-black/60"
                         @click.stop
                       >
                         <template #icon><DeleteOutlined /></template>
@@ -549,33 +604,53 @@ export default {
                   </div>
 
                   <!-- 悬浮播放按钮 -->
-                  <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 z-10" @click.stop="goToBilibiliVideo(video)">
-                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-transparent text-white flex items-center justify-center border-2 border-white transition-all duration-300">
-                      <CaretRightOutlined class="text-3xl sm:text-4xl ml-1" />
+                  <div
+                    class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    @click.stop="goToBilibiliVideo(video)"
+                  >
+                    <div
+                      class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-transparent text-white transition-all duration-300 sm:h-14 sm:w-14"
+                    >
+                      <CaretRightOutlined class="ml-1 text-3xl sm:text-4xl" />
                     </div>
                   </div>
                 </div>
 
                 <!-- 内容区域 -->
                 <div class="p-2 sm:p-3">
-                  <h3 class="text-xs sm:text-sm font-bold text-foreground line-clamp-2 mb-2 sm:mb-2.5 leading-5 h-10 group-hover:text-primary transition-colors duration-300 overflow-hidden">
+                  <h3
+                    class="mb-2 line-clamp-2 h-10 overflow-hidden text-xs font-bold leading-5 text-foreground transition-colors duration-300 group-hover:text-primary sm:mb-2.5 sm:text-sm"
+                  >
                     {{ video.title || '未命名视频' }}
                   </h3>
 
-                  <div class="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground mb-2 sm:mb-3">
-                    <span class="inline-flex items-center max-w-[65%]">
-                      <span class="truncate font-medium">{{ video.owner?.name || video.ownerName || '未知UP主' }}</span>
+                  <div
+                    class="mb-2 flex items-center justify-between text-[10px] text-muted-foreground sm:mb-3 sm:text-[11px]"
+                  >
+                    <span class="inline-flex max-w-[65%] items-center">
+                      <span class="truncate font-medium">{{
+                        video.owner?.name || video.ownerName || '未知UP主'
+                      }}</span>
                     </span>
-                    <span class="inline-flex items-center font-bold tabular-nums text-primary/80">
+                    <span
+                      class="inline-flex items-center font-bold tabular-nums text-primary/80"
+                    >
                       {{ video.currentEpisode }}/{{ video.episodes }}
                     </span>
                   </div>
 
                   <!-- 进度条 -->
                   <div class="relative pt-0.5 sm:pt-1">
-                    <div class="flex items-center justify-between mb-1 sm:mb-1 text-[9px] sm:text-[10px] text-muted-foreground tabular-nums">
-                      <span>{{ formatDuration(video.watchedDuration) }} / {{ formatDuration(video.duration) }}</span>
-                      <span class="font-black text-primary tracking-tighter">{{ getActualProgress(video) }}%</span>
+                    <div
+                      class="mb-1 flex items-center justify-between text-[9px] tabular-nums text-muted-foreground sm:mb-1 sm:text-[10px]"
+                    >
+                      <span
+                        >{{ formatDuration(video.watchedDuration) }} /
+                        {{ formatDuration(video.duration) }}</span
+                      >
+                      <span class="font-black tracking-tighter text-primary"
+                        >{{ getActualProgress(video) }}%</span
+                      >
                     </div>
                     <AProgress
                       :percent="getActualProgress(video)"
@@ -594,10 +669,12 @@ export default {
 
     <!-- 新增悬浮按钮 -->
     <div
-      class="fixed right-4 sm:right-8 bottom-4 sm:bottom-8 w-12 sm:w-14 h-12 sm:h-14 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-2xl hover:shadow-primary/40 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer z-50 group"
+      class="group fixed bottom-4 right-4 z-50 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-all duration-300 hover:scale-110 hover:shadow-primary/40 active:scale-95 sm:bottom-8 sm:right-8 sm:h-14 sm:w-14"
       @click="showModal"
     >
-      <PlusOutlined class="text-xl sm:text-2xl transition-transform duration-300 group-hover:rotate-90" />
+      <PlusOutlined
+        class="text-xl transition-transform duration-300 group-hover:rotate-90 sm:text-2xl"
+      />
     </div>
 
     <!-- 弹窗部分 -->
@@ -605,7 +682,7 @@ export default {
       v-model:open="visible"
       :title="newVideo.id ? '编辑视频' : '新增视频'"
       :width="700"
-      :maskClosable="true"
+      :mask-closable="true"
       @ok="handleOk"
       @cancel="handleCancel"
     >
@@ -617,23 +694,32 @@ export default {
               placeholder="请输入B站视频链接，如：https://www.bilibili.com/video/BV1xxx"
               class="flex-1"
             />
-            <AButton :loading="isParsing" type="primary" @click="parseBilibiliUrl">
+            <AButton
+              :loading="isParsing"
+              type="primary"
+              @click="parseBilibiliUrl"
+            >
               解析
             </AButton>
           </div>
         </AFormItem>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <AFormItem label="视频标题">
             <AInput v-model:value="newVideo.title" placeholder="视频标题" />
           </AFormItem>
 
           <AFormItem label="BV号">
-            <AInput v-model:value="newVideo.bvid" readonly placeholder="BV号 (自动解析)" class="bg-muted/50" />
+            <AInput
+              v-model:value="newVideo.bvid"
+              readonly
+              placeholder="BV号 (自动解析)"
+              class="bg-muted/50"
+            />
           </AFormItem>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <AFormItem label="UP主名称">
             <AInput v-model:value="newVideo.ownerName" placeholder="UP主名称" />
           </AFormItem>
@@ -643,9 +729,13 @@ export default {
           </AFormItem>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AFormItem label="总集数">
-            <AInputNumber v-model:value="newVideo.episodes" :min="1" class="w-full" />
+            <AInputNumber
+              v-model:value="newVideo.episodes"
+              :min="1"
+              class="w-full"
+            />
           </AFormItem>
 
           <AFormItem label="当前集数">
@@ -659,32 +749,53 @@ export default {
           </AFormItem>
 
           <AFormItem label="学习状态">
-            <ASelect v-model:value="newVideo.status" class="w-full" @change="handleStatusChange">
-              <ASelectOption v-for="option in statusOptions" :key="option.value" :value="option.value">
+            <ASelect
+              v-model:value="newVideo.status"
+              class="w-full"
+              @change="handleStatusChange"
+            >
+              <ASelectOption
+                v-for="option in statusOptions"
+                :key="option.value"
+                :value="option.value"
+              >
                 {{ option.label }}
               </ASelectOption>
             </ASelect>
           </AFormItem>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AFormItem label="总时长">
-            <AInput :value="formatDuration(newVideo.duration)" readonly class="bg-muted/50 w-full" />
+            <AInput
+              :value="formatDuration(newVideo.duration)"
+              readonly
+              class="w-full bg-muted/50"
+            />
           </AFormItem>
 
           <AFormItem label="已看时长">
-            <AInput v-model:value="newVideo.watchedDurationFormatted" readonly class="bg-muted/50 w-full" />
+            <AInput
+              v-model:value="newVideo.watchedDurationFormatted"
+              readonly
+              class="w-full bg-muted/50"
+            />
           </AFormItem>
 
           <AFormItem label="进度">
-            <div class="flex items-center h-8">
+            <div class="flex h-8 items-center">
               <AProgress :percent="newVideo.progress" size="small" />
             </div>
           </AFormItem>
         </div>
 
         <AFormItem label="学习笔记">
-          <AInput v-model:value="newVideo.notes" type="textarea" :rows="3" placeholder="记录学习心得或笔记" />
+          <AInput
+            v-model:value="newVideo.notes"
+            type="textarea"
+            :rows="3"
+            placeholder="记录学习心得或笔记"
+          />
         </AFormItem>
       </AForm>
     </AModal>
@@ -693,8 +804,8 @@ export default {
 
 <style scoped>
 .custom-tabs :deep(.ant-tabs-nav) {
-  margin-bottom: 0;
   padding: 0;
+  margin-bottom: 0;
 }
 
 .custom-tabs :deep(.ant-tabs-nav-wrap) {
@@ -724,8 +835,8 @@ export default {
 
 .line-clamp-2 {
   display: -webkit-box;
+  overflow: hidden;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 </style>

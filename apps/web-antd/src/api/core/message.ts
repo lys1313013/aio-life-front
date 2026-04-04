@@ -53,8 +53,14 @@ export interface MessagePageResult {
   size: number;
 }
 
-export async function adminGetMessageListApi(params: { userId?: string; current?: number; size?: number }) {
-  return requestClient.get<MessagePageResult>('/message/admin/list', { params });
+export async function adminGetMessageListApi(params: {
+  current?: number;
+  size?: number;
+  userId?: string;
+}) {
+  return requestClient.get<MessagePageResult>('/message/admin/list', {
+    params,
+  });
 }
 
 export async function adminSendMessageApi(data: SendMessageParams) {

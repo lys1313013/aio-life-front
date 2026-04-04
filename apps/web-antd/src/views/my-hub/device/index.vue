@@ -9,11 +9,11 @@ import {
   Form,
   Input,
   InputNumber,
+  message,
   Modal,
   Popconfirm,
   Row,
   Select,
-  message,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -267,7 +267,14 @@ export default {
         @cancel="handleCancel"
       >
         <template #footer>
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              width: 100%;
+            "
+          >
             <div>
               <APopconfirm
                 v-if="newDevice.id"
@@ -293,10 +300,7 @@ export default {
             <AInput v-model:value="newDevice.name" />
           </AFormItem>
           <AFormItem label="配置">
-            <AInput
-              v-model:value="newDevice.spec"
-              placeholder=""
-            />
+            <AInput v-model:value="newDevice.spec" placeholder="" />
           </AFormItem>
           <AFormItem label="价格">
             <AInputNumber
@@ -304,8 +308,8 @@ export default {
               style="width: 100%"
             />
           </AFormItem>
-          <a-row :gutter="16">
-            <a-col :span="12">
+          <ARow :gutter="16">
+            <ACol :span="12">
               <AFormItem label="购买日期">
                 <ADatePicker
                   format="YYYY-MM-DD"
@@ -313,8 +317,8 @@ export default {
                   style="width: 100%"
                 />
               </AFormItem>
-            </a-col>
-            <a-col :span="12">
+            </ACol>
+            <ACol :span="12">
               <AFormItem label="退役日期">
                 <ADatePicker
                   format="YYYY-MM-DD"
@@ -323,8 +327,8 @@ export default {
                   placeholder="留空则计算至今日"
                 />
               </AFormItem>
-            </a-col>
-          </a-row>
+            </ACol>
+          </ARow>
           <AFormItem label="设备类型">
             <ASelect
               v-model:value="newDevice.type"
@@ -397,12 +401,7 @@ export default {
               cancel-text="取消"
               @confirm="handleDelete(item)"
             >
-              <AButton
-                class="delete-btn"
-                type="text"
-                danger
-                @click.stop
-              >
+              <AButton class="delete-btn" type="text" danger @click.stop>
                 <DeleteOutlined />
               </AButton>
             </APopconfirm>
@@ -431,25 +430,6 @@ export default {
 </template>
 
 <style scoped>
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.electronics-container {
-  padding: 10px;
-  margin: 0 auto;
-}
-
-.electronics-grid {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  /* 动态控制每行显示个数 */
-}
-
 @media screen and (max-width: 768px) {
   /* 覆盖 Ant Design Card 样式 */
   :deep(.ant-card-body) {
@@ -457,8 +437,8 @@ export default {
   }
 
   :deep(.ant-card-head) {
-    padding: 0 12px !important;
     min-height: 46px;
+    padding: 0 12px !important;
   }
 
   :deep(.ant-tabs-tab) {
@@ -484,16 +464,16 @@ export default {
   }
 
   .card-content h3 {
-    font-size: 14px;
     margin-bottom: 5px;
+    font-size: 14px;
   }
 
   .price,
   .purchase-date,
   .usage-days,
   .avg-cost {
-    font-size: 12px;
     margin: 2px 0;
+    font-size: 12px;
   }
 
   /* 隐藏部分不重要的信息以节省空间，或者调整显示 */
@@ -501,34 +481,60 @@ export default {
     display: none;
   }
 
-
-
   .status-badge {
     top: 5px;
     right: 5px;
-    font-size: 10px;
     padding: 1px 6px;
+    font-size: 10px;
   }
 }
 
+@media screen and (max-width: 768px) {
+  .delete-btn {
+    display: none;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.electronics-container {
+  padding: 10px;
+  margin: 0 auto;
+}
+
+.electronics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+
+  /* 动态控制每行显示个数 */
+}
+
 .electronics-card {
+  min-width: 0;
+  overflow: hidden;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  overflow: hidden;
   transition: transform 0.3s ease;
-  min-width: 0;
+
   /* 添加这个属性防止内容溢出 */
 }
 
 .electronics-card:hover {
+  box-shadow: 0 10px 20px rgb(0 0 0 / 10%);
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .card-image {
   position: relative;
   width: 100%;
   padding-top: 100%;
+
   /* 1:1 宽高比 */
   overflow: hidden;
 }
@@ -550,20 +556,20 @@ export default {
 
 .delete-btn {
   position: absolute;
-  bottom: 10px;
   right: 10px;
+  bottom: 10px;
   z-index: 2;
-  opacity: 0;
-  transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 32px;
+  height: 32px;
   padding: 0;
+  background-color: rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 15%);
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
 .electronics-card:hover .delete-btn {
@@ -572,42 +578,42 @@ export default {
 }
 
 .card-content h3 {
-  margin: 0 0 5px 0;
+  margin: 0 0 5px;
   font-size: 18px;
 }
 
 .spec {
-  color: #888;
+  margin: 0 0 5px;
   font-size: 12px;
-  margin: 0 0 5px 0;
+  color: #888;
 }
 
 .price {
-  font-weight: bold;
   margin: 5px 0;
+  font-weight: bold;
 }
 
 .purchase-date {
-  color: #666;
-  font-size: 14px;
   margin: 5px 0;
+  font-size: 14px;
+  color: #666;
 }
 
 .usage-days {
-  color: #666;
-  font-size: 14px;
   margin: 5px 0;
+  font-size: 14px;
+  color: #666;
 }
 
 .default-icon {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   background-color: #f5f5f5;
 }
 
@@ -619,44 +625,42 @@ export default {
 
 /* 添加新的样式 */
 .avg-cost {
-  color: #666;
-  font-size: 14px;
   margin: 5px 0;
+  font-size: 14px;
   font-weight: bold;
+  color: #666;
 }
 
 .floating-btn {
   position: fixed;
-  right: 30px;
-  bottom: 30px;
-  width: 56px;
-  height: 56px;
-  background-color: #1890ff;
-  border-radius: 50%;
+  inset: auto 30px 30px auto;
+
+  /* 添加以下属性确保拖动时位置更新 */
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 56px;
+  height: 56px;
   cursor: move;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s;
-  z-index: 1000;
   user-select: none;
-  /* 添加以下属性确保拖动时位置更新 */
-  left: auto;
-  top: auto;
+  background-color: #1890ff;
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgb(0 0 0 / 20%);
+  transition: all 0.3s;
 }
 
 .floating-btn:hover {
   background-color: #40a9ff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* 添加十字图标样式 */
 .floating-btn::before,
 .floating-btn::after {
-  content: '';
   position: absolute;
+  content: '';
   background-color: white;
 }
 
@@ -674,11 +678,11 @@ export default {
   position: absolute;
   top: 10px;
   right: 10px;
+  z-index: 1;
   padding: 2px 8px;
-  border-radius: 10px;
   font-size: 12px;
   color: white;
-  z-index: 1;
+  border-radius: 10px;
 }
 
 .status-using {
@@ -694,9 +698,10 @@ export default {
 }
 
 .status-idle {
-  background-color: #d9d9d9;
   color: #666;
+  background-color: #d9d9d9;
 }
+
 .total-static {
   margin-bottom: 20px;
 }
@@ -708,13 +713,7 @@ export default {
 }
 
 .total-static .ant-card span:first-child {
-  font-weight: bold;
   font-size: 18px;
-}
-
-@media screen and (max-width: 768px) {
-  .delete-btn {
-    display: none;
-  }
+  font-weight: bold;
 }
 </style>

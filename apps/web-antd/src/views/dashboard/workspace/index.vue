@@ -239,7 +239,7 @@ function navTo(nav: WorkbenchProjectItem | WorkbenchQuickNavItem) {
       :avatar="userStore.userInfo?.avatar || preferences.app.defaultAvatar"
     >
       <template #title>
-          {{ userStore.userInfo?.realName }}, 相信相信的力量
+        {{ userStore.userInfo?.realName }}, 相信相信的力量
       </template>
       <template #description> 日拱一卒 </template>
     </WorkbenchHeader>

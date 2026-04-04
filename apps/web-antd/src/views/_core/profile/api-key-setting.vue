@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { message, Modal, Form, Input, Select, Button, Table, Popconfirm } from 'ant-design-vue';
-import { getApiKeyListApi, generateApiKeyApi, deleteApiKeyApi } from '#/api';
+
+import {
+  Button,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Table,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+import { deleteApiKeyApi, generateApiKeyApi, getApiKeyListApi } from '#/api';
 
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
@@ -89,7 +100,7 @@ onMounted(() => {
 
 <template>
   <div class="p-4">
-    <div class="mb-4 flex justify-between items-center">
+    <div class="mb-4 flex items-center justify-between">
       <div class="text-lg font-medium">API Key 管理</div>
       <Button type="primary" @click="visible = true">生成新 Key</Button>
     </div>
@@ -103,8 +114,12 @@ onMounted(() => {
     >
       <template #bodyCell="{ column, record, text }">
         <template v-if="column.key === 'apiKey'">
-          <code class="bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-mono text-xs">
-            {{ record.apiKey.substring(0, 8) }}***{{ record.apiKey.substring(record.apiKey.length - 4) }}
+          <code
+            class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
+          >
+            {{ record.apiKey.substring(0, 8) }}***{{
+              record.apiKey.substring(record.apiKey.length - 4)
+            }}
           </code>
         </template>
         <template v-else-if="column.key === 'expiredAt'">
@@ -114,7 +129,10 @@ onMounted(() => {
           {{ dayjs(text).format('YYYY-MM-DD HH:mm:ss') }}
         </template>
         <template v-else-if="column.key === 'action'">
-          <Popconfirm title="确定要删除该 API Key 吗？" @confirm="handleDelete(record.id)">
+          <Popconfirm
+            title="确定要删除该 API Key 吗？"
+            @confirm="handleDelete(record.id)"
+          >
             <Button type="link" danger size="small">删除</Button>
           </Popconfirm>
         </template>
@@ -132,7 +150,10 @@ onMounted(() => {
     >
       <Form :model="formState" layout="vertical">
         <Form.Item label="备注" name="remark" required>
-          <Input v-model:value="formState.remark" placeholder="请输入 API Key 备注" />
+          <Input
+            v-model:value="formState.remark"
+            placeholder="请输入 API Key 备注"
+          />
         </Form.Item>
         <Form.Item label="有效期" name="expireDays">
           <Select v-model:value="formState.expireDays">

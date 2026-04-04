@@ -1,0 +1,25 @@
+{
+    "name": "@types/bintrees",
+    "version": "1.0.6",
+    "description": "TypeScript definitions for bintrees",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/bintrees",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Cayle Sharrock",
+            "githubUsername": "CjS77",
+            "url": "https://github.com/CjS77"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/bintrees"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "7e6cf71c5b4d4dd6634d9330034ffa3d194fecf868c434ce1d1f92347451840c",
+    "typeScriptVersion": "4.5"
+}

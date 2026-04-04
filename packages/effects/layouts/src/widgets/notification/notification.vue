@@ -37,9 +37,9 @@ const emit = defineEmits<{
   clear: [];
   makeAll: [];
   read: [NotificationItem];
+  refresh: [];
   remove: [NotificationItem];
   viewAll: [];
-  refresh: [];
 }>();
 
 const router = useRouter();
@@ -104,7 +104,7 @@ function navigateTo(
         <VbenIconButton class="bell-button text-foreground relative">
           <span
             v-if="dot"
-            class="bg-red-500 absolute right-0.5 top-0.5 h-2 w-2 rounded"
+            class="absolute right-0.5 top-0.5 h-2 w-2 rounded bg-red-500"
           ></span>
           <Bell class="size-4" />
         </VbenIconButton>
@@ -131,7 +131,7 @@ function navigateTo(
             >
               <span
                 v-if="!item.isRead"
-                class="bg-red-500 absolute right-2 top-2 h-2 w-2 rounded"
+                class="absolute right-2 top-2 h-2 w-2 rounded bg-red-500"
               ></span>
 
               <span

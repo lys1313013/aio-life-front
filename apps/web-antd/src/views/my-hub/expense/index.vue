@@ -1,20 +1,27 @@
 <script lang="ts" setup>
-import type { VbenFormProps } from '#/adapter/form';
-import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import { onMounted, ref, computed, nextTick, watch } from 'vue';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
+
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
-import { usePreferences } from '@vben/preferences';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import { Button, Popconfirm, Card, Select, message } from 'ant-design-vue';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { usePreferences } from '@vben/preferences';
+
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import { Button, Card, message, Popconfirm, Select } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
-import { deleteData, query, deleteBatch, statisticsByYear, statisticsByMonth } from '#/api/core/expense';
-
+import {
+  deleteBatch,
+  deleteData,
+  query,
+  statisticsByMonth,
+  statisticsByYear,
+} from '#/api/core/expense';
 import { PAY_TYPE_OPTIONS } from '#/constants/expense';
 
 import FormDrawerDemo from './form-drawer.vue';
@@ -44,7 +51,10 @@ const areaChartRef = ref<EchartsUIType>();
 const yearPieChartRef = ref<EchartsUIType>();
 const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
-const { renderEcharts: renderAreaChart, getChartInstance: getAreaChartInstance } = useEcharts(areaChartRef);
+const {
+  renderEcharts: renderAreaChart,
+  getChartInstance: getAreaChartInstance,
+} = useEcharts(areaChartRef);
 const { renderEcharts: renderYearPieChart } = useEcharts(yearPieChartRef);
 const { isMobile } = usePreferences();
 
@@ -52,7 +62,8 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
 );
 
-const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
+const payTypeOptions =
+  ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
 
 // 年度统计数据相关
 interface ExpenseDetail {
@@ -73,8 +84,10 @@ interface MonthlyExpenseData {
 }
 
 // 年度选择相关
-const selectedYear = ref<number | 'all'>('all');
-const yearOptions = ref<{ value: string | number; label: string | number }[]>([{ value: 'all', label: '全部' }]);
+const selectedYear = ref<'all' | number>('all');
+const yearOptions = ref<{ label: number | string; value: number | string }[]>([
+  { value: 'all', label: '全部' },
+]);
 
 // 表格数据引用
 const tableData = ref<RowType[]>([]);
@@ -129,7 +142,7 @@ const expenseTypeStats = computed(() => {
 
   const result = Object.entries(typeData).map(([name, value]) => ({
     name,
-    value: Number(value.toFixed(2))
+    value: Number(value.toFixed(2)),
   }));
   return result;
 });
@@ -147,7 +160,7 @@ const getAllExpenseTypes = computed(() => {
       types.add(item.typeName);
     });
   });
-  return Array.from(types);
+  return [...types];
 });
 
 // 计算每年的总支出
@@ -210,14 +223,14 @@ const getBarChartSeries = computed(() => {
       },
       fontSize: 12,
       color: '#333',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
     },
     itemStyle: {
-      color: 'rgba(0,0,0,0)'
+      color: 'rgba(0,0,0,0)',
     },
     emphasis: {
-      disabled: true
-    }
+      disabled: true,
+    },
   });
 
   return series;
@@ -228,16 +241,20 @@ const filteredMonthlyExpData = computed(() => {
   if (selectedYear.value === 'all') {
     return monthlyExpData.value;
   }
-  return monthlyExpData.value.filter((item) => item.year === selectedYear.value);
+  return monthlyExpData.value.filter(
+    (item) => item.year === selectedYear.value,
+  );
 });
 
 // 获取月份列表
 const getMonths = computed(() => {
-  return filteredMonthlyExpData.value.map((item) => {
-    const yearStr = item.year.toString();
-    const monthStr = item.month.toString().padStart(2, '0');
-    return `${yearStr}-${monthStr}`;
-  }).sort();
+  return filteredMonthlyExpData.value
+    .map((item) => {
+      const yearStr = item.year.toString();
+      const monthStr = item.month.toString().padStart(2, '0');
+      return `${yearStr}-${monthStr}`;
+    })
+    .sort();
 });
 
 // 获取堆叠面积图的系列数据
@@ -249,23 +266,25 @@ const getAreaChartSeries = computed(() => {
       types.add(item.typeName);
     });
   });
-  const expenseTypes = Array.from(types);
+  const expenseTypes = [...types];
 
   const months = getMonths.value;
 
   const series = expenseTypes.map((type) => {
-      const data = months.map((monthStr) => {
-        // 解析月份字符串，获取年份和月份
-        const [year, month] = monthStr.split('-').map(Number);
-        // 查找对应的月度数据
-        const monthData = filteredMonthlyExpData.value.find((item) => item.year === year && item.month === month);
-        if (monthData) {
-          // 查找该月份下的对应类型数据
-          const detail = monthData.detail.find((d) => d.typeName === type);
-          return detail ? detail.amt : 0;
-        }
-        return 0;
-      });
+    const data = months.map((monthStr) => {
+      // 解析月份字符串，获取年份和月份
+      const [year, month] = monthStr.split('-').map(Number);
+      // 查找对应的月度数据
+      const monthData = filteredMonthlyExpData.value.find(
+        (item) => item.year === year && item.month === month,
+      );
+      if (monthData) {
+        // 查找该月份下的对应类型数据
+        const detail = monthData.detail.find((d) => d.typeName === type);
+        return detail ? detail.amt : 0;
+      }
+      return 0;
+    });
 
     return {
       name: type,
@@ -287,20 +306,23 @@ const getYearPieChartData = computed(() => {
   const yearTotals: Record<string, number> = {};
 
   filteredExpData.value.forEach((yearData) => {
-    const yearTotal = yearData.detail.reduce((total, item) => total + item.amt, 0);
+    const yearTotal = yearData.detail.reduce(
+      (total, item) => total + item.amt,
+      0,
+    );
     yearTotals[yearData.year] = (yearTotals[yearData.year] || 0) + yearTotal;
   });
 
   const data = Object.entries(yearTotals)
     .map(([year, value]) => ({
       name: `${year}年`,
-      value: Number(value.toFixed(2))
+      value: Number(value.toFixed(2)),
     }))
-    .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+    .sort((a, b) => Number.parseInt(a.name) - Number.parseInt(b.name));
 
   return {
     data,
-    total: data.reduce((sum, item) => sum + item.value, 0)
+    total: data.reduce((sum, item) => sum + item.value, 0),
   };
 });
 
@@ -315,13 +337,16 @@ const filteredData = computed(() => {
         let date: Date;
         if (typeof row.expTime === 'string' && row.expTime.includes('T')) {
           date = new Date(row.expTime);
-        } else if (typeof row.expTime === 'string' && row.expTime.includes(' ')) {
+        } else if (
+          typeof row.expTime === 'string' &&
+          row.expTime.includes(' ')
+        ) {
           date = new Date(row.expTime.replace(' ', 'T'));
         } else {
-          date = new Date(row.expTime + 'T00:00:00');
+          date = new Date(`${row.expTime}T00:00:00`);
         }
         return date.getFullYear() === selectedYear.value;
-      } catch (error) {
+      } catch {
         return false;
       }
     }
@@ -348,12 +373,12 @@ const totalExpense = computed(() => {
 // 计算今年总支出
 const currentYearExpense = computed(() => {
   const currentYear = new Date().getFullYear();
-  const currentYearData = expData.value.find(item => item.year === currentYear);
-  if (currentYearData) {
-    return currentYearData.detail.reduce((sum, item) => sum + item.amt, 0);
-  } else {
-    return 0;
-  }
+  const currentYearData = expData.value.find(
+    (item) => item.year === currentYear,
+  );
+  return currentYearData
+    ? currentYearData.detail.reduce((sum, item) => sum + item.amt, 0)
+    : 0;
 });
 
 // 格式化金额显示
@@ -367,7 +392,6 @@ const formatCurrency = (amount: number) => {
 
 // 更新图表
 const updateCharts = async () => {
-
   const typeData = expenseTypeStats.value;
   const barChartSeries = getBarChartSeries.value;
   const areaChartSeries = getAreaChartSeries.value;
@@ -379,7 +403,8 @@ const updateCharts = async () => {
   }
 
   // 渲染年度柱状图
-  await renderLineChart({tooltip: {
+  await renderLineChart({
+    tooltip: {
       trigger: 'axis',
       axisPointer: {
         type: 'shadow',
@@ -398,7 +423,8 @@ const updateCharts = async () => {
         // 显示各项的金额和百分比
         params.forEach((item: any) => {
           if (item.seriesName !== '年度合计' && item.value > 0) {
-            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${formatCurrency(item.value)} (${percentage}%)<br/>`;
           }
         });
@@ -433,17 +459,17 @@ const updateCharts = async () => {
     yAxis: {
       type: 'value',
       axisLabel: {
-        formatter: '¥{value}'
-      }
+        formatter: '¥{value}',
+      },
     },
-    series: barChartSeries as any
+    series: barChartSeries as any,
   });
 
   // 渲染饼图
   await renderPieChart({
     tooltip: {
       trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
+      formatter: '{a} <br/>{b}: {c} ({d}%)',
     },
     legend: {
       type: 'scroll',
@@ -453,39 +479,41 @@ const updateCharts = async () => {
       padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
       itemGap: isMobile.value ? 8 : 10,
     },
-    series: [{
-      name: '支出类型分布',
+    series: [
+      {
+        name: '支出类型分布',
         type: 'pie',
         radius: isMobile.value ? ['0%', '45%'] : ['0%', '65%'],
         center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
-      avoidLabelOverlap: true,
-      itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
-        borderWidth: 2,
-      },
-      label: {
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2,
+        },
+        label: {
           show: true,
           position: 'outside',
           formatter: (params: any) => {
             return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
           },
-          fontSize: isMobile.value ? 10 : 12
+          fontSize: isMobile.value ? 10 : 12,
         },
-      emphasis: {
-        label: {
+        emphasis: {
+          label: {
+            show: true,
+            fontSize: 14,
+            fontWeight: 'bold',
+          },
+        },
+        labelLine: {
           show: true,
-          fontSize: 14,
-          fontWeight: 'bold'
-        }
+          length: isMobile.value ? 5 : 10,
+          length2: isMobile.value ? 5 : 10,
+        },
+        data: typeData,
       },
-      labelLine: {
-        show: true,
-        length: isMobile.value ? 5 : 10,
-        length2: isMobile.value ? 5 : 10
-      },
-      data: typeData
-    }]
+    ],
   });
 
   // 渲染堆叠面积图
@@ -508,7 +536,8 @@ const updateCharts = async () => {
         // 显示各项的金额和百分比
         params.forEach((item: any) => {
           if (item.value > 0) {
-            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${formatCurrency(item.value)} (${percentage}%)<br/>`;
           }
         });
@@ -536,7 +565,7 @@ const updateCharts = async () => {
       axisLabel: {
         rotate: 45,
         interval: 'auto',
-        fontSize: isMobile.value ? 10 : 12
+        fontSize: isMobile.value ? 10 : 12,
       },
       triggerEvent: true,
     },
@@ -544,10 +573,14 @@ const updateCharts = async () => {
       type: 'value',
       axisLabel: {
         formatter: '¥{value}',
-        fontSize: isMobile.value ? 10 : 12
-      }
+        fontSize: isMobile.value ? 10 : 12,
+      },
     },
-    series: areaChartSeries.map(item => ({ ...item, symbol: 'emptyCircle', symbolSize: 4 })) as any
+    series: areaChartSeries.map((item) => ({
+      ...item,
+      symbol: 'emptyCircle',
+      symbolSize: 4,
+    })) as any,
   });
 
   // 绑定点击事件
@@ -567,7 +600,10 @@ const updateCharts = async () => {
       }
 
       if (monthStr && /^\d{4}-\d{2}$/.test(monthStr)) {
-        const [year, month] = monthStr.split('-').map(Number) as [number, number];
+        const [year, month] = monthStr.split('-').map(Number) as [
+          number,
+          number,
+        ];
         const lastDay = new Date(year, month, 0).getDate();
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
@@ -575,11 +611,11 @@ const updateCharts = async () => {
         message.success(`已选择月份: ${monthStr}`);
 
         if (gridApi && gridApi.formApi) {
-           gridApi.formApi.setValues({
+          gridApi.formApi.setValues({
             expTimeRange: [startDate, endDate],
           });
         } else {
-           console.error('gridApi or formApi is missing', gridApi);
+          console.error('gridApi or formApi is missing', gridApi);
         }
       }
     });
@@ -592,7 +628,7 @@ const updateCharts = async () => {
   await renderYearPieChart({
     tooltip: {
       trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
+      formatter: '{a} <br/>{b}: {c} ({d}%)',
     },
     legend: {
       type: 'scroll',
@@ -612,29 +648,29 @@ const updateCharts = async () => {
         itemStyle: {
           borderRadius: 10,
           borderColor: '#fff',
-          borderWidth: 2
+          borderWidth: 2,
         },
         label: {
           show: true,
           formatter: (params: any) => {
             return `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`;
           },
-          fontSize: isMobile.value ? 10 : 12
+          fontSize: isMobile.value ? 10 : 12,
         },
         emphasis: {
           label: {
             show: true,
             fontSize: 14,
-            fontWeight: 'bold'
-          }
+            fontWeight: 'bold',
+          },
         },
         labelLine: {
           show: true,
-          length: isMobile.value ? 5 : 10
+          length: isMobile.value ? 5 : 10,
         },
-        data: yearPieData.data
-      }
-    ]
+        data: yearPieData.data,
+      },
+    ],
   });
 };
 
@@ -646,10 +682,10 @@ const updateYearOptions = () => {
   });
 
   // 生成年份选项
-  const sortedYears = Array.from(years).sort((a, b) => b - a);
+  const sortedYears = [...years].sort((a, b) => b - a);
   yearOptions.value = [
     { value: 'all', label: '全部' },
-    ...sortedYears.map(year => ({ value: year, label: year }))
+    ...sortedYears.map((year) => ({ value: year, label: year })),
   ];
 };
 
@@ -658,7 +694,7 @@ const getYearlyStatistics = async () => {
   try {
     const [yearRes, monthRes] = await Promise.all([
       statisticsByYear({}),
-      statisticsByMonth({})
+      statisticsByMonth({}),
     ]);
     expData.value = yearRes;
     monthlyExpData.value = monthRes;
@@ -731,7 +767,7 @@ const formOptions: VbenFormProps = {
       fieldName: 'expTimeRange',
       label: '日期区间',
     },
-     {
+    {
       component: 'Input',
       fieldName: 'counterparty',
       label: '交易对方',
@@ -808,14 +844,32 @@ const gridOptions: VxeGridProps<RowType> = {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'payTypeId', title: '支付方式', sortable: true, width: 100, formatter: ({ cellValue }) => { return getPayTypeLabel(cellValue); } },
+    {
+      field: 'payTypeId',
+      title: '支付方式',
+      sortable: true,
+      width: 100,
+      formatter: ({ cellValue }) => {
+        return getPayTypeLabel(cellValue);
+      },
+    },
     { field: 'remark', title: '备注', sortable: true, width: 100 },
     { field: 'expTime', title: '时间', sortable: true, width: 180 },
     { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
     { field: 'counterparty', title: '交易对方', sortable: true, width: 150 },
     { field: 'transactionId', title: '交易号', sortable: true, width: 200 },
-    { field: 'transactionStatus', title: '交易状态', sortable: true, width: 200 },
-    { field: 'merchantOrderNo', title: '商家订单号', sortable: true, width: 200 },
+    {
+      field: 'transactionStatus',
+      title: '交易状态',
+      sortable: true,
+      width: 200,
+    },
+    {
+      field: 'merchantOrderNo',
+      title: '商家订单号',
+      sortable: true,
+      width: 200,
+    },
     { field: 'createTime', title: '创建时间', sortable: true, width: 180 },
     { field: 'updateTime', title: '修改时间', sortable: true, width: 180 },
     {
@@ -874,10 +928,10 @@ const gridOptions: VxeGridProps<RowType> = {
           }
 
           // 保存表格数据用于图表统计
-        tableData.value = result.items;
+          tableData.value = result.items;
 
-        // 更新年度统计数据
-        await getYearlyStatistics();
+          // 更新年度统计数据
+          await getYearlyStatistics();
         } else {
           tableData.value = [];
         }
@@ -912,7 +966,7 @@ function openAddFormDrawer() {
 }
 
 function submitDeleteData() {
-  let checkboxRecords = gridApi.grid.getCheckboxRecords();
+  const checkboxRecords = gridApi.grid.getCheckboxRecords();
   console.log('checkboxRecords:', checkboxRecords);
   deleteBatch({
     idList: checkboxRecords.map((item) => item.id),
@@ -939,11 +993,15 @@ const processQueryCondition = (formValues: any) => {
     const [startTime, endTime] = condition.expTimeRange;
     if (startTime) {
       // 确保开始时间包含完整的时间部分
-      condition.startTime = startTime.includes(' ') ? startTime : `${startTime} 00:00:00`;
+      condition.startTime = startTime.includes(' ')
+        ? startTime
+        : `${startTime} 00:00:00`;
     }
     if (endTime) {
       // 确保结束时间包含完整的时间部分
-      condition.endTime = endTime.includes(' ') ? endTime : `${endTime} 23:59:59`;
+      condition.endTime = endTime.includes(' ')
+        ? endTime
+        : `${endTime} 23:59:59`;
     }
     // 删除原始的日期区间字段
     delete condition.expTimeRange;
@@ -970,7 +1028,10 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 
 <template>
   <div class="vp-raw w-full">
-    <FormDrawer @table-reload="tableReload" @update-success="handleUpdateSuccess" />
+    <FormDrawer
+      @table-reload="tableReload"
+      @update-success="handleUpdateSuccess"
+    />
 
     <!-- 图表区域 -->
     <div class="charts-section">
@@ -984,8 +1045,12 @@ const handleUpdateSuccess = async (updatedRow: any) => {
             </div>
             <div class="stat-divider"></div>
             <div class="stat-item">
-              <div class="stat-label">{{ new Date().getFullYear() }}年总支出</div>
-              <div class="stat-value">{{ formatCurrency(currentYearExpense) }}</div>
+              <div class="stat-label">
+                {{ new Date().getFullYear() }}年总支出
+              </div>
+              <div class="stat-value">
+                {{ formatCurrency(currentYearExpense) }}
+              </div>
             </div>
           </div>
 
@@ -1052,125 +1117,14 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 </template>
 
 <style scoped>
-.charts-section {
-  padding: 12px;
-  overflow: hidden;
-}
-
-
-
-.total-card {
-  background: linear-gradient(135deg, #f093fb 0%, #764ba2 50%, #667eea 100%);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-  color: white;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.total-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-  transform: rotate(0deg);
-  animation: shimmer 3s infinite linear;
-}
-
 @keyframes shimmer {
   0% {
     transform: rotate(0deg) translate(-50%, -50%);
   }
+
   100% {
     transform: rotate(360deg) translate(-50%, -50%);
   }
-}
-
-.total-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.35);
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.total-stats {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  gap: 24px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.stat-item {
-  flex: 1;
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 14px;
-  opacity: 0.85;
-  margin-bottom: 8px;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  color: #fff;
-}
-
-.stat-value {
-  font-size: 36px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  line-height: 1.2;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 50%, #e0c3fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: #fff; /* Fallback */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.stat-divider {
-  width: 1px;
-  height: 60px;
-  background: linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-  border-radius: 0.5px;
-}
-
-.year-selector-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.year-label {
-  font-weight: 500;
-  color: #fff;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.year-select {
-  width: 160px;
 }
 
 @media (max-width: 768px) {
@@ -1188,12 +1142,12 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   .stat-divider {
     width: 100%;
     height: 1px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgb(255 255 255 / 20%);
   }
 
   .year-selector-wrapper {
-    width: 100%;
     justify-content: center;
+    width: 100%;
   }
 
   .year-select {
@@ -1207,48 +1161,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   .stat-label {
     font-size: 13px;
   }
-}
-
-.chart-container {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  height: auto;
-}
-
-.chart-item {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.chart-item h3 {
-  margin: 12px;
-  margin-bottom: 0px;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.chart-item.full-width {
-  grid-column: 1 / -1;
-}
-
-.chart-item :deep(.ant-card-body) {
-  padding: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.chart-item :deep(.echarts-ui) {
-  flex: 1;
-  min-height: 0;
-}
-
-/* 确保堆叠面积图底部有足够空间，避免与搜索框重叠 */
-.area-chart-item {
-  overflow: hidden;
 }
 
 @media (max-width: 1400px) {
@@ -1282,7 +1194,168 @@ const handleUpdateSuccess = async (updatedRow: any) => {
 
   .charts-section {
     padding: 8px;
-    margin-bottom: 0px;
+    margin-bottom: 0;
   }
+}
+
+.charts-section {
+  padding: 12px;
+  overflow: hidden;
+}
+
+.total-card {
+  position: relative;
+  padding: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  color: white;
+  background: linear-gradient(135deg, #f093fb 0%, #764ba2 50%, #667eea 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgb(102 126 234 / 30%);
+  transition: all 0.3s ease;
+}
+
+.total-card::before {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  content: '';
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgb(255 255 255 / 10%) 50%,
+    transparent 70%
+  );
+  transform: rotate(0deg);
+  animation: shimmer 3s infinite linear;
+}
+
+.total-card:hover {
+  box-shadow: 0 12px 40px rgb(102 126 234 / 35%);
+  transform: translateY(-2px);
+}
+
+.dashboard-header {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.total-stats {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-around;
+  padding: 12px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.3px;
+  opacity: 0.85;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff; /* Fallback */
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+  background: linear-gradient(135deg, #fff 0%, #f0f4ff 50%, #e0c3fc 100%);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 60px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(255 255 255 / 30%) 50%,
+    transparent 100%
+  );
+  border-radius: 0.5px;
+}
+
+.year-selector-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 15%);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.year-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.year-select {
+  width: 160px;
+}
+
+.chart-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  height: auto;
+}
+
+.chart-item {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+}
+
+.chart-item h3 {
+  flex-shrink: 0;
+  margin: 12px;
+  margin-bottom: 0;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.chart-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.chart-item :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.chart-item :deep(.echarts-ui) {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 确保堆叠面积图底部有足够空间，避免与搜索框重叠 */
+.area-chart-item {
+  overflow: hidden;
 }
 </style>

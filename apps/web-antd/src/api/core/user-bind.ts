@@ -12,7 +12,9 @@ export interface UserBindEntity {
 }
 
 export const getUserBindListApi = (includeToken?: boolean) => {
-  return requestClient.get<UserBindEntity[]>('/userbinds/list', { params: { includeToken } });
+  return requestClient.get<UserBindEntity[]>('/userbinds/list', {
+    params: { includeToken },
+  });
 };
 
 export const addUserBindApi = (data: UserBindEntity) => {

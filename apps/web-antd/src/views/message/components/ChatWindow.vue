@@ -1,24 +1,30 @@
 <script setup lang="ts">
 import type { Message } from '#/api/core/message';
 
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { formatDate, formatDateTime } from '@vben/utils';
 
-import { Avatar, Button, Input, Modal as AModal, message } from 'ant-design-vue';
 import { ArrowLeftOutlined } from '@ant-design/icons-vue';
+import {
+  Modal as AModal,
+  Avatar,
+  Button,
+  Input,
+  message,
+} from 'ant-design-vue';
 
 import { deleteMessageApi } from '#/api/core/message';
 
 const props = defineProps<{
+  isMobile?: boolean;
+  loading?: boolean;
   messages: Message[];
+  myAvatar?: string;
+  myId: string;
+  sending?: boolean;
   targetId: string;
   targetName?: string;
-  myId: string;
-  myAvatar?: string;
-  loading?: boolean;
-  sending?: boolean;
-  isMobile?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -67,7 +73,7 @@ const handleDeleteMessage = async () => {
     message.success('删除成功');
     emit('delete', selectedMessage.value.id);
     deleteModalVisible.value = false;
-  } catch (error) {
+  } catch {
     message.error('删除失败');
   } finally {
     deleteLoading.value = false;
@@ -97,35 +103,51 @@ watch(
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-white">
+  <div class="flex h-full flex-col bg-white">
     <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div
+      class="flex items-center justify-between border-b border-gray-100 px-6 py-4"
+    >
       <div class="flex items-center gap-3">
-        <Button v-if="isMobile" type="text" class="!px-0 mr-2" @click="emit('back')">
+        <Button
+          v-if="isMobile"
+          type="text"
+          class="mr-2 !px-0"
+          @click="emit('back')"
+        >
           <ArrowLeftOutlined class="text-lg" />
         </Button>
-        <span class="font-medium text-lg">{{ targetName || `User ${targetId}` }}</span>
+        <span class="text-lg font-medium">{{
+          targetName || `User ${targetId}`
+        }}</span>
       </div>
-      <div class="text-gray-400 text-sm">
+      <div class="text-sm text-gray-400">
         {{ formatDateTime(new Date()) }}
       </div>
     </div>
 
     <!-- Messages -->
-    <div ref="listRef" class="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+    <div ref="listRef" class="flex-1 overflow-y-auto bg-gray-50/50 p-6">
       <div v-if="loading" class="flex justify-center py-4">
         <span class="text-gray-400">Loading...</span>
       </div>
-      <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-gray-400 gap-2">
+      <div
+        v-else-if="messages.length === 0"
+        class="flex h-full flex-col items-center justify-center gap-2 text-gray-400"
+      >
         <span>暂无消息</span>
       </div>
-      
+
       <div v-else class="space-y-6">
         <div
           v-for="msg in messages"
           :key="msg.id"
           class="flex w-full"
-          :class="String(msg.senderId) === String(myId) ? 'justify-end' : 'justify-start'"
+          :class="
+            String(msg.senderId) === String(myId)
+              ? 'justify-end'
+              : 'justify-start'
+          "
         >
           <!-- Other User Avatar -->
           <Avatar
@@ -137,21 +159,28 @@ watch(
             {{ targetName?.[0]?.toUpperCase() || targetId }}
           </Avatar>
 
-          <div class="flex flex-col max-w-[70%]" :class="String(msg.senderId) === String(myId) ? 'items-end' : 'items-start'">
+          <div
+            class="flex max-w-[70%] flex-col"
+            :class="
+              String(msg.senderId) === String(myId)
+                ? 'items-end'
+                : 'items-start'
+            "
+          >
             <!-- Message Content -->
             <div
-              class="px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm max-w-full break-words"
+              class="max-w-full break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm"
               :class="
                 String(msg.senderId) === String(myId)
-                  ? 'bg-[#95EC69] text-black border border-[#7CD958]'
-                  : 'bg-white text-gray-800 border border-gray-100'
+                  ? 'border border-[#7CD958] bg-[#95EC69] text-black'
+                  : 'border border-gray-100 bg-white text-gray-800'
               "
               @contextmenu="handleContextMenu($event, msg)"
             >
               {{ msg.content }}
             </div>
             <!-- Time -->
-            <span class="text-xs text-gray-400 mt-1.5 px-1">
+            <span class="mt-1.5 px-1 text-xs text-gray-400">
               {{ formatDate(msg.createTime, 'MM-DD HH:mm') }}
             </span>
           </div>
@@ -170,21 +199,31 @@ watch(
     </div>
 
     <!-- Input Area -->
-    <div class="bg-white border-t border-gray-100" :class="isMobile ? 'p-2' : 'p-4'">
+    <div
+      class="border-t border-gray-100 bg-white"
+      :class="isMobile ? 'p-2' : 'p-4'"
+    >
       <div class="relative">
         <Input.TextArea
           v-model:value="inputContent"
           :rows="4"
           placeholder="请输入消息内容..."
           :bordered="false"
-          class="resize-none !bg-gray-50 rounded-xl !p-3 focus:!bg-white focus:!shadow-none transition-all"
+          class="resize-none rounded-xl !bg-gray-50 !p-3 transition-all focus:!bg-white focus:!shadow-none"
           @press-enter.prevent="handleSend"
         />
         <div class="absolute bottom-3 right-3 flex items-center gap-2">
-           <span class="text-xs text-gray-400">{{ inputContent.length }}/500</span>
-           <Button type="primary" @click="handleSend" :disabled="!inputContent.trim() || sending" :loading="sending">
-             发送
-           </Button>
+          <span class="text-xs text-gray-400"
+            >{{ inputContent.length }}/500</span
+          >
+          <Button
+            type="primary"
+            @click="handleSend"
+            :disabled="!inputContent.trim() || sending"
+            :loading="sending"
+          >
+            发送
+          </Button>
         </div>
       </div>
     </div>
@@ -193,12 +232,15 @@ watch(
     <Teleport to="body">
       <div
         v-if="contextMenuVisible"
-        class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]"
-        :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        :style="{
+          left: `${contextMenuPosition.x}px`,
+          top: `${contextMenuPosition.y}px`,
+        }"
         @click.stop
       >
         <div
-          class="px-4 py-2 text-sm text-red-500 cursor-pointer hover:bg-red-50"
+          class="cursor-pointer px-4 py-2 text-sm text-red-500 hover:bg-red-50"
           @click="openDeleteConfirm"
         >
           删除
@@ -207,16 +249,15 @@ watch(
     </Teleport>
 
     <!-- Delete Confirmation Modal -->
-    <a-modal
+    <AModal
       v-model:open="deleteModalVisible"
       title="确认删除"
       :confirm-loading="deleteLoading"
       @ok="handleDeleteMessage"
     >
       <p>确定要删除这条消息吗？删除后无法恢复。</p>
-    </a-modal>
+    </AModal>
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

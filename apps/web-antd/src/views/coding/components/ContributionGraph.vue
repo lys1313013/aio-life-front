@@ -5,6 +5,7 @@ import { computed, ref, toRefs, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
+
 import { theme } from 'ant-design-vue';
 
 interface ContributionItem {

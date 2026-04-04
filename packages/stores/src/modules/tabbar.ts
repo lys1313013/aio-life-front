@@ -40,13 +40,13 @@ interface TabbarState {
    */
   renderRouteView?: boolean;
   /**
-   * @zh_CN 当前打开的标签页列表
-   */
-  tabs: TabDefinition[];
-  /**
    * @zh_CN 标签页最后活跃时间
    */
   tabLastActiveTime: Map<string, number>;
+  /**
+   * @zh_CN 当前打开的标签页列表
+   */
+  tabs: TabDefinition[];
   /**
    * @zh_CN 更新时间，用于一些更新场景，使用watch深度监听的话，会损耗性能
    */

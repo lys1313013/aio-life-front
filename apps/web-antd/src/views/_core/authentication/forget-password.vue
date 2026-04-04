@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router';
 
 import { AuthenticationForgetPassword, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
+
 import { message } from 'ant-design-vue';
 
 import { resetPasswordApi, sendResetPasswordCodeApi } from '#/api';
@@ -54,7 +55,7 @@ const formSchema = computed((): VbenFormSchema[] => {
                 throw new Error('Email is required');
               }
               // 简单校验邮箱格式
-              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              if (!/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(email)) {
                 message.warning($t('authentication.emailTip'));
                 throw new Error('Email format is invalid');
               }
@@ -118,7 +119,7 @@ async function handleSubmit(value: Recordable<any>) {
     await resetPasswordApi(value);
     message.success('密码重置成功，请重新登录');
     router.push('/auth/login');
-  } catch (error) {
+  } catch {
     // console.error('reset password error:', error);
   } finally {
     loading.value = false;
