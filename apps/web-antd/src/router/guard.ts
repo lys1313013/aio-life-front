@@ -2,7 +2,12 @@ import type { Router } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
-import { getTabKey, useAccessStore, useTabbarStore, useUserStore } from '@vben/stores';
+import {
+  getTabKey,
+  useAccessStore,
+  useTabbarStore,
+  useUserStore,
+} from '@vben/stores';
 import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';

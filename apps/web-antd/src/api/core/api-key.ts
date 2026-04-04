@@ -11,7 +11,10 @@ export async function getApiKeyListApi() {
  * 生成 API Key
  * @param params { remark: string, expireDays: number }
  */
-export async function generateApiKeyApi(params: { remark?: string; expireDays?: number }) {
+export async function generateApiKeyApi(params: {
+  expireDays?: number;
+  remark?: string;
+}) {
   return requestClient.post<any>('/api-key/generate', params);
 }
 

@@ -116,11 +116,15 @@ const [Form, formApi] = useVbenForm({
   submitOnEnter: true,
 });
 
-watch(() => props.values, (newValues) => {
-  if (newValues) {
-    formApi.setValues(newValues);
-  }
-}, { immediate: true });
+watch(
+  () => props.values,
+  (newValues) => {
+    if (newValues) {
+      formApi.setValues(newValues);
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   await loadDictOptions();
@@ -148,7 +152,7 @@ const handleCancel = () => {
 <template>
   <div class="p-4">
     <Form />
-    <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+    <div class="mt-4 flex justify-end gap-2 border-t border-border pt-4">
       <Button @click="handleCancel">取消</Button>
       <Button type="primary" @click="handleSubmit">保存</Button>
     </div>

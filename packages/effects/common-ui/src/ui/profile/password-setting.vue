@@ -6,6 +6,7 @@ import type { VbenFormSchema } from '@vben-core/form-ui';
 import { computed, reactive } from 'vue';
 
 import { useIsMobile } from '@vben/hooks';
+
 import { useVbenForm } from '@vben-core/form-ui';
 import { VbenButton } from '@vben-core/shadcn-ui';
 
@@ -53,9 +54,7 @@ defineExpose({
   <div>
     <Form />
     <div class="mt-4 flex justify-end">
-      <VbenButton type="submit" @click="handleSubmit">
-        更新密码
-      </VbenButton>
+      <VbenButton type="submit" @click="handleSubmit"> 更新密码 </VbenButton>
     </div>
   </div>
 </template>

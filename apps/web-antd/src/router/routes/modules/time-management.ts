@@ -21,7 +21,8 @@ const routes: RouteRecordRaw[] = [
         },
         name: 'TimeTracker',
         path: '/time-management/time-tracker',
-        component: () => import('#/views/time-management/time-tracker/index.vue'),
+        component: () =>
+          import('#/views/time-management/time-tracker/index.vue'),
       },
       {
         meta: {

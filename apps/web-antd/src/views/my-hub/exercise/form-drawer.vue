@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import { ref, onMounted, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 
 import { Button } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useVbenForm } from '#/adapter/form';
-import { add, update } from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/common';
+import { add, update } from '#/api/core/exerciseRecord';
 
 const props = defineProps<{
   values: any;
@@ -141,13 +141,9 @@ const handleSubmit = async () => {
   <div class="p-4">
     <Form />
 
-    <div class="flex justify-end mt-6">
-      <Button class="mr-2" @click="$emit('close')">
-        取消
-      </Button>
-      <Button type="primary" @click="handleSubmit">
-        确定
-      </Button>
+    <div class="mt-6 flex justify-end">
+      <Button class="mr-2" @click="$emit('close')"> 取消 </Button>
+      <Button type="primary" @click="handleSubmit"> 确定 </Button>
     </div>
   </div>
 </template>

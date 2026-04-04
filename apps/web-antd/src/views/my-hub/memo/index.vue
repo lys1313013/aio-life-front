@@ -1,11 +1,35 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import type { Memo } from '#/api/core/memo';
+
+import { onMounted, reactive, ref } from 'vue';
+
 import { usePreferences } from '@vben/preferences';
-import { Button, Modal, Input, message, Popconfirm, Tooltip, Spin, Empty } from 'ant-design-vue';
-import { EditOutlined, DeleteOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
-import { getMemoListApi, createMemoApi, updateMemoApi, deleteMemoApi, type Memo } from '#/api/core/memo';
+
+import {
+  ClockCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from '@ant-design/icons-vue';
+import {
+  Button,
+  Empty,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Spin,
+  Tooltip,
+} from 'ant-design-vue';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+
+import {
+  createMemoApi,
+  deleteMemoApi,
+  getMemoListApi,
+  updateMemoApi,
+} from '#/api/core/memo';
+
 import MemoFab from './MemoFab.vue';
 
 const memos = ref<Memo[]>([]);
@@ -53,7 +77,7 @@ const handleDelete = async (id: string) => {
     await deleteMemoApi(id);
     message.success('删除成功');
     fetchMemos();
-  } catch (error) {
+  } catch {
     // Error is handled by request interceptor usually
   }
 };
@@ -65,11 +89,9 @@ const handleOk = async () => {
   }
   confirmLoading.value = true;
   try {
-    if (formState.id) {
-      await updateMemoApi({ ...formState });
-    } else {
-      await createMemoApi({ ...formState });
-    }
+    await (formState.id
+      ? updateMemoApi({ ...formState })
+      : createMemoApi({ ...formState }));
     modalOpen.value = false;
     fetchMemos();
   } finally {
@@ -79,8 +101,11 @@ const handleOk = async () => {
 
 const formatTime = (time: string) => {
   try {
-    return formatDistanceToNow(new Date(time), { addSuffix: true, locale: zhCN });
-  } catch (e) {
+    return formatDistanceToNow(new Date(time), {
+      addSuffix: true,
+      locale: zhCN,
+    });
+  } catch {
     return time;
   }
 };
@@ -95,9 +120,11 @@ const bgColors = [
   'bg-indigo-50 dark:bg-indigo-900/20',
 ];
 
-const getBgColor = (id: string | number) => {
+const getBgColor = (id: number | string) => {
   const strId = String(id);
-  const index = strId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % bgColors.length;
+  const index =
+    strId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) %
+    bgColors.length;
   return bgColors[index];
 };
 
@@ -107,45 +134,60 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-2 h-full flex flex-col overflow-hidden">
+  <div class="flex h-full flex-col overflow-hidden p-2">
     <div class="flex-1 overflow-y-auto overflow-x-hidden">
       <Spin :spinning="loading">
-        <div v-if="memos.length > 0" class="columns-2 md:columns-3 lg:columns-4 gap-2 mx-auto">
-          <div 
-            v-for="item in memos" 
-            :key="item.id" 
-            class="break-inside-avoid mb-2"
+        <div
+          v-if="memos.length > 0"
+          class="mx-auto columns-2 gap-2 md:columns-3 lg:columns-4"
+        >
+          <div
+            v-for="item in memos"
+            :key="item.id"
+            class="mb-2 break-inside-avoid"
           >
-            <div 
-              class="group relative flex flex-col p-3 rounded-xl transition-all duration-300 hover:-translate-y-0.3 hover:shadow-lg border border-transparent dark:border-slate-700"
+            <div
+              class="hover:-translate-y-0.3 group relative flex flex-col rounded-xl border border-transparent p-3 transition-all duration-300 hover:shadow-lg dark:border-slate-700"
               :class="getBgColor(item.id)"
             >
               <!-- Content Area -->
-              <div class="flex-1 overflow-hidden cursor-pointer" @click="handleEdit(item)">
-                <h3 v-if="item.title" class="font-bold text-lg mb-1 truncate text-slate-800 dark:text-slate-200">
+              <div
+                class="flex-1 cursor-pointer overflow-hidden"
+                @click="handleEdit(item)"
+              >
+                <h3
+                  v-if="item.title"
+                  class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200"
+                >
                   {{ item.title }}
                 </h3>
-                <p class="whitespace-pre-wrap text-slate-700 dark:text-slate-300 text-base leading-relaxed break-words line-clamp-[10]">
+                <p
+                  class="line-clamp-[10] whitespace-pre-wrap break-words text-base leading-relaxed text-slate-700 dark:text-slate-300"
+                >
                   {{ item.content }}
                 </p>
               </div>
-              
+
               <!-- Footer Area -->
-              <div class="mt-3 flex justify-between items-center text-xs text-slate-400">
+              <div
+                class="mt-3 flex items-center justify-between text-xs text-slate-400"
+              >
                 <div class="flex items-center gap-1">
                   <ClockCircleOutlined />
                   <Tooltip :title="new Date(item.updateTime).toLocaleString()">
                     <span>{{ formatTime(item.updateTime) }}</span>
                   </Tooltip>
                 </div>
-                
-                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+
+                <div
+                  class="flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                >
                   <Tooltip title="编辑">
-                    <Button 
-                      type="text" 
-                      size="small" 
-                      shape="circle" 
-                      class="!text-slate-500 hover:!text-blue-500 hover:bg-white/50 dark:hover:bg-black/20"
+                    <Button
+                      type="text"
+                      size="small"
+                      shape="circle"
+                      class="!text-slate-500 hover:bg-white/50 hover:!text-blue-500 dark:hover:bg-black/20"
                       @click.stop="handleEdit(item)"
                     >
                       <template #icon><EditOutlined /></template>
@@ -159,11 +201,11 @@ onMounted(() => {
                     @click.stop
                   >
                     <Tooltip title="删除">
-                      <Button 
-                        type="text" 
-                        size="small" 
+                      <Button
+                        type="text"
+                        size="small"
                         shape="circle"
-                        class="!text-slate-500 hover:!text-red-500 hover:bg-white/50 dark:hover:bg-black/20"
+                        class="!text-slate-500 hover:bg-white/50 hover:!text-red-500 dark:hover:bg-black/20"
                       >
                         <template #icon><DeleteOutlined /></template>
                       </Button>
@@ -182,28 +224,33 @@ onMounted(() => {
       v-model:open="modalOpen"
       :title="modalTitle"
       :confirm-loading="confirmLoading"
-      :maskClosable="false"
+      :mask-closable="false"
       @ok="handleOk"
       :width="isMobile ? '100%' : '70%'"
       :centered="true"
-      :body-style="{ height: isMobile ? 'calc(100vh - 110px)' : '60vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }"
+      :body-style="{
+        height: isMobile ? 'calc(100vh - 110px)' : '60vh',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }"
       class="memo-modal"
     >
       <Input
         v-model:value="formState.title"
         placeholder="标题"
-        class="!text-lg !font-bold !mb-2 !border-0 focus:!shadow-none !px-0"
+        class="!mb-2 !border-0 !px-0 !text-lg !font-bold focus:!shadow-none"
         :bordered="false"
       />
       <Input.TextArea
         v-model:value="formState.content"
         placeholder="记下你的想法..."
-        class="!text-base !leading-relaxed !resize-none !border-0 focus:!shadow-none flex-1 !px-0"
+        class="flex-1 !resize-none !border-0 !px-0 !text-base !leading-relaxed focus:!shadow-none"
         :bordered="false"
-        style="height: 100%;"
+        style="height: 100%"
       />
     </Modal>
-    
+
     <MemoFab @click="handleAdd" />
   </div>
 </template>

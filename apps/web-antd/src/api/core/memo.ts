@@ -1,4 +1,4 @@
-import { requestClient } from "#/api/request";
+import { requestClient } from '#/api/request';
 
 export interface Memo {
   id: string;

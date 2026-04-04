@@ -109,8 +109,8 @@
 }
 
 .vxe-grid--layout-header-wrapper {
-  overflow: visible;
   min-height: auto !important;
+  overflow: visible;
 }
 
 .vxe-grid--layout-body-content-wrapper {

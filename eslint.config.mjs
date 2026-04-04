@@ -2,4 +2,45 @@
 
 import { defineConfig } from '@vben/eslint-config';
 
-export default defineConfig();
+export default defineConfig([
+  {
+    rules: {
+      'unicorn/no-array-sort': 'off',
+      'unicorn/no-array-reduce': 'off',
+      'unicorn/no-array-reverse': 'off',
+      'unicorn/prefer-code-point': 'off',
+      'unicorn/prefer-spread': 'off',
+      'unicorn/prefer-ternary': 'off',
+      'unicorn/prefer-structured-clone': 'off',
+      'unicorn/no-nested-ternary': 'off',
+      'unicorn/prefer-array-some': 'off',
+      'unicorn/prefer-single-call': 'off',
+      'unicorn/text-encoding-identifier-case': 'off',
+      'no-console': 'off',
+      'unused-imports/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'vue/no-unused-components': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+      'prettier/prettier': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      eqeqeq: 'off',
+      'n/prefer-global/buffer': 'off',
+      'vue/custom-event-name-casing': 'off',
+      '@typescript-eslint/no-dynamic-delete': 'off',
+      '@typescript-eslint/no-invalid-void-type': 'off',
+      'no-useless-catch': 'off',
+      'unicorn/prefer-query-selector': 'off',
+      'vue/no-unused-refs': 'off',
+      'unicorn/prefer-number-properties': 'off',
+      'n/no-extraneous-import': 'off',
+      'unicorn/prefer-add-event-listener': 'off',
+      'unicorn/prefer-blob-reading-methods': 'off',
+      'unicorn/prefer-logical-operator-over-ternary': 'off',
+      'unicorn/prefer-default-parameters': 'off',
+      'vue/no-v-html': 'off',
+      'jsdoc/check-param-names': 'off',
+      'vue/one-component-per-file': 'off',
+    },
+  },
+]);

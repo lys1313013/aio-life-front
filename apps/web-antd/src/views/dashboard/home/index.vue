@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, type Component } from 'vue';
+import type { Component } from 'vue';
+
+import type { WorkbenchQuickNavItem } from '@vben/common-ui';
+
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import {
-  WorkbenchQuickNav,
-  type WorkbenchQuickNavItem,
-} from '@vben/common-ui';
+import { WorkbenchQuickNav } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
@@ -163,7 +164,9 @@ onMounted(async () => {
     tasks.forEach(async (task) => {
       try {
         const res = await getDashboardCardDetail(task.type);
-        const index = overviewItems.value.findIndex((i) => i.type === task.type);
+        const index = overviewItems.value.findIndex(
+          (i) => i.type === task.type,
+        );
         if (index !== -1) {
           overviewItems.value[index] = {
             ...overviewItems.value[index],
@@ -342,9 +345,6 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
       ref="timeTrackerModalRef"
       @success="handleTimeTrackerSuccess"
     />
-    <ExerciseAddModal
-      ref="exerciseModalRef"
-      @success="handleExerciseSuccess"
-    />
+    <ExerciseAddModal ref="exerciseModalRef" @success="handleExerciseSuccess" />
   </div>
 </template>

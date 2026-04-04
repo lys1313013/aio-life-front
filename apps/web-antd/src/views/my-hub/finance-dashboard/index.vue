@@ -4,10 +4,11 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-import { Card, Select, Statistic, Row, Col } from 'ant-design-vue';
 
-import { statisticsByMonth as incomeStatisticsByMonth } from '#/api/core/income';
+import { Card, Col, Row, Select, Statistic } from 'ant-design-vue';
+
 import { statisticsByMonth as expenseStatisticsByMonth } from '#/api/core/expense';
+import { statisticsByMonth as incomeStatisticsByMonth } from '#/api/core/income';
 
 // 图表引用
 const balanceChartRef = ref<EchartsUIType>();
@@ -17,10 +18,16 @@ const yearChartRef = ref<EchartsUIType>();
 const yearlyBalancePieChartRef = ref<EchartsUIType>();
 
 const { renderEcharts: renderBalanceChart } = useEcharts(balanceChartRef);
-const { renderEcharts: renderIncomeCategoryChart } = useEcharts(incomeCategoryChartRef);
-const { renderEcharts: renderExpenseCategoryChart } = useEcharts(expenseCategoryChartRef);
+const { renderEcharts: renderIncomeCategoryChart } = useEcharts(
+  incomeCategoryChartRef,
+);
+const { renderEcharts: renderExpenseCategoryChart } = useEcharts(
+  expenseCategoryChartRef,
+);
 const { renderEcharts: renderYearChart } = useEcharts(yearChartRef);
-const { renderEcharts: renderYearlyBalancePieChart } = useEcharts(yearlyBalancePieChartRef);
+const { renderEcharts: renderYearlyBalancePieChart } = useEcharts(
+  yearlyBalancePieChartRef,
+);
 
 // 数据接口
 interface FinanceDetail {
@@ -44,8 +51,12 @@ const yearOptions = ref([{ value: 'all', label: '全部' }]);
 const totalIncome = ref(0);
 const totalExpense = ref(0);
 const totalBalance = ref(0);
-const monthlyBalances = ref<{month: string, income: number, expense: number, balance: number}[]>([]);
-const yearlyBalances = ref<{year: number, income: number, expense: number, balance: number}[]>([]);
+const monthlyBalances = ref<
+  { balance: number; expense: number; income: number; month: string }[]
+>([]);
+const yearlyBalances = ref<
+  { balance: number; expense: number; income: number; year: number }[]
+>([]);
 
 // 格式化金额
 const formatCurrency = (amount: number) => {
@@ -58,20 +69,20 @@ const formatCurrency = (amount: number) => {
 const getCommonChartConfig = (title: string) => ({
   tooltip: {
     trigger: 'axis' as const,
-    axisPointer: { type: 'shadow' as const }
+    axisPointer: { type: 'shadow' as const },
   },
   legend: {},
   grid: {
     left: '3%',
     right: '4%',
     bottom: '3%',
-    containLabel: true
+    containLabel: true,
   },
   xAxis: { type: 'category' as const },
   yAxis: {
     type: 'value' as const,
-    axisLabel: { formatter: '{value}' }
-  }
+    axisLabel: { formatter: '{value}' },
+  },
 });
 
 // 工具提示格式化函数
@@ -131,10 +142,10 @@ const calculateTotal = (data: FinanceData[]) => {
 
 // 计算月度结余
 const calculateMonthlyBalances = () => {
-  const monthlyData: Record<string, {income: number, expense: number}> = {};
+  const monthlyData: Record<string, { expense: number; income: number }> = {};
 
   // 处理收入数据
-  incomeData.value.forEach(item => {
+  incomeData.value.forEach((item) => {
     const monthKey = `${item.year}-${item.month?.toString().padStart(2, '0') || '01'}`;
     const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
 
@@ -145,7 +156,7 @@ const calculateMonthlyBalances = () => {
   });
 
   // 处理支出数据
-  expenseData.value.forEach(item => {
+  expenseData.value.forEach((item) => {
     const monthKey = `${item.year}-${item.month?.toString().padStart(2, '0') || '01'}`;
     const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
 
@@ -161,17 +172,17 @@ const calculateMonthlyBalances = () => {
       month: monthKey,
       income: data.income,
       expense: data.expense,
-      balance: data.income - data.expense
+      balance: data.income - data.expense,
     }))
     .sort((a, b) => b.month.localeCompare(a.month));
 };
 
 // 计算年度结余
 const calculateYearlyBalances = () => {
-  const yearlyData: Record<number, {income: number, expense: number}> = {};
+  const yearlyData: Record<number, { expense: number; income: number }> = {};
 
   // 处理收入数据
-  incomeData.value.forEach(item => {
+  incomeData.value.forEach((item) => {
     const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
 
     if (!yearlyData[item.year]) {
@@ -181,7 +192,7 @@ const calculateYearlyBalances = () => {
   });
 
   // 处理支出数据
-  expenseData.value.forEach(item => {
+  expenseData.value.forEach((item) => {
     const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
 
     if (!yearlyData[item.year]) {
@@ -193,10 +204,10 @@ const calculateYearlyBalances = () => {
   // 转换为数组并倒序排序
   yearlyBalances.value = Object.entries(yearlyData)
     .map(([year, data]) => ({
-      year: parseInt(year),
+      year: Number.parseInt(year),
       income: data.income,
       expense: data.expense,
-      balance: data.income - data.expense
+      balance: data.income - data.expense,
     }))
     .sort((a, b) => b.year - a.year);
 };
@@ -205,14 +216,17 @@ const calculateYearlyBalances = () => {
 const updateYearOptions = () => {
   const years = new Set<number>();
 
-  incomeData.value.forEach(item => years.add(item.year));
-  expenseData.value.forEach(item => years.add(item.year));
+  incomeData.value.forEach((item) => years.add(item.year));
+  expenseData.value.forEach((item) => years.add(item.year));
 
-  const sortedYears = Array.from(years).sort((a, b) => b - a);
+  const sortedYears = [...years].sort((a, b) => b - a);
 
   yearOptions.value = [
     { value: 'all', label: '全部' },
-    ...sortedYears.map(year => ({ value: year.toString(), label: `${year}年` }))
+    ...sortedYears.map((year) => ({
+      value: year.toString(),
+      label: `${year}年`,
+    })),
   ];
 };
 
@@ -223,20 +237,21 @@ const filteredData = computed(() => {
       income: incomeData.value,
       expense: expenseData.value,
       monthly: monthlyBalances.value,
-      yearly: yearlyBalances.value
+      yearly: yearlyBalances.value,
     };
   }
 
-  const year = parseInt(selectedYear.value);
+  const year = Number.parseInt(selectedYear.value);
 
   return {
-    income: incomeData.value.filter(item => item.year === year),
-    expense: expenseData.value.filter(item => item.year === year),
-    monthly: monthlyBalances.value.filter(item => item.month.startsWith(selectedYear.value as string)),
-    yearly: yearlyBalances.value.filter(item => item.year === year)
+    income: incomeData.value.filter((item) => item.year === year),
+    expense: expenseData.value.filter((item) => item.year === year),
+    monthly: monthlyBalances.value.filter((item) =>
+      item.month.startsWith(selectedYear.value as string),
+    ),
+    yearly: yearlyBalances.value.filter((item) => item.year === year),
   };
 });
-
 
 // 更新图表
 const updateCharts = () => {
@@ -259,34 +274,34 @@ const updateBalanceChart = () => {
     ...getCommonChartConfig('月度收支结余趋势'),
     tooltip: {
       ...getCommonChartConfig('').tooltip,
-      formatter: tooltipFormatter
+      formatter: tooltipFormatter,
     },
     xAxis: {
       type: 'category',
-      data: chartData.map(item => item.month),
-      axisLabel: { rotate: 45 }
+      data: chartData.map((item) => item.month),
+      axisLabel: { rotate: 45 },
     },
     series: [
       {
         name: '收入',
         type: 'bar',
-        data: chartData.map(item => item.income),
-        itemStyle: { color: '#52c41a' }
+        data: chartData.map((item) => item.income),
+        itemStyle: { color: '#52c41a' },
       },
       {
         name: '支出',
         type: 'bar',
-        data: chartData.map(item => item.expense),
-        itemStyle: { color: '#ff4d4f' }
+        data: chartData.map((item) => item.expense),
+        itemStyle: { color: '#ff4d4f' },
       },
       {
         name: '结余',
         type: 'line',
-        data: chartData.map(item => item.balance),
+        data: chartData.map((item) => item.balance),
         itemStyle: { color: '#1890ff' },
-        lineStyle: { width: 3 }
-      }
-    ]
+        lineStyle: { width: 3 },
+      },
+    ],
   });
 };
 
@@ -294,21 +309,21 @@ const updateBalanceChart = () => {
 const updateCategoryChart = (
   data: FinanceData[] | undefined,
   renderFunc: (opt: any) => void,
-  seriesName: string
+  seriesName: string,
 ) => {
   const types = new Map<string, number>();
 
   // 统计类型
-  data?.forEach(item => {
-    item.detail?.forEach(detail => {
+  data?.forEach((item) => {
+    item.detail?.forEach((detail) => {
       const current = types.get(detail.typeName) || 0;
       types.set(detail.typeName, current + detail.amt);
     });
   });
 
-  const chartData = Array.from(types.entries()).map(([name, value]) => ({
+  const chartData = [...types.entries()].map(([name, value]) => ({
     name,
-    value: Number(value.toFixed(2))
+    value: Number(value.toFixed(2)),
   }));
 
   const total = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -325,20 +340,20 @@ const updateCategoryChart = (
           val: {
             fontSize: 20,
             fontWeight: 'bold',
-            padding: [5, 0]
-          }
-        }
-      }
+            padding: [5, 0],
+          },
+        },
+      },
     },
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
         return `${params.seriesName}<br/>${params.marker} ${params.name}: ${formatCurrency(params.value)}<br/>占比: ${params.percent}%`;
-      }
+      },
     },
     legend: {
       orient: 'vertical',
-      left: 'left'
+      left: 'left',
     },
     series: [
       {
@@ -352,31 +367,39 @@ const updateCategoryChart = (
           formatter: (params: any) => {
             return `${params.name}\n${formatCurrency(params.value)}\n${params.percent}%`;
           },
-          fontSize: 12
+          fontSize: 12,
         },
         labelLine: {
-          show: true
+          show: true,
         },
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-    ]
+            shadowColor: 'rgba(0, 0, 0, 0.5)',
+          },
+        },
+      },
+    ],
   });
 };
 
 // 更新收入分类占比图
 const updateIncomeCategoryChart = () => {
-  updateCategoryChart(filteredData.value.income, renderIncomeCategoryChart, '收入分类');
+  updateCategoryChart(
+    filteredData.value.income,
+    renderIncomeCategoryChart,
+    '收入分类',
+  );
 };
 
 // 更新支出分类占比图
 const updateExpenseCategoryChart = () => {
-  updateCategoryChart(filteredData.value.expense, renderExpenseCategoryChart, '支出分类');
+  updateCategoryChart(
+    filteredData.value.expense,
+    renderExpenseCategoryChart,
+    '支出分类',
+  );
 };
 
 // 更新年度对比图
@@ -391,48 +414,48 @@ const updateYearChart = () => {
     ...getCommonChartConfig('年度收支结余对比'),
     tooltip: {
       ...getCommonChartConfig('').tooltip,
-      formatter: tooltipFormatter
+      formatter: tooltipFormatter,
     },
     xAxis: {
       type: 'category',
-      data: chartData.map(item => `${item.year}年`)
+      data: chartData.map((item) => `${item.year}年`),
     },
     series: [
       {
         name: '收入',
         type: 'bar',
-        data: chartData.map(item => item.income),
+        data: chartData.map((item) => item.income),
         itemStyle: { color: '#52c41a' },
         label: {
           show: true,
           position: 'top',
-          formatter: (params: any) => formatCurrency(params.value)
-        }
+          formatter: (params: any) => formatCurrency(params.value),
+        },
       },
       {
         name: '支出',
         type: 'bar',
-        data: chartData.map(item => item.expense),
+        data: chartData.map((item) => item.expense),
         itemStyle: { color: '#ff4d4f' },
         label: {
           show: true,
           position: 'top',
-          formatter: (params: any) => formatCurrency(params.value)
-        }
+          formatter: (params: any) => formatCurrency(params.value),
+        },
       },
       {
         name: '结余',
         type: 'line',
-        data: chartData.map(item => item.balance),
+        data: chartData.map((item) => item.balance),
         itemStyle: { color: '#1890ff' },
         lineStyle: { width: 3 },
         label: {
           show: true,
           position: 'top',
-          formatter: (params: any) => formatCurrency(params.value)
-        }
-      }
-    ]
+          formatter: (params: any) => formatCurrency(params.value),
+        },
+      },
+    ],
   });
 };
 
@@ -443,11 +466,13 @@ const updateYearlyBalancePieChart = () => {
   if (!data || data.length === 0) return;
 
   // 计算每年结余占比数据
-  const pieData = data.map(item => ({
-    name: `${item.year}年`,
-    value: Math.abs(item.balance),
-    balance: item.balance
-  })).filter(item => item.value > 0);
+  const pieData = data
+    .map((item) => ({
+      name: `${item.year}年`,
+      value: Math.abs(item.balance),
+      balance: item.balance,
+    }))
+    .filter((item) => item.value > 0);
 
   if (pieData.length === 0) return;
 
@@ -459,12 +484,12 @@ const updateYearlyBalancePieChart = () => {
         const balance = data.balance;
         const sign = balance >= 0 ? '盈余' : '亏损';
         return `${name}<br/>${params.marker} ${sign}: ${formatCurrency(Math.abs(balance))}<br/>占比: ${((value / pieData.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1)}%`;
-      }
+      },
     },
     legend: {
       orient: 'vertical',
       right: 10,
-      top: 'center'
+      top: 'center',
     },
     series: [
       {
@@ -486,7 +511,7 @@ const updateYearlyBalancePieChart = () => {
             return `${params.name}\n${sign}: ${formatCurrency(Math.abs(balance))}\n${percentage}%`;
           },
           fontSize: 12,
-          fontWeight: 'normal'
+          fontWeight: 'normal',
         },
         emphasis: {
           label: {
@@ -497,17 +522,17 @@ const updateYearlyBalancePieChart = () => {
               const balance = params.data.balance;
               const sign = balance >= 0 ? '盈余' : '亏损';
               return `${params.name}\n${sign}\n${formatCurrency(Math.abs(balance))}`;
-            }
-          }
+            },
+          },
         },
         labelLine: {
           show: true,
           length: 10,
-          length2: 5
+          length2: 5,
         },
-        data: pieData
-      }
-    ]
+        data: pieData,
+      },
+    ],
   });
 };
 
@@ -574,7 +599,7 @@ onMounted(() => {
         <Card>
           <Statistic
             title="结余率"
-            :value="totalIncome > 0 ? (totalBalance / totalIncome * 100) : 0"
+            :value="totalIncome > 0 ? (totalBalance / totalIncome) * 100 : 0"
             :precision="1"
             suffix="%"
             :value-style="{ color: totalBalance >= 0 ? '#52c41a' : '#ff4d4f' }"
@@ -588,29 +613,29 @@ onMounted(() => {
       <Row :gutter="[12, 12]">
         <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="年度收支结余对比">
-            <EchartsUI ref="yearChartRef" style="height: 300px;" />
+            <EchartsUI ref="yearChartRef" style="height: 300px" />
           </Card>
         </Col>
         <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="每年结余占比">
-            <EchartsUI ref="yearlyBalancePieChartRef" style="height: 300px;" />
+            <EchartsUI ref="yearlyBalancePieChartRef" style="height: 300px" />
           </Card>
         </Col>
 
         <Col :span="24">
           <Card class="chart-card" title="月度收支结余趋势">
-            <EchartsUI ref="balanceChartRef" style="height: 400px;" />
+            <EchartsUI ref="balanceChartRef" style="height: 400px" />
           </Card>
         </Col>
 
         <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="收入分类占比">
-            <EchartsUI ref="incomeCategoryChartRef" style="height: 300px;" />
+            <EchartsUI ref="incomeCategoryChartRef" style="height: 300px" />
           </Card>
         </Col>
         <Col :xs="24" :sm="24" :md="12" :lg="12">
           <Card class="chart-card" title="支出分类占比">
-            <EchartsUI ref="expenseCategoryChartRef" style="height: 300px;" />
+            <EchartsUI ref="expenseCategoryChartRef" style="height: 300px" />
           </Card>
         </Col>
 
@@ -627,12 +652,21 @@ onMounted(() => {
                 v-for="item in filteredData.monthly"
                 :key="item.month"
                 class="table-row"
-                :class="{ positive: item.balance >= 0, negative: item.balance < 0 }"
+                :class="{
+                  positive: item.balance >= 0,
+                  negative: item.balance < 0,
+                }"
               >
                 <div class="table-cell">{{ item.month }}</div>
-                <div class="table-cell income">{{ formatCurrency(item.income) }}</div>
-                <div class="table-cell expense">{{ formatCurrency(item.expense) }}</div>
-                <div class="table-cell balance">{{ formatCurrency(item.balance) }}</div>
+                <div class="income table-cell">
+                  {{ formatCurrency(item.income) }}
+                </div>
+                <div class="expense table-cell">
+                  {{ formatCurrency(item.expense) }}
+                </div>
+                <div class="balance table-cell">
+                  {{ formatCurrency(item.balance) }}
+                </div>
               </div>
             </div>
           </Card>
@@ -650,12 +684,21 @@ onMounted(() => {
                 v-for="item in filteredData.yearly"
                 :key="item.year"
                 class="table-row"
-                :class="{ positive: item.balance >= 0, negative: item.balance < 0 }"
+                :class="{
+                  positive: item.balance >= 0,
+                  negative: item.balance < 0,
+                }"
               >
                 <div class="table-cell">{{ item.year }}年</div>
-                <div class="table-cell income">{{ formatCurrency(item.income) }}</div>
-                <div class="table-cell expense">{{ formatCurrency(item.expense) }}</div>
-                <div class="table-cell balance">{{ formatCurrency(item.balance) }}</div>
+                <div class="income table-cell">
+                  {{ formatCurrency(item.income) }}
+                </div>
+                <div class="expense table-cell">
+                  {{ formatCurrency(item.expense) }}
+                </div>
+                <div class="balance table-cell">
+                  {{ formatCurrency(item.balance) }}
+                </div>
               </div>
             </div>
           </Card>
@@ -666,92 +709,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.finance-dashboard {
-  padding: 20px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  background: white;
-  padding: 12px 12px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.page-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #262626;
-}
-
-.stats-row {
-  margin-bottom: 20px;
-}
-
-.data-card {
-  height: 100%;
-}
-
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-  max-height: 400px;
-  overflow-y: auto;
-  position: relative;
-}
-
-.table-header,
-.table-row {
-  display: flex;
-  border-bottom: 1px solid #f0f0f0;
-  padding: 8px 0;
-}
-
-.table-cell {
-  flex: 1;
-  padding: 4px 8px;
-  text-align: right;
-  font-size: 14px;
-}
-
-.table-cell:first-child {
-  text-align: left;
-  flex: 0.8;
-}
-
-.table-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #fafafa;
-  font-weight: 600;
-  color: #595959;
-}
-
-.table-row.positive .balance {
-  color: #52c41a;
-  font-weight: 600;
-}
-
-.table-row.negative .balance {
-  color: #ff4d4f;
-  font-weight: 600;
-}
-
-.table-row .income {
-  color: #52c41a;
-}
-
-.table-row .expense {
-  color: #ff4d4f;
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
   .finance-dashboard {
@@ -780,8 +737,8 @@ onMounted(() => {
   }
 
   .table-cell {
-    font-size: 12px;
     padding: 4px 6px;
+    font-size: 12px;
   }
 
   /* 优化图表配置 */
@@ -790,4 +747,89 @@ onMounted(() => {
   }
 }
 
+.finance-dashboard {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
+}
+
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.data-card {
+  height: 100%;
+}
+
+.data-table {
+  position: relative;
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  border-collapse: collapse;
+}
+
+.table-header,
+.table-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-cell {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 14px;
+  text-align: right;
+}
+
+.table-cell:first-child {
+  flex: 0.8;
+  text-align: left;
+}
+
+.table-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  font-weight: 600;
+  color: #595959;
+  background-color: #fafafa;
+}
+
+.table-row.positive .balance {
+  font-weight: 600;
+  color: #52c41a;
+}
+
+.table-row.negative .balance {
+  font-weight: 600;
+  color: #ff4d4f;
+}
+
+.table-row .income {
+  color: #52c41a;
+}
+
+.table-row .expense {
+  color: #ff4d4f;
+}
 </style>

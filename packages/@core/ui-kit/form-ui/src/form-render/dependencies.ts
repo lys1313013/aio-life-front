@@ -19,7 +19,6 @@ export default function useDependencies(
 
   const formRenderProps = injectRenderFormProps();
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const formApi = formRenderProps.form!;
 
   if (!values) {

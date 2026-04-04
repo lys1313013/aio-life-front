@@ -1,12 +1,23 @@
 <script setup lang="ts">
 import type { ChatSession } from '#/api/core/llm';
+
+import { onMounted, onUnmounted, ref } from 'vue';
+
 import { formatDate } from '@vben/utils';
-import { List, ListItem, ListItemMeta, TypographyText, Button, Popconfirm, Input, Modal as AModal } from 'ant-design-vue';
-import { ref, onMounted, onUnmounted } from 'vue';
+
+import {
+  Modal as AModal,
+  Button,
+  Input,
+  List,
+  ListItem,
+  ListItemMeta,
+  Popconfirm,
+} from 'ant-design-vue';
 
 const props = defineProps<{
-  sessions: ChatSession[];
   selectedConversationId?: string;
+  sessions: ChatSession[];
 }>();
 
 const emit = defineEmits<{
@@ -16,7 +27,7 @@ const emit = defineEmits<{
   (e: 'update-title', conversationId: string, title: string): void;
 }>();
 
-const editingId = ref<string | null>(null);
+const editingId = ref<null | string>(null);
 const editingTitle = ref('');
 
 // Context Menu
@@ -86,28 +97,40 @@ const cancelEdit = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
-    <div class="p-4 border-b border-gray-100/60 flex justify-between items-center">
-      <span class="font-medium text-lg text-gray-800">AI 会话</span>
+  <div class="flex h-full flex-col">
+    <div
+      class="flex items-center justify-between border-b border-gray-100/60 p-4"
+    >
+      <span class="text-lg font-medium text-gray-800">AI 会话</span>
       <Button type="primary" size="small" @click="emit('create')">
-        <template #icon><span class="i-ant-design:plus-outlined"></span></template>
+        <template #icon>
+          <span class="i-ant-design:plus-outlined"></span>
+        </template>
         新对话
       </Button>
     </div>
-    <div class="flex-1 overflow-y-auto custom-scrollbar">
-      <List item-layout="horizontal" :data-source="sessions" class="session-list">
+    <div class="custom-scrollbar flex-1 overflow-y-auto">
+      <List
+        item-layout="horizontal"
+        :data-source="sessions"
+        class="session-list"
+      >
         <template #renderItem="{ item }">
           <ListItem
             :id="`session-${item.id}`"
-            class="cursor-pointer hover:bg-gray-50/80 transition-all px-4 !py-3 group"
+            class="group cursor-pointer !py-3 px-4 transition-all hover:bg-gray-50/80"
             :class="{ 'bg-blue-50/50': selectedConversationId === item.id }"
             @click="handleSelect(item.id)"
             @contextmenu="handleContextMenu($event, item)"
           >
             <ListItemMeta>
               <template #title>
-                <div class="flex justify-between items-center">
-                  <div v-if="editingId === item.id" class="flex-1 flex gap-1 mr-2" @click.stop>
+                <div class="flex items-center justify-between">
+                  <div
+                    v-if="editingId === item.id"
+                    class="mr-2 flex flex-1 gap-1"
+                    @click.stop
+                  >
                     <Input
                       v-model:value="editingTitle"
                       size="small"
@@ -116,22 +139,31 @@ const cancelEdit = () => {
                       auto-focus
                     />
                   </div>
-                  <span v-else class="font-medium truncate flex-1 mr-2 text-gray-700">{{ item.title || '新对话' }}</span>
-                  <span class="text-[10px] text-gray-400 whitespace-nowrap opacity-80">{{ formatDate(item.updateTime, 'MM-DD HH:mm') }}</span>
+                  <span
+                    v-else
+                    class="mr-2 flex-1 truncate font-medium text-gray-700"
+                    >{{ item.title || '新对话' }}</span
+                  >
+                  <span
+                    class="whitespace-nowrap text-[10px] text-gray-400 opacity-80"
+                    >{{ formatDate(item.updateTime, 'MM-DD HH:mm') }}</span
+                  >
                 </div>
               </template>
               <template #description>
-                <div class="flex justify-end items-center mt-0.5 min-h-[16px]">
-                  <div class="hidden group-hover:flex gap-3" @click.stop>
+                <div class="mt-0.5 flex min-h-[16px] items-center justify-end">
+                  <div class="hidden gap-3 group-hover:flex" @click.stop>
                     <span
-                      class="i-ant-design:edit-outlined text-gray-400 hover:text-blue-500 transition-colors cursor-pointer text-sm"
+                      class="i-ant-design:edit-outlined cursor-pointer text-sm text-gray-400 transition-colors hover:text-blue-500"
                       @click="startEdit(item)"
                     ></span>
                     <Popconfirm
                       title="确定删除此会话吗？"
                       @confirm="emit('delete', item.id)"
                     >
-                      <span class="i-ant-design:delete-outlined text-gray-400 hover:text-red-500 transition-colors cursor-pointer text-sm"></span>
+                      <span
+                        class="i-ant-design:delete-outlined cursor-pointer text-sm text-gray-400 transition-colors hover:text-red-500"
+                      ></span>
                     </Popconfirm>
                   </div>
                 </div>
@@ -140,7 +172,10 @@ const cancelEdit = () => {
           </ListItem>
         </template>
       </List>
-      <div v-if="sessions.length === 0" class="flex flex-col items-center justify-center py-10 text-gray-400/80">
+      <div
+        v-if="sessions.length === 0"
+        class="flex flex-col items-center justify-center py-10 text-gray-400/80"
+      >
         <p class="text-xs">暂无会话历史</p>
       </div>
     </div>
@@ -149,19 +184,22 @@ const cancelEdit = () => {
     <Teleport to="body">
       <div
         v-if="contextMenuVisible"
-        class="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[120px]"
-        :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        :style="{
+          left: `${contextMenuPosition.x}px`,
+          top: `${contextMenuPosition.y}px`,
+        }"
         @click.stop
       >
         <div
-          class="px-4 py-2 text-sm text-gray-700 cursor-pointer hover:bg-gray-50 flex items-center gap-2"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
           @click="handleRename"
         >
           <span class="i-ant-design:edit-outlined"></span>
           重命名
         </div>
         <div
-          class="px-4 py-2 text-sm text-red-500 cursor-pointer hover:bg-red-50 flex items-center gap-2"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50"
           @click="openDeleteConfirm"
         >
           <span class="i-ant-design:delete-outlined"></span>
@@ -171,13 +209,13 @@ const cancelEdit = () => {
     </Teleport>
 
     <!-- Delete Confirmation Modal -->
-    <a-modal
+    <AModal
       v-model:open="deleteModalVisible"
       title="确认删除"
       @ok="handleDeleteSession"
     >
       <p>确定要删除此会话吗？这将删除所有聊天记录且无法恢复。</p>
-    </a-modal>
+    </AModal>
   </div>
 </template>
 
@@ -192,22 +230,24 @@ const cancelEdit = () => {
 
 /* 减轻列表项边框颜色 */
 :deep(.ant-list-split .ant-list-item) {
-  border-block-end: 1px solid rgba(0, 0, 0, 0.03) !important;
+  border-block-end: 1px solid rgb(0 0 0 / 3%) !important;
   transition: all 0.2s ease;
 }
 
 :deep(.dark .ant-list-split .ant-list-item) {
-  border-block-end: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-block-end: 1px solid rgb(255 255 255 / 5%) !important;
 }
 
 /* 选中项的边框优化 */
+/* stylelint-disable-next-line selector-class-pattern */
 :deep(.ant-list-item.bg-blue-50\/50) {
-  border-left: 2px solid #3b82f6;
   padding-left: 14px !important;
+  border-left: 2px solid #3b82f6;
 }
 
+/* stylelint-disable-next-line selector-class-pattern */
 :deep(.dark .ant-list-item.bg-blue-50\/50) {
-  background-color: rgba(59, 130, 246, 0.1) !important;
+  background-color: rgb(59 130 246 / 10%) !important;
 }
 
 /* 隐藏最后一个元素的边框 */
@@ -225,19 +265,19 @@ const cancelEdit = () => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgb(0 0 0 / 5%);
   border-radius: 10px;
 }
 
 :deep(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 10%);
 }
 
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgb(0 0 0 / 10%);
 }
 
 :deep(.dark) .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(255 255 255 / 20%);
 }
 </style>

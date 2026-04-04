@@ -367,7 +367,9 @@ const getModelLinks = (record: any) => {
                 <div class="font-medium text-gray-900 dark:text-gray-100">
                   {{ model.label }}
                 </div>
-                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                <div
+                  class="flex justify-between text-xs text-gray-500 dark:text-gray-400"
+                >
                   <span>{{ model.value }}</span>
                   <div class="flex gap-2">
                     <span

@@ -21,14 +21,14 @@ export interface TimeSlotCategory {
   id: string;
   name: string;
   color: string;
-  icon?: string;  // 图标名称(Iconify格式)
+  icon?: string; // 图标名称(Iconify格式)
   description?: string;
   isTrackTime?: boolean;
   // 新增字段
-  categoryType?: 'public' | 'private';  // 分类来源类型
-  originalId?: string;  // 原始公共分类ID（仅覆盖记录）
-  originalName?: string;  // 原始公共分类名称
-  isOverridden?: boolean;  // 是否被当前用户覆盖
+  categoryType?: 'private' | 'public'; // 分类来源类型
+  originalId?: string; // 原始公共分类ID（仅覆盖记录）
+  originalName?: string; // 原始公共分类名称
+  isOverridden?: boolean; // 是否被当前用户覆盖
 }
 
 // 合并后的分类列表（用于前端展示）
@@ -36,9 +36,9 @@ export interface MergedCategory extends TimeSlotCategory {
   realId?: string; // 真实的数据库主键 ID
   isHidden: boolean; // 是否被当前用户隐藏
   overrideFields?: {
-    name?: string;
     color?: string;
-    icon?: string;  // 图标字段
+    icon?: string; // 图标字段
+    name?: string;
     sort?: number;
   };
 }
@@ -46,15 +46,15 @@ export interface MergedCategory extends TimeSlotCategory {
 // 分类配置项（用于表单）
 export interface CategoryConfigItem {
   id?: string;
-  templateId?: string | null;
+  templateId?: null | string;
   name: string;
   color: string;
-  icon?: string;  // 图标名称(Iconify格式)
+  icon?: string; // 图标名称(Iconify格式)
   description?: string;
   isTrackTime: boolean;
   sort: number;
-  categoryType: 'public' | 'private' | 'override';
-  originalPublicId?: string;  // 原始公共分类ID
+  categoryType: 'override' | 'private' | 'public';
+  originalPublicId?: string; // 原始公共分类ID
 }
 
 // 时间轴配置

@@ -1,13 +1,15 @@
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
+import { useUserStore } from '@vben/stores';
+
 import { Card, message, Skeleton, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import ContributionGraph from '../components/ContributionGraph.vue';
-import { useUserStore } from '@vben/stores';
 import { getUserBindListApi } from '#/api/core/user-bind';
+
+import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'LeetCode' });
 
@@ -22,7 +24,6 @@ const totalCommits = ref(0);
 const graphData = ref<any[]>([]);
 const { token } = theme.useToken();
 
-
 type Difficulty = 'EASY' | 'HARD' | 'MEDIUM';
 type DifficultyStat = { count: number; difficulty: Difficulty };
 type QuestionProgress = {
@@ -31,40 +32,40 @@ type QuestionProgress = {
   numUntouchedQuestions: DifficultyStat[];
 };
 type PublicProfile = {
-  siteRanking: number;
   profile: {
-    countryName?: string | null;
-    reputation?: number | null;
+    countryName?: null | string;
+    reputation?: null | number;
   };
+  siteRanking: number;
 };
 type ContestRanking = {
   attendedContestsCount: number;
-  rating: number;
   globalRanking: number;
-  localRanking: number;
   globalTotalParticipants: number;
+  localRanking: number;
   localTotalParticipants: number;
+  rating: number;
   topPercentage: number;
 };
 type RecentACSubmission = {
+  question: {
+    questionFrontendId: string;
+    title: string;
+    titleSlug: string;
+    translatedTitle: string;
+  };
   submissionId: string;
   submitTime: number;
-  question: {
-    title: string;
-    translatedTitle: string;
-    titleSlug: string;
-    questionFrontendId: string;
-  };
 };
 type DailyQuestion = {
   todayRecord: Array<{
     date: string;
-    userStatus: string;
     question: {
       title: string;
       titleSlug: string;
       translatedTitle?: string;
     };
+    userStatus: string;
   }>;
 };
 
@@ -76,16 +77,16 @@ type UserCalendar = {
   totalActiveDays: number;
 };
 
-const userInfo = ref<PublicProfile | null>(null);
+const userInfo = ref<null | PublicProfile>(null);
 const contestInfo = ref<ContestRanking | null>(null);
-const questionProgress = ref<QuestionProgress | null>(null);
+const questionProgress = ref<null | QuestionProgress>(null);
 const dailyQuestionStatus = ref<string>('');
 const dailyQuestion = ref<DailyQuestion['todayRecord'][0]['question'] | null>(
   null,
 );
 const currentStreak = ref(0);
 const totalActiveDays = ref(0);
-const mostActiveDay = ref<{ count: number; date: string } | null>(null);
+const mostActiveDay = ref<null | { count: number; date: string }>(null);
 const todaySubmissions = ref(0);
 const scrollContainer = ref<HTMLDivElement | null>(null);
 
@@ -104,7 +105,9 @@ const totalQuestions = computed(() => {
   const sum = (list: DifficultyStat[]) =>
     list.reduce((acc, cur) => acc + (cur.count || 0), 0);
   return (
-    sum(numAcceptedQuestions) + sum(numFailedQuestions) + sum(numUntouchedQuestions)
+    sum(numAcceptedQuestions) +
+    sum(numFailedQuestions) +
+    sum(numUntouchedQuestions)
   );
 });
 
@@ -287,7 +290,8 @@ async function fetchDailyQuestionData() {
     ) {
       const dailySlug = todayRecord.question.titleSlug;
       const dailyDate = todayRecord.date; // YYYY-MM-DD
-      const startTime = new Date(`${dailyDate}T00:00:00+08:00`).getTime() / 1000;
+      const startTime =
+        new Date(`${dailyDate}T00:00:00+08:00`).getTime() / 1000;
       const endTime = new Date(`${dailyDate}T23:59:59+08:00`).getTime() / 1000;
 
       const isFinished = recentSubRes.value.recentACSubmissions.some((sub) => {
@@ -325,7 +329,11 @@ async function requestLeetCode<T>(
     path?: string;
   } = {},
 ): Promise<T> {
-  const { path = '/leetcode-api/graphql', headers = {}, operationName } = options;
+  const {
+    path = '/leetcode-api/graphql',
+    headers = {},
+    operationName,
+  } = options;
   const body: Record<string, any> = { query, variables };
   if (operationName) {
     body.operationName = operationName;
@@ -383,7 +391,7 @@ function renderGreenWall(
   });
   mostActiveDay.value = { count: maxVal, date: maxDate };
 
-  const sortedDates = Array.from(countByDate.keys()).sort();
+  const sortedDates = [...countByDate.keys()].sort();
   let tempStreak = 0;
   let maxStreak = 0;
   let prevDate: dayjs.Dayjs | null = null;
@@ -419,7 +427,7 @@ function renderGreenWall(
   currentStreak.value = recentStreakVal;
   totalActiveDays.value = calendar.totalActiveDays;
 
-  const data: { date: string; count: number }[] = [];
+  const data: { count: number; date: string }[] = [];
   let maxCount = 0;
   let total = 0;
   const days = end.diff(start, 'day');
@@ -450,31 +458,41 @@ function renderGreenWall(
 
 function getDifficultyColor(difficulty: string) {
   switch (difficulty) {
-    case 'EASY':
-      return '#00b8a3';
-    case 'MEDIUM':
-      return '#ffc01e';
-    case 'HARD':
-      return '#ef4743';
-    case 'ALL':
+    case 'ALL': {
       return '#2db55d';
-    default:
+    }
+    case 'EASY': {
+      return '#00b8a3';
+    }
+    case 'HARD': {
+      return '#ef4743';
+    }
+    case 'MEDIUM': {
+      return '#ffc01e';
+    }
+    default: {
       return '#ccc';
+    }
   }
 }
 
 function getDifficultyLabel(difficulty: string) {
   switch (difficulty) {
-    case 'EASY':
-      return '简单';
-    case 'MEDIUM':
-      return '中等';
-    case 'HARD':
-      return '困难';
-    case 'ALL':
+    case 'ALL': {
       return '总计';
-    default:
+    }
+    case 'EASY': {
+      return '简单';
+    }
+    case 'HARD': {
+      return '困难';
+    }
+    case 'MEDIUM': {
+      return '中等';
+    }
+    default: {
       return difficulty;
+    }
   }
 }
 
@@ -523,15 +541,15 @@ watch(graphData, () => {
 onMounted(async () => {
   try {
     const binds = await getUserBindListApi();
-    const leetcodeBind = binds.find(item => item.platform === 'leetcode');
+    const leetcodeBind = binds.find((item) => item.platform === 'leetcode');
     if (leetcodeBind && leetcodeBind.platformUsername) {
       username.value = leetcodeBind.platformUsername;
       fetchData();
     } else {
       message.warning('未绑定 LeetCode 账号，请在个人中心绑定');
     }
-  } catch (e) {
-    console.error('获取绑定信息失败', e);
+  } catch (error) {
+    console.error('获取绑定信息失败', error);
   }
 });
 </script>
@@ -540,55 +558,105 @@ onMounted(async () => {
   <Page title="" content-class="p-0">
     <div class="p-2 md:p-4">
       <!-- Ranking Info Card Group -->
-      <div class="mb-4 grid grid-cols-2 gap-2 md:gap-3 md:grid-cols-4">
-        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
-          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+      <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+        <Card
+          :bordered="false"
+          class="shadow-sm"
+          :body-style="{ padding: '12px' }"
+        >
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
             全站排名
           </div>
-          <Skeleton :active="true" :loading="profileLoading" :paragraph="{ rows: 0 }">
+          <Skeleton
+            :active="true"
+            :loading="profileLoading"
+            :paragraph="{ rows: 0 }"
+          >
             <div class="text-lg font-bold tabular-nums md:text-2xl">
               {{ userInfo?.siteRanking?.toLocaleString() || '-' }}
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
-          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card
+          :bordered="false"
+          class="shadow-sm"
+          :body-style="{ padding: '12px' }"
+        >
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
             竞赛分数
           </div>
-          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+          <Skeleton
+            :active="true"
+            :loading="contestLoading"
+            :paragraph="{ rows: 0 }"
+          >
             <div class="text-lg font-bold tabular-nums md:text-2xl">
               {{ Math.round(contestInfo?.rating || 0) || '-' }}
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
-          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card
+          :bordered="false"
+          class="shadow-sm"
+          :body-style="{ padding: '12px' }"
+        >
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
             全球排名
           </div>
-          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+          <Skeleton
+            :active="true"
+            :loading="contestLoading"
+            :paragraph="{ rows: 0 }"
+          >
             <div class="flex items-baseline gap-1">
               <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.globalRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.globalTotalParticipants" class="text-xs text-gray-400 md:text-sm">
+              <span
+                v-if="contestInfo?.globalTotalParticipants"
+                class="text-xs text-gray-400 md:text-sm"
+              >
                 / {{ contestInfo.globalTotalParticipants.toLocaleString() }}
               </span>
             </div>
           </Skeleton>
         </Card>
 
-        <Card :bordered="false" class="shadow-sm" :body-style="{ padding: '12px' }">
-          <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+        <Card
+          :bordered="false"
+          class="shadow-sm"
+          :body-style="{ padding: '12px' }"
+        >
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
             全国排名
           </div>
-          <Skeleton :active="true" :loading="contestLoading" :paragraph="{ rows: 0 }">
+          <Skeleton
+            :active="true"
+            :loading="contestLoading"
+            :paragraph="{ rows: 0 }"
+          >
             <div class="flex items-baseline gap-1">
               <span class="text-lg font-bold tabular-nums md:text-2xl">
                 {{ contestInfo?.localRanking?.toLocaleString() || '-' }}
               </span>
-              <span v-if="contestInfo?.localTotalParticipants" class="text-xs text-gray-400 md:text-sm">
+              <span
+                v-if="contestInfo?.localTotalParticipants"
+                class="text-xs text-gray-400 md:text-sm"
+              >
                 / {{ contestInfo.localTotalParticipants.toLocaleString() }}
               </span>
             </div>
@@ -600,7 +668,10 @@ onMounted(async () => {
       <Card class="mb-4" :body-style="{ padding: '12px' }">
         <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
           <div class="rounded-lg border p-3 md:p-4">
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               已解题
             </div>
             <Skeleton
@@ -617,7 +688,10 @@ onMounted(async () => {
             </Skeleton>
           </div>
           <div class="rounded-lg border p-3 md:p-4">
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               声望
             </div>
             <Skeleton
@@ -631,7 +705,10 @@ onMounted(async () => {
             </Skeleton>
           </div>
           <div class="rounded-lg border p-3 md:p-4">
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               累计活跃天数
             </div>
             <Skeleton
@@ -639,11 +716,16 @@ onMounted(async () => {
               :loading="calendarLoading"
               :paragraph="{ rows: 0 }"
             >
-              <div class="text-lg font-bold md:text-2xl">{{ totalActiveDays }} 天</div>
+              <div class="text-lg font-bold md:text-2xl">
+                {{ totalActiveDays }} 天
+              </div>
             </Skeleton>
           </div>
           <div class="rounded-lg border p-3 md:p-4">
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               最活跃的一天
             </div>
             <Skeleton
@@ -654,7 +736,9 @@ onMounted(async () => {
               <div class="flex flex-col">
                 <div class="text-lg font-bold tabular-nums md:text-2xl">
                   {{ mostActiveDay?.count || 0 }}
-                  <span class="text-xs font-normal text-gray-400 md:text-sm">次提交</span>
+                  <span class="text-xs font-normal text-gray-400 md:text-sm"
+                    >次提交</span
+                  >
                 </div>
                 <div class="text-xs text-gray-400 md:text-sm">
                   {{ mostActiveDay?.date || '-' }}
@@ -663,7 +747,10 @@ onMounted(async () => {
             </Skeleton>
           </div>
           <div class="rounded-lg border p-3 md:p-4">
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               今日提交次数
             </div>
             <Skeleton
@@ -680,7 +767,10 @@ onMounted(async () => {
             class="cursor-pointer rounded-lg border p-3 transition-shadow hover:shadow-md md:p-4"
             @click="goToDailyQuestion"
           >
-            <div class="text-xs md:text-sm" :style="{ color: token.colorTextSecondary }">
+            <div
+              class="text-xs md:text-sm"
+              :style="{ color: token.colorTextSecondary }"
+            >
               每日一题
             </div>
             <Skeleton
@@ -729,11 +819,24 @@ onMounted(async () => {
         </Skeleton>
       </Card>
 
-      <Card :bordered="false" class="shadow-sm" :head-style="{ borderBottom: 'none', paddingLeft: '12px', paddingRight: '12px' }" :body-style="{ padding: '0 12px 20px 12px' }">
+      <Card
+        :bordered="false"
+        class="shadow-sm"
+        :head-style="{
+          borderBottom: 'none',
+          paddingLeft: '12px',
+          paddingRight: '12px',
+        }"
+        :body-style="{ padding: '0 12px 20px 12px' }"
+      >
         <template #title>
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-sm md:text-base">过去一年共提交 {{ totalCommits }} 次</span>
-            <span class="text-xs font-normal text-gray-500 dark:text-gray-400 md:text-sm">
+            <span class="text-sm md:text-base"
+              >过去一年共提交 {{ totalCommits }} 次</span
+            >
+            <span
+              class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
+            >
               连续提交:
               <span class="font-medium text-green-600 dark:text-green-500">
                 {{ currentStreak }}
@@ -748,7 +851,10 @@ onMounted(async () => {
           :loading="calendarLoading"
           :paragraph="{ rows: 4 }"
         >
-          <div ref="scrollContainer" class="w-full overflow-x-auto overflow-y-hidden transition-all">
+          <div
+            ref="scrollContainer"
+            class="w-full overflow-x-auto overflow-y-hidden transition-all"
+          >
             <div class="h-[125px] min-w-[720px] md:h-[130px]">
               <ContributionGraph :data="graphData" height="100%" />
             </div>
@@ -760,20 +866,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* 自定义滚动条样式，使其更简洁 */
-.overflow-x-auto::-webkit-scrollbar {
-  height: 4px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 2px;
-}
-
-.dark .overflow-x-auto::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 /* 手机端隐藏滚动条 */
 @media (max-width: 768px) {
   .overflow-x-auto {
@@ -785,4 +877,19 @@ onMounted(async () => {
     display: none;
   }
 }
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgb(0 0 0 / 10%);
+  border-radius: 2px;
+}
+
+.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: rgb(255 255 255 / 10%);
+}
+
+/* 自定义滚动条样式，使其更简洁 */
 </style>

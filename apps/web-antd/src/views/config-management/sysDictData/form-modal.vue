@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { toRaw, ref, onMounted } from 'vue';
+import { onMounted, ref, toRaw } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { query } from '#/api/core/sysDictType';
 import { insertOrUpdate } from '#/api/core/sysDictData';
+import { query } from '#/api/core/sysDictType';
 
 defineOptions({
   name: 'FormModal',
@@ -16,15 +16,17 @@ const tableReload = () => {
   emit('tableReload');
 };
 
-const dictOptions = ref<Array<{label: string, value: string}>>([]);
+const dictOptions = ref<Array<{ label: string; value: string }>>([]);
 
 async function loadDictOptions() {
   try {
     const res = await query({});
-    dictOptions.value = res.items.map((item: { dictName: string; dictId: string }) => ({
-      label: item.dictName,
-      value: item.dictId
-    }));
+    dictOptions.value = res.items.map(
+      (item: { dictId: string; dictName: string }) => ({
+        label: item.dictName,
+        value: item.dictId,
+      }),
+    );
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
@@ -53,7 +55,7 @@ const [Form, formApi] = useVbenForm({
         options: dictOptions,
         showSearch: true, // 支持输入查询
         optionFilterProp: 'label', // 按标签过滤
-        style: { width: '100%' },  // 设置为100%宽度
+        style: { width: '100%' }, // 设置为100%宽度
       },
       fieldName: 'dictId',
       label: '字典类型',

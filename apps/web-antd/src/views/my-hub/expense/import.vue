@@ -7,8 +7,8 @@ import { computed, onMounted, ref } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
-import { Button, Card, message, Popconfirm } from "ant-design-vue";
 import { DeleteOutlined } from '@ant-design/icons-vue';
+import { Button, Card, message, Popconfirm } from 'ant-design-vue';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 
@@ -56,9 +56,7 @@ const selectedCategory = ref<null | string>(null);
 // 图表引用
 const monthlyChartRef = ref<EchartsUIType>();
 const categoryChartRef = ref<EchartsUIType>();
-const {
-  renderEcharts: renderMonthlyChart,
-} = useEcharts(monthlyChartRef);
+const { renderEcharts: renderMonthlyChart } = useEcharts(monthlyChartRef);
 const {
   renderEcharts: renderCategoryChart,
   getChartInstance: getCategoryChartInstance,
@@ -226,7 +224,7 @@ const handleFile = async (file: File) => {
     }
 
     transactions.value = parsedTransactions;
-    
+
     let globalStartTime = '';
     let globalEndTime = '';
     if (fileMinDate && fileMaxDate) {
@@ -350,13 +348,16 @@ const parseCSV = (csvText: string): ParseResult => {
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
       // 过滤出状态为"成功"的支出记录
-      if (transaction.flow === '支出' && transaction.transactionStatus === '交易成功') {
+      if (
+        transaction.flow === '支出' &&
+        transaction.transactionStatus === '交易成功'
+      ) {
         transactions.push(transaction);
       }
     }
   }
 
-  let minDate, maxDate;
+  let maxDate, minDate;
   if (validTimes.length > 0) {
     minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
     maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
@@ -466,27 +467,40 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
     // 获取各字段值
     const transactionTimeRaw = getRowValue(row, columnIndex.transactionTime);
     const transactionTime = excelDateToString(transactionTimeRaw);
-    
+
     if (transactionTime) {
       const d = new Date(transactionTime);
       if (!isNaN(d.getTime())) {
         validTimes.push(d);
       }
     }
-    
-    const transactionType = String(getRowValue(row, columnIndex.transactionType) || '');
-    const counterparty = String(getRowValue(row, columnIndex.counterparty) || '');
+
+    const transactionType = String(
+      getRowValue(row, columnIndex.transactionType) || '',
+    );
+    const counterparty = String(
+      getRowValue(row, columnIndex.counterparty) || '',
+    );
     const goods = String(getRowValue(row, columnIndex.goods) || '');
     const flow = String(getRowValue(row, columnIndex.flow) || '');
     const amountStr = String(getRowValue(row, columnIndex.amount) || '');
-    const paymentMethod = String(getRowValue(row, columnIndex.paymentMethod) || '');
-    const transactionStatus = String(getRowValue(row, columnIndex.transactionStatus) || '');
-    const transactionId = String(getRowValue(row, columnIndex.transactionId) || '');
-    const merchantOrderNo = String(getRowValue(row, columnIndex.merchantOrderNo) || '');
+    const paymentMethod = String(
+      getRowValue(row, columnIndex.paymentMethod) || '',
+    );
+    const transactionStatus = String(
+      getRowValue(row, columnIndex.transactionStatus) || '',
+    );
+    const transactionId = String(
+      getRowValue(row, columnIndex.transactionId) || '',
+    );
+    const merchantOrderNo = String(
+      getRowValue(row, columnIndex.merchantOrderNo) || '',
+    );
     const remark = String(getRowValue(row, columnIndex.remark) || '');
 
     // 处理金额，去除¥符号和其他非数字字符
-    const amount = Number.parseFloat(amountStr.replace(/[^0-9.-]/g, '')) || 0;
+    const amount =
+      Number.parseFloat(amountStr.replaceAll(/[^0-9.-]/g, '')) || 0;
 
     // 只处理支出记录
     if (flow === '支出') {
@@ -518,7 +532,7 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
     }
   }
 
-  let minDate, maxDate;
+  let maxDate, minDate;
   if (validTimes.length > 0) {
     minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
     maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
@@ -659,7 +673,7 @@ const parseMobileCSV = (csvText: string): ParseResult => {
     }
   }
 
-  let minDate, maxDate;
+  let maxDate, minDate;
   if (validTimes.length > 0) {
     minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
     maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
@@ -687,7 +701,11 @@ const getCategoryStats = (transactions: Transaction[]) => {
 };
 
 // 更新统计信息
-const updateStats = (transactions: Transaction[], globalStartTime?: string, globalEndTime?: string) => {
+const updateStats = (
+  transactions: Transaction[],
+  globalStartTime?: string,
+  globalEndTime?: string,
+) => {
   let totalExpense = 0;
   let expenseCount = 0;
 
@@ -695,26 +713,24 @@ const updateStats = (transactions: Transaction[], globalStartTime?: string, glob
   let startTime = globalStartTime || '';
   let endTime = globalEndTime || '';
 
-  if (!startTime || !endTime) {
-    if (transactions.length > 0) {
-      // 提取所有有效的时间
-      const validTimes = transactions
-        .map((t) => t.expTime || t.createdTime)
-        .filter((time) => time && time.trim() !== '')
-        .map((time) => new Date(time))
-        .filter((date) => !isNaN(date.getTime()));
+  if ((!startTime || !endTime) && transactions.length > 0) {
+    // 提取所有有效的时间
+    const validTimes = transactions
+      .map((t) => t.expTime || t.createdTime)
+      .filter((time) => time && time.trim() !== '')
+      .map((time) => new Date(time))
+      .filter((date) => !isNaN(date.getTime()));
 
-      if (validTimes.length > 0) {
-        // 找到最早和最晚的时间
-        const earliest = new Date(
-          Math.min(...validTimes.map((d) => d.getTime())),
-        );
-        const latest = new Date(Math.max(...validTimes.map((d) => d.getTime())));
+    if (validTimes.length > 0) {
+      // 找到最早和最晚的时间
+      const earliest = new Date(
+        Math.min(...validTimes.map((d) => d.getTime())),
+      );
+      const latest = new Date(Math.max(...validTimes.map((d) => d.getTime())));
 
-        // 格式化时间显示
-        startTime = formatDate(earliest);
-        endTime = formatDate(latest);
-      }
+      // 格式化时间显示
+      startTime = formatDate(earliest);
+      endTime = formatDate(latest);
     }
   }
 
@@ -744,7 +760,10 @@ const formatDate = (date: Date): string => {
 // 更新图表
 const updateCharts = (transactions: Transaction[]) => {
   const categoryData = getCategoryStats(transactions);
-  const totalCategory = Object.values(categoryData).reduce((sum, val) => sum + val, 0);
+  const totalCategory = Object.values(categoryData).reduce(
+    (sum, val) => sum + val,
+    0,
+  );
 
   // 获取按月份和分类的统计数据
   const monthlyCategoryData: Record<string, Record<string, number>> = {};
@@ -758,41 +777,48 @@ const updateCharts = (transactions: Transaction[]) => {
         const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
           const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-          const category = transaction.transactionType || transaction.type || '其他';
-          
+          const category =
+            transaction.transactionType || transaction.type || '其他';
+
           allMonthsSet.add(monthKey);
           allCategoriesSet.add(category);
-          
+
           if (!monthlyCategoryData[monthKey]) {
             monthlyCategoryData[monthKey] = {};
           }
-          monthlyCategoryData[monthKey][category] = (monthlyCategoryData[monthKey][category] || 0) + transaction.amt;
+          monthlyCategoryData[monthKey][category] =
+            (monthlyCategoryData[monthKey][category] || 0) + transaction.amt;
         }
       }
     }
   });
 
-  const months = Array.from(allMonthsSet).sort();
-  const categories = Array.from(allCategoriesSet);
-  
+  const months = [...allMonthsSet].sort();
+  const categories = [...allCategoriesSet];
+
   // 计算每个月的总计用于显示在柱子顶部
-  const monthlyTotals = months.map(month => {
-    return categories.reduce((sum, category) => sum + (monthlyCategoryData[month]?.[category] || 0), 0);
+  const monthlyTotals = months.map((month) => {
+    return categories.reduce(
+      (sum, category) => sum + (monthlyCategoryData[month]?.[category] || 0),
+      0,
+    );
   });
 
   const series: any[] = [];
-  
-  categories.forEach(category => {
-    const data = months.map(month => monthlyCategoryData[month]?.[category] || 0);
+
+  categories.forEach((category) => {
+    const data = months.map(
+      (month) => monthlyCategoryData[month]?.[category] || 0,
+    );
     series.push({
       name: category,
       type: 'bar',
       stack: 'expense',
       barMaxWidth: 120,
       emphasis: {
-        focus: 'series'
+        focus: 'series',
       },
-      data
+      data,
     });
   });
 
@@ -813,14 +839,14 @@ const updateCharts = (transactions: Transaction[]) => {
       },
       fontSize: 12,
       color: '#333',
-      fontWeight: 'bold'
+      fontWeight: 'bold',
     },
     itemStyle: {
-      color: 'rgba(0,0,0,0)'
+      color: 'rgba(0,0,0,0)',
     },
     emphasis: {
-      disabled: true
-    }
+      disabled: true,
+    },
   });
 
   // 渲染月度柱状图
@@ -844,7 +870,8 @@ const updateCharts = (transactions: Transaction[]) => {
         // 显示各分类
         params.forEach((item: any) => {
           if (item.seriesName !== '月度合计' && item.value > 0) {
-            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ¥${item.value.toFixed(2)} (${percentage}%)<br/>`;
           }
         });
@@ -903,8 +930,8 @@ const updateCharts = (transactions: Transaction[]) => {
       textVerticalAlign: 'middle',
       textStyle: {
         fontSize: 14,
-        fontWeight: 'bold'
-      }
+        fontWeight: 'bold',
+      },
     },
     tooltip: {
       trigger: 'item',
@@ -1338,11 +1365,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
       <Grid>
         <template #toolbar-tools>
           <div class="toolbar-buttons">
-            <Button
-              type="primary"
-              @click="submitData"
-              :loading="submitLoading"
-            >
+            <Button type="primary" @click="submitData" :loading="submitLoading">
               提交
             </Button>
             <Popconfirm
@@ -1353,11 +1376,7 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
             >
               <Button type="primary" danger>删除</Button>
             </Popconfirm>
-            <Button
-              type="default"
-              @click="resetFilter"
-              v-if="selectedCategory"
-            >
+            <Button type="default" @click="resetFilter" v-if="selectedCategory">
               重置过滤
             </Button>
           </div>
@@ -1381,20 +1400,20 @@ const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
 
 <style scoped>
 .page-container {
-  @apply w-full bg-white dark:bg-[#141414] rounded-xl shadow-sm p-4 md:p-6;
+  @apply w-full rounded-xl bg-white p-4 shadow-sm md:p-6 dark:bg-[#141414];
 }
 
 h1 {
-  @apply text-center text-blue-600 dark:text-blue-500 mb-5 font-semibold;
+  @apply mb-5 text-center font-semibold text-blue-600 dark:text-blue-500;
 }
 
 .upload-area {
-  @apply border-2 border-dashed border-blue-500 dark:border-blue-700 rounded-lg p-4 md:p-6 text-center mb-6 bg-blue-50 dark:bg-blue-900/20 transition-all duration-300 cursor-pointer;
+  @apply mb-6 cursor-pointer rounded-lg border-2 border-dashed border-blue-500 bg-blue-50 p-4 text-center transition-all duration-300 md:p-6 dark:border-blue-700 dark:bg-blue-900/20;
 }
 
 .upload-area:hover,
 .upload-area.dragover {
-  @apply bg-blue-100 dark:bg-blue-900/40 -translate-y-0.5;
+  @apply -translate-y-0.5 bg-blue-100 dark:bg-blue-900/40;
 }
 
 .upload-text {
@@ -1406,7 +1425,7 @@ h1 {
 }
 
 .browse-btn {
-  @apply inline-block bg-blue-600 dark:bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors duration-300 hover:bg-blue-700 dark:hover:bg-blue-500;
+  @apply inline-block cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-white transition-colors duration-300 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500;
 }
 
 input[type='file'] {
@@ -1418,19 +1437,19 @@ input[type='file'] {
 }
 
 .results h2 {
-  @apply text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200;
+  @apply mb-4 text-lg font-semibold text-gray-800 dark:text-gray-200;
 }
 
 .stats {
-  @apply flex justify-around mb-5 flex-wrap gap-3;
+  @apply mb-5 flex flex-wrap justify-around gap-3;
 }
 
 .stat-card {
-  @apply bg-white dark:bg-[#1f1f1f] rounded-lg p-4 min-w-[140px] md:min-w-[160px] text-center shadow-sm flex-1 border border-gray-100 dark:border-[#303030];
+  @apply min-w-[140px] flex-1 rounded-lg border border-gray-100 bg-white p-4 text-center shadow-sm md:min-w-[160px] dark:border-[#303030] dark:bg-[#1f1f1f];
 }
 
 .stat-value {
-  @apply text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400 my-2;
+  @apply my-2 text-xl font-bold text-blue-600 md:text-2xl dark:text-blue-400;
 }
 
 .stat-label {
@@ -1442,11 +1461,11 @@ input[type='file'] {
 }
 
 .loading {
-  @apply text-center p-5 text-blue-600 dark:text-blue-400;
+  @apply p-5 text-center text-blue-600 dark:text-blue-400;
 }
 
 .charts-container {
-  @apply grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 mb-6;
+  @apply mb-6 mt-6 grid grid-cols-1 gap-4 md:grid-cols-2;
 }
 
 .chart-card {
@@ -1454,10 +1473,10 @@ input[type='file'] {
 }
 
 .toolbar-buttons {
-  @apply flex gap-2 items-center;
+  @apply flex items-center gap-2;
 }
 
 .toolbar-buttons :deep(.ant-btn) {
-  @apply px-3 h-8 text-sm;
+  @apply h-8 px-3 text-sm;
 }
 </style>

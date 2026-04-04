@@ -19,6 +19,7 @@ import {
 } from '@vueuse/core';
 
 import echarts from './echarts';
+
 import 'echarts/theme/v5';
 
 type EchartsUIType = typeof EchartsUI | undefined;
@@ -76,7 +77,8 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
   ): Promise<Nullable<echarts.ECharts>> => {
     cacheOptions = options;
     const getCurrentOptions = (): EChartsOption => {
-      const resolvedOptions = typeof options === 'function' ? options() : options;
+      const resolvedOptions =
+        typeof options === 'function' ? options() : options;
       return {
         ...resolvedOptions,
         ...getOptions.value,

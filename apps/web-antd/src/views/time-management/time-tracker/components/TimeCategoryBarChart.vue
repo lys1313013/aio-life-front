@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
-import type { TimeSlot, TimeSlotCategory, MergedCategory } from '../types';
-import { getCategoryColor, getCategoryName } from '../config';
+import type { MergedCategory, TimeSlot, TimeSlotCategory } from '../types';
 
 import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
-import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+import { getCategoryColor, getCategoryName } from '../config';
 
 interface Props {
   timeSlots: TimeSlot[];
-  categories: (TimeSlotCategory | MergedCategory)[];
+  categories: (MergedCategory | TimeSlotCategory)[];
   selectedDate: dayjs.Dayjs;
-  selectedFilterCategoryIds?: string[] | null;
+  selectedFilterCategoryIds?: null | string[];
 }
 
 const props = defineProps<Props>();
@@ -25,9 +25,13 @@ const { renderEcharts } = useEcharts(chartRef);
 
 const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
-  props.timeSlots.forEach(slot => {
+  props.timeSlots.forEach((slot) => {
     // 如果有分类过滤，且当前 slot 不属于过滤分类，则跳过
-    if (props.selectedFilterCategoryIds && props.selectedFilterCategoryIds.length > 0 && !props.selectedFilterCategoryIds.includes(slot.categoryId)) {
+    if (
+      props.selectedFilterCategoryIds &&
+      props.selectedFilterCategoryIds.length > 0 &&
+      !props.selectedFilterCategoryIds.includes(slot.categoryId)
+    ) {
       return;
     }
     const duration = slot.endTime - slot.startTime + 1;
@@ -39,7 +43,7 @@ const categoryDurations = computed(() => {
 // 统计有数据的有效天数（按周/月用于平均）
 const activeDaysCount = computed(() => {
   const dates = new Set<string>();
-  props.timeSlots.forEach(s => {
+  props.timeSlots.forEach((s) => {
     if (s && s.date) {
       dates.add(s.date);
     }
@@ -50,17 +54,17 @@ const activeDaysCount = computed(() => {
 const barChartData = computed(() => {
   const divisor = Math.max(activeDaysCount.value, 1);
   const items = props.categories
-    .map(category => {
+    .map((category) => {
       const total = categoryDurations.value[category.id] || 0;
       const avg = Math.round(total / divisor);
       return {
         name: getCategoryName(category.id, props.categories),
         value: avg,
         total,
-        itemStyle: { color: getCategoryColor(category.id, props.categories) }
+        itemStyle: { color: getCategoryColor(category.id, props.categories) },
       };
     })
-    .filter(item => item.total > 0)
+    .filter((item) => item.total > 0)
     .sort((a, b) => b.value - a.value);
 
   return items;
@@ -69,7 +73,7 @@ const barChartData = computed(() => {
 const renderBarChart = () => {
   if (!chartRef.value) return;
 
-  const names = barChartData.value.map(i => i.name);
+  const names = barChartData.value.map((i) => i.name);
 
   const options = {
     tooltip: {
@@ -78,7 +82,8 @@ const renderBarChart = () => {
       formatter: (params: any) => {
         const p = Array.isArray(params) ? params[0] : params;
         const avg = p.value as number;
-        const total = (p.data && typeof p.data.total === 'number') ? p.data.total : avg;
+        const total =
+          p.data && typeof p.data.total === 'number' ? p.data.total : avg;
         const avgHours = Math.floor(avg / 60);
         const avgMinutes = avg % 60;
         const totalHours = Math.floor(total / 60);
@@ -87,18 +92,18 @@ const renderBarChart = () => {
           return `${p.name}<br/>日均: ${avgHours}h${avgMinutes}m\n总: ${totalHours}h${totalMinutes}m\n`;
         }
         return `${p.name}<br/>${avgHours}小时${avgMinutes}分钟\n总时长: ${total}分钟`;
-      }
+      },
     },
     grid: { left: 40, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
       data: names,
-      axisLabel: { interval: 0 }
+      axisLabel: { interval: 0 },
     },
     yAxis: {
       type: 'value',
       name: '',
-      splitLine: { show: true }
+      splitLine: { show: true },
     },
     series: [
       {
@@ -111,24 +116,29 @@ const renderBarChart = () => {
             const duration = params.value;
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            const text = duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
+            const text =
+              duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
             return activeDaysCount.value > 1 ? `日 ${text}` : text;
           },
-          fontSize: 10
+          fontSize: 10,
         },
         itemStyle: {
-          borderRadius: [6, 6, 0, 0]
-        }
-      }
-    ]
+          borderRadius: [6, 6, 0, 0],
+        },
+      },
+    ],
   };
 
   renderEcharts(options as any);
 };
 
-watch([barChartData, () => props.selectedDate], () => {
-  renderBarChart();
-}, { immediate: true });
+watch(
+  [barChartData, () => props.selectedDate],
+  () => {
+    renderBarChart();
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   renderBarChart();
@@ -143,7 +153,7 @@ onMounted(() => {
 
 <style scoped>
 .bar-chart-container {
-  height: 100%;
   width: 100%;
+  height: 100%;
 }
 </style>

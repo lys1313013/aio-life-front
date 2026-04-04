@@ -2,18 +2,15 @@
 import type { BasicOption } from '@vben/types';
 
 import type { VbenFormSchema } from '#/adapter/form';
+import type { UpdateUserParams } from '#/api';
 
 import { computed, onMounted, ref } from 'vue';
 
 import { ProfileBaseSetting } from '@vben/common-ui';
+
 import { message } from 'ant-design-vue';
 
-import {
-  getUserInfoApi,
-  type UpdateUserParams,
-  updateUserInfoApi,
-  uploadAvatarApi,
-} from '#/api';
+import { getUserInfoApi, updateUserInfoApi, uploadAvatarApi } from '#/api';
 import { useAuthStore } from '#/store/auth';
 
 const authStore = useAuthStore();
@@ -82,7 +79,11 @@ const formSchema = computed((): VbenFormSchema[] => {
 
 const handleSubmit = async (values: any) => {
   try {
-    if (values.avatar && Array.isArray(values.avatar) && values.avatar.length > 0) {
+    if (
+      values.avatar &&
+      Array.isArray(values.avatar) &&
+      values.avatar.length > 0
+    ) {
       values.avatar = values.avatar[0].response || values.avatar[0].url;
     }
     await updateUserInfoApi(values as UpdateUserParams);
@@ -122,7 +123,7 @@ onMounted(async () => {
 
 <style scoped>
 :deep(.avatar-upload .ant-upload-select) {
-  border-radius: 50% !important;
   overflow: hidden;
+  border-radius: 50% !important;
 }
 </style>

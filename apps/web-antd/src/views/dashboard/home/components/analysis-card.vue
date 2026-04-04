@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 
-import { Card, Skeleton } from 'ant-design-vue';
 import { VbenIcon } from '@vben/common-ui';
+
+import { Card, Skeleton } from 'ant-design-vue';
 
 interface Props {
   icon?: Component | string;
@@ -62,7 +63,9 @@ function handleTitleClick(e: MouseEvent) {
 <template>
   <Card :body-style="{ padding: '16px' }" class="w-full select-none">
     <div
-      :class="{ 'cursor-pointer hover:text-primary transition-colors': !!titleClickUrl }"
+      :class="{
+        'cursor-pointer transition-colors hover:text-primary': !!titleClickUrl,
+      }"
       class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
       @click="handleTitleClick"
     >
@@ -81,7 +84,11 @@ function handleTitleClick(e: MouseEvent) {
           {{ value }}
         </span>
       </div>
-      <div v-if="diffValue" :style="{ color: diffColor }" class="flex items-center text-xs font-normal">
+      <div
+        v-if="diffValue"
+        :style="{ color: diffColor }"
+        class="flex items-center text-xs font-normal"
+      >
         {{ diffValue }}
       </div>
       <VbenIcon
@@ -92,11 +99,18 @@ function handleTitleClick(e: MouseEvent) {
         @click="handleIconClick"
       />
     </div>
-    <div v-if="totalTitle" class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm">
+    <div
+      v-if="totalTitle"
+      class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm"
+    >
       <span>{{ totalTitle }}</span>
       <div class="flex items-center">
         <template v-if="loading">
-          <Skeleton.Button active size="small" :style="{ width: '60px', height: '20px' }" />
+          <Skeleton.Button
+            active
+            size="small"
+            :style="{ width: '60px', height: '20px' }"
+          />
         </template>
         <span v-else>{{ totalValue }}</span>
       </div>

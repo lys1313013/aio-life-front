@@ -1,14 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import type { MbtiResult } from '#/api/core/mbti';
+
+import { onMounted, onUnmounted, ref } from 'vue';
+
 import { ExperimentOutlined, LinkOutlined } from '@ant-design/icons-vue';
-import { Spin, Card, Button, Modal, Table, message, Tag, Divider } from 'ant-design-vue';
 import {
-  createMbtiTest,
+  Button,
+  Card,
+  Divider,
+  message,
+  Modal,
+  Spin,
+  Table,
+  Tag,
+} from 'ant-design-vue';
+
+import {
   checkMbtiResult,
-  saveMbtiResult,
-  getMbtiHistory,
+  createMbtiTest,
   getMbtiById,
-  type MbtiResult,
+  getMbtiHistory,
+  saveMbtiResult,
 } from '#/api/core/mbti';
 
 const loading = ref(false);
@@ -22,7 +34,7 @@ const historyVisible = ref(false);
 const historyList = ref<MbtiResult[]>([]);
 const iframeLoadError = ref(false);
 
-let pollTimer: number | null = null;
+let pollTimer: null | number = null;
 
 const testUrl = ref('');
 
@@ -33,13 +45,14 @@ const handleStartTest = async () => {
     const res = await createMbtiTest();
     if (res.success && res.testId) {
       currentTestId.value = res.testId;
-      testUrl.value = res.testUrl || `https://devil.ai/api-personality-test/${res.testId}`;
+      testUrl.value =
+        res.testUrl || `https://devil.ai/api-personality-test/${res.testId}`;
       testStarted.value = true;
       startPolling();
     } else {
       message.error(res.message || '创建测试失败');
     }
-  } catch (error) {
+  } catch {
     message.error('创建测试失败');
   } finally {
     loading.value = false;
@@ -104,7 +117,7 @@ const handleSaveResult = async () => {
     });
     message.success('保存成功');
     historyList.value = await getMbtiHistory();
-  } catch (error) {
+  } catch {
     message.error('保存失败');
   }
 };
@@ -114,7 +127,7 @@ const handleViewHistory = async () => {
   try {
     historyList.value = await getMbtiHistory();
     historyVisible.value = true;
-  } catch (error) {
+  } catch {
     message.error('获取历史记录失败');
   } finally {
     loading.value = false;
@@ -137,7 +150,7 @@ const handleViewDetail = async (record: MbtiResult) => {
       testCompleted.value = true;
       historyVisible.value = false;
     }
-  } catch (error) {
+  } catch {
     message.error('获取详情失败');
   }
 };
@@ -228,9 +241,9 @@ onUnmounted(() => {
       <div v-if="!testStarted && !testCompleted" class="start-section">
         <Card>
           <div class="text-center">
-            <ExperimentOutlined class="text-4xl mb-4 text-blue-500" />
-            <h2 class="text-2xl font-bold mb-2">MBTI人格测试</h2>
-            <p class="text-gray-500 mb-6">了解你的性格类型，发现真实的自我</p>
+            <ExperimentOutlined class="mb-4 text-4xl text-blue-500" />
+            <h2 class="mb-2 text-2xl font-bold">MBTI人格测试</h2>
+            <p class="mb-6 text-gray-500">了解你的性格类型，发现真实的自我</p>
             <Button
               type="primary"
               size="large"
@@ -254,7 +267,7 @@ onUnmounted(() => {
               class="recent-item"
             >
               <span class="mbti-type-small">{{ item.mbtiType }}</span>
-              <span class="text-gray-400 text-sm">{{ item.createTime }}</span>
+              <span class="text-sm text-gray-400">{{ item.createTime }}</span>
             </div>
           </div>
         </Card>
@@ -272,18 +285,23 @@ onUnmounted(() => {
               @error="iframeLoadError = true"
             ></iframe>
             <div v-else class="iframe-fallback">
-              <p class="text-orange-500 mb-4">
-                <ExperimentOutlined /> 如果测试页面无法在下方显示，请点击按钮在新窗口打开
+              <p class="mb-4 text-orange-500">
+                <ExperimentOutlined />
+                如果测试页面无法在下方显示，请点击按钮在新窗口打开
               </p>
-              <Button type="primary" size="large" @click="window.open(testUrl, '_blank')">
+              <Button
+                type="primary"
+                size="large"
+                @click="window.open(testUrl, '_blank')"
+              >
                 在新窗口打开测试
               </Button>
             </div>
           </div>
-          <p class="text-center text-gray-500 mt-4">
+          <p class="mt-4 text-center text-gray-500">
             完成测试后，系统将自动获取结果
           </p>
-          <div class="text-center mt-4">
+          <div class="mt-4 text-center">
             <Button @click="handleReset">取消测试</Button>
           </div>
         </Card>
@@ -294,7 +312,11 @@ onUnmounted(() => {
           <template #title>测试结果</template>
           <div class="text-center">
             <div class="mbti-type-large">{{ mbtiResult.mbtiType }}</div>
-            <Button type="primary" @click="openResultsPage" v-if="checkData?.resultsPage">
+            <Button
+              type="primary"
+              @click="openResultsPage"
+              v-if="checkData?.resultsPage"
+            >
               <template #icon><LinkOutlined /></template>
               查看完整分析报告
             </Button>
@@ -305,7 +327,9 @@ onUnmounted(() => {
           <template #title>16种人格类型匹配度</template>
           <div class="predictions-grid">
             <div
-              v-for="(score, type) in (typeof checkData.predictions === 'string' ? JSON.parse(checkData.predictions) : checkData.predictions)"
+              v-for="(score, type) in typeof checkData.predictions === 'string'
+                ? JSON.parse(checkData.predictions)
+                : checkData.predictions"
               :key="type"
               class="prediction-item"
             >
@@ -317,14 +341,20 @@ onUnmounted(() => {
           </div>
         </Card>
 
-        <Card class="mb-4" v-if="checkData?.traitOrderConscious || checkData?.traitOrderShadow">
+        <Card
+          class="mb-4"
+          v-if="checkData?.traitOrderConscious || checkData?.traitOrderShadow"
+        >
           <template #title>功能栈分析</template>
           <div class="trait-section">
             <h4>显性功能（意识层面）</h4>
             <div class="trait-list">
               <div
-                v-for="(trait, role) in (typeof checkData.traitOrderConscious === 'string' ? JSON.parse(checkData.traitOrderConscious) : checkData.traitOrderConscious)"
-                :key="'c-' + role"
+                v-for="(trait, role) in typeof checkData.traitOrderConscious ===
+                'string'
+                  ? JSON.parse(checkData.traitOrderConscious)
+                  : checkData.traitOrderConscious"
+                :key="`c-${role}`"
                 class="trait-item"
               >
                 <Tag color="green">{{ getTraitChinese(role) }}</Tag>
@@ -338,8 +368,11 @@ onUnmounted(() => {
             <h4>隐性功能（阴影层面）</h4>
             <div class="trait-list">
               <div
-                v-for="(trait, role) in (typeof checkData.traitOrderShadow === 'string' ? JSON.parse(checkData.traitOrderShadow) : checkData.traitOrderShadow)"
-                :key="'s-' + role"
+                v-for="(trait, role) in typeof checkData.traitOrderShadow ===
+                'string'
+                  ? JSON.parse(checkData.traitOrderShadow)
+                  : checkData.traitOrderShadow"
+                :key="`s-${role}`"
                 class="trait-item"
               >
                 <Tag color="orange">{{ getTraitChinese(role) }}</Tag>
@@ -353,13 +386,23 @@ onUnmounted(() => {
         <Card class="mb-4" v-if="checkData?.matches">
           <template #title>人格匹配分析</template>
           <ul class="matches-list">
-            <li v-for="(match, index) in getMatchesArray(checkData.matches)" :key="index" v-html="match"></li>
+            <li
+              v-for="(match, index) in getMatchesArray(checkData.matches)"
+              :key="index"
+              v-html="match"
+            ></li>
           </ul>
         </Card>
 
         <Card>
           <div class="result-actions">
-            <Button v-if="!isFromHistory" type="primary" @click="handleSaveResult">保存结果</Button>
+            <Button
+              v-if="!isFromHistory"
+              type="primary"
+              @click="handleSaveResult"
+            >
+              保存结果
+            </Button>
             <Button @click="handleViewHistory">查看历史</Button>
             <Button @click="handleReset">重新测试</Button>
           </div>
@@ -371,7 +414,7 @@ onUnmounted(() => {
       v-model:open="historyVisible"
       title="测试历史"
       :width="800"
-      @Cancel="handleCloseHistory"
+      @cancel="handleCloseHistory"
       :footer="null"
     >
       <Table
@@ -461,9 +504,9 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
+  background: #fff;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
-  background: #fff;
 }
 
 .iframe-fallback {
@@ -476,17 +519,17 @@ onUnmounted(() => {
 }
 
 .mbti-type-large {
+  margin-bottom: 24px;
   font-size: 72px;
   font-weight: bold;
-  text-align: center;
   color: #1890ff;
-  margin-bottom: 24px;
+  text-align: center;
 }
 
 .result-actions {
   display: flex;
-  justify-content: center;
   gap: 16px;
+  justify-content: center;
   margin-top: 24px;
 }
 
@@ -498,11 +541,11 @@ onUnmounted(() => {
 
 .recent-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   padding: 8px;
-  border-radius: 4px;
   background: #f9f9f9;
+  border-radius: 4px;
 }
 
 .mbti-type-small {
@@ -519,8 +562,8 @@ onUnmounted(() => {
 
 .prediction-item {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   padding: 8px;
   background: #f5f5f5;
   border-radius: 4px;
@@ -539,34 +582,34 @@ onUnmounted(() => {
 
 .trait-item {
   display: flex;
-  align-items: center;
   gap: 12px;
+  align-items: center;
   padding: 8px;
   background: #fafafa;
   border-radius: 4px;
 }
 
 .trait-name {
+  font-size: 16px;
   font-weight: bold;
   color: #1890ff;
-  font-size: 16px;
 }
 
 .trait-desc {
-  color: #666;
   font-size: 13px;
+  color: #666;
 }
 
 .matches-list {
-  list-style: none;
   padding: 0;
   margin: 0;
+  list-style: none;
 }
 
 .matches-list li {
   padding: 8px 0;
-  border-bottom: 1px solid #f0f0f0;
   color: #555;
+  border-bottom: 1px solid #f0f0f0;
 }
 
 .matches-list li:last-child {
@@ -574,9 +617,9 @@ onUnmounted(() => {
 }
 
 .matches-list :deep(a) {
+  font-weight: 500;
   color: #1890ff;
   text-decoration: none;
-  font-weight: 500;
 }
 
 .matches-list :deep(a:hover) {
@@ -598,8 +641,8 @@ onUnmounted(() => {
 }
 
 .dark .test-iframe {
-  border-color: #303030;
   background: #1a1a1a;
+  border-color: #303030;
 }
 
 .dark .recent-item {

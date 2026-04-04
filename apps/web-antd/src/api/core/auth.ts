@@ -63,7 +63,9 @@ export async function sendEmailCodeApi(email: string) {
  * 发送重置密码验证码
  */
 export async function sendResetPasswordCodeApi(email: string) {
-  return requestClient.get('/auth/sendResetPasswordCode', { params: { email } });
+  return requestClient.get('/auth/sendResetPasswordCode', {
+    params: { email },
+  });
 }
 
 /**

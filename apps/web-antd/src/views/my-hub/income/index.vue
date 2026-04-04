@@ -6,8 +6,8 @@ import { onMounted, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
 
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -30,7 +30,7 @@ const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
 );
 
 // 跟踪选中的年份
-const selectedYear = ref<number | 'all'>('all');
+const selectedYear = ref<'all' | number>('all');
 
 const loadIncomeTypes = async () => {
   try {
@@ -163,7 +163,9 @@ const gridOptions: VxeGridProps<RowType> = {
           condition: {
             ...formValues,
             // 添加年份条件，当选择"全部"时不传递year参数
-            ...(selectedYear.value !== 'all' ? { year: selectedYear.value } : {}),
+            ...(selectedYear.value === 'all'
+              ? {}
+              : { year: selectedYear.value }),
           },
         });
       },
@@ -214,7 +216,7 @@ const deleteRow = async (row: RowType) => {
 };
 
 // 处理年份变化
-const handleYearChange = async (year: number | 'all') => {
+const handleYearChange = async (year: 'all' | number) => {
   selectedYear.value = year;
   // 只刷新表格，不刷新看板，避免重复刷新
   await gridApi.reload();

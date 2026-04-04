@@ -3,15 +3,16 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { useVbenModal } from '@vben/common-ui';
+
 import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
 } from '@ant-design/icons-vue';
-import { Button, Popconfirm, message, Badge } from 'ant-design-vue';
+import { Badge, Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getUserListApi, deleteUserApi } from '#/api/system/user';
+import { deleteUserApi, getUserListApi } from '#/api/system/user';
 
 import FormModal from './form-modal.vue';
 
@@ -90,8 +91,8 @@ const gridOptions: VxeGridProps<RowType> = {
           ...formValues,
         });
         return {
-            items: res.items,
-            total: res.total
+          items: res.items,
+          total: res.total,
         };
       },
     },
@@ -99,8 +100,8 @@ const gridOptions: VxeGridProps<RowType> = {
   toolbarConfig: {
     custom: true,
     slots: {
-        tools: 'toolbar-tools',
-    }
+      tools: 'toolbar-tools',
+    },
   },
 };
 
@@ -139,16 +140,16 @@ function handleReload() {
         </Button>
       </template>
       <template #isOnline="{ row }">
-        <Badge :color="row.isOnline ? 'green' : 'gray'" :text="row.isOnline ? '在线' : '离线'" />
+        <Badge
+          :color="row.isOnline ? 'green' : 'gray'"
+          :text="row.isOnline ? '在线' : '离线'"
+        />
       </template>
       <template #action="{ row }">
         <Button type="link" size="small" @click="openFormModal(row)">
           <EditOutlined />
         </Button>
-        <Popconfirm
-          title="确认删除该用户吗？"
-          @confirm="handleDelete(row)"
-        >
+        <Popconfirm title="确认删除该用户吗？" @confirm="handleDelete(row)">
           <Button type="link" size="small" danger>
             <DeleteOutlined />
           </Button>
