@@ -660,6 +660,9 @@ importers:
       dayjs:
         specifier: 'catalog:'
         version: 1.11.13
+      gm-crypto:
+        specifier: 0.1.12
+        version: 0.1.12
       jszip:
         specifier: ^3.10.1
         version: 3.10.1

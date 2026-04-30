@@ -4,7 +4,6 @@ import type {
 } from '@vben/types';
 
 import { generateAccessible } from '@vben/access';
-import { preferences } from '@vben/preferences';
 
 import { getAllMenusApi } from '#/api';
 import { BasicLayout, IFrameView } from '#/layouts';
@@ -19,7 +18,7 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
     IFrameView,
   };
 
-  return await generateAccessible(preferences.app.accessMode, {
+  return await generateAccessible('backend', {
     ...options,
     fetchMenuListAsync: () => getAllMenusApi(),
     // 可以指定没有权限跳转403页面

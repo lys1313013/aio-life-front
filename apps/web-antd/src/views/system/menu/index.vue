@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue';
 
 import { Button, Form, Input, InputNumber, Modal, Select, Spin, Switch, Table, TreeSelect, message } from 'ant-design-vue';
 
+import { useAccessStore, useUserStore } from '@vben/stores';
+
 import {
   createMenuApi,
   getMenuAdminTreeApi,
@@ -12,6 +14,10 @@ import {
   type SysMenuAdminItem,
   type SysMenuSaveReq,
 } from '#/api/core/menu';
+import { generateAccess } from '#/router/access';
+import { resetRoutes, router } from '#/router';
+import { accessRoutes } from '#/router/routes';
+import { useAuthStore } from '#/store';
 
 const loading = ref(false);
 const list = ref<SysMenuAdminItem[]>([]);
@@ -20,6 +26,9 @@ const editVisible = ref(false);
 const saving = ref(false);
 const editingId = ref<number | null>(null);
 const statusChanging = ref<Record<number, boolean>>({});
+const accessStore = useAccessStore();
+const userStore = useUserStore();
+const authStore = useAuthStore();
 
 const form = ref<SysMenuSaveReq>({
   name: '',
@@ -117,6 +126,21 @@ const loadRoleOptions = async () => {
   }
 };
 
+const refreshAccessibleMenus = async () => {
+  const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
+  const userRoles = userInfo.roles ?? [];
+  resetRoutes();
+  const { accessibleMenus, accessibleRoutes: nextAccessRoutes } =
+    await generateAccess({
+      roles: userRoles,
+      router,
+      routes: accessRoutes,
+    });
+  accessStore.setAccessMenus(accessibleMenus);
+  accessStore.setAccessRoutes(nextAccessRoutes);
+  accessStore.setIsAccessChecked(true);
+};
+
 const openCreate = () => {
   editingId.value = null;
   form.value = {
@@ -204,6 +228,7 @@ const save = async () => {
     }
     editVisible.value = false;
     await load();
+    await refreshAccessibleMenus();
   } catch (e: any) {
     message.error(e?.message || '保存失败');
   } finally {
@@ -218,6 +243,7 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
     await updateMenuStatusApi(id, status);
     message.success(status === 1 ? '已启用' : '已禁用');
     await load();
+    await refreshAccessibleMenus();
   } catch (e: any) {
     message.error(e?.message || '更新状态失败');
     await load();
