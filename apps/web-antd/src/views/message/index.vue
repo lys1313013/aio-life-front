@@ -770,11 +770,11 @@ onUnmounted(() => {
         v-if="
           !isMobile || selectedUserId || (isAIChat && selectedConversationId)
         "
-        class="flex flex-1 flex-col bg-white min-h-0"
+        class="flex min-h-0 flex-1 flex-col bg-white"
       >
         <div
           v-if="isAIChat && selectedConversationId"
-          class="flex flex-1 flex-col min-h-0"
+          class="flex min-h-0 flex-1 flex-col"
         >
           <div
             class="flex items-center justify-between border-b border-gray-100 px-4 py-3"

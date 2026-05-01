@@ -326,7 +326,6 @@ const getYearPieChartData = computed(() => {
   };
 });
 
-
 // 根据选中的年份过滤年度统计数据
 const filteredExpData = computed(() => {
   if (selectedYear.value === 'all') {

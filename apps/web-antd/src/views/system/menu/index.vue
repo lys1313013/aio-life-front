@@ -1,9 +1,23 @@
 <script setup lang="ts">
+import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
+
 import { computed, onMounted, ref } from 'vue';
 
-import { Button, Form, Input, InputNumber, Modal, Select, Spin, Switch, Table, TreeSelect, message } from 'ant-design-vue';
-
 import { useAccessStore, useUserStore } from '@vben/stores';
+
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Modal,
+  Select,
+  Spin,
+  Switch,
+  Table,
+  TreeSelect,
+} from 'ant-design-vue';
 
 import {
   createMenuApi,
@@ -11,11 +25,9 @@ import {
   getMenuRoleOptionsApi,
   updateMenuApi,
   updateMenuStatusApi,
-  type SysMenuAdminItem,
-  type SysMenuSaveReq,
 } from '#/api/core/menu';
-import { generateAccess } from '#/router/access';
 import { resetRoutes, router } from '#/router';
+import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
@@ -24,7 +36,7 @@ const list = ref<SysMenuAdminItem[]>([]);
 
 const editVisible = ref(false);
 const saving = ref(false);
-const editingId = ref<number | null>(null);
+const editingId = ref<null | number>(null);
 const statusChanging = ref<Record<number, boolean>>({});
 const accessStore = useAccessStore();
 const userStore = useUserStore();
@@ -45,12 +57,15 @@ const form = ref<SysMenuSaveReq>({
 const metaText = ref('{}');
 
 const protectedPaths = new Set(['/system', '/system/menu']);
-const isProtectedMenu = (row: { path?: string }) => protectedPaths.has(String(row?.path || ''));
+const isProtectedMenu = (row: { path?: string }) =>
+  protectedPaths.has(String(row?.path || ''));
 
 type RoleOption = { label: string; value: string };
 const roleOptions = ref<RoleOption[]>([]);
 const roleOptionsLoading = ref(false);
-const selectableRoleOptions = computed(() => roleOptions.value.filter((x) => x.value !== 'admin'));
+const selectableRoleOptions = computed(() =>
+  roleOptions.value.filter((x) => x.value !== 'admin'),
+);
 
 const selectedRoles = ref<string[]>([]);
 
@@ -103,8 +118,8 @@ const load = async () => {
   loading.value = true;
   try {
     list.value = await getMenuAdminTreeApi();
-  } catch (e: any) {
-    message.error(e?.message || '加载菜单失败');
+  } catch (error: any) {
+    message.error(error?.message || '加载菜单失败');
   } finally {
     loading.value = false;
   }
@@ -115,8 +130,8 @@ const loadRoleOptions = async () => {
   try {
     const roles = await getMenuRoleOptionsApi();
     roleOptions.value = (roles || []).map((r) => ({ label: r, value: r }));
-  } catch (e: any) {
-    message.error(e?.message || '加载角色失败');
+  } catch (error: any) {
+    message.error(error?.message || '加载角色失败');
     roleOptions.value = [
       { label: 'admin', value: 'admin' },
       { label: 'user', value: 'user' },
@@ -229,8 +244,8 @@ const save = async () => {
     editVisible.value = false;
     await load();
     await refreshAccessibleMenus();
-  } catch (e: any) {
-    message.error(e?.message || '保存失败');
+  } catch (error: any) {
+    message.error(error?.message || '保存失败');
   } finally {
     saving.value = false;
   }
@@ -244,8 +259,8 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
     message.success(status === 1 ? '已启用' : '已禁用');
     await load();
     await refreshAccessibleMenus();
-  } catch (e: any) {
-    message.error(e?.message || '更新状态失败');
+  } catch (error: any) {
+    message.error(error?.message || '更新状态失败');
     await load();
   } finally {
     statusChanging.value = { ...statusChanging.value, [id]: false };
@@ -260,7 +275,7 @@ onMounted(() => {
 
 <template>
   <div class="p-4">
-    <div class="flex items-center justify-between mb-3">
+    <div class="mb-3 flex items-center justify-between">
       <div class="text-lg font-bold">权限菜单</div>
       <div class="flex items-center gap-2">
         <Button @click="load">刷新</Button>
@@ -278,13 +293,17 @@ onMounted(() => {
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'title'">
-            <div class="font-medium">{{ record.meta?.title ?? record.name }}</div>
+            <div class="font-medium">
+              {{ record.meta?.title ?? record.name }}
+            </div>
             <div class="text-xs text-stone-400">{{ record.name }}</div>
           </template>
           <template v-else-if="column.key === 'status'">
             <Switch
               :checked="record.status === 1"
-              :disabled="isProtectedMenu(record) || statusChanging[record.id] === true"
+              :disabled="
+                isProtectedMenu(record) || statusChanging[record.id] === true
+              "
               @change="toggleStatus(record, $event ? 1 : 0)"
             />
           </template>
@@ -304,12 +323,13 @@ onMounted(() => {
       :width="820"
       @ok="save"
     >
-      <div class="text-xs text-stone-400 mb-3">
-        建议优先填写 Name、Path、Component；只有启用状态的菜单会在前端侧边栏显示。
+      <div class="mb-3 text-xs text-stone-400">
+        建议优先填写
+        Name、Path、Component；只有启用状态的菜单会在前端侧边栏显示。
       </div>
       <Form layout="vertical">
-        <div class="rounded-md border border-stone-200 p-3 mb-3">
-          <div class="text-sm font-semibold mb-3">基本信息</div>
+        <div class="mb-3 rounded-md border border-stone-200 p-3">
+          <div class="mb-3 text-sm font-semibold">基本信息</div>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="父节点">
               <TreeSelect
@@ -321,24 +341,37 @@ onMounted(() => {
               />
             </Form.Item>
             <Form.Item label="Name（路由 name）">
-              <Input v-model:value="form.name" placeholder="例如 TimeManagement" />
+              <Input
+                v-model:value="form.name"
+                placeholder="例如 TimeManagement"
+              />
             </Form.Item>
           </div>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="Path（路由 path）">
-              <Input v-model:value="form.path" :disabled="editingId != null" placeholder="例如 /time-management" />
+              <Input
+                v-model:value="form.path"
+                :disabled="editingId != null"
+                placeholder="例如 /time-management"
+              />
             </Form.Item>
             <Form.Item label="Component">
-              <Input v-model:value="form.component" placeholder="例如 BasicLayout 或 system/menu/index" />
+              <Input
+                v-model:value="form.component"
+                placeholder="例如 BasicLayout 或 system/menu/index"
+              />
             </Form.Item>
           </div>
         </div>
 
-        <div class="rounded-md border border-stone-200 p-3 mb-3">
-          <div class="text-sm font-semibold mb-3">路由与权限</div>
+        <div class="mb-3 rounded-md border border-stone-200 p-3">
+          <div class="mb-3 text-sm font-semibold">路由与权限</div>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="Redirect（可选）">
-              <Input v-model:value="form.redirect" placeholder="例如 /time-management/time-tracker" />
+              <Input
+                v-model:value="form.redirect"
+                placeholder="例如 /time-management/time-tracker"
+              />
             </Form.Item>
             <Form.Item label="Roles（空=仅管理员）">
               <Select
@@ -349,12 +382,19 @@ onMounted(() => {
                 allow-clear
                 placeholder="选择可访问角色"
               />
-              <div class="text-xs text-stone-400 mt-1">留空表示仅管理员可见；选择后表示所选角色与管理员可见。</div>
+              <div class="mt-1 text-xs text-stone-400">
+                留空表示仅管理员可见；选择后表示所选角色与管理员可见。
+              </div>
             </Form.Item>
           </div>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="排序 sort">
-              <InputNumber v-model:value="form.sort" class="w-full" :min="-9999" :max="9999" />
+              <InputNumber
+                v-model:value="form.sort"
+                class="w-full"
+                :min="-9999"
+                :max="9999"
+              />
             </Form.Item>
             <Form.Item label="启用状态">
               <Switch
@@ -370,8 +410,8 @@ onMounted(() => {
         </div>
 
         <div class="rounded-md border border-stone-200 p-3">
-          <div class="text-sm font-semibold mb-2">Meta 配置（JSON）</div>
-          <div class="text-xs text-stone-400 mb-2">
+          <div class="mb-2 text-sm font-semibold">Meta 配置（JSON）</div>
+          <div class="mb-2 text-xs text-stone-400">
             常见字段：title / icon / order / hideInMenu / keepAlive / link
           </div>
           <Form.Item class="!mb-0">
@@ -379,7 +419,7 @@ onMounted(() => {
               v-model:value="metaText"
               :auto-size="{ minRows: 7, maxRows: 14 }"
               class="font-mono"
-              placeholder="{&quot;title&quot;:&quot;时间&quot;,&quot;icon&quot;:&quot;mdi:clock-outline&quot;}"
+              placeholder='{"title":"时间","icon":"mdi:clock-outline"}'
             />
           </Form.Item>
         </div>

@@ -23,14 +23,18 @@ export async function getAnniversaryRecords() {
 /**
  * 创建纪念日
  */
-export async function createAnniversaryRecord(data: Partial<AnniversaryRecord>) {
+export async function createAnniversaryRecord(
+  data: Partial<AnniversaryRecord>,
+) {
   return requestClient.post<AnniversaryRecord>('/anniversaryRecords', data);
 }
 
 /**
  * 更新纪念日
  */
-export async function updateAnniversaryRecord(data: Partial<AnniversaryRecord>) {
+export async function updateAnniversaryRecord(
+  data: Partial<AnniversaryRecord>,
+) {
   return requestClient.put<AnniversaryRecord>('/anniversaryRecords', data);
 }
 
@@ -38,5 +42,7 @@ export async function updateAnniversaryRecord(data: Partial<AnniversaryRecord>) 
  * 删除纪念日
  */
 export async function deleteAnniversaryRecords(idList: string[]) {
-  return requestClient.post<void>(`/anniversaryRecords/batchDelete`, { idList });
+  return requestClient.post<void>(`/anniversaryRecords/batchDelete`, {
+    idList,
+  });
 }

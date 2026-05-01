@@ -1,6 +1,7 @@
 export * from './api-key';
 export * from './auth';
 export * from './bilibili-video';
+export * from './cbti';
 export * from './common';
 export * from './device';
 export * from './exerciseRecord';
@@ -22,4 +23,3 @@ export * from './time-tracker-category';
 export * from './todo';
 export * from './user';
 export * from './user-bind';
-export * from './cbti';

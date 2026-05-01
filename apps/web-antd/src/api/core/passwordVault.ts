@@ -46,7 +46,10 @@ export async function createPasswordVault(data: PasswordVaultEntity) {
  * 更新密码
  */
 export async function updatePasswordVault(data: PasswordVaultEntity) {
-  return await requestClient.put<PasswordVaultEntity>(`/password/${data.id}`, data);
+  return await requestClient.put<PasswordVaultEntity>(
+    `/password/${data.id}`,
+    data,
+  );
 }
 
 /**
@@ -78,7 +81,9 @@ export interface PasswordGeneratorOptions {
 /**
  * 生成随机密码（前端实现，不依赖后端）
  */
-export function generatePassword(options: PasswordGeneratorOptions = {}): string {
+export function generatePassword(
+  options: PasswordGeneratorOptions = {},
+): string {
   const {
     length = 16,
     uppercase = true,
@@ -88,8 +93,12 @@ export function generatePassword(options: PasswordGeneratorOptions = {}): string
     excludeAmbiguous = false,
   } = options;
 
-  const uppercaseChars = excludeAmbiguous ? 'ABCDEFGHJKLMNPQRSTUVWXYZ' : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const lowercaseChars = excludeAmbiguous ? 'abcdefghjkmnpqrstuvwxyz' : 'abcdefghijklmnopqrstuvwxyz';
+  const uppercaseChars = excludeAmbiguous
+    ? 'ABCDEFGHJKLMNPQRSTUVWXYZ'
+    : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercaseChars = excludeAmbiguous
+    ? 'abcdefghjkmnpqrstuvwxyz'
+    : 'abcdefghijklmnopqrstuvwxyz';
   const numberChars = excludeAmbiguous ? '23456789' : '0123456789';
   const symbolChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
 

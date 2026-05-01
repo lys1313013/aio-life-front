@@ -53,5 +53,7 @@ export async function updateMenuApi(id: number, data: SysMenuSaveReq) {
 }
 
 export async function updateMenuStatusApi(id: number, status: number) {
-  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/status`, { status });
+  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/status`, {
+    status,
+  });
 }

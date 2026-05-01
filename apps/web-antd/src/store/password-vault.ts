@@ -1,11 +1,18 @@
+import { computed } from 'vue';
+
+import { useSessionStorage } from '@vueuse/core';
 import { defineStore } from 'pinia';
 
-import { ref, computed } from 'vue';
-
 export const usePasswordVaultStore = defineStore('password-vault', () => {
-  const isUnlocked = ref(false);
-  const masterKey = ref<string | null>(null);
-  const lastActivityTime = ref<number>(Date.now());
+  const isUnlocked = useSessionStorage('password-vault-unlocked', false);
+  const masterKey = useSessionStorage<null | string>(
+    'password-vault-master-key',
+    null,
+  );
+  const lastActivityTime = useSessionStorage(
+    'password-vault-activity',
+    Date.now(),
+  );
   const lockTimeout = 30 * 60 * 1000; // 30 minutes
 
   const isLocked = computed(() => !isUnlocked.value);

@@ -169,18 +169,30 @@ export async function getCbtiAdminPersonalitiesApi() {
 }
 
 export async function createCbtiPersonalityApi(data: CbtiPersonalitySaveReq) {
-  return requestClient.post<CbtiAdminPersonality>('/cbti/admin/personalities', data);
+  return requestClient.post<CbtiAdminPersonality>(
+    '/cbti/admin/personalities',
+    data,
+  );
 }
 
-export async function updateCbtiPersonalityApi(id: number, data: CbtiPersonalitySaveReq) {
-  return requestClient.put<CbtiAdminPersonality>(`/cbti/admin/personalities/${id}`, data);
+export async function updateCbtiPersonalityApi(
+  id: number,
+  data: CbtiPersonalitySaveReq,
+) {
+  return requestClient.put<CbtiAdminPersonality>(
+    `/cbti/admin/personalities/${id}`,
+    data,
+  );
 }
 
 export async function deleteCbtiPersonalityApi(id: number) {
   return requestClient.delete<boolean>(`/cbti/admin/personalities/${id}`);
 }
 
-export async function uploadCbtiPersonalityImageApi(code: string, formData: FormData) {
+export async function uploadCbtiPersonalityImageApi(
+  code: string,
+  formData: FormData,
+) {
   return requestClient.post<CbtiPersonalityImageResp>(
     `/cbti/admin/personalities/${code}/image`,
     formData,

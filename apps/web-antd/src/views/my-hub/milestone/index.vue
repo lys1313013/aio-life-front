@@ -468,7 +468,9 @@ const getTypeLabel = (type: string) => {
                   </div>
                 </div>
 
-                <p class="text-sm leading-normal text-gray-600 dark:text-gray-400">
+                <p
+                  class="text-sm leading-normal text-gray-600 dark:text-gray-400"
+                >
                   {{ item.description }}
                 </p>
               </div>

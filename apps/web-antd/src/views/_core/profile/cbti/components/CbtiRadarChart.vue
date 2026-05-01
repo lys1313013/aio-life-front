@@ -1,17 +1,11 @@
-<template>
-  <div class="w-full">
-    <EchartsUI ref="chartRef" />
-  </div>
-</template>
-
 <script setup lang="ts">
 import type { EchartsUIType } from '@vben/plugins/echarts';
+
+import type { CbtiDimensionScore } from '#/api/core/cbti';
 
 import { computed, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
-
-import type { CbtiDimensionScore } from '#/api/core/cbti';
 
 interface Props {
   dimensions: CbtiDimensionScore[];
@@ -39,7 +33,10 @@ const modelScores = computed(() => {
   }
   return modelMeta.map((m) => {
     const arr = grouped.get(m.key) ?? [];
-    const avg = arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+    const avg =
+      arr.length > 0
+        ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+        : 0;
     return { ...m, value: avg };
   });
 });
@@ -59,8 +56,14 @@ const render = () => {
         fontSize: 12,
         fontWeight: 700,
       },
-      splitLine: { lineStyle: { color: ['#fed7aa', '#ffedd5', '#ffedd5', '#fff7ed'] } },
-      splitArea: { areaStyle: { color: ['rgba(255, 247, 237, 0.8)', 'rgba(255, 247, 237, 0.4)'] } },
+      splitLine: {
+        lineStyle: { color: ['#fed7aa', '#ffedd5', '#ffedd5', '#fff7ed'] },
+      },
+      splitArea: {
+        areaStyle: {
+          color: ['rgba(255, 247, 237, 0.8)', 'rgba(255, 247, 237, 0.4)'],
+        },
+      },
       axisLine: { lineStyle: { color: '#fed7aa' } },
     },
     series: [
@@ -85,3 +88,8 @@ const render = () => {
 watch(modelScores, () => render(), { immediate: true });
 </script>
 
+<template>
+  <div class="w-full">
+    <EchartsUI ref="chartRef" />
+  </div>
+</template>

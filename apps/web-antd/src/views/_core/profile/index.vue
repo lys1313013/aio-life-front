@@ -7,19 +7,28 @@ import { useUserStore } from '@vben/stores';
 
 import ApiKeySetting from './api-key-setting.vue';
 import ProfileBase from './base-setting.vue';
+import CbtiSetting from './cbti-setting.vue';
 import LLMSetting from './llm-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import UserBindSetting from './user-bind.vue';
-import CbtiSetting from './cbti-setting.vue';
 
 const userStore = useUserStore();
 
 const route = useRoute();
 const router = useRouter();
 
-const availableTabs = new Set(['basic', 'bind', 'password', 'api-key', 'llm', 'mbti', 'cbti', 'notice']);
+const availableTabs = new Set([
+  'api-key',
+  'basic',
+  'bind',
+  'cbti',
+  'llm',
+  'mbti',
+  'notice',
+  'password',
+]);
 
 const resolveTab = (value: unknown) => {
   if (typeof value !== 'string') return 'basic';
@@ -73,20 +82,17 @@ watch(
   },
 );
 
-watch(
-  tabsValue,
-  (tab) => {
-    const current = route.query.tab;
-    if (tab === current) return;
-    const nextQuery: Record<string, any> = { ...route.query };
-    if (tab === 'basic') {
-      delete nextQuery.tab;
-    } else {
-      nextQuery.tab = tab;
-    }
-    router.replace({ query: nextQuery });
-  },
-);
+watch(tabsValue, (tab) => {
+  const current = route.query.tab;
+  if (tab === current) return;
+  const nextQuery: Record<string, any> = { ...route.query };
+  if (tab === 'basic') {
+    delete nextQuery.tab;
+  } else {
+    nextQuery.tab = tab;
+  }
+  router.replace({ query: nextQuery });
+});
 </script>
 <template>
   <Profile

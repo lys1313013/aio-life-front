@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { AnniversaryRecord } from '#/api/my-hub/anniversary';
+
 import { computed, onMounted, ref } from 'vue';
 
 import {
@@ -30,7 +32,6 @@ import {
   getAnniversaryRecords,
   updateAnniversaryRecord,
 } from '#/api/my-hub/anniversary';
-import type { AnniversaryRecord } from '#/api/my-hub/anniversary';
 
 const { width } = useWindowSize();
 const isMobile = computed(() => width.value < 768);
@@ -44,10 +45,10 @@ const submitLoading = ref(false);
 
 const formState = ref<{
   color: string;
-  targetDate: Dayjs | undefined;
   icon: string;
   id?: string;
   note: string;
+  targetDate: Dayjs | undefined;
   title: string;
 }>({
   title: '',
@@ -324,7 +325,8 @@ const selectColor = (color: string) => {
                   class="text-6xl font-black tabular-nums leading-none tracking-tighter drop-shadow-lg filter"
                 >
                   {{ getDayCount(item.targetDate) }}
-                  <span class="ml-1 align-baseline text-lg font-normal opacity-80"
+                  <span
+                    class="ml-1 align-baseline text-lg font-normal opacity-80"
                     >天</span
                   >
                 </div>
@@ -337,7 +339,9 @@ const selectColor = (color: string) => {
                 >
                   {{ item.title }}
                 </h3>
-                <div class="flex items-center justify-between text-sm opacity-80">
+                <div
+                  class="flex items-center justify-between text-sm opacity-80"
+                >
                   <span
                     class="flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 font-medium backdrop-blur-sm"
                   >
