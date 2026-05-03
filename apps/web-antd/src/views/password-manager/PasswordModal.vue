@@ -259,14 +259,6 @@ defineExpose({ openModal });
           />
         </FormItem>
 
-        <FormItem label="分类">
-          <Select v-model:value="formState.category">
-            <SelectOption v-for="cat in categories" :key="cat" :value="cat">
-              {{ cat }}
-            </SelectOption>
-          </Select>
-        </FormItem>
-
         <FormItem label="账号">
           <Input
             v-model:value="formState.username"
@@ -287,6 +279,14 @@ defineExpose({ openModal });
               <LockOutlined /> 生成
             </Button>
           </div>
+        </FormItem>
+
+        <FormItem label="分类">
+          <Select v-model:value="formState.category">
+            <SelectOption v-for="cat in categories" :key="cat" :value="cat">
+              {{ cat }}
+            </SelectOption>
+          </Select>
         </FormItem>
 
         <FormItem label="备注">
@@ -370,4 +370,8 @@ defineExpose({ openModal });
   </Modal>
 </template>
 
-<style scoped></style>
+<style scoped>
+:deep(.ant-form-item) {
+  margin-bottom: 12px;
+}
+</style>

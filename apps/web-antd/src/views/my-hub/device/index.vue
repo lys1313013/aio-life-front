@@ -302,19 +302,48 @@ export default {
             </div>
           </div>
         </template>
-        <AForm :model="newDevice" layout="vertical">
+        <AForm :model="newDevice" layout="vertical" class="device-form">
           <AFormItem label="设备名称">
             <AInput v-model:value="newDevice.name" />
           </AFormItem>
           <AFormItem label="配置">
             <AInput v-model:value="newDevice.spec" placeholder="" />
           </AFormItem>
-          <AFormItem label="价格">
-            <AInputNumber
-              v-model:value="newDevice.purchasePrice"
-              style="width: 100%"
-            />
-          </AFormItem>
+          <ARow :gutter="16">
+            <ACol :span="12">
+              <AFormItem label="设备类型">
+                <ASelect
+                  v-model:value="newDevice.type"
+                  style="width: 100%"
+                  :options="typeOptions"
+                />
+              </AFormItem>
+            </ACol>
+            <ACol :span="12">
+              <AFormItem label="设备状态">
+                <ASelect
+                  v-model:value="newDevice.status"
+                  style="width: 100%"
+                  :options="statusOptions"
+                />
+              </AFormItem>
+            </ACol>
+          </ARow>
+          <ARow :gutter="16">
+            <ACol :span="12">
+              <AFormItem label="价格">
+                <AInputNumber
+                  v-model:value="newDevice.purchasePrice"
+                  style="width: 100%"
+                />
+              </AFormItem>
+            </ACol>
+            <ACol :span="12">
+              <AFormItem label="购买平台">
+                <AInput v-model:value="newDevice.purchasePlace" />
+              </AFormItem>
+            </ACol>
+          </ARow>
           <ARow :gutter="16">
             <ACol :span="12">
               <AFormItem label="购买日期">
@@ -336,25 +365,8 @@ export default {
               </AFormItem>
             </ACol>
           </ARow>
-          <AFormItem label="设备类型">
-            <ASelect
-              v-model:value="newDevice.type"
-              style="width: 100%"
-              :options="typeOptions"
-            />
-          </AFormItem>
-          <AFormItem label="设备状态">
-            <ASelect
-              v-model:value="newDevice.status"
-              style="width: 100%"
-              :options="statusOptions"
-            />
-          </AFormItem>
           <AFormItem label="图片链接">
             <AInput v-model:value="newDevice.image" />
-          </AFormItem>
-          <AFormItem label="购买平台">
-            <AInput v-model:value="newDevice.purchasePlace" />
           </AFormItem>
           <AFormItem label="备注">
             <AInput
@@ -678,5 +690,9 @@ export default {
 .total-static .ant-card span:first-child {
   font-size: 18px;
   font-weight: bold;
+}
+
+.device-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
 }
 </style>
