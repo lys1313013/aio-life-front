@@ -478,10 +478,33 @@ const adjustEndTime = (minutes: number) => {
 };
 
 const addExercise = () => {
+  let lastExerciseTypeId: string = '';
+  if (formState.value.exercises.length > 0) {
+    const lastExercise =
+      formState.value.exercises[formState.value.exercises.length - 1];
+    if (lastExercise) {
+      lastExerciseTypeId = lastExercise.exerciseTypeId || '';
+    }
+  }
   formState.value.exercises.push({
-    exerciseTypeId: '',
+    exerciseTypeId: lastExerciseTypeId,
     exerciseCount: undefined,
   });
+};
+
+const handleExerciseTypeChange = (value: any, index: number) => {
+  if (index === 0 && value && typeof value === 'string') {
+    const option = exerciseTypeOptions.value.find((opt) => opt.value === value);
+    if (option && option.label) {
+      const currentTitle = formState.value.title;
+      const isDefaultTitle =
+        !currentTitle ||
+        exerciseTypeOptions.value.some((opt) => !!opt.label && opt.label === currentTitle);
+      if (isDefaultTitle) {
+        formState.value.title = option.label;
+      }
+    }
+  }
 };
 
 const removeExercise = (index: number) => {
@@ -794,6 +817,7 @@ onUnmounted(() => {
                 :options="exerciseTypeOptions"
                 allow-clear
                 style="width: 100%"
+                @change="handleExerciseTypeChange($event, index)"
               />
             </div>
             <div style="flex: 1">
