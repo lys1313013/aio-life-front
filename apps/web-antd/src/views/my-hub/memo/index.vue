@@ -98,6 +98,7 @@ const handleOk = async () => {
   }
 };
 
+// 格式化时间
 const formatTime = (time: string) => {
   try {
     return formatDistanceToNow(new Date(time), {
@@ -109,36 +110,18 @@ const formatTime = (time: string) => {
   }
 };
 
-// 预设背景色
-const bgColors = [
-  'bg-amber-50 dark:bg-amber-900/20',
-  'bg-blue-50 dark:bg-blue-900/20',
-  'bg-green-50 dark:bg-green-900/20',
-  'bg-rose-50 dark:bg-rose-900/20',
-  'bg-purple-50 dark:bg-purple-900/20',
-  'bg-indigo-50 dark:bg-indigo-900/20',
-];
-
-const getBgColor = (id: number | string) => {
-  const strId = String(id);
-  const index =
-    strId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) %
-    bgColors.length;
-  return bgColors[index];
-};
-
 onMounted(() => {
   fetchMemos();
 });
 </script>
 
 <template>
-  <div class="flex h-full flex-col overflow-hidden p-5">
+  <div class="flex h-full flex-col overflow-hidden p-3 sm:p-5">
     <div class="flex-1 overflow-y-auto overflow-x-hidden">
       <Spin :spinning="loading">
         <div
           v-if="memos.length > 0"
-          class="mx-auto columns-1 gap-5 sm:columns-2 lg:columns-3 xl:columns-3"
+          class="mx-auto columns-2 gap-3 sm:columns-2 sm:gap-5 lg:columns-3 xl:columns-3"
         >
           <div
             v-for="item in memos"
@@ -146,8 +129,7 @@ onMounted(() => {
             class="mb-5 break-inside-avoid"
           >
             <div
-              class="hover:-translate-y-0.3 group relative flex flex-col rounded-xl border border-transparent p-3 transition-all duration-300 hover:shadow-lg dark:border-slate-700"
-              :class="getBgColor(item.id)"
+              class="hover:-translate-y-0.3 group relative flex flex-col rounded-xl border border-slate-200/60 bg-[var(--ant-color-bg-container)] p-3 transition-all duration-300 hover:shadow-md dark:border-slate-700/80"
             >
               <!-- Content Area -->
               <div
@@ -225,10 +207,10 @@ onMounted(() => {
       :confirm-loading="confirmLoading"
       :mask-closable="false"
       @ok="handleOk"
-      :width="isMobile ? '100%' : '70%'"
+      :width="isMobile ? '90%' : '70%'"
       :centered="true"
       :body-style="{
-        height: isMobile ? 'calc(100vh - 110px)' : '60vh',
+        height: isMobile ? '50vh' : '60vh',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
