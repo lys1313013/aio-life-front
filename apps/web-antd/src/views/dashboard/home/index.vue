@@ -395,33 +395,36 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
       />
       <div
         v-if="watchedTasks.length > 0 || !watchedLoading"
-        class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition-all dark:border-gray-800 dark:bg-gray-800/50"
+        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
-        <div class="mb-4 flex items-center justify-between">
+        <div class="flex items-center justify-between p-4 pb-2">
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-base font-semibold"
+              class="cursor-pointer select-none text-lg font-semibold"
               @click="loadWatchedTasks"
               >关注待办</span
             >
           </div>
-          <div v-if="watchedTasks.length > 0" class="text-xs text-gray-400">
+          <div
+            v-if="watchedTasks.length > 0"
+            class="text-xs text-muted-foreground"
+          >
             {{ watchedTasks.length }} 个任务
           </div>
         </div>
 
         <div v-if="watchedLoading" class="py-10 text-center">
           <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-amber-500"
+            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
           ></div>
         </div>
 
         <div
           v-else-if="watchedTasks.length === 0"
-          class="rounded-xl border border-dashed border-gray-200 py-10 text-center dark:border-gray-700"
+          class="m-4 rounded-xl border border-dashed border-border py-10 text-center"
         >
           <svg
-            class="mx-auto mb-2 size-10 text-gray-300 dark:text-gray-600"
+            class="mx-auto mb-2 size-10 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -433,21 +436,24 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
               d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
             />
           </svg>
-          <p class="text-sm text-gray-400">暂无关注的待办</p>
-          <p class="mt-1 text-xs text-gray-400">在任务详情中点击星标关注</p>
+          <p class="text-sm text-muted-foreground">暂无关注的待办</p>
+          <p class="mt-1 text-xs text-muted-foreground">
+            在任务详情中点击星标关注
+          </p>
         </div>
 
-        <div v-else class="space-y-1">
+        <div v-else class="flex-1 space-y-1 overflow-y-auto p-4 pt-2">
           <div
             v-for="(task, index) in watchedTasks"
             :key="task.id"
-            class="group relative flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-gray-50 dark:hover:bg-gray-800/50"
+            class="group relative flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground"
             :style="{ animationDelay: `${index * 50}ms` }"
           >
             <button
-              class="flex-shrink-0 rounded border-2 border-gray-200 p-0.5 transition-all hover:border-green-400 hover:bg-green-50 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none dark:border-gray-600 dark:hover:border-green-500 dark:hover:bg-green-900/20"
+              class="flex-shrink-0 rounded border-2 border-border p-0.5 transition-all hover:border-green-500 hover:bg-green-500/10 focus:outline-none focus:ring-0 focus:ring-offset-0 active:outline-none"
               :class="{
-                'border-green-500 bg-green-500': task.isCompleted === 1,
+                'border-green-500 bg-green-500 hover:border-green-600 hover:bg-green-600':
+                  task.isCompleted === 1,
               }"
               @click="handleCompleteTask(task)"
             >
@@ -477,22 +483,22 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
                 {{ getPriorityLabel(task.priority) }}
               </span>
               <span
-                class="text-sm font-medium leading-snug text-gray-700 dark:text-gray-200"
+                class="text-sm font-medium leading-snug text-foreground"
                 :class="{
-                  'text-gray-400 line-through': task.isCompleted === 1,
+                  'text-muted-foreground line-through': task.isCompleted === 1,
                 }"
               >
                 {{ task.content }}
               </span>
               <span
                 v-if="task.taskName"
-                class="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                class="rounded-md bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground"
               >
                 {{ task.taskName }}
               </span>
               <span
                 v-if="task.startTime || task.endTime"
-                class="inline-flex items-center gap-1 text-[10px] text-gray-400"
+                class="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
               >
                 <svg
                   class="size-2.5"
