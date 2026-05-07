@@ -207,7 +207,6 @@ const handleUnlockSubmit = async () => {
 
     store.unlock(masterPasswordInput.value);
     showUnlockModal.value = false;
-    message.success('解锁成功');
 
     await decryptPasswords();
 
@@ -238,10 +237,7 @@ const handleCopy = (item: DecryptedPassword, type: 'password' | 'username') => {
       if (typeName === 'username') {
         message.success('账号已复制到剪贴板');
       } else {
-        message.success('密码已复制到剪贴板，30秒后自动清除');
-        setTimeout(() => {
-          copyToClipboard('');
-        }, 30_000);
+        message.success('密码已复制到剪贴板');
       }
     } catch {
       message.error('复制失败');
