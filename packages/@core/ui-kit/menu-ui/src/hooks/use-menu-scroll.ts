@@ -25,8 +25,8 @@ export function useMenuScroll(
     if (activeElement) {
       activeElement.scrollIntoView({
         behavior: 'smooth',
-        block: 'center',
-        inline: 'center',
+        block: 'nearest',
+        inline: 'nearest',
       });
     }
   }
