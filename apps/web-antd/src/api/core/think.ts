@@ -12,6 +12,10 @@ export async function update(data: any) {
   return await requestClient.post('/thought/update', data);
 }
 
+export async function getPinnedThoughts() {
+  return await requestClient.get('/thought/dashboard');
+}
+
 export async function deleteData(data: any) {
   return await requestClient.post('/thought/batchDelete', data);
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, toRaw } from 'vue';
 
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { DeleteOutlined, PlusOutlined, PushpinFilled } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -13,6 +13,7 @@ import {
   Popconfirm,
   Space,
   Spin,
+  Switch,
 } from 'ant-design-vue';
 
 import {
@@ -35,6 +36,7 @@ interface Thought {
   events: Event[];
   likes: number;
   createTime: string;
+  isPinned: number;
 }
 
 const thoughts = ref<Thought[]>([]);
@@ -46,10 +48,12 @@ const currentEditId = ref<null | number | string>(null);
 interface ThoughtForm {
   content: string;
   events: Event[];
+  isPinned: number;
 }
 
 const form = reactive<ThoughtForm>({
   content: '',
+  isPinned: 0,
   events: [
     {
       id: 1,
@@ -67,6 +71,7 @@ const modalTitle = computed(() =>
 // 方法
 const openAddModal = () => {
   form.content = '';
+  form.isPinned = 0;
   form.events = [
     {
       id: Date.now(),
@@ -82,6 +87,7 @@ const openEditModal = (id: number | string) => {
   const thought = thoughts.value.find((t) => t.id === id);
   if (thought) {
     form.content = thought.content;
+    form.isPinned = thought.isPinned ?? 0;
     const evs = Array.isArray(thought.events) ? thought.events : [];
     form.events =
       evs.length > 0
@@ -134,6 +140,7 @@ const saveCard = async () => {
   // 构造提交数据
   const payload: any = {
     content: form.content.trim(),
+    isPinned: form.isPinned,
     events: validEvents.map((e) => ({ ...e })),
   };
 
@@ -151,6 +158,7 @@ const saveCard = async () => {
     const normalized = {
       ...saved,
       id: saved?.id ?? currentEditId.value, // 确保 ID 不丢失
+      isPinned: saved?.isPinned ?? form.isPinned,
       content:
         saved?.content ??
         saved?.text ??
@@ -219,6 +227,7 @@ const loadThoughts = async () => {
     thoughts.value = list
       .map((t: any) => ({
         ...t,
+        isPinned: t?.isPinned ?? 0,
         content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
         events: Array.isArray(t?.events)
           ? t.events.map((e: any) => ({
@@ -277,8 +286,11 @@ onMounted(async () => {
           <div class="card-content">{{ thought.content }}</div>
           <div class="card-footer">
             <span class="card-date">{{ formatDate(thought.createTime) }}</span>
-            <div class="event-badge" v-if="(thought.events || []).length > 0">
-              {{ (thought.events || []).length }}
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <PushpinFilled v-if="thought.isPinned === 1" style="color: #faad14" />
+              <div class="event-badge" v-if="(thought.events || []).length > 0">
+                {{ (thought.events || []).length }}
+              </div>
             </div>
           </div>
         </Card>
@@ -346,22 +358,29 @@ onMounted(async () => {
         <div
           class="form-actions"
           :style="{
-            justifyContent: currentEditId ? 'space-between' : 'flex-end',
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }"
         >
-          <Popconfirm
-            v-if="currentEditId"
-            title="确定要删除这条思考吗？"
-            ok-text="确定"
-            cancel-text="取消"
-            @confirm="handleDelete(currentEditId!)"
-          >
-            <Button danger type="text">
-              <template #icon><DeleteOutlined /></template>
-              删除
-            </Button>
-          </Popconfirm>
+          <div>
+            <Popconfirm
+              v-if="currentEditId"
+              title="确定要删除这条思考吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDelete(currentEditId!)"
+            >
+              <Button danger type="text">
+                <template #icon><DeleteOutlined /></template>
+                删除
+              </Button>
+            </Popconfirm>
+          </div>
           <Space>
+            <div style="display: flex; align-items: center; gap: 8px; margin-right: 16px;">
+              <span style="font-size: 14px; opacity: 0.85;">添加到首页</span>
+              <Switch v-model:checked="form.isPinned" :checkedValue="1" :unCheckedValue="0" size="small" />
+            </div>
             <Button @click="closeCardModal" shape="round">取消</Button>
             <Button type="primary" @click="saveCard" shape="round">保存</Button>
           </Space>

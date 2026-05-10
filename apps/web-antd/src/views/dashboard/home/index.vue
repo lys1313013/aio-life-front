@@ -17,6 +17,7 @@ import {
   getDashboardTasks,
   getWatchedTaskDetails,
 } from '#/api/core/dashboard';
+import { getPinnedThoughts } from '#/api/core/think';
 import { updateTaskDetail } from '#/api/core/todo';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
@@ -45,6 +46,8 @@ const overviewItems = ref<OverviewItem[]>([]);
 const loading = ref(true);
 const watchedTasks = ref<WatchedTaskDetail[]>([]);
 const watchedLoading = ref(true);
+const pinnedThoughts = ref<any[]>([]);
+const thoughtsLoading = ref(true);
 const userStore = useUserStore();
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
@@ -94,6 +97,18 @@ async function loadWatchedTasks() {
     console.error('获取关注的待办失败:', error);
   } finally {
     watchedLoading.value = false;
+  }
+}
+
+async function loadPinnedThoughts() {
+  try {
+    thoughtsLoading.value = true;
+    const res = await getPinnedThoughts();
+    pinnedThoughts.value = res || [];
+  } catch (error) {
+    console.error('获取固定的闪念失败:', error);
+  } finally {
+    thoughtsLoading.value = false;
   }
 }
 
@@ -194,6 +209,7 @@ onMounted(async () => {
   try {
     loading.value = true;
     loadWatchedTasks();
+    loadPinnedThoughts();
     // 1. 获取任务列表
     const tasks = await getDashboardTasks();
     const items: OverviewItem[] = [];
@@ -514,6 +530,52 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
                   />
                 </svg>
                 {{ formatTimeRange(task.startTime, task.endTime) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 固定闪念 -->
+      <div
+        v-if="pinnedThoughts.length > 0 || thoughtsLoading"
+        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+      >
+        <div class="flex items-center justify-between p-4 pb-2">
+          <div class="flex items-center gap-2">
+            <span
+              class="cursor-pointer select-none text-lg font-semibold"
+              @click="loadPinnedThoughts"
+              >闪念</span
+            >
+          </div>
+        </div>
+
+        <div v-if="thoughtsLoading" class="py-10 text-center">
+          <div
+            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
+          ></div>
+        </div>
+
+        <div v-else class="flex-1 space-y-1 overflow-y-auto p-4 pt-2">
+          <div
+            v-for="(thought, index) in pinnedThoughts"
+            :key="thought.id"
+            class="group relative flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            :style="{ animationDelay: `${index * 50}ms` }"
+            @click="navTo({ title: '闪念', url: '/my-hub/think' })"
+          >
+            <div class="mt-1 flex-shrink-0">
+              <svg class="size-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12M8.8,14L10,12.8V4H14V12.8L15.2,14H8.8Z" />
+              </svg>
+            </div>
+            <div class="flex min-w-0 flex-col gap-1">
+              <span class="text-sm font-medium leading-snug text-foreground whitespace-pre-wrap line-clamp-3">
+                {{ thought.content }}
+              </span>
+              <span class="text-[10px] text-muted-foreground">
+                {{ formatTimeRange(thought.createTime) }}
               </span>
             </div>
           </div>
