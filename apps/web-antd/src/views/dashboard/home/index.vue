@@ -149,6 +149,16 @@ function formatTimeRange(startTime?: string, endTime?: string): string {
   return formatDate(startTime) || formatDate(endTime) || '';
 }
 
+function formatThoughtTime(dateStr?: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hour = String(date.getHours()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hour}`;
+}
+
 function clearCardTimer(type?: string) {
   if (type && refreshTimers.has(type)) {
     clearInterval(refreshTimers.get(type));
@@ -563,20 +573,22 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
             :key="thought.id"
             class="group relative flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer"
             :style="{ animationDelay: `${index * 50}ms` }"
-            @click="navTo({ title: '闪念', url: '/my-hub/think' })"
+            @click="navTo({ title: '闪念', url: '/my-hub/think', icon: 'mdi:lightbulb-on-outline' })"
           >
             <div class="mt-1 flex-shrink-0">
               <svg class="size-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12M8.8,14L10,12.8V4H14V12.8L15.2,14H8.8Z" />
               </svg>
             </div>
-            <div class="flex min-w-0 flex-col gap-1">
-              <span class="text-sm font-medium leading-snug text-foreground whitespace-pre-wrap line-clamp-3">
-                {{ thought.content }}
-              </span>
-              <span class="text-[10px] text-muted-foreground">
-                {{ formatTimeRange(thought.createTime) }}
-              </span>
+            <div class="flex min-w-0 flex-1 flex-col gap-1">
+              <div class="flex justify-between items-start gap-2">
+                <span class="text-sm font-medium leading-snug text-foreground whitespace-pre-wrap line-clamp-3 flex-1">
+                  {{ thought.content }}
+                </span>
+                <span class="text-[10px] text-muted-foreground flex-shrink-0 whitespace-nowrap mt-0.5">
+                  {{ formatThoughtTime(thought.createTime) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
