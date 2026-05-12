@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { Page } from '@vben/common-ui';
-import { useUserStore } from '@vben/stores';
 
 import { Card, message, Skeleton, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -13,7 +12,6 @@ import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'LeetCode' });
 
-const userStore = useUserStore();
 const username = ref('');
 
 const profileLoading = ref(false);

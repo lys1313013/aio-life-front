@@ -10,7 +10,7 @@ import { $t } from '@vben/locales';
 
 import { message } from 'ant-design-vue';
 
-import { resetPasswordApi, sendResetPasswordCodeApi } from '#/api';
+import { resetPasswordApi, sendResetPasswordCodeApi } from '#/api/core/auth';
 
 defineOptions({ name: 'ForgetPassword' });
 

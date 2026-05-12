@@ -372,7 +372,7 @@ const getPriorityLabel = (priority: number) => {
   return '低';
 };
 
-const handleStar = async (detail: Detail) => {
+const handleStar = async (detail: any) => {
   if (detail.isStarred === 1) {
     detail.isStarred = 0;
     await unstarTaskDetail(detail.id);
@@ -425,7 +425,7 @@ const handleEditOk = async () => {
 };
 
 const confirmDeleteColumn = (columnId: number) => {
-  Modal.confirm({
+  AModal.confirm({
     title: '确认删除列',
     content: '删除列将同时删除该列下的所有任务，确定要删除吗？',
     okText: '确定',

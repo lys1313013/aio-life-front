@@ -108,8 +108,8 @@ const statusMap: Record<number, { color: string; label: string }> = {
 
 const autoCalculateDates = (type: number) => {
   const now = dayjs();
-  let startDate: Dayjs;
-  let endDate: Dayjs;
+  let startDate: Dayjs | undefined;
+  let endDate: Dayjs | undefined;
 
   switch (type) {
     case 1: {

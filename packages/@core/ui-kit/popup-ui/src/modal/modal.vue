@@ -50,10 +50,8 @@ const props = withDefaults(defineProps<Props>(), {
 const components = globalShareState.getComponents();
 
 const contentRef = ref();
-const wrapperRef = ref<HTMLElement>();
 const dialogRef = ref();
 const headerRef = ref();
-const footerRef = ref();
 
 const id = useId();
 

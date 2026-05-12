@@ -26,7 +26,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {});
 
-const { contentElement, overlayStyle } = useLayoutContentStyle();
+const { overlayStyle } = useLayoutContentStyle();
 
 const style = computed((): CSSProperties => {
   const {

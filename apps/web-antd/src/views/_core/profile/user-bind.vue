@@ -67,7 +67,7 @@ const handleAdd = () => {
   modalVisible.value = true;
 };
 
-const handleEdit = (record: UserBindEntity) => {
+const handleEdit = (record: any) => {
   formState.value = { ...record, accessToken: '' }; // 编辑时不回显Token
   modalVisible.value = true;
 };

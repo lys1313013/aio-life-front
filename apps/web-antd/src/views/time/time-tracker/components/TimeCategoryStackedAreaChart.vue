@@ -49,7 +49,7 @@ const chartData = computed(() => {
 
     // 初始化24小时的数据
     filteredCategories.forEach((cat) => {
-      seriesData[cat.id] = Array.from({ length: 24 }).fill(0);
+      seriesData[cat.id] = new Array(24).fill(0);
     });
 
     // 填充数据

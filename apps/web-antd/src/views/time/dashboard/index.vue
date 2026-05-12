@@ -51,15 +51,6 @@ const dateDisplay = computed(() => {
   }
 });
 
-const filteredTimeSlots = computed(() => {
-  if (selectedFilterCategoryIds.value.length === 0) {
-    return timeSlots.value;
-  }
-  return timeSlots.value.filter((slot) =>
-    selectedFilterCategoryIds.value.includes(slot.categoryId),
-  );
-});
-
 const trackedCards = computed(() => {
   return categories.value
     .filter((cat) => cat.isTrackTime)
@@ -99,11 +90,6 @@ const trackedCards = computed(() => {
               : token.value.colorSuccess,
       };
     });
-});
-
-const activeDaysCount = computed(() => {
-  const activeDates = new Set(timeSlots.value.map((slot) => slot.date));
-  return activeDates.size;
 });
 
 const handleFilterChange = (categoryIds: null | string[]) => {

@@ -66,7 +66,7 @@ const formatCurrency = (amount: number) => {
 };
 
 // 公共图表配置
-const getCommonChartConfig = (title: string) => ({
+const getCommonChartConfig = () => ({
   tooltip: {
     trigger: 'axis' as const,
     axisPointer: { type: 'shadow' as const },
@@ -271,9 +271,9 @@ const updateBalanceChart = () => {
   const chartData = [...data].reverse();
 
   renderBalanceChart({
-    ...getCommonChartConfig('月度收支结余趋势'),
+    ...getCommonChartConfig(),
     tooltip: {
-      ...getCommonChartConfig('').tooltip,
+      ...getCommonChartConfig().tooltip,
       formatter: tooltipFormatter,
     },
     xAxis: {
@@ -411,9 +411,9 @@ const updateYearChart = () => {
   const chartData = [...data].reverse();
 
   renderYearChart({
-    ...getCommonChartConfig('年度收支结余对比'),
+    ...getCommonChartConfig(),
     tooltip: {
-      ...getCommonChartConfig('').tooltip,
+      ...getCommonChartConfig().tooltip,
       formatter: tooltipFormatter,
     },
     xAxis: {

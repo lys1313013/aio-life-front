@@ -179,7 +179,7 @@ function calculateWatchedDuration(
     let watchedSeconds = 0;
     // 累加当前集数之前的所有分P时长
     for (let i = 0; i < Math.min(currentEpisode - 1, pages.length); i++) {
-      watchedSeconds += pages[i].duration;
+      watchedSeconds += pages[i]?.duration || 0;
     }
     return Math.max(0, Math.min(totalDurationSeconds, watchedSeconds));
   }
@@ -229,7 +229,7 @@ export async function parseBilibiliUrl(url: string) {
 
   // 匹配av号格式
   const avMatch = url.match(/AV(\d+)/i);
-  if (avMatch) {
+  if (avMatch && avMatch[1]) {
     aid = avMatch[1];
   }
 

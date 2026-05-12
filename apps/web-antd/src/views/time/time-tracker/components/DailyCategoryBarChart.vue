@@ -23,17 +23,6 @@ const props = defineProps<Props>();
 const chartRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 
-const selectedFilterCategories = computed(() => {
-  if (
-    !props.selectedFilterCategoryIds ||
-    props.selectedFilterCategoryIds.length === 0
-  )
-    return [];
-  return props.categories.filter((cat) =>
-    props.selectedFilterCategoryIds?.includes(cat.id),
-  );
-});
-
 // 按天统计分类时长
 const dailyCategoryData = computed(() => {
   const days: string[] = [];
@@ -86,7 +75,7 @@ const dailyCategoryData = computed(() => {
 
       const arr = seriesData[slot.categoryId];
       if (arr && arr[i] !== undefined) {
-        arr[i] += slot.endTime - slot.startTime + 1;
+        arr[i] = (arr[i] as number) + (slot.endTime - slot.startTime);
       }
     });
   }

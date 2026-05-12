@@ -84,9 +84,9 @@ const monthlyStats = computed(() => {
   const monthlyData: Record<string, Record<string, number>> = {};
 
   // 遍历去重后的数据进行统计
-  dailyUniqueExercises.forEach((ids, dateTypeKey) => {
+  dailyUniqueExercises.forEach((_ids, dateTypeKey) => {
     const [dateStr, typeId] = dateTypeKey.split('_');
-    const date = new Date(dateStr);
+    const date = new Date(dateStr || '');
 
     if (!isNaN(date.getTime())) {
       const year = date.getFullYear();
@@ -94,7 +94,7 @@ const monthlyStats = computed(() => {
       const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
 
       // 获取运动类型标签
-      const typeLabel = getExerciseTypeLabel(typeId);
+      const typeLabel = getExerciseTypeLabel(typeId || '');
 
       // 初始化月份和类型的计数器
       if (!monthlyData[monthKey]) {
@@ -157,31 +157,6 @@ const totalExercise = computed(() => {
   return uniqueExercises.size;
 });
 
-// 计算每日运动统计（按类型去重）
-const dailyStats = computed(() => {
-  const dailyData: Record<string, Set<string>> = {}; // 日期 -> 运动类型集合
-
-  tableData.value.forEach((row) => {
-    if (row.exerciseDate && row.exerciseTypeId) {
-      const date = row.exerciseDate;
-      const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
-
-      if (!dailyData[date]) {
-        dailyData[date] = new Set();
-      }
-      dailyData[date].add(typeLabel);
-    }
-  });
-
-  // 转换为每个日期的运动类型数量
-  const result: Record<string, number> = {};
-  Object.keys(dailyData).forEach((date) => {
-    result[date] = dailyData[date].size;
-  });
-
-  return result;
-});
-
 // 更新图表
 const updateCharts = () => {
   const monthlyData = monthlyStats.value;
@@ -205,7 +180,7 @@ const updateCharts = () => {
   // 计算每月总计
   const monthlyTotals = monthKeys.map((monthKey) => {
     let total = 0;
-    Object.values(monthlyData[monthKey]).forEach((count) => {
+    Object.values(monthlyData[monthKey] || {}).forEach((count) => {
       total += count;
     });
     return total;
@@ -217,7 +192,7 @@ const updateCharts = () => {
       type: 'bar',
       stack: '总量', // 堆叠显示
       data: monthKeys.map((monthKey) => {
-        return monthlyData[monthKey][type] || 0;
+        return monthlyData[monthKey]?.[type] || 0;
       }),
       label: {
         show: true,
@@ -255,11 +230,8 @@ const updateCharts = () => {
     },
     emphasis: {
       disabled: true,
-    },
-  });
-
-  // 计算总运动次数
-  const grandTotal = monthlyTotals.reduce((sum, val) => sum + val, 0);
+    } as any,
+  } as any);
 
   // 渲染柱状图（按类型分类显示）
   renderLineChart({
@@ -352,7 +324,7 @@ const updateCharts = () => {
         },
       },
     },
-    series: seriesData,
+    series: seriesData as any,
   });
 
   // 渲染饼图
@@ -689,7 +661,7 @@ const [Grid, gridApi] = useVbenVxeGrid({
     // vxe-table 不直接支持 rowTouchStart 事件，需要通过 cell-mouseenter 等间接方式或者自定义事件
     // 但 vxe-grid 组件支持 v-on 绑定所有 vxe-table 事件
   },
-});
+} as any);
 
 const updateColumnsVisibility = () => {
   if (!gridApi?.grid) return;
@@ -838,10 +810,6 @@ const tableReload = () => {
               <span class="card-date">{{ row.exerciseDate }}</span>
             </div>
             <div class="card-body">
-              <div class="card-row">
-                <span class="label">数量:</span>
-                <span class="value">{{ row.exerciseCount }}</span>
-              </div>
               <div class="card-row" v-if="row.description">
                 <span class="label">备注:</span>
                 <span class="value">{{ row.description }}</span>

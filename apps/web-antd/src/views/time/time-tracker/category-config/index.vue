@@ -60,9 +60,7 @@ const loading = ref(false);
 const loadingCategoryId = ref<null | string>(null);
 const categories = ref<TimeTrackerCategoryEntity[]>([]);
 const mergedCategories = ref<MergedCategory[]>([]);
-const showGuide = ref(
-  localStorage.getItem('time-tracker-category-guide') !== 'false',
-);
+
 
 // 分类数据计算
 const visibleCategories = computed(() =>
@@ -103,10 +101,6 @@ const editingCategory = ref<null | TimeTrackerCategoryEntity>(null);
 const isOverrideMode = ref(false);
 const selectedIconSet = ref('lucide');
 
-const openIconPicker = () => {
-  showIconPickerModal.value = true;
-};
-
 const handleIconSelect = (icon: string) => {
   formState.value.icon = icon;
   showIconPickerModal.value = false;
@@ -134,11 +128,6 @@ const modalTitle = computed(() => {
 });
 
 // 方法
-const handleCloseGuide = () => {
-  localStorage.setItem('time-tracker-category-guide', 'false');
-  showGuide.value = false;
-};
-
 const fetchCategories = async () => {
   loading.value = true;
   try {
@@ -212,7 +201,7 @@ const handleAddCategory = () => {
   showEditModal.value = true;
 };
 
-const handleEditClick = (record: MergedCategory) => {
+const handleEditClick = (record: any) => {
   if (record.categoryType === 'public') {
     handleOverride(record);
   } else {
@@ -220,7 +209,7 @@ const handleEditClick = (record: MergedCategory) => {
   }
 };
 
-const handleEdit = (record: MergedCategory) => {
+const handleEdit = (record: any) => {
   editingCategory.value = {
     id: record.realId,
     name: record.name,
@@ -238,7 +227,7 @@ const handleEdit = (record: MergedCategory) => {
   showEditModal.value = true;
 };
 
-const handleOverride = (record: MergedCategory) => {
+const handleOverride = (record: any) => {
   editingCategory.value = {
     id: record.realId,
     templateId: record.originalId,
@@ -256,7 +245,7 @@ const handleOverride = (record: MergedCategory) => {
   showEditModal.value = true;
 };
 
-const handleHide = async (record: MergedCategory) => {
+const handleHide = async (record: any) => {
   try {
     loadingCategoryId.value = record.realId!;
     await updateCategory({
@@ -273,13 +262,9 @@ const handleHide = async (record: MergedCategory) => {
   }
 };
 
-const handleToggleEnable = async (record: MergedCategory, checked: boolean) => {
-  await (checked ? handleUnhide(record) : handleHide(record));
-};
-
 const handleToggleTrackTime = async (
-  record: MergedCategory,
-  checked: boolean,
+  record: any,
+  checked: any,
 ) => {
   try {
     loadingCategoryId.value = record.realId!;
@@ -296,7 +281,7 @@ const handleToggleTrackTime = async (
   }
 };
 
-const handleUnhide = async (record: MergedCategory) => {
+const handleUnhide = async (record: any) => {
   try {
     loadingCategoryId.value = record.realId!;
     await updateCategory({
@@ -313,7 +298,7 @@ const handleUnhide = async (record: MergedCategory) => {
   }
 };
 
-const handleDelete = async (record: MergedCategory) => {
+const handleDelete = async (record: any) => {
   try {
     await deleteCategory(record.realId!);
     message.success('删除成功');
@@ -448,7 +433,7 @@ onMounted(() => {
 
         <Table
           :data-source="visibleCategories"
-          :columns="columns"
+          :columns="columns as any"
           :loading="loading"
           :pagination="false"
           row-key="id"
@@ -516,7 +501,7 @@ onMounted(() => {
                 :loading="loadingCategoryId === record.realId"
                 size="small"
                 @change="
-                  (checked: boolean) => handleToggleTrackTime(record, checked)
+                  (checked: any) => handleToggleTrackTime(record, checked)
                 "
               />
             </template>

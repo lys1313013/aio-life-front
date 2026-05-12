@@ -138,7 +138,7 @@ const handleAddCategory = () => {
   editModalVisible.value = true;
 };
 
-const handleEditCategory = (record: TimeTrackerCategoryEntity) => {
+const handleEditCategory = (record: any) => {
   isEdit.value = true;
   if (record.icon?.includes(':')) {
     const parts = record.icon.split(':');
@@ -150,7 +150,7 @@ const handleEditCategory = (record: TimeTrackerCategoryEntity) => {
   editModalVisible.value = true;
 };
 
-const handleDeleteCategory = async (record: TimeTrackerCategoryEntity) => {
+const handleDeleteCategory = async (record: any) => {
   if (!record.id) return;
   try {
     await adminDeleteCategory(record.id);
@@ -163,8 +163,8 @@ const handleDeleteCategory = async (record: TimeTrackerCategoryEntity) => {
 };
 
 const handleToggleEnable = async (
-  record: TimeTrackerCategoryEntity,
-  checked: boolean,
+  record: any,
+  checked: any,
 ) => {
   if (!record.id) return;
   try {
@@ -181,8 +181,8 @@ const handleToggleEnable = async (
 };
 
 const handleToggleTrackTime = async (
-  record: TimeTrackerCategoryEntity,
-  checked: boolean,
+  record: any,
+  checked: any,
 ) => {
   if (!record.id) return;
   try {
@@ -237,7 +237,7 @@ const handleSubmitCategory = async () => {
 
         <Table
           :data-source="publicCategories"
-          :columns="columns"
+          :columns="columns as any"
           :loading="loading"
           :pagination="false"
           row-key="id"
@@ -300,7 +300,7 @@ const handleSubmitCategory = async () => {
                 :loading="loadingCategoryId === record.id"
                 size="small"
                 @change="
-                  (checked: boolean) => handleToggleTrackTime(record, checked)
+                  (checked: any) => handleToggleTrackTime(record, checked)
                 "
               />
             </template>
@@ -310,7 +310,7 @@ const handleSubmitCategory = async () => {
                 :loading="loadingCategoryId === record.id"
                 size="small"
                 @change="
-                  (checked: boolean) => handleToggleEnable(record, checked)
+                  (checked: any) => handleToggleEnable(record, checked)
                 "
               />
             </template>

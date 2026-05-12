@@ -3,8 +3,7 @@ import type { LLMKey } from '#/api/core/llm';
 
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 
-import { useIsMobile } from '@vben/hooks';
-
+import type { TableColumnsType } from 'ant-design-vue';
 import {
   message as antMessage,
   Button,
@@ -25,7 +24,6 @@ import {
   updateLLMKeyApi,
 } from '#/api/core/llm';
 
-const { isMobile } = useIsMobile();
 const dropdownRef = ref<HTMLElement | null>(null);
 
 const handleClickOutside = (event: MouseEvent) => {
@@ -54,7 +52,7 @@ const formData = reactive({
   modelName: 'gpt-4o',
   apiKey: '',
   baseUrl: 'https://api.openai.com/v1',
-  isDefault: 0,
+  isDefault: false,
 });
 
 // 预置大模型选项
@@ -129,7 +127,7 @@ const currentPreset = computed(() => {
   );
 });
 
-const columns = [
+const columns: TableColumnsType = [
   {
     title: '模型名称',
     dataIndex: 'modelName',
@@ -166,8 +164,9 @@ const handleAdd = () => {
   formVisible.value = true;
 };
 
-const handleEdit = (key: LLMKey) => {
+const handleEdit = (key: any) => {
   Object.assign(formData, key);
+  formData.isDefault = !!key.isDefault;
   formVisible.value = true;
 };
 

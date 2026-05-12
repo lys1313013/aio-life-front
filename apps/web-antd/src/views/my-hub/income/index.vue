@@ -198,7 +198,7 @@ function openAddFormModal() {
 
 const dashboardRef = ref<InstanceType<typeof IncomeDashboard>>();
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
 
 const deleteRow = async (row: RowType) => {
   try {

@@ -9,7 +9,6 @@ import {
   MoreOutlined,
   PlusOutlined,
 } from '@ant-design/icons-vue';
-import { useWindowSize } from '@vueuse/core';
 import {
   Button,
   DatePicker,
@@ -33,9 +32,6 @@ import {
   updateAnniversaryRecord,
 } from '#/api/my-hub/anniversary';
 
-const { width } = useWindowSize();
-const isMobile = computed(() => width.value < 768);
-
 const anniversaries = ref<AnniversaryRecord[]>([]);
 const modalVisible = ref(false);
 const isEdit = ref(false);
@@ -58,7 +54,7 @@ const formState = ref<{
   icon: '🎉',
 });
 
-const rules = {
+const rules: Record<string, any> = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   targetDate: [{ required: true, message: '请选择日期', trigger: 'change' }],
 };
@@ -131,7 +127,7 @@ const openModal = (item?: AnniversaryRecord) => {
       title: item.title,
       targetDate: dayjs(item.targetDate),
       note: item.note || '',
-      color: item.color || bgOptions[0].value,
+      color: item.color || bgOptions[0]?.value || 'from-pink-400 to-rose-500',
       icon: item.icon || '🎉',
     };
   } else {
@@ -140,7 +136,7 @@ const openModal = (item?: AnniversaryRecord) => {
       title: '',
       targetDate: dayjs(),
       note: '',
-      color: bgOptions[0].value,
+      color: bgOptions[0]?.value || 'from-pink-400 to-rose-500',
       icon: '🎉',
     };
   }

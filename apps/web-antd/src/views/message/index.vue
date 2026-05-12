@@ -23,6 +23,7 @@ import {
 } from '#/api/core/llm';
 import {
   createMessageApi,
+  deleteMessageApi,
   getMessageListApi,
   markAsReadApi,
 } from '#/api/core/message';
@@ -480,8 +481,6 @@ const handleDeleteConversation = async (userId: string) => {
     loading.value = false;
   }
 };
-
-const aiMessageRef = ref<Message | null>(null);
 
 const handleAISendMessage = async () => {
   if (!aiChatInput.value.trim() || isStreaming.value) return;

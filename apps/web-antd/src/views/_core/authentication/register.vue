@@ -10,7 +10,7 @@ import { $t } from '@vben/locales';
 
 import { message } from 'ant-design-vue';
 
-import { registerApi, sendEmailCodeApi } from '#/api';
+import { registerApi, sendEmailCodeApi } from '#/api/core/auth';
 
 defineOptions({ name: 'Register' });
 

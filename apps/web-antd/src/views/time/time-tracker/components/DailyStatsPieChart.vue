@@ -18,22 +18,12 @@ interface Props {
   selectedFilterCategoryIds: null | string[];
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  categories: () => [],
+});
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
-
-const selectedFilterCategories = computed(() => {
-  if (
-    !props.selectedFilterCategoryIds ||
-    props.selectedFilterCategoryIds.length === 0
-  )
-    return [];
-  return props.categories.filter((cat) =>
-    props.selectedFilterCategoryIds?.includes(cat.id),
-  );
-});
-
 // 按天统计时长
 const dailyStatsData = computed(() => {
   const days: string[] = [];
@@ -139,7 +129,6 @@ const renderPieChart = () => {
             const duration = params.value;
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            const percentage = params.percent;
 
             return duration >= 60
               ? `${params.name}\n${hours}h${minutes}m`

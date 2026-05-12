@@ -90,10 +90,6 @@ const saveEdit = (conversationId: string) => {
   }
   editingId.value = null;
 };
-
-const cancelEdit = () => {
-  editingId.value = null;
-};
 </script>
 
 <template>

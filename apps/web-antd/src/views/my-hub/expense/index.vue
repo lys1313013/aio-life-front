@@ -944,7 +944,7 @@ function submitDeleteData() {
   }).then(() => gridApi.reload());
 }
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
 
 const deleteRow = async (row: RowType) => {
   try {

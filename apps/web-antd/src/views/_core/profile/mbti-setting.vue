@@ -134,7 +134,7 @@ const handleViewHistory = async () => {
   }
 };
 
-const handleViewDetail = async (record: MbtiResult) => {
+const handleViewDetail = async (record: any) => {
   try {
     if (record.id) {
       const detail = await getMbtiById(record.id);
@@ -176,7 +176,12 @@ const openResultsPage = () => {
   }
 };
 
-const getTraitDescription = (trait: string) => {
+const openWindow = (url: string) => {
+  window.open(url, '_blank');
+};
+
+const getTraitDescription = (trait: string | number) => {
+  const traitStr = String(trait);
   const descriptions: Record<string, string> = {
     hero: '英雄 - 你最突出的特质',
     parent: '父母 - 你善于照顾他人的特质',
@@ -187,10 +192,11 @@ const getTraitDescription = (trait: string) => {
     trickster: '骗徒 - 你容易欺骗自己的一面',
     demon: '恶魔 - 你需要警惕的阴影面',
   };
-  return descriptions[trait] || trait;
+  return descriptions[traitStr] || traitStr;
 };
 
-const getTraitChinese = (trait: string) => {
+const getTraitChinese = (trait: string | number) => {
+  const traitStr = String(trait);
   const names: Record<string, string> = {
     hero: '英雄',
     parent: '父母',
@@ -201,7 +207,7 @@ const getTraitChinese = (trait: string) => {
     trickster: '骗徒',
     demon: '恶魔',
   };
-  return names[trait] || trait;
+  return names[traitStr] || traitStr;
 };
 
 const getMatchesArray = (matches: any): string[] => {
@@ -292,7 +298,7 @@ onUnmounted(() => {
               <Button
                 type="primary"
                 size="large"
-                @click="window.open(testUrl, '_blank')"
+                @click="openWindow(testUrl)"
               >
                 在新窗口打开测试
               </Button>

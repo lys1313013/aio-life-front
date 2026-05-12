@@ -5,8 +5,6 @@ import type { VbenFormSchema } from '@vben-core/form-ui';
 
 import { computed, reactive } from 'vue';
 
-import { useIsMobile } from '@vben/hooks';
-
 import { useVbenForm } from '@vben-core/form-ui';
 import { VbenButton } from '@vben-core/shadcn-ui';
 
@@ -21,8 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   submit: [Recordable<any>];
 }>();
-
-const { isMobile } = useIsMobile();
 
 const [Form, formApi] = useVbenForm(
   reactive({

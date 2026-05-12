@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import type { BasicOption } from '@vben/types';
-
 import type { VbenFormSchema } from '#/adapter/form';
-import type { UpdateUserParams } from '#/api';
+import type { UpdateUserParams } from '#/api/core/user';
 
 import { computed, onMounted, ref } from 'vue';
 
@@ -10,26 +8,11 @@ import { ProfileBaseSetting } from '@vben/common-ui';
 
 import { message } from 'ant-design-vue';
 
-import { getUserInfoApi, updateUserInfoApi, uploadAvatarApi } from '#/api';
+import { getUserInfoApi, updateUserInfoApi, uploadAvatarApi } from '#/api/core/user';
 import { useAuthStore } from '#/store/auth';
 
 const authStore = useAuthStore();
 const profileBaseSettingRef = ref();
-
-const MOCK_ROLES_OPTIONS: BasicOption[] = [
-  {
-    label: '管理员',
-    value: 'super',
-  },
-  {
-    label: '用户',
-    value: 'user',
-  },
-  {
-    label: '测试',
-    value: 'test',
-  },
-];
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [

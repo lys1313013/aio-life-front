@@ -592,7 +592,7 @@ const onAdminVectorTextBlur = () => {
   }
 };
 
-const onAdminVectorUseJsonChange = (checked: boolean) => {
+const onAdminVectorUseJsonChange = (checked: any) => {
   if (!checked) {
     try {
       syncAdminVectorFromText();

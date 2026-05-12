@@ -53,7 +53,7 @@ const wrapperClass = computed(() => {
 
 provideFormRenderProps(props);
 
-const { isCalculated, keepFormItemIndex, wrapperRef } = useExpandable(props);
+const { isCalculated, keepFormItemIndex } = useExpandable(props);
 
 const shapes = computed(() => {
   const resultShapes: FormShape[] = [];

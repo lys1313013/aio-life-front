@@ -9,7 +9,6 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { WorkbenchQuickNav } from '@vben/common-ui';
-import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
 import {
@@ -48,7 +47,6 @@ const watchedTasks = ref<WatchedTaskDetail[]>([]);
 const watchedLoading = ref(true);
 const pinnedThoughts = ref<any[]>([]);
 const thoughtsLoading = ref(true);
-const userStore = useUserStore();
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();

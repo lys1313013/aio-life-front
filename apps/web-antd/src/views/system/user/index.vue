@@ -108,7 +108,7 @@ const gridOptions: VxeGridProps<RowType> = {
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions,
   gridOptions,
-});
+} as any);
 
 function openFormModal(row?: RowType) {
   formModalApi.setData({ values: row || {} }).open();

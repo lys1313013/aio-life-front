@@ -206,15 +206,19 @@ const [Modal, modalApi] = useVbenModal({
     }
   },
   title: '',
+  bordered: false,
+  headerClass: 'border-none',
+  footerClass: 'border-none',
+  contentClass: 'p-6',
 });
 </script>
 <template>
   <Modal>
     <Form />
 
-    <!-- 连续录入模式开关 -->
-    <div class="continuous-mode-switch">
-      <div class="flex items-center gap-2">
+    <template #prepend-footer>
+      <!-- 连续录入模式开关 -->
+      <div class="mr-auto flex items-center gap-2">
         <span class="text-sm text-gray-600">连续录入:</span>
         <div
           class="relative inline-block h-6 w-10 cursor-pointer"
@@ -230,15 +234,6 @@ const [Modal, modalApi] = useVbenModal({
           ></div>
         </div>
       </div>
-    </div>
+    </template>
   </Modal>
 </template>
-
-<style scoped>
-.continuous-mode-switch {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  z-index: 10;
-}
-</style>

@@ -1299,7 +1299,7 @@ const deleteRow = (row: RowType) => {
   message.success('删除成功');
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ gridOptions });
+const [Grid, gridApi] = useVbenVxeGrid({ gridOptions } as any);
 </script>
 
 <template>

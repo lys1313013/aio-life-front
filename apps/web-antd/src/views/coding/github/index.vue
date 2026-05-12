@@ -25,7 +25,7 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { getGithubContributionStats } from '#/api';
+import { getGithubContributionStats } from '#/api/core/github';
 import { getUserBindListApi } from '#/api/core/user-bind';
 
 import ContributionGraph from '../components/ContributionGraph.vue';
