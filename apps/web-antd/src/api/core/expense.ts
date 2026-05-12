@@ -10,8 +10,15 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insertOrUpdate(data: any) {
-  return await requestClient.post('/expense/insertOrUpdate', data);
+export async function insertData(data: any) {
+  return await requestClient.post('/expense', data);
+}
+
+/**
+ * 修改
+ */
+export async function updateData(data: any) {
+  return await requestClient.put('/expense', data);
 }
 
 export async function saveBatch(dataList: any) {

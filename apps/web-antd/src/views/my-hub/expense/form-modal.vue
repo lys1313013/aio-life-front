@@ -5,7 +5,7 @@ import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
-import { insertOrUpdate } from '#/api/core/expense';
+import { insertData, updateData } from '#/api/core/expense';
 import { PAY_TYPE_OPTIONS } from '#/constants/expense';
 
 defineOptions({
@@ -148,7 +148,11 @@ const [Modal, modalApi] = useVbenModal({
       processedData.expTime = `${processedData.expTime} 00:00:00`;
     }
 
-    await insertOrUpdate(processedData);
+    if (processedData.id) {
+      await updateData(processedData);
+    } else {
+      await insertData(processedData);
+    }
 
     // 根据连续录入模式决定是否关闭弹窗
     if (continuousMode.value) {
