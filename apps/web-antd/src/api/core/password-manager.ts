@@ -45,6 +45,16 @@ export async function deletePasswordApi(id: string) {
   return requestClient.delete<boolean>(`/password/${id}`);
 }
 
+export const DEFAULT_PASSWORD_CATEGORIES = [
+  '工作',
+  '生活',
+  '学习',
+  '金融',
+  '社交',
+  '游戏',
+  '其他',
+];
+
 export async function getCategoriesApi() {
   return requestClient.get<string[]>('/password/categories');
 }
