@@ -569,21 +569,37 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
           <div
             v-for="(thought, index) in pinnedThoughts"
             :key="thought.id"
-            class="group relative flex items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer"
+            class="group relative flex cursor-pointer items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground"
             :style="{ animationDelay: `${index * 50}ms` }"
-            @click="navTo({ title: '闪念', url: '/my-hub/think', icon: 'mdi:lightbulb-on-outline' })"
+            @click="
+              navTo({
+                title: '闪念',
+                url: '/my-hub/think',
+                icon: 'mdi:lightbulb-on-outline',
+              })
+            "
           >
             <div class="mt-1 flex-shrink-0">
-              <svg class="size-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12M8.8,14L10,12.8V4H14V12.8L15.2,14H8.8Z" />
+              <svg
+                class="size-4 text-yellow-500"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M16,12V4H17V2H7V4H8V12L6,14V16H11.2V22H12.8V16H18V14L16,12M8.8,14L10,12.8V4H14V12.8L15.2,14H8.8Z"
+                />
               </svg>
             </div>
             <div class="flex min-w-0 flex-1 flex-col gap-1">
-              <div class="flex justify-between items-start gap-2">
-                <span class="text-sm font-medium leading-snug text-foreground whitespace-pre-wrap line-clamp-3 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <span
+                  class="line-clamp-3 flex-1 whitespace-pre-wrap text-sm font-medium leading-snug text-foreground"
+                >
                   {{ thought.content }}
                 </span>
-                <span class="text-[10px] text-muted-foreground flex-shrink-0 whitespace-nowrap mt-0.5">
+                <span
+                  class="mt-0.5 flex-shrink-0 whitespace-nowrap text-[10px] text-muted-foreground"
+                >
                   {{ formatThoughtTime(thought.createTime) }}
                 </span>
               </div>

@@ -180,7 +180,7 @@ const openWindow = (url: string) => {
   window.open(url, '_blank');
 };
 
-const getTraitDescription = (trait: string | number) => {
+const getTraitDescription = (trait: number | string) => {
   const traitStr = String(trait);
   const descriptions: Record<string, string> = {
     hero: '英雄 - 你最突出的特质',
@@ -195,7 +195,7 @@ const getTraitDescription = (trait: string | number) => {
   return descriptions[traitStr] || traitStr;
 };
 
-const getTraitChinese = (trait: string | number) => {
+const getTraitChinese = (trait: number | string) => {
   const traitStr = String(trait);
   const names: Record<string, string> = {
     hero: '英雄',
@@ -295,11 +295,7 @@ onUnmounted(() => {
                 <ExperimentOutlined />
                 如果测试页面无法在下方显示，请点击按钮在新窗口打开
               </p>
-              <Button
-                type="primary"
-                size="large"
-                @click="openWindow(testUrl)"
-              >
+              <Button type="primary" size="large" @click="openWindow(testUrl)">
                 在新窗口打开测试
               </Button>
             </div>

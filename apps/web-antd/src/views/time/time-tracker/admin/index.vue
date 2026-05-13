@@ -162,10 +162,7 @@ const handleDeleteCategory = async (record: any) => {
   }
 };
 
-const handleToggleEnable = async (
-  record: any,
-  checked: any,
-) => {
+const handleToggleEnable = async (record: any, checked: any) => {
   if (!record.id) return;
   try {
     loadingCategoryId.value = record.id;
@@ -180,10 +177,7 @@ const handleToggleEnable = async (
   }
 };
 
-const handleToggleTrackTime = async (
-  record: any,
-  checked: any,
-) => {
+const handleToggleTrackTime = async (record: any, checked: any) => {
   if (!record.id) return;
   try {
     loadingCategoryId.value = record.id;
@@ -309,9 +303,7 @@ const handleSubmitCategory = async () => {
                 :checked="record.isEnabled === 1"
                 :loading="loadingCategoryId === record.id"
                 size="small"
-                @change="
-                  (checked: any) => handleToggleEnable(record, checked)
-                "
+                @change="(checked: any) => handleToggleEnable(record, checked)"
               />
             </template>
             <template v-else-if="column.key === 'action'">

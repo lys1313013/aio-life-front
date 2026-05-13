@@ -5,20 +5,20 @@ import { ref } from 'vue';
 
 import { CopyOutlined, LockOutlined } from '@ant-design/icons-vue';
 import {
+  AutoComplete,
   Button,
   Form,
   FormItem,
   Input,
   message,
   Modal,
-  Select,
-  SelectOption,
   Spin,
   Switch,
 } from 'ant-design-vue';
 
 import {
   createPasswordApi,
+  DEFAULT_PASSWORD_CATEGORIES,
   getCategoriesApi,
   getPasswordApi,
   updatePasswordApi,
@@ -71,7 +71,7 @@ const fetchCategories = async () => {
   try {
     categories.value = await getCategoriesApi();
   } catch {
-    categories.value = ['工作', '生活', '金融', '社交', '其他'];
+    categories.value = [...DEFAULT_PASSWORD_CATEGORIES];
   }
 };
 
@@ -282,11 +282,11 @@ defineExpose({ openModal });
         </FormItem>
 
         <FormItem label="分类">
-          <Select v-model:value="formState.category">
-            <SelectOption v-for="cat in categories" :key="cat" :value="cat">
-              {{ cat }}
-            </SelectOption>
-          </Select>
+          <AutoComplete
+            v-model:value="formState.category"
+            :options="categories.map((c) => ({ value: c }))"
+            placeholder="请选择或输入分类"
+          />
         </FormItem>
 
         <FormItem label="备注">

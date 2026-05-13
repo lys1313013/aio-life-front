@@ -13,7 +13,11 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { deleteApiKeyApi, generateApiKeyApi, getApiKeyListApi } from '#/api/core/api-key';
+import {
+  deleteApiKeyApi,
+  generateApiKeyApi,
+  getApiKeyListApi,
+} from '#/api/core/api-key';
 
 const loading = ref(false);
 const dataSource = ref<any[]>([]);

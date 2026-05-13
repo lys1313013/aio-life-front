@@ -117,6 +117,10 @@ const [Modal, modalApi] = useVbenModal({
     }
   },
   title: '新增/编辑',
+  bordered: false,
+  headerClass: 'border-none',
+  footerClass: 'border-none',
+  contentClass: 'p-6',
 });
 </script>
 <template>

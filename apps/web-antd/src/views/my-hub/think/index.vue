@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, toRaw } from 'vue';
 
-import { DeleteOutlined, PlusOutlined, PushpinFilled } from '@ant-design/icons-vue';
+import {
+  DeleteOutlined,
+  PlusOutlined,
+  PushpinFilled,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -286,8 +290,11 @@ onMounted(async () => {
           <div class="card-content">{{ thought.content }}</div>
           <div class="card-footer">
             <span class="card-date">{{ formatDate(thought.createTime) }}</span>
-            <div style="display: flex; gap: 8px; align-items: center;">
-              <PushpinFilled v-if="thought.isPinned === 1" style="color: #faad14" />
+            <div style="display: flex; gap: 8px; align-items: center">
+              <PushpinFilled
+                v-if="thought.isPinned === 1"
+                style="color: #faad14"
+              />
               <div class="event-badge" v-if="(thought.events || []).length > 0">
                 {{ (thought.events || []).length }}
               </div>
@@ -359,7 +366,7 @@ onMounted(async () => {
           class="form-actions"
           :style="{
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
           }"
         >
           <div>
@@ -377,9 +384,21 @@ onMounted(async () => {
             </Popconfirm>
           </div>
           <Space>
-            <div style="display: flex; align-items: center; gap: 8px; margin-right: 16px;">
-              <span style="font-size: 14px; opacity: 0.85;">添加到首页</span>
-              <Switch v-model:checked="form.isPinned" :checkedValue="1" :unCheckedValue="0" size="small" />
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-right: 16px;
+              "
+            >
+              <span style="font-size: 14px; opacity: 0.85">添加到首页</span>
+              <Switch
+                v-model:checked="form.isPinned"
+                :checked-value="1"
+                :un-checked-value="0"
+                size="small"
+              />
             </div>
             <Button @click="closeCardModal" shape="round">取消</Button>
             <Button type="primary" @click="saveCard" shape="round">保存</Button>

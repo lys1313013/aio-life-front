@@ -8,7 +8,11 @@ import { ProfileBaseSetting } from '@vben/common-ui';
 
 import { message } from 'ant-design-vue';
 
-import { getUserInfoApi, updateUserInfoApi, uploadAvatarApi } from '#/api/core/user';
+import {
+  getUserInfoApi,
+  updateUserInfoApi,
+  uploadAvatarApi,
+} from '#/api/core/user';
 import { useAuthStore } from '#/store/auth';
 
 const authStore = useAuthStore();

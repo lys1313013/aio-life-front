@@ -61,7 +61,6 @@ const loadingCategoryId = ref<null | string>(null);
 const categories = ref<TimeTrackerCategoryEntity[]>([]);
 const mergedCategories = ref<MergedCategory[]>([]);
 
-
 // 分类数据计算
 const visibleCategories = computed(() =>
   mergedCategories.value.filter((c) => !c.isHidden),
@@ -262,10 +261,7 @@ const handleHide = async (record: any) => {
   }
 };
 
-const handleToggleTrackTime = async (
-  record: any,
-  checked: any,
-) => {
+const handleToggleTrackTime = async (record: any, checked: any) => {
   try {
     loadingCategoryId.value = record.realId!;
     await updateCategory({

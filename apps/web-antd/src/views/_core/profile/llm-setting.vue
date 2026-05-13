@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { TableColumnsType } from 'ant-design-vue';
+
 import type { LLMKey } from '#/api/core/llm';
 
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 
-import type { TableColumnsType } from 'ant-design-vue';
 import {
   message as antMessage,
   Button,

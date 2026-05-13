@@ -499,7 +499,9 @@ const handleExerciseTypeChange = (value: any, index: number) => {
       const currentTitle = formState.value.title;
       const isDefaultTitle =
         !currentTitle ||
-        exerciseTypeOptions.value.some((opt) => !!opt.label && opt.label === currentTitle);
+        exerciseTypeOptions.value.some(
+          (opt) => !!opt.label && opt.label === currentTitle,
+        );
       if (isDefaultTitle) {
         formState.value.title = option.label;
       }

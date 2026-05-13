@@ -32,6 +32,7 @@ import {
 import dayjs from 'dayjs';
 
 import {
+  DEFAULT_PASSWORD_CATEGORIES,
   deletePasswordApi,
   getCategoriesApi,
   getPasswordListApi,
@@ -115,7 +116,7 @@ const fetchCategories = async () => {
   try {
     categories.value = await getCategoriesApi();
   } catch {
-    categories.value = ['工作', '生活', '金融', '社交', '其他'];
+    categories.value = [...DEFAULT_PASSWORD_CATEGORIES];
   }
 };
 
@@ -379,6 +380,7 @@ onUnmounted(() => {
         placeholder="选择分类"
         class="w-32"
         allow-clear
+        show-search
       >
         <Select.Option v-for="cat in categories" :key="cat" :value="cat">
           {{ cat }}
