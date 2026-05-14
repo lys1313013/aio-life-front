@@ -13,7 +13,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { DeleteOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Col,
@@ -21,11 +21,13 @@ import {
   Input,
   InputNumber,
   message,
+  Modal,
   Popconfirm,
   Row,
   Select,
   Textarea,
   TimePicker,
+  theme,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -58,10 +60,25 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const { useToken } = theme;
+const { token } = useToken();
+
 // 分类计算属性
 const visibleCategories = computed(() => {
   return props.categories.filter((c) => !('isHidden' in c && c.isHidden));
 });
+
+const selectedCategory = computed(() => {
+  if (!formState.value.categoryId) return null;
+  return props.categories.find((c) => c.id === formState.value.categoryId) || null;
+});
+
+const categoryModalVisible = ref(false);
+const isMobile = ref(window.innerWidth < 1024);
+
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth < 1024;
+};
 
 // 获取显示颜色
 const getDisplayColor = (category: MergedCategory | TimeSlotCategory) => {
@@ -145,6 +162,7 @@ const loadExerciseTypes = async () => {
 
 onMounted(() => {
   loadExerciseTypes();
+  window.addEventListener('resize', updateIsMobile);
 });
 
 // 连续调整相关变量
@@ -350,6 +368,13 @@ const handleCategoryChange = () => {
       { exerciseTypeId: '', exerciseCount: undefined },
     ];
   }
+  formRef.value?.validateFields(['categoryId']).catch(() => {});
+};
+
+const handleCategorySelect = (category: MergedCategory | TimeSlotCategory) => {
+  formState.value.categoryId = category.id;
+  handleCategoryChange();
+  categoryModalVisible.value = false;
 };
 
 // 处理保存
@@ -569,6 +594,7 @@ const stopContinuousAdjust = () => {
 // 组件卸载时清理定时器
 onUnmounted(() => {
   stopContinuousAdjust();
+  window.removeEventListener('resize', updateIsMobile);
 });
 </script>
 
@@ -582,32 +608,29 @@ onUnmounted(() => {
       @finish="handleSave"
     >
       <Form.Item label="分类" name="categoryId">
-        <Select
-          v-model:value="formState.categoryId"
-          placeholder="请选择分类"
-          @change="handleCategoryChange"
+        <div
+          class="selected-category-trigger"
+          @click="categoryModalVisible = true"
         >
-          <Select.Option
-            v-for="category in visibleCategories"
-            :key="category.id"
-            :value="category.id"
-          >
-            <div class="category-option">
-              <span
-                class="color-dot"
-                :style="{ backgroundColor: getDisplayColor(category) }"
-              ></span>
+          <template v-if="selectedCategory">
+            <div class="category-icon-wrapper-small">
               <component
-                v-if="getDisplayIcon(category)"
-                :is="getDisplayIcon(category)"
-                class="category-icon"
+                v-if="getDisplayIcon(selectedCategory)"
+                :is="getDisplayIcon(selectedCategory)"
+                class="category-icon-small"
+                :style="{ color: getDisplayColor(selectedCategory) }"
               />
-              <span class="category-name flex-1 truncate">{{
-                getDisplayName(category)
-              }}</span>
+              <div v-else class="category-color-dot-small" :style="{ backgroundColor: getDisplayColor(selectedCategory) }"></div>
             </div>
-          </Select.Option>
-        </Select>
+            <span class="category-name-small">{{ getDisplayName(selectedCategory) }}</span>
+          </template>
+          <template v-else>
+            <span class="placeholder-text">请选择分类</span>
+          </template>
+          <div class="trigger-arrow">
+            <RightOutlined />
+          </div>
+        </div>
       </Form.Item>
 
       <Form.Item label="标题" name="title">
@@ -884,6 +907,35 @@ onUnmounted(() => {
         </div>
       </Form.Item>
     </Form>
+
+    <Modal
+      v-model:open="categoryModalVisible"
+      title="选择分类"
+      :footer="null"
+      :width="isMobile ? '95vw' : 500"
+      :destroyOnClose="true"
+    >
+      <div class="category-grid">
+        <div
+          v-for="category in visibleCategories"
+          :key="category.id"
+          class="category-grid-item"
+          :class="{ active: formState.categoryId === category.id }"
+          @click="handleCategorySelect(category)"
+        >
+          <div class="category-icon-wrapper">
+            <component
+              v-if="getDisplayIcon(category)"
+              :is="getDisplayIcon(category)"
+              class="category-icon-large"
+              :style="{ color: formState.categoryId === category.id ? getDisplayColor(category) : 'inherit' }"
+            />
+            <div v-else class="category-color-dot-large" :style="{ backgroundColor: getDisplayColor(category) }"></div>
+          </div>
+          <span class="category-name-large">{{ getDisplayName(category) }}</span>
+        </div>
+      </div>
+    </Modal>
   </div>
 </template>
 
@@ -892,28 +944,117 @@ onUnmounted(() => {
   padding: 10px 0;
 }
 
-.category-option {
+.selected-category-trigger {
   display: flex;
-  gap: 6px;
   align-items: center;
+  padding: 8px 12px;
+  background-color: v-bind('token.colorBgContainer');
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.color-dot {
-  flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+.selected-category-trigger:hover {
+  border-color: v-bind('token.colorPrimary');
+}
+
+.category-icon-wrapper-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+}
+
+.category-icon-small {
+  font-size: 18px;
+}
+
+.category-color-dot-small {
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
 }
 
-.category-icon {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  color: #666;
+.category-name-small {
+  font-size: 14px;
+  color: v-bind('token.colorText');
 }
 
-.category-name {
-  color: #333;
+.placeholder-text {
+  color: v-bind('token.colorTextPlaceholder');
+}
+
+.trigger-arrow {
+  margin-left: auto;
+  color: v-bind('token.colorTextPlaceholder');
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  max-height: 60vh;
+  padding: 4px;
+  overflow-y: auto;
+}
+
+.category-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.category-grid::-webkit-scrollbar-thumb {
+  background-color: v-bind('token.colorTextQuaternary');
+  border-radius: 2px;
+}
+
+.category-grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.category-grid-item:hover {
+  background-color: v-bind('token.controlItemBgHover');
+}
+
+.category-grid-item.active {
+  background-color: v-bind('token.controlItemBgActive');
+}
+
+.category-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  margin-bottom: 4px;
+}
+
+.category-icon-large {
+  font-size: 24px;
+  color: v-bind('token.colorTextSecondary');
+  transition: color 0.2s;
+}
+
+.category-color-dot-large {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+}
+
+.category-name-large {
+  font-size: 12px;
+  line-height: 1.2;
+  color: v-bind('token.colorText');
+  text-align: center;
 }
 
 .duration-display {
