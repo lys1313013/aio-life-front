@@ -243,6 +243,7 @@ defineExpose({ open });
     v-model:open="visible"
     :title="title"
     :width="isMobile ? '95vw' : 600"
+    :closable="false"
     :footer="null"
     @cancel="handleCancel"
   >

@@ -13,7 +13,11 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 
-import { DeleteOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons-vue';
+import {
+  DeleteOutlined,
+  PlusOutlined,
+  RightOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Col,
@@ -26,8 +30,8 @@ import {
   Row,
   Select,
   Textarea,
-  TimePicker,
   theme,
+  TimePicker,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -70,7 +74,9 @@ const visibleCategories = computed(() => {
 
 const selectedCategory = computed(() => {
   if (!formState.value.categoryId) return null;
-  return props.categories.find((c) => c.id === formState.value.categoryId) || null;
+  return (
+    props.categories.find((c) => c.id === formState.value.categoryId) || null
+  );
 });
 
 const categoryModalVisible = ref(false);
@@ -607,28 +613,46 @@ onUnmounted(() => {
       layout="vertical"
       @finish="handleSave"
     >
-      <Form.Item label="分类" name="categoryId">
+      <Form.Item name="categoryId">
         <div
-          class="selected-category-trigger"
+          class="category-inline-trigger"
           @click="categoryModalVisible = true"
         >
-          <template v-if="selectedCategory">
-            <div class="category-icon-wrapper-small">
-              <component
-                v-if="getDisplayIcon(selectedCategory)"
-                :is="getDisplayIcon(selectedCategory)"
-                class="category-icon-small"
-                :style="{ color: getDisplayColor(selectedCategory) }"
-              />
-              <div v-else class="category-color-dot-small" :style="{ backgroundColor: getDisplayColor(selectedCategory) }"></div>
-            </div>
-            <span class="category-name-small">{{ getDisplayName(selectedCategory) }}</span>
-          </template>
-          <template v-else>
-            <span class="placeholder-text">请选择分类</span>
-          </template>
-          <div class="trigger-arrow">
-            <RightOutlined />
+          <span class="category-label-text">
+            <span
+              :style="{
+                color: token.colorError,
+                marginRight: '4px',
+                fontFamily: 'SimSun, sans-serif',
+              }"
+              >*</span
+            >分类
+          </span>
+          <div class="category-value-wrapper">
+            <template v-if="selectedCategory">
+              <div class="category-icon-wrapper-small">
+                <component
+                  v-if="getDisplayIcon(selectedCategory)"
+                  :is="getDisplayIcon(selectedCategory)"
+                  class="category-icon-small"
+                  :style="{ color: getDisplayColor(selectedCategory) }"
+                />
+                <div
+                  v-else
+                  class="category-color-dot-small"
+                  :style="{
+                    backgroundColor: getDisplayColor(selectedCategory),
+                  }"
+                ></div>
+              </div>
+              <span class="category-name-small">{{
+                getDisplayName(selectedCategory)
+              }}</span>
+            </template>
+            <template v-else>
+              <span class="placeholder-text">请选择分类</span>
+            </template>
+            <RightOutlined class="trigger-arrow" />
           </div>
         </div>
       </Form.Item>
@@ -889,7 +913,7 @@ onUnmounted(() => {
         />
       </Form.Item>
 
-      <Form.Item>
+      <Form.Item style="margin-bottom: 0">
         <div class="form-actions">
           <Popconfirm
             v-if="isExistingSlot"
@@ -910,10 +934,11 @@ onUnmounted(() => {
 
     <Modal
       v-model:open="categoryModalVisible"
-      title="选择分类"
+      :closable="false"
+      :centered="true"
       :footer="null"
       :width="isMobile ? '95vw' : 500"
-      :destroyOnClose="true"
+      :destroy-on-close="true"
     >
       <div class="category-grid">
         <div
@@ -928,11 +953,22 @@ onUnmounted(() => {
               v-if="getDisplayIcon(category)"
               :is="getDisplayIcon(category)"
               class="category-icon-large"
-              :style="{ color: formState.categoryId === category.id ? getDisplayColor(category) : 'inherit' }"
+              :style="{
+                color:
+                  formState.categoryId === category.id
+                    ? getDisplayColor(category)
+                    : 'inherit',
+              }"
             />
-            <div v-else class="category-color-dot-large" :style="{ backgroundColor: getDisplayColor(category) }"></div>
+            <div
+              v-else
+              class="category-color-dot-large"
+              :style="{ backgroundColor: getDisplayColor(category) }"
+            ></div>
           </div>
-          <span class="category-name-large">{{ getDisplayName(category) }}</span>
+          <span class="category-name-large">{{
+            getDisplayName(category)
+          }}</span>
         </div>
       </div>
     </Modal>
@@ -941,40 +977,41 @@ onUnmounted(() => {
 
 <style scoped>
 .time-slot-edit-form {
-  padding: 10px 0;
+  padding: 10px 0 0;
 }
 
-.selected-category-trigger {
+.category-inline-trigger {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
-  background-color: v-bind('token.colorBgContainer');
-  border: 1px solid v-bind('token.colorBorder');
-  border-radius: 6px;
+  justify-content: space-between;
+  padding: 16px 0 0;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.selected-category-trigger:hover {
-  border-color: v-bind('token.colorPrimary');
+.category-label-text {
+  font-size: 14px;
+  color: v-bind('token.colorText');
+}
+
+.category-value-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .category-icon-wrapper-small {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
 }
 
 .category-icon-small {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .category-color-dot-small {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
@@ -985,10 +1022,12 @@ onUnmounted(() => {
 
 .placeholder-text {
   color: v-bind('token.colorTextPlaceholder');
+  font-size: 14px;
 }
 
 .trigger-arrow {
-  margin-left: auto;
+  margin-left: 2px;
+  font-size: 12px;
   color: v-bind('token.colorTextPlaceholder');
 }
 
