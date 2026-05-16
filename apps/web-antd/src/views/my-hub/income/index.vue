@@ -13,7 +13,7 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
 import { deleteData, query } from '#/api/core/income';
 
-import IncomeDashboard from './components/IncomeDashboard.vue';
+import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
 
 interface RowType {
@@ -196,7 +196,7 @@ function openAddFormModal() {
     .open();
 }
 
-const dashboardRef = ref<InstanceType<typeof IncomeDashboard>>();
+const dashboardRef = ref<InstanceType<typeof TransactionDashboard>>();
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
 
@@ -235,7 +235,11 @@ const tableReload = async () => {
   <div class="vp-raw w-full">
     <FormModal @table-reload="tableReload" />
     <!-- 收入看板 -->
-    <IncomeDashboard ref="dashboardRef" @year-change="handleYearChange" />
+    <TransactionDashboard
+      ref="dashboardRef"
+      type="income"
+      @year-change="handleYearChange"
+    />
     <!-- 收入列表 -->
     <Grid>
       <template #toolbar-tools>
