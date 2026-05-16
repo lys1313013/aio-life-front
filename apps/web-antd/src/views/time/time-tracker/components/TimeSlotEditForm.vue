@@ -613,6 +613,10 @@ onUnmounted(() => {
       layout="vertical"
       @finish="handleSave"
     >
+      <Form.Item label="标题" name="title">
+        <Input v-model:value="formState.title" placeholder="标题" />
+      </Form.Item>
+
       <Form.Item name="categoryId">
         <div
           class="category-inline-trigger"
@@ -655,10 +659,6 @@ onUnmounted(() => {
             <RightOutlined class="trigger-arrow" />
           </div>
         </div>
-      </Form.Item>
-
-      <Form.Item label="标题" name="title">
-        <Input v-model:value="formState.title" placeholder="标题" />
       </Form.Item>
 
       <Row :gutter="16">
@@ -977,14 +977,15 @@ onUnmounted(() => {
 
 <style scoped>
 .time-slot-edit-form {
-  padding: 10px 0 0;
+  padding: 0;
+  margin-bottom: -16px;
 }
 
 .category-inline-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 0 0;
+  padding: 4px 0;
   cursor: pointer;
 }
 
