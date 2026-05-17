@@ -581,6 +581,7 @@ onMounted(() => {
       v-model:open="showEditModal"
       :title="modalTitle"
       :confirm-loading="submitLoading"
+      centered
       @ok="handleSaveCategory"
     >
       <Form
@@ -712,6 +713,7 @@ onMounted(() => {
       title="选择图标"
       :footer="null"
       :width="800"
+      centered
       style="max-width: 100%"
     >
       <div class="flex flex-col gap-4">

@@ -245,6 +245,7 @@ defineExpose({ open });
     :width="isMobile ? '95vw' : 600"
     :closable="false"
     :footer="null"
+    centered
     @cancel="handleCancel"
   >
     <Spin :spinning="loading">

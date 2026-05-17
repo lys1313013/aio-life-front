@@ -1656,6 +1656,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
       title="确认删除"
       :width="isMobile ? '95vw' : 400"
       :mask-closable="false"
+      centered
       @ok="confirmResetData"
       @cancel="cancelDelete"
     >

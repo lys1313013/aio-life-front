@@ -339,6 +339,7 @@ const handleSubmitCategory = async () => {
       v-model:open="editModalVisible"
       :title="modalTitle"
       :confirm-loading="submitting"
+      centered
       @ok="handleSubmitCategory"
     >
       <Form
@@ -490,6 +491,7 @@ const handleSubmitCategory = async () => {
       title="选择图标"
       :footer="null"
       width="800px"
+      centered
     >
       <div class="flex flex-col gap-4">
         <Select

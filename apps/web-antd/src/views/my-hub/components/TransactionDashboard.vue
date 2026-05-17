@@ -8,21 +8,30 @@ import { usePreferences } from '@vben/preferences';
 
 import { Card, Select } from 'ant-design-vue';
 
-import { statisticsByMonth as expenseStatMonth, statisticsByYear as expenseStatYear } from '#/api/core/expense';
-import { statisticsByMonth as incomeStatMonth, statisticsByYear as incomeStatYear } from '#/api/core/income';
+import {
+  statisticsByMonth as expenseStatMonth,
+  statisticsByYear as expenseStatYear,
+} from '#/api/core/expense';
+import {
+  statisticsByMonth as incomeStatMonth,
+  statisticsByYear as incomeStatYear,
+} from '#/api/core/income';
 
 const props = defineProps({
   type: {
     type: String,
     default: 'income',
-    validator: (val: string) => ['income', 'expense'].includes(val)
-  }
+    validator: (val: string) => ['expense', 'income'].includes(val),
+  },
 });
 
 // 定义事件
 const emit = defineEmits<{
   (e: 'yearChange', year: 'all' | number): void;
-  (e: 'monthSelect', payload: { monthStr: string, startDate: string, endDate: string }): void;
+  (
+    e: 'monthSelect',
+    payload: { endDate: string; monthStr: string; startDate: string },
+  ): void;
 }>();
 
 const chartRef = ref<EchartsUIType>();
@@ -33,12 +42,15 @@ const monthChartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
-const { renderEcharts: renderMonthEcharts, getChartInstance: getMonthChartInstance } = useEcharts(monthChartRef);
+const {
+  renderEcharts: renderMonthEcharts,
+  getChartInstance: getMonthChartInstance,
+} = useEcharts(monthChartRef);
 
 const { isMobile } = usePreferences();
 
 const isIncome = computed(() => props.type === 'income');
-const labelName = computed(() => isIncome.value ? '收入' : '支出');
+const labelName = computed(() => (isIncome.value ? '收入' : '支出'));
 
 interface DetailData {
   typeName: string;
@@ -93,9 +105,10 @@ const filteredData = computed(() => {
 // 根据选中的年份过滤月份数据
 const filteredMonthlyData = computed(() => {
   let data: MonthData[] = [];
-  data = selectedYear.value === 'all'
-    ? monthDataList.value
-    : monthDataList.value.filter((item) => item.year === selectedYear.value);
+  data =
+    selectedYear.value === 'all'
+      ? monthDataList.value
+      : monthDataList.value.filter((item) => item.year === selectedYear.value);
   // 按时间升序排序
   return [...data].sort((a, b) => {
     if (a.year !== b.year) {
@@ -225,7 +238,10 @@ const getYearPieChartData = () => {
   const yearTotals: Record<string, number> = {};
 
   filteredData.value.forEach((item) => {
-    const yearTotal = item.detail.reduce((sum, current) => sum + current.amt, 0);
+    const yearTotal = item.detail.reduce(
+      (sum, current) => sum + current.amt,
+      0,
+    );
     yearTotals[item.year] = (yearTotals[item.year] || 0) + yearTotal;
   });
 
@@ -310,7 +326,9 @@ const updateCharts = () => {
 
   // 计算当年总金额
   const currentYear = new Date().getFullYear();
-  const currentYearData = yearDataList.value.find((item) => item.year === currentYear);
+  const currentYearData = yearDataList.value.find(
+    (item) => item.year === currentYear,
+  );
   currentYearAmount.value = currentYearData
     ? currentYearData.detail.reduce((sum, item) => sum + item.amt, 0)
     : 0;
@@ -334,7 +352,8 @@ const updateCharts = () => {
         });
         params.forEach((item: any) => {
           if (item.seriesName !== '年度合计' && item.value > 0) {
-            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
           }
         });
@@ -385,7 +404,8 @@ const updateCharts = () => {
         label: {
           show: true,
           position: 'outside',
-          formatter: (params: any) => `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`,
+          formatter: (params: any) =>
+            `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`,
           fontSize: isMobile.value ? 10 : 12,
         },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
@@ -420,7 +440,8 @@ const updateCharts = () => {
         itemStyle: { borderRadius: 10, borderWidth: 2 },
         label: {
           show: true,
-          formatter: (params: any) => `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`,
+          formatter: (params: any) =>
+            `${params.name}\n${formatCurrency(params.value)} (${params.percent}%)`,
           fontSize: isMobile.value ? 10 : 12,
         },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
@@ -446,10 +467,13 @@ const updateCharts = () => {
       formatter: (params: any) => {
         let tooltip = `${params[0].name}<br/>`;
         let total = 0;
-        params.forEach((item: any) => { total += item.value || 0; });
+        params.forEach((item: any) => {
+          total += item.value || 0;
+        });
         params.forEach((item: any) => {
           if (item.value > 0) {
-            const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
+            const percentage =
+              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
           }
         });
@@ -491,19 +515,22 @@ const updateCharts = () => {
       let monthIndex = -1;
       if (params.componentType === 'xAxis') {
         // 如果点击了 x 轴标签，我们需要通过文字去找索引
-        monthIndex = monthLabels.findIndex(m => m === params.value);
+        monthIndex = monthLabels.indexOf(params.value);
       } else if (params.componentType === 'series') {
         // 点击了图表区域
         monthIndex = params.dataIndex;
       }
-      
+
       if (monthIndex !== -1 && fullMonthLabels[monthIndex]) {
-        const fullMonthStr = fullMonthLabels[monthIndex];
-        const [year, month] = fullMonthStr.split('-').map(Number) as [number, number];
+        const fullMonthStr = fullMonthLabels[monthIndex] as string;
+        const [year, month] = fullMonthStr.split('-').map(Number) as [
+          number,
+          number,
+        ];
         const lastDay = new Date(year, month, 0).getDate();
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-        
+
         emit('monthSelect', { monthStr: fullMonthStr, startDate, endDate });
       }
     });
@@ -525,13 +552,17 @@ const refreshData = async () => {
     yearDataList.value = yearRes as YearData[];
     monthDataList.value = monthRes as MonthData[];
 
-    const years = [...new Set(yearDataList.value.map((item) => item.year))].sort((a, b) => b - a);
+    const years = [
+      ...new Set(yearDataList.value.map((item) => item.year)),
+    ].sort((a, b) => b - a);
     yearOptions.value = [
       { value: 'all', label: '全部' },
       ...years.map((year) => ({ value: year, label: year })),
     ];
 
-    const yearExists = yearOptions.value.some((option) => option.value === currentYear);
+    const yearExists = yearOptions.value.some(
+      (option) => option.value === currentYear,
+    );
     selectedYear.value = yearExists ? currentYear : 'all';
 
     updateCharts();
@@ -556,7 +587,10 @@ defineExpose({
 
 <template>
   <div class="transaction-dashboard">
-    <div class="total-card" :class="isIncome ? 'income-theme' : 'expense-theme'">
+    <div
+      class="total-card"
+      :class="isIncome ? 'income-theme' : 'expense-theme'"
+    >
       <div class="dashboard-header">
         <div class="total-stats">
           <div class="stat-item">
@@ -565,7 +599,9 @@ defineExpose({
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item">
-            <div class="stat-label">{{ new Date().getFullYear() }}年总{{ labelName }}</div>
+            <div class="stat-label">
+              {{ new Date().getFullYear() }}年总{{ labelName }}
+            </div>
             <div class="stat-value">
               {{ formatCurrency(currentYearAmount) }}
             </div>

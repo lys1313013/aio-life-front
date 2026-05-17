@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
-import { Page } from '@vben/common-ui';
-
 import { Card, message, Skeleton, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getUserBindListApi } from '#/api/core/user-bind';
 
+import CodingDashboardLayout from '../components/CodingDashboardLayout.vue';
+import StatCard from '../components/StatCard.vue';
 import ContributionGraph from '../components/ContributionGraph.vue';
 
 defineOptions({ name: 'LeetCode' });
@@ -553,20 +553,46 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Page title="" content-class="p-0">
-    <div class="p-2 md:p-4">
-      <!-- Ranking Info Card Group -->
-      <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-        <Card
-          :bordered="false"
-          class="shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
+  <CodingDashboardLayout>
+    <!-- Ranking Info Card Group -->
+    <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+      <StatCard 
+        title="全站排名" 
+        :value="userInfo?.siteRanking?.toLocaleString()" 
+        :loading="profileLoading"
+        color="gray"
+      />
+      <StatCard 
+        title="竞赛分数" 
+        :value="Math.round(contestInfo?.rating || 0)" 
+        :loading="contestLoading"
+        color="blue"
+      />
+      <StatCard 
+        title="全球排名" 
+        :value="contestInfo?.globalRanking?.toLocaleString()" 
+        :sub-value="contestInfo?.globalTotalParticipants ? `/ ${contestInfo.globalTotalParticipants.toLocaleString()}` : ''"
+        :loading="contestLoading"
+        color="orange"
+      />
+      <StatCard 
+        title="全国排名" 
+        :value="contestInfo?.localRanking?.toLocaleString()" 
+        :sub-value="contestInfo?.localTotalParticipants ? `/ ${contestInfo.localTotalParticipants.toLocaleString()}` : ''"
+        :loading="contestLoading"
+        color="red"
+      />
+    </div>
+
+    <!-- User Info Card -->
+    <Card class="mb-4" :body-style="{ padding: '12px' }">
+      <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
+        <div class="rounded-lg border p-3 md:p-4">
           <div
             class="text-xs md:text-sm"
             :style="{ color: token.colorTextSecondary }"
           >
-            全站排名
+            已解题
           </div>
           <Skeleton
             :active="true"
@@ -574,293 +600,188 @@ onMounted(async () => {
             :paragraph="{ rows: 0 }"
           >
             <div class="text-lg font-bold tabular-nums md:text-2xl">
-              {{ userInfo?.siteRanking?.toLocaleString() || '-' }}
+              {{ totalSolved }}
+              <span class="text-xs font-normal text-gray-400 md:text-base">
+                / {{ totalQuestions }}
+              </span>
             </div>
           </Skeleton>
-        </Card>
-
-        <Card
-          :bordered="false"
-          class="shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
+        </div>
+        <div class="rounded-lg border p-3 md:p-4">
           <div
             class="text-xs md:text-sm"
             :style="{ color: token.colorTextSecondary }"
           >
-            竞赛分数
+            声望
           </div>
           <Skeleton
             :active="true"
-            :loading="contestLoading"
+            :loading="profileLoading"
             :paragraph="{ rows: 0 }"
           >
             <div class="text-lg font-bold tabular-nums md:text-2xl">
-              {{ Math.round(contestInfo?.rating || 0) || '-' }}
+              {{ userInfo?.profile?.reputation ?? 0 }}
             </div>
           </Skeleton>
-        </Card>
-
-        <Card
-          :bordered="false"
-          class="shadow-sm"
-          :body-style="{ padding: '12px' }"
+        </div>
+        <div class="rounded-lg border p-3 md:p-4">
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
+            累计活跃天数
+          </div>
+          <Skeleton
+            :active="true"
+            :loading="calendarLoading"
+            :paragraph="{ rows: 0 }"
+          >
+            <div class="text-lg font-bold md:text-2xl">
+              {{ totalActiveDays }} 天
+            </div>
+          </Skeleton>
+        </div>
+        <div class="rounded-lg border p-3 md:p-4">
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
+            最活跃的一天
+          </div>
+          <Skeleton
+            :active="true"
+            :loading="calendarLoading"
+            :paragraph="{ rows: 0 }"
+          >
+            <div class="flex flex-col">
+              <div class="text-lg font-bold tabular-nums md:text-2xl">
+                {{ mostActiveDay?.count || 0 }}
+                <span class="text-xs font-normal text-gray-400 md:text-sm"
+                  >次提交</span
+                >
+              </div>
+              <div class="text-xs text-gray-400 md:text-sm">
+                {{ mostActiveDay?.date || '-' }}
+              </div>
+            </div>
+          </Skeleton>
+        </div>
+        <div class="rounded-lg border p-3 md:p-4">
+          <div
+            class="text-xs md:text-sm"
+            :style="{ color: token.colorTextSecondary }"
+          >
+            今日提交次数
+          </div>
+          <Skeleton
+            :active="true"
+            :loading="calendarLoading"
+            :paragraph="{ rows: 0 }"
+          >
+            <div class="text-lg font-bold md:text-2xl">
+              {{ todaySubmissions }}
+            </div>
+          </Skeleton>
+        </div>
+        <div
+          class="cursor-pointer rounded-lg border p-3 transition-shadow hover:shadow-md md:p-4"
+          @click="goToDailyQuestion"
         >
           <div
             class="text-xs md:text-sm"
             :style="{ color: token.colorTextSecondary }"
           >
-            全球排名
+            每日一题
           </div>
           <Skeleton
             :active="true"
-            :loading="contestLoading"
+            :loading="dailyQuestionLoading"
             :paragraph="{ rows: 0 }"
           >
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-bold tabular-nums md:text-2xl">
-                {{ contestInfo?.globalRanking?.toLocaleString() || '-' }}
-              </span>
-              <span
-                v-if="contestInfo?.globalTotalParticipants"
-                class="text-xs text-gray-400 md:text-sm"
-              >
-                / {{ contestInfo.globalTotalParticipants.toLocaleString() }}
-              </span>
+            <div
+              class="text-lg font-bold md:text-2xl"
+              :class="{
+                'text-red-500': dailyQuestionStatus !== 'Finish',
+                'text-green-500': dailyQuestionStatus === 'Finish',
+              }"
+            >
+              {{ dailyQuestionStatus === 'Finish' ? '已完成' : '未完成' }}
             </div>
           </Skeleton>
-        </Card>
-
-        <Card
-          :bordered="false"
-          class="shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
-          <div
-            class="text-xs md:text-sm"
-            :style="{ color: token.colorTextSecondary }"
-          >
-            全国排名
-          </div>
-          <Skeleton
-            :active="true"
-            :loading="contestLoading"
-            :paragraph="{ rows: 0 }"
-          >
-            <div class="flex items-baseline gap-1">
-              <span class="text-lg font-bold tabular-nums md:text-2xl">
-                {{ contestInfo?.localRanking?.toLocaleString() || '-' }}
-              </span>
-              <span
-                v-if="contestInfo?.localTotalParticipants"
-                class="text-xs text-gray-400 md:text-sm"
-              >
-                / {{ contestInfo.localTotalParticipants.toLocaleString() }}
-              </span>
-            </div>
-          </Skeleton>
-        </Card>
+        </div>
       </div>
 
-      <!-- User Info Card -->
-      <Card class="mb-4" :body-style="{ padding: '12px' }">
-        <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
-          <div class="rounded-lg border p-3 md:p-4">
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              已解题
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="profileLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div class="text-lg font-bold tabular-nums md:text-2xl">
-                {{ totalSolved }}
-                <span class="text-xs font-normal text-gray-400 md:text-base">
-                  / {{ totalQuestions }}
-                </span>
-              </div>
-            </Skeleton>
-          </div>
-          <div class="rounded-lg border p-3 md:p-4">
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              声望
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="profileLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div class="text-lg font-bold tabular-nums md:text-2xl">
-                {{ userInfo?.profile?.reputation ?? 0 }}
-              </div>
-            </Skeleton>
-          </div>
-          <div class="rounded-lg border p-3 md:p-4">
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              累计活跃天数
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="calendarLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div class="text-lg font-bold md:text-2xl">
-                {{ totalActiveDays }} 天
-              </div>
-            </Skeleton>
-          </div>
-          <div class="rounded-lg border p-3 md:p-4">
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              最活跃的一天
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="calendarLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div class="flex flex-col">
-                <div class="text-lg font-bold tabular-nums md:text-2xl">
-                  {{ mostActiveDay?.count || 0 }}
-                  <span class="text-xs font-normal text-gray-400 md:text-sm"
-                    >次提交</span
-                  >
-                </div>
-                <div class="text-xs text-gray-400 md:text-sm">
-                  {{ mostActiveDay?.date || '-' }}
-                </div>
-              </div>
-            </Skeleton>
-          </div>
-          <div class="rounded-lg border p-3 md:p-4">
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              今日提交次数
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="calendarLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div class="text-lg font-bold md:text-2xl">
-                {{ todaySubmissions }}
-              </div>
-            </Skeleton>
-          </div>
-          <div
-            class="cursor-pointer rounded-lg border p-3 transition-shadow hover:shadow-md md:p-4"
-            @click="goToDailyQuestion"
-          >
-            <div
-              class="text-xs md:text-sm"
-              :style="{ color: token.colorTextSecondary }"
-            >
-              每日一题
-            </div>
-            <Skeleton
-              :active="true"
-              :loading="dailyQuestionLoading"
-              :paragraph="{ rows: 0 }"
-            >
-              <div
-                class="text-lg font-bold md:text-2xl"
-                :class="{
-                  'text-red-500': dailyQuestionStatus !== 'Finish',
-                  'text-green-500': dailyQuestionStatus === 'Finish',
-                }"
-              >
-                {{ dailyQuestionStatus === 'Finish' ? '已完成' : '未完成' }}
-              </div>
-            </Skeleton>
-          </div>
-        </div>
-
-        <h3 class="mb-4 text-lg font-bold">做题进度</h3>
-        <Skeleton :active="true" :loading="profileLoading">
-          <div
-            v-if="questionProgress"
-            class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
-          >
-            <div
-              v-for="item in progressDisplayList"
-              :key="item.difficulty"
-              class="rounded-lg border p-2 text-center md:p-4"
-            >
-              <div
-                :style="{ color: getDifficultyColor(item.difficulty) }"
-                class="mb-1 text-sm font-bold md:mb-2 md:text-lg"
-              >
-                {{ getDifficultyLabel(item.difficulty) }}
-              </div>
-              <div class="text-lg font-bold tabular-nums md:text-2xl">
-                {{ item.count }}
-                <span class="text-xs font-normal text-gray-400 md:text-sm">
-                  / {{ getTotalCount(item.difficulty) }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </Skeleton>
-      </Card>
-
-      <Card
-        :bordered="false"
-        class="shadow-sm"
-        :head-style="{
-          borderBottom: 'none',
-          paddingLeft: '12px',
-          paddingRight: '12px',
-        }"
-        :body-style="{ padding: '0 12px 20px 12px' }"
-      >
-        <template #title>
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="text-sm md:text-base"
-              >过去一年共提交 {{ totalCommits }} 次</span
-            >
-            <span
-              class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
-            >
-              连续提交:
-              <span class="font-medium text-green-600 dark:text-green-500">
-                {{ currentStreak }}
-              </span>
-              天
-            </span>
-          </div>
-        </template>
-
-        <Skeleton
-          :active="true"
-          :loading="calendarLoading"
-          :paragraph="{ rows: 4 }"
+      <h3 class="mb-4 text-lg font-bold">做题进度</h3>
+      <Skeleton :active="true" :loading="profileLoading">
+        <div
+          v-if="questionProgress"
+          class="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
         >
           <div
-            ref="scrollContainer"
-            class="w-full overflow-x-auto overflow-y-hidden transition-all"
+            v-for="item in progressDisplayList"
+            :key="item.difficulty"
+            class="rounded-lg border p-2 text-center md:p-4"
           >
-            <div class="h-[125px] min-w-[720px] md:h-[130px]">
-              <ContributionGraph :data="graphData" height="100%" />
+            <div
+              :style="{ color: getDifficultyColor(item.difficulty) }"
+              class="mb-1 text-sm font-bold md:mb-2 md:text-lg"
+            >
+              {{ getDifficultyLabel(item.difficulty) }}
+            </div>
+            <div class="text-lg font-bold tabular-nums md:text-2xl">
+              {{ item.count }}
+              <span class="text-xs font-normal text-gray-400 md:text-sm">
+                / {{ getTotalCount(item.difficulty) }}
+              </span>
             </div>
           </div>
-        </Skeleton>
-      </Card>
-    </div>
-  </Page>
+        </div>
+      </Skeleton>
+    </Card>
+
+    <Card
+      :bordered="false"
+      class="shadow-sm"
+      :head-style="{
+        borderBottom: 'none',
+        paddingLeft: '12px',
+        paddingRight: '12px',
+      }"
+      :body-style="{ padding: '0 12px 20px 12px' }"
+    >
+      <template #title>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-sm md:text-base"
+            >过去一年共提交 {{ totalCommits }} 次</span
+          >
+          <span
+            class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
+          >
+            连续提交:
+            <span class="font-medium text-green-600 dark:text-green-500">
+              {{ currentStreak }}
+            </span>
+            天
+          </span>
+        </div>
+      </template>
+
+      <Skeleton
+        :active="true"
+        :loading="calendarLoading"
+        :paragraph="{ rows: 4 }"
+      >
+        <div
+          ref="scrollContainer"
+          class="w-full overflow-x-auto overflow-y-hidden transition-all"
+        >
+          <div class="h-[125px] min-w-[720px] md:h-[130px]">
+            <ContributionGraph :data="graphData" height="100%" />
+          </div>
+        </div>
+      </Skeleton>
+    </Card>
+  </CodingDashboardLayout>
 </template>
 
 <style scoped>

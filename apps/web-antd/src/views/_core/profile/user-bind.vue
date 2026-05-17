@@ -46,6 +46,7 @@ const formState = ref<UserBindEntity>({
 const platformOptions = [
   { label: 'GitHub', value: 'github' },
   { label: 'LeetCode', value: 'leetcode' },
+  { label: 'CSDN', value: 'csdn' },
   { label: '扇贝单词', value: 'shanbay' },
 ];
 

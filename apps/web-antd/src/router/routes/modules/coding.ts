@@ -30,6 +30,15 @@ const routes: RouteRecordRaw[] = [
         path: '/coding/leetcode',
         component: () => import('#/views/coding/leetcode/index.vue'),
       },
+      {
+        meta: {
+          icon: 'simple-icons:csdn',
+          title: 'CSDN',
+        },
+        name: 'CsdnDashboard',
+        path: '/coding/csdn',
+        component: () => import('#/views/coding/csdn/index.vue'),
+      },
     ],
   },
 ];

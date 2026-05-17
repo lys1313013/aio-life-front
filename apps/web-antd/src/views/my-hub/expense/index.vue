@@ -2,24 +2,21 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
+
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Card, message, Popconfirm, Select } from 'ant-design-vue';
+import { Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
-import {
-  deleteBatch,
-  deleteData,
-  query,
-} from '#/api/core/expense';
+import { deleteBatch, deleteData, query } from '#/api/core/expense';
 import { PAY_TYPE_OPTIONS } from '#/constants/expense';
 
-import FormModalDemo from './form-modal.vue';
 import TransactionDashboard from '../components/TransactionDashboard.vue';
+import FormModalDemo from './form-modal.vue';
 
 interface RowType {
   id: any;
@@ -43,8 +40,11 @@ const dashboardRef = ref<InstanceType<typeof TransactionDashboard>>();
 
 const { isMobile } = usePreferences();
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>([]);
-const payTypeOptions = ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
+const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+  [],
+);
+const payTypeOptions =
+  ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
 const tableData = ref<RowType[]>([]);
 
 const loadExpTypes = async () => {
@@ -293,7 +293,9 @@ const gridOptions: VxeGridProps<RowType> = {
           tableData.value = result.items;
 
           // 更新年度统计数据
-          if (dashboardRef.value) { await dashboardRef.value.refreshData(); }
+          if (dashboardRef.value) {
+            await dashboardRef.value.refreshData();
+          }
         } else {
           tableData.value = [];
         }
@@ -384,10 +386,16 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   }
 
   // 刷新看板数据
-  if (dashboardRef.value) { await dashboardRef.value.refreshData(); }
+  if (dashboardRef.value) {
+    await dashboardRef.value.refreshData();
+  }
 };
 
-const handleMonthSelect = (payload: { monthStr: string, startDate: string, endDate: string }) => {
+const handleMonthSelect = (payload: {
+  endDate: string;
+  monthStr: string;
+  startDate: string;
+}) => {
   message.success(`已选择月份: ${payload.monthStr}`);
   if (gridApi && gridApi.formApi) {
     gridApi.formApi.setValues({
@@ -396,7 +404,7 @@ const handleMonthSelect = (payload: { monthStr: string, startDate: string, endDa
   }
 };
 
-const handleYearChange = (year: 'all' | number) => {
+const handleYearChange = (_year: 'all' | number) => {
   // dashboard内部已处理
 };
 </script>
@@ -444,5 +452,4 @@ const handleYearChange = (year: 'all' | number) => {
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

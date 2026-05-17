@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { computed, nextTick, ref, watch } from 'vue';
 
-import { Page } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import {
@@ -14,11 +13,9 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
 import {
-  Alert,
   Card,
   List,
   message,
-  Skeleton,
   Spin,
   Table,
   Tag,
@@ -29,6 +26,9 @@ import { getGithubContributionStats } from '#/api/core/github';
 import { getUserBindListApi } from '#/api/core/user-bind';
 
 import ContributionGraph from '../components/ContributionGraph.vue';
+import CodingDashboardLayout from '../components/CodingDashboardLayout.vue';
+import StatCard from '../components/StatCard.vue';
+import DataListCard from '../components/DataListCard.vue';
 
 defineOptions({ name: 'GithubGraph' });
 
@@ -433,429 +433,205 @@ watch(
 </script>
 
 <template>
-  <Page title="" content-class="p-0">
-    <div class="p-3 md:p-6">
-      <div>
-        <div>
-          <!-- Stats Grid -->
-          <template v-if="loading">
-            <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-              <Card
-                v-for="i in 6"
-                :key="i"
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <Skeleton.Avatar
-                    active
-                    shape="circle"
-                    size="small"
-                    class="md:hidden"
-                  />
-                  <Skeleton.Avatar
-                    active
-                    shape="circle"
-                    size="large"
-                    class="hidden md:block"
-                  />
-                  <div class="w-full min-w-0">
-                    <Skeleton
-                      active
-                      :paragraph="{ rows: 1, width: '100%' }"
-                      :title="{ width: '60%' }"
-                    />
-                  </div>
-                </div>
-              </Card>
-            </div>
-            <Card :bordered="false" class="shadow-sm">
-              <Skeleton active :paragraph="{ rows: 4 }" />
-            </Card>
-          </template>
+  <CodingDashboardLayout :loading="loading" :error="error" :error-message="errorMessage">
+    <template #skeleton>
+      <Card :bordered="false" class="shadow-sm">
+        <Skeleton active :paragraph="{ rows: 4 }" />
+      </Card>
+    </template>
 
-          <template v-else-if="error">
-            <div class="w-full py-12 text-center">
-              <Alert
-                :description="errorMessage"
-                message="加载失败"
-                show-icon
-                type="error"
-                class="inline-block text-left"
-              />
-            </div>
-          </template>
+    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
+      <StatCard title="最活跃的月份" :value="bestMonth.date" color="blue">
+        <template #icon><CalendarOutlined /></template>
+      </StatCard>
+      
+      <StatCard title="日均提交" :value="dailyAverage" color="green">
+        <template #icon><BarChartOutlined /></template>
+      </StatCard>
 
-          <template v-else>
-            <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-              <!-- Best Month -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-blue-100 p-1.5 md:p-2 dark:bg-blue-900/30"
-                  >
-                    <CalendarOutlined
-                      class="text-base text-blue-600 md:text-lg dark:text-blue-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      最活跃的月份
-                    </div>
-                    <div class="mt-0.5">
-                      <span class="text-sm font-bold md:text-base">{{
-                        bestMonth.date
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+      <StatCard title="总 Star 数" :value="totalStars" color="yellow">
+        <template #icon><StarOutlined /></template>
+      </StatCard>
 
-              <!-- Daily Average -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-green-100 p-1.5 md:p-2 dark:bg-green-900/30"
-                  >
-                    <BarChartOutlined
-                      class="text-base text-green-600 md:text-lg dark:text-green-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      日均提交
-                    </div>
-                    <div class="mt-0.5">
-                      <span class="text-sm font-bold md:text-base">{{
-                        dailyAverage
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+      <StatCard title="最活跃的一天" :value="busiestDay.count" unit="次" :sub-value="busiestDay.date" color="orange">
+        <template #icon><ThunderboltOutlined /></template>
+      </StatCard>
 
-              <!-- Total Stars -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-yellow-100 p-1.5 md:p-2 dark:bg-yellow-900/30"
-                  >
-                    <StarOutlined
-                      class="text-base text-yellow-600 md:text-lg dark:text-yellow-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      总 Star 数
-                    </div>
-                    <div class="mt-0.5">
-                      <span class="text-sm font-bold md:text-base">{{
-                        totalStars
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+      <StatCard title="最长连续" :value="longestStreak.days" unit="天" :sub-value="`${longestStreak.start}-${longestStreak.end}`" color="red">
+        <template #icon><FireOutlined /></template>
+      </StatCard>
 
-              <!-- Busiest Day -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-orange-100 p-1.5 md:p-2 dark:bg-orange-900/30"
-                  >
-                    <ThunderboltOutlined
-                      class="text-base text-orange-600 md:text-lg dark:text-orange-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      最活跃的一天
-                    </div>
-                    <div class="mt-0.5 flex items-baseline gap-1">
-                      <span class="text-sm font-bold md:text-base">{{
-                        busiestDay.count
-                      }}</span>
-                      <span class="text-xs text-gray-500">次</span>
-                    </div>
-                    <div class="truncate text-xs text-gray-400">
-                      {{ busiestDay.date }}
-                    </div>
-                  </div>
-                </div>
-              </Card>
+      <StatCard title="今日提交次数" :value="todayContribution" unit="次" color="cyan">
+        <template #icon><CheckCircleOutlined /></template>
+      </StatCard>
+    </div>
 
-              <!-- Longest Streak -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-red-100 p-1.5 md:p-2 dark:bg-red-900/30"
-                  >
-                    <FireOutlined
-                      class="text-base text-red-600 md:text-lg dark:text-red-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      最长连续
-                    </div>
-                    <div class="mt-0.5 flex items-baseline gap-1">
-                      <span class="text-sm font-bold md:text-base">{{
-                        longestStreak.days
-                      }}</span>
-                      <span class="text-xs text-gray-500">天</span>
-                    </div>
-                    <div class="truncate text-xs text-gray-400">
-                      {{ longestStreak.start }}-{{ longestStreak.end }}
-                    </div>
-                  </div>
-                </div>
-              </Card>
-
-              <!-- Today's Contribution -->
-              <Card
-                :bordered="false"
-                class="shadow-sm"
-                :body-style="{ padding: '12px' }"
-              >
-                <div class="flex items-start gap-2 md:items-center md:gap-3">
-                  <div
-                    class="shrink-0 rounded-full bg-cyan-100 p-1.5 md:p-2 dark:bg-cyan-900/30"
-                  >
-                    <CheckCircleOutlined
-                      class="text-base text-cyan-600 md:text-lg dark:text-cyan-400"
-                    />
-                  </div>
-                  <div class="min-w-0">
-                    <div class="truncate text-xs text-gray-500 md:text-sm">
-                      今日提交次数
-                    </div>
-                    <div class="mt-0.5 flex items-baseline gap-1">
-                      <span class="text-sm font-bold md:text-base">{{
-                        todayContribution
-                      }}</span>
-                      <span class="text-xs text-gray-500">次</span>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-            <Card
-              :bordered="false"
-              class="mb-6 shadow-sm"
-              :head-style="{
-                borderBottom: 'none',
-                paddingLeft: '12px',
-                paddingRight: '12px',
-              }"
-              :body-style="{ padding: '0 12px 20px 12px' }"
+    <Card
+      :bordered="false"
+      class="mb-6 shadow-sm"
+      :head-style="{
+        borderBottom: 'none',
+        paddingLeft: '12px',
+        paddingRight: '12px',
+      }"
+      :body-style="{ padding: '0 12px 20px 12px' }"
+    >
+      <template #title>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <span class="text-sm md:text-base"
+            >过去一年共提交 {{ totalContributions }} 次</span
+          >
+          <span
+            class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
+          >
+            连续提交:
+            <span
+              class="font-medium text-green-600 dark:text-green-500"
             >
-              <template #title>
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <span class="text-sm md:text-base"
-                    >过去一年共提交 {{ totalContributions }} 次</span
-                  >
+              {{ currentStreak }}
+            </span>
+            天
+          </span>
+        </div>
+      </template>
+      <div
+        ref="scrollContainer"
+        class="w-full overflow-x-auto overflow-y-hidden transition-all"
+      >
+        <div class="h-[125px] min-w-[720px] md:h-[130px]">
+          <ContributionGraph :data="graphData" height="100%" />
+        </div>
+      </div>
+    </Card>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div class="lg:col-span-2">
+        <h3
+          class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
+        >
+          仓库
+        </h3>
+        <Table
+          :columns="columns"
+          :data-source="repoList"
+          :loading="reposLoading"
+          :pagination="{ pageSize: 10 }"
+          :scroll="{ x: 'max-content' }"
+          row-key="id"
+        >
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.key === 'name'">
+              <a
+                :href="record.html_url"
+                class="flex items-center gap-2 text-blue-500 hover:underline"
+                target="_blank"
+              >
+                <span class="font-medium">{{ record.name }}</span>
+                <Tag v-if="record.private" color="red">Private</Tag>
+                <Tag v-if="record.fork" color="orange">Fork</Tag>
+              </a>
+              <div class="max-w-[200px] truncate text-xs text-gray-500">
+                {{ record.description }}
+              </div>
+            </template>
+            <template v-if="column.key === 'language'">
+              <Tag v-if="record.language" color="blue">
+                {{ record.language }}
+              </Tag>
+            </template>
+            <template v-if="column.key === 'stargazers_count'">
+              <div class="flex items-center gap-1">
+                <StarOutlined class="text-yellow-500" />
+                <span>
+                  {{ record.stargazers_count }}
                   <span
-                    class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
+                    v-if="record.fork && record.sourceStars !== undefined"
+                    class="text-xs text-gray-400"
                   >
-                    连续提交:
-                    <span
-                      class="font-medium text-green-600 dark:text-green-500"
-                    >
-                      {{ currentStreak }}
-                    </span>
-                    天
+                    / {{ record.sourceStars }}
                   </span>
-                </div>
-              </template>
+                </span>
+              </div>
+            </template>
+            <template v-if="column.key === 'forks_count'">
+              <div class="flex items-center gap-1">
+                <BranchesOutlined class="text-gray-500" />
+                <span>{{ record.forks_count }}</span>
+              </div>
+            </template>
+            <template v-if="column.key === 'pushed_at'">
+              <span class="text-gray-500">
+                {{ formatDate(record.pushed_at) }}
+              </span>
+            </template>
+            <template v-if="column.key === 'myCommits'">
               <div
-                ref="scrollContainer"
-                class="w-full overflow-x-auto overflow-y-hidden transition-all"
+                v-if="record.loadingStats"
+                class="flex items-center gap-2"
               >
-                <div class="h-[125px] min-w-[720px] md:h-[130px]">
-                  <ContributionGraph :data="graphData" height="100%" />
-                </div>
+                <Spin size="small" />
               </div>
-            </Card>
+              <span
+                v-else
+                :class="{
+                  'font-bold text-green-600':
+                    typeof record.myCommits === 'number' &&
+                    record.myCommits > 0,
+                }"
+              >
+                {{ record.myCommits }}
+              </span>
+            </template>
           </template>
+        </Table>
+      </div>
 
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div class="lg:col-span-2">
-              <h3
-                class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
-              >
-                仓库
-              </h3>
-              <Table
-                :columns="columns"
-                :data-source="repoList"
-                :loading="reposLoading"
-                :pagination="{ pageSize: 10 }"
-                :scroll="{ x: 'max-content' }"
-                row-key="id"
-              >
-                <template #bodyCell="{ column, record }">
-                  <template v-if="column.key === 'name'">
-                    <a
-                      :href="record.html_url"
-                      class="flex items-center gap-2 text-blue-500 hover:underline"
-                      target="_blank"
-                    >
-                      <span class="font-medium">{{ record.name }}</span>
-                      <Tag v-if="record.private" color="red">Private</Tag>
-                      <Tag v-if="record.fork" color="orange">Fork</Tag>
-                    </a>
-                    <div class="max-w-[200px] truncate text-xs text-gray-500">
-                      {{ record.description }}
+      <div class="lg:relative lg:col-span-1">
+        <div class="flex flex-col lg:absolute lg:inset-0">
+          <DataListCard title="最近提交" :loading="activitiesLoading" :is-empty="recentActivities.length === 0" empty-text="暂无最近动态">
+            <List
+              item-layout="horizontal"
+              :data-source="recentActivities"
+            >
+              <template #renderItem="{ item }">
+                <List.Item
+                  class="!px-4 !py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                >
+                  <div class="w-full">
+                    <div class="mb-1 flex items-center justify-between">
+                      <a
+                        :href="item.repoUrl"
+                        target="_blank"
+                        class="max-w-[200px] truncate font-medium text-blue-500 hover:underline"
+                        :title="item.repo"
+                      >
+                        {{ item.repo }}
+                      </a>
+                      <span class="shrink-0 text-xs text-gray-400">{{
+                        formatDate(item.date)
+                      }}</span>
                     </div>
-                  </template>
-                  <template v-if="column.key === 'language'">
-                    <Tag v-if="record.language" color="blue">
-                      {{ record.language }}
-                    </Tag>
-                  </template>
-                  <template v-if="column.key === 'stargazers_count'">
-                    <div class="flex items-center gap-1">
-                      <StarOutlined class="text-yellow-500" />
-                      <span>
-                        {{ record.stargazers_count }}
-                        <span
-                          v-if="record.fork && record.sourceStars !== undefined"
-                          class="text-xs text-gray-400"
-                        >
-                          / {{ record.sourceStars }}
-                        </span>
-                      </span>
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'forks_count'">
-                    <div class="flex items-center gap-1">
-                      <BranchesOutlined class="text-gray-500" />
-                      <span>{{ record.forks_count }}</span>
-                    </div>
-                  </template>
-                  <template v-if="column.key === 'pushed_at'">
-                    <span class="text-gray-500">
-                      {{ formatDate(record.pushed_at) }}
-                    </span>
-                  </template>
-                  <template v-if="column.key === 'myCommits'">
                     <div
-                      v-if="record.loadingStats"
-                      class="flex items-center gap-2"
+                      class="line-clamp-2 break-all text-xs text-gray-500 dark:text-gray-400"
+                      :title="item.message"
                     >
-                      <Spin size="small" />
+                      <a
+                        :href="item.commitUrl"
+                        target="_blank"
+                        class="text-gray-500 hover:text-blue-500 hover:underline dark:text-gray-400 dark:hover:text-blue-400"
+                      >
+                        {{ item.message }}
+                      </a>
                     </div>
-                    <span
-                      v-else
-                      :class="{
-                        'font-bold text-green-600':
-                          typeof record.myCommits === 'number' &&
-                          record.myCommits > 0,
-                      }"
-                    >
-                      {{ record.myCommits }}
-                    </span>
-                  </template>
-                </template>
-              </Table>
-            </div>
-
-            <div class="lg:relative lg:col-span-1">
-              <div class="flex flex-col lg:absolute lg:inset-0">
-                <h3
-                  class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
-                >
-                  最近提交
-                </h3>
-                <Card
-                  :bordered="false"
-                  class="flex min-h-0 flex-1 flex-col shadow-sm"
-                  :body-style="{
-                    padding: '0',
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                  }"
-                >
-                  <div v-if="activitiesLoading" class="flex justify-center p-8">
-                    <Spin />
                   </div>
-                  <div
-                    v-else-if="recentActivities.length === 0"
-                    class="p-8 text-center text-gray-500"
-                  >
-                    暂无最近动态
-                  </div>
-                  <div v-else class="flex-1 overflow-y-auto">
-                    <List
-                      item-layout="horizontal"
-                      :data-source="recentActivities"
-                    >
-                      <template #renderItem="{ item }">
-                        <List.Item
-                          class="!px-4 !py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        >
-                          <div class="w-full">
-                            <div class="mb-1 flex items-center justify-between">
-                              <a
-                                :href="item.repoUrl"
-                                target="_blank"
-                                class="max-w-[200px] truncate font-medium text-blue-500 hover:underline"
-                                :title="item.repo"
-                              >
-                                {{ item.repo }}
-                              </a>
-                              <span class="shrink-0 text-xs text-gray-400">{{
-                                formatDate(item.date)
-                              }}</span>
-                            </div>
-                            <div
-                              class="line-clamp-2 break-all text-xs text-gray-500 dark:text-gray-400"
-                              :title="item.message"
-                            >
-                              <a
-                                :href="item.commitUrl"
-                                target="_blank"
-                                class="text-gray-500 hover:text-blue-500 hover:underline dark:text-gray-400 dark:hover:text-blue-400"
-                              >
-                                {{ item.message }}
-                              </a>
-                            </div>
-                          </div>
-                        </List.Item>
-                      </template>
-                    </List>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          </div>
+                </List.Item>
+              </template>
+            </List>
+          </DataListCard>
         </div>
       </div>
     </div>
-  </Page>
+  </CodingDashboardLayout>
 </template>
 
 <style scoped>
