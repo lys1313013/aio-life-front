@@ -1,14 +1,15 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
+
 import { Card, Skeleton } from 'ant-design-vue';
 
 interface Props {
   loading?: boolean;
   title: string;
-  value?: string | number;
+  value?: number | string;
   unit?: string;
   subValue?: string;
-  color?: 'blue' | 'green' | 'yellow' | 'orange' | 'red' | 'cyan' | 'gray';
+  color?: 'blue' | 'cyan' | 'gray' | 'green' | 'orange' | 'red' | 'yellow';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -18,13 +19,34 @@ const props = withDefaults(defineProps<Props>(), {
 
 const colorClasses = computed(() => {
   const map: Record<string, { bg: string; text: string }> = {
-    blue: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400' },
-    green: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-600 dark:text-green-400' },
-    yellow: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400' },
-    orange: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-600 dark:text-orange-400' },
-    red: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400' },
-    cyan: { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-600 dark:text-cyan-400' },
-    gray: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400' },
+    blue: {
+      bg: 'bg-blue-100 dark:bg-blue-900/30',
+      text: 'text-blue-600 dark:text-blue-400',
+    },
+    green: {
+      bg: 'bg-green-100 dark:bg-green-900/30',
+      text: 'text-green-600 dark:text-green-400',
+    },
+    yellow: {
+      bg: 'bg-yellow-100 dark:bg-yellow-900/30',
+      text: 'text-yellow-600 dark:text-yellow-400',
+    },
+    orange: {
+      bg: 'bg-orange-100 dark:bg-orange-900/30',
+      text: 'text-orange-600 dark:text-orange-400',
+    },
+    red: {
+      bg: 'bg-red-100 dark:bg-red-900/30',
+      text: 'text-red-600 dark:text-red-400',
+    },
+    cyan: {
+      bg: 'bg-cyan-100 dark:bg-cyan-900/30',
+      text: 'text-cyan-600 dark:text-cyan-400',
+    },
+    gray: {
+      bg: 'bg-gray-100 dark:bg-gray-800',
+      text: 'text-gray-600 dark:text-gray-400',
+    },
   };
   return map[props.color ?? 'blue'] || map.blue || { bg: '', text: '' };
 });
@@ -57,7 +79,10 @@ const colorClasses = computed(() => {
           class="shrink-0 rounded-full p-1.5 md:p-2"
           :class="colorClasses.bg"
         >
-          <div class="text-base md:text-lg flex items-center justify-center" :class="colorClasses.text">
+          <div
+            class="flex items-center justify-center text-base md:text-lg"
+            :class="colorClasses.text"
+          >
             <slot name="icon"></slot>
           </div>
         </div>
@@ -66,7 +91,9 @@ const colorClasses = computed(() => {
             {{ title }}
           </div>
           <div class="mt-0.5 flex items-baseline gap-1">
-            <span class="text-sm font-bold md:text-base tabular-nums">{{ value ?? '-' }}</span>
+            <span class="text-sm font-bold tabular-nums md:text-base">{{
+              value ?? '-'
+            }}</span>
             <span v-if="unit" class="text-xs text-gray-500">{{ unit }}</span>
             <slot name="extra"></slot>
           </div>

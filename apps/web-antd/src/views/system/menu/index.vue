@@ -54,6 +54,8 @@ const form = ref<SysMenuSaveReq>({
   meta: {},
 });
 
+const metaTitle = ref('');
+const metaIcon = ref('');
 const metaText = ref('{}');
 
 const protectedPaths = new Set(['/system', '/system/menu']);
@@ -64,7 +66,7 @@ type RoleOption = { label: string; value: string };
 const roleOptions = ref<RoleOption[]>([]);
 const roleOptionsLoading = ref(false);
 const selectableRoleOptions = computed(() =>
-  roleOptions.value.filter((x) => x.value !== 'admin'),
+  roleOptions.value,
 );
 
 const selectedRoles = ref<string[]>([]);
@@ -170,6 +172,8 @@ const openCreate = () => {
     meta: {},
   };
   selectedRoles.value = [];
+  metaTitle.value = '';
+  metaIcon.value = '';
   metaText.value = '{}';
   editVisible.value = true;
 };
@@ -190,8 +194,14 @@ const openEdit = (row: any) => {
     meta: r.meta ?? {},
   };
   const roles = parseRoles(r.roles);
-  selectedRoles.value = roles.filter((x) => x !== 'admin');
-  metaText.value = JSON.stringify(form.value.meta ?? {}, null, 2);
+  selectedRoles.value = roles;
+  const metaObj = { ...r.meta };
+  metaTitle.value = metaObj.title || '';
+  metaIcon.value = metaObj.icon || '';
+  delete metaObj.title;
+  delete metaObj.icon;
+  metaText.value = Object.keys(metaObj).length > 0 ? JSON.stringify(metaObj, null, 2) : '{}';
+
   editVisible.value = true;
 };
 
@@ -215,9 +225,12 @@ const save = async () => {
         selectedRoles.value
           .map((x) => x.trim())
           .filter(Boolean)
-          .filter((x) => x !== 'admin'),
       ),
     );
+    const parsedMeta = parseMeta();
+    if (metaTitle.value) parsedMeta.title = metaTitle.value.trim();
+    if (metaIcon.value) parsedMeta.icon = metaIcon.value.trim();
+
     const payload: SysMenuSaveReq = {
       ...form.value,
       name: form.value.name?.trim(),
@@ -225,7 +238,7 @@ const save = async () => {
       component: form.value.component?.trim(),
       redirect: form.value.redirect?.trim(),
       roles: normalizedSelectedRoles.join(','),
-      meta: parseMeta(),
+      meta: parsedMeta,
     };
     if (isProtectedMenu(payload)) {
       payload.status = 1;
@@ -329,7 +342,20 @@ onMounted(() => {
       </div>
       <Form layout="vertical">
         <div class="mb-3 rounded-md border border-stone-200 p-3">
-          <div class="mb-3 text-sm font-semibold">基本信息</div>
+          <div class="grid grid-cols-2 gap-x-4">
+            <Form.Item label="菜单名称">
+              <Input
+                v-model:value="metaTitle"
+                placeholder="例如 时间管理"
+              />
+            </Form.Item>
+            <Form.Item label="路由名称">
+              <Input
+                v-model:value="form.name"
+                placeholder="例如 TimeManagement"
+              />
+            </Form.Item>
+          </div>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="父节点">
               <TreeSelect
@@ -340,40 +366,35 @@ onMounted(() => {
                 allow-clear
               />
             </Form.Item>
-            <Form.Item label="Name（路由 name）">
+            <Form.Item label="Path（路由 path）">
               <Input
-                v-model:value="form.name"
-                placeholder="例如 TimeManagement"
+                v-model:value="form.path"
+                placeholder="例如 /time-management"
               />
             </Form.Item>
           </div>
           <div class="grid grid-cols-2 gap-x-4">
-            <Form.Item label="Path（路由 path）">
-              <Input
-                v-model:value="form.path"
-                :disabled="editingId != null"
-                placeholder="例如 /time-management"
-              />
-            </Form.Item>
             <Form.Item label="Component">
               <Input
                 v-model:value="form.component"
                 placeholder="例如 BasicLayout 或 system/menu/index"
               />
             </Form.Item>
-          </div>
-        </div>
-
-        <div class="mb-3 rounded-md border border-stone-200 p-3">
-          <div class="mb-3 text-sm font-semibold">路由与权限</div>
-          <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="Redirect（可选）">
               <Input
                 v-model:value="form.redirect"
                 placeholder="例如 /time-management/time-tracker"
               />
             </Form.Item>
-            <Form.Item label="Roles（空=仅管理员）">
+          </div>
+          <div class="grid grid-cols-2 gap-x-4">
+            <Form.Item label="菜单图标（Icon）">
+              <Input
+                v-model:value="metaIcon"
+                placeholder="例如 mdi:clock-outline"
+              />
+            </Form.Item>
+            <Form.Item label="Roles（空=所有人可见）">
               <Select
                 v-model:value="selectedRoles"
                 mode="multiple"
@@ -383,7 +404,7 @@ onMounted(() => {
                 placeholder="选择可访问角色"
               />
               <div class="mt-1 text-xs text-stone-400">
-                留空表示仅管理员可见；选择后表示所选角色与管理员可见。
+                留空表示所有人可见；选择后表示仅所选角色可见。
               </div>
             </Form.Item>
           </div>
@@ -412,14 +433,14 @@ onMounted(() => {
         <div class="rounded-md border border-stone-200 p-3">
           <div class="mb-2 text-sm font-semibold">Meta 配置（JSON）</div>
           <div class="mb-2 text-xs text-stone-400">
-            常见字段：title / icon / order / hideInMenu / keepAlive / link
+            其他高级字段：order / hideInMenu / keepAlive / link
           </div>
           <Form.Item class="!mb-0">
             <Input.TextArea
               v-model:value="metaText"
               :auto-size="{ minRows: 7, maxRows: 14 }"
               class="font-mono"
-              placeholder='{"title":"时间","icon":"mdi:clock-outline"}'
+              placeholder="{&quot;order&quot;: 1, &quot;hideInMenu&quot;: false}"
             />
           </Form.Item>
         </div>

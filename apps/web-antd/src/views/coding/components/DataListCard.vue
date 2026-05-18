@@ -16,7 +16,7 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex h-full flex-col">
     <h3
       v-if="title"
       class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
@@ -37,10 +37,7 @@ withDefaults(defineProps<Props>(), {
       <div v-if="loading" class="flex justify-center p-8">
         <Spin />
       </div>
-      <div
-        v-else-if="isEmpty"
-        class="p-8 text-center text-gray-500"
-      >
+      <div v-else-if="isEmpty" class="p-8 text-center text-gray-500">
         {{ emptyText }}
       </div>
       <div v-else class="flex-1 overflow-y-auto">

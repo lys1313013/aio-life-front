@@ -7,8 +7,8 @@ import dayjs from 'dayjs';
 import { getUserBindListApi } from '#/api/core/user-bind';
 
 import CodingDashboardLayout from '../components/CodingDashboardLayout.vue';
-import StatCard from '../components/StatCard.vue';
 import ContributionGraph from '../components/ContributionGraph.vue';
+import StatCard from '../components/StatCard.vue';
 
 defineOptions({ name: 'LeetCode' });
 
@@ -556,29 +556,37 @@ onMounted(async () => {
   <CodingDashboardLayout>
     <!-- Ranking Info Card Group -->
     <div class="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-      <StatCard 
-        title="全站排名" 
-        :value="userInfo?.siteRanking?.toLocaleString()" 
+      <StatCard
+        title="全站排名"
+        :value="userInfo?.siteRanking?.toLocaleString()"
         :loading="profileLoading"
         color="gray"
       />
-      <StatCard 
-        title="竞赛分数" 
-        :value="Math.round(contestInfo?.rating || 0)" 
+      <StatCard
+        title="竞赛分数"
+        :value="Math.round(contestInfo?.rating || 0)"
         :loading="contestLoading"
         color="blue"
       />
-      <StatCard 
-        title="全球排名" 
-        :value="contestInfo?.globalRanking?.toLocaleString()" 
-        :sub-value="contestInfo?.globalTotalParticipants ? `/ ${contestInfo.globalTotalParticipants.toLocaleString()}` : ''"
+      <StatCard
+        title="全球排名"
+        :value="contestInfo?.globalRanking?.toLocaleString()"
+        :sub-value="
+          contestInfo?.globalTotalParticipants
+            ? `/ ${contestInfo.globalTotalParticipants.toLocaleString()}`
+            : ''
+        "
         :loading="contestLoading"
         color="orange"
       />
-      <StatCard 
-        title="全国排名" 
-        :value="contestInfo?.localRanking?.toLocaleString()" 
-        :sub-value="contestInfo?.localTotalParticipants ? `/ ${contestInfo.localTotalParticipants.toLocaleString()}` : ''"
+      <StatCard
+        title="全国排名"
+        :value="contestInfo?.localRanking?.toLocaleString()"
+        :sub-value="
+          contestInfo?.localTotalParticipants
+            ? `/ ${contestInfo.localTotalParticipants.toLocaleString()}`
+            : ''
+        "
         :loading="contestLoading"
         color="red"
       />

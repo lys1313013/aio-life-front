@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { Page } from '@vben/common-ui';
+
 import { Alert } from 'ant-design-vue';
 
 interface Props {
@@ -21,7 +22,7 @@ withDefaults(defineProps<Props>(), {
       <template v-if="loading">
         <slot name="skeleton"></slot>
       </template>
-      
+
       <template v-else-if="error">
         <div class="w-full py-12 text-center">
           <Alert

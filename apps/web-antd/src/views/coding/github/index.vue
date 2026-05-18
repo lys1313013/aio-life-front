@@ -12,23 +12,16 @@ import {
   StarOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
-import {
-  Card,
-  List,
-  message,
-  Spin,
-  Table,
-  Tag,
-} from 'ant-design-vue';
+import { Card, List, message, Spin, Table, Tag } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getGithubContributionStats } from '#/api/core/github';
 import { getUserBindListApi } from '#/api/core/user-bind';
 
-import ContributionGraph from '../components/ContributionGraph.vue';
 import CodingDashboardLayout from '../components/CodingDashboardLayout.vue';
-import StatCard from '../components/StatCard.vue';
+import ContributionGraph from '../components/ContributionGraph.vue';
 import DataListCard from '../components/DataListCard.vue';
+import StatCard from '../components/StatCard.vue';
 
 defineOptions({ name: 'GithubGraph' });
 
@@ -433,18 +426,24 @@ watch(
 </script>
 
 <template>
-  <CodingDashboardLayout :loading="loading" :error="error" :error-message="errorMessage">
+  <CodingDashboardLayout
+    :loading="loading"
+    :error="error"
+    :error-message="errorMessage"
+  >
     <template #skeleton>
       <Card :bordered="false" class="shadow-sm">
         <Skeleton active :paragraph="{ rows: 4 }" />
       </Card>
     </template>
 
-    <div class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
+    <div
+      class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6"
+    >
       <StatCard title="最活跃的月份" :value="bestMonth.date" color="blue">
         <template #icon><CalendarOutlined /></template>
       </StatCard>
-      
+
       <StatCard title="日均提交" :value="dailyAverage" color="green">
         <template #icon><BarChartOutlined /></template>
       </StatCard>
@@ -453,15 +452,32 @@ watch(
         <template #icon><StarOutlined /></template>
       </StatCard>
 
-      <StatCard title="最活跃的一天" :value="busiestDay.count" unit="次" :sub-value="busiestDay.date" color="orange">
+      <StatCard
+        title="最活跃的一天"
+        :value="busiestDay.count"
+        unit="次"
+        :sub-value="busiestDay.date"
+        color="orange"
+      >
         <template #icon><ThunderboltOutlined /></template>
       </StatCard>
 
-      <StatCard title="最长连续" :value="longestStreak.days" unit="天" :sub-value="`${longestStreak.start}-${longestStreak.end}`" color="red">
+      <StatCard
+        title="最长连续"
+        :value="longestStreak.days"
+        unit="天"
+        :sub-value="`${longestStreak.start}-${longestStreak.end}`"
+        color="red"
+      >
         <template #icon><FireOutlined /></template>
       </StatCard>
 
-      <StatCard title="今日提交次数" :value="todayContribution" unit="次" color="cyan">
+      <StatCard
+        title="今日提交次数"
+        :value="todayContribution"
+        unit="次"
+        color="cyan"
+      >
         <template #icon><CheckCircleOutlined /></template>
       </StatCard>
     </div>
@@ -485,9 +501,7 @@ watch(
             class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
           >
             连续提交:
-            <span
-              class="font-medium text-green-600 dark:text-green-500"
-            >
+            <span class="font-medium text-green-600 dark:text-green-500">
               {{ currentStreak }}
             </span>
             天
@@ -506,9 +520,7 @@ watch(
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div class="lg:col-span-2">
-        <h3
-          class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200"
-        >
+        <h3 class="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
           仓库
         </h3>
         <Table
@@ -565,10 +577,7 @@ watch(
               </span>
             </template>
             <template v-if="column.key === 'myCommits'">
-              <div
-                v-if="record.loadingStats"
-                class="flex items-center gap-2"
-              >
+              <div v-if="record.loadingStats" class="flex items-center gap-2">
                 <Spin size="small" />
               </div>
               <span
@@ -588,11 +597,13 @@ watch(
 
       <div class="lg:relative lg:col-span-1">
         <div class="flex flex-col lg:absolute lg:inset-0">
-          <DataListCard title="最近提交" :loading="activitiesLoading" :is-empty="recentActivities.length === 0" empty-text="暂无最近动态">
-            <List
-              item-layout="horizontal"
-              :data-source="recentActivities"
-            >
+          <DataListCard
+            title="最近提交"
+            :loading="activitiesLoading"
+            :is-empty="recentActivities.length === 0"
+            empty-text="暂无最近动态"
+          >
+            <List item-layout="horizontal" :data-source="recentActivities">
               <template #renderItem="{ item }">
                 <List.Item
                   class="!px-4 !py-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
