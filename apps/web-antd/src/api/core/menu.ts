@@ -57,3 +57,7 @@ export async function updateMenuStatusApi(id: number, status: number) {
     status,
   });
 }
+
+export async function deleteMenuApi(id: number) {
+  return requestClient.delete<void>(`/menu/admin/${id}`);
+}

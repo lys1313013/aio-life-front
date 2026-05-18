@@ -3,6 +3,7 @@ import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
 
 import { computed, onMounted, ref } from 'vue';
 
+import { VbenIcon } from '@vben/common-ui';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import {
@@ -12,6 +13,7 @@ import {
   InputNumber,
   message,
   Modal,
+  Popconfirm,
   Select,
   Spin,
   Switch,
@@ -21,6 +23,7 @@ import {
 
 import {
   createMenuApi,
+  deleteMenuApi,
   getMenuAdminTreeApi,
   getMenuRoleOptionsApi,
   updateMenuApi,
@@ -65,9 +68,7 @@ const isProtectedMenu = (row: { path?: string }) =>
 type RoleOption = { label: string; value: string };
 const roleOptions = ref<RoleOption[]>([]);
 const roleOptionsLoading = ref(false);
-const selectableRoleOptions = computed(() =>
-  roleOptions.value,
-);
+const selectableRoleOptions = computed(() => roleOptions.value);
 
 const selectedRoles = ref<string[]>([]);
 
@@ -200,7 +201,8 @@ const openEdit = (row: any) => {
   metaIcon.value = metaObj.icon || '';
   delete metaObj.title;
   delete metaObj.icon;
-  metaText.value = Object.keys(metaObj).length > 0 ? JSON.stringify(metaObj, null, 2) : '{}';
+  metaText.value =
+    Object.keys(metaObj).length > 0 ? JSON.stringify(metaObj, null, 2) : '{}';
 
   editVisible.value = true;
 };
@@ -221,11 +223,7 @@ const save = async () => {
   saving.value = true;
   try {
     const normalizedSelectedRoles = Array.from(
-      new Set(
-        selectedRoles.value
-          .map((x) => x.trim())
-          .filter(Boolean)
-      ),
+      new Set(selectedRoles.value.map((x) => x.trim()).filter(Boolean)),
     );
     const parsedMeta = parseMeta();
     if (metaTitle.value) parsedMeta.title = metaTitle.value.trim();
@@ -280,6 +278,17 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
   }
 };
 
+const handleDelete = async (row: Record<string, any>) => {
+  try {
+    await deleteMenuApi(Number(row.id));
+    message.success('删除成功');
+    await load();
+    await refreshAccessibleMenus();
+  } catch (error: any) {
+    message.error(error?.message || '删除失败');
+  }
+};
+
 onMounted(() => {
   load();
   loadRoleOptions();
@@ -306,10 +315,19 @@ onMounted(() => {
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'title'">
-            <div class="font-medium">
-              {{ record.meta?.title ?? record.name }}
+            <div class="flex items-center gap-2">
+              <VbenIcon
+                v-if="record.meta?.icon"
+                :icon="record.meta.icon"
+                class="size-5 flex-shrink-0 text-stone-500"
+              />
+              <div>
+                <div class="font-medium">
+                  {{ record.meta?.title ?? record.name }}
+                </div>
+                <div class="text-xs text-stone-400">{{ record.name }}</div>
+              </div>
             </div>
-            <div class="text-xs text-stone-400">{{ record.name }}</div>
           </template>
           <template v-else-if="column.key === 'status'">
             <Switch
@@ -322,7 +340,22 @@ onMounted(() => {
           </template>
           <template v-else-if="column.key === 'action'">
             <div class="flex items-center gap-2">
-              <Button size="small" @click="openEdit(record)">编辑</Button>
+              <Button size="small" type="link" @click="openEdit(record)">
+                编辑
+              </Button>
+              <Popconfirm
+                title="确定要删除该菜单吗？"
+                @confirm="handleDelete(record)"
+              >
+                <Button
+                  danger
+                  size="small"
+                  type="link"
+                  :disabled="isProtectedMenu(record)"
+                >
+                  删除
+                </Button>
+              </Popconfirm>
             </div>
           </template>
         </template>
@@ -344,10 +377,7 @@ onMounted(() => {
         <div class="mb-3 rounded-md border border-stone-200 p-3">
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="菜单名称">
-              <Input
-                v-model:value="metaTitle"
-                placeholder="例如 时间管理"
-              />
+              <Input v-model:value="metaTitle" placeholder="例如 时间管理" />
             </Form.Item>
             <Form.Item label="路由名称">
               <Input
@@ -440,7 +470,7 @@ onMounted(() => {
               v-model:value="metaText"
               :auto-size="{ minRows: 7, maxRows: 14 }"
               class="font-mono"
-              placeholder="{&quot;order&quot;: 1, &quot;hideInMenu&quot;: false}"
+              placeholder="{'order': 1, 'hideInMenu': false}"
             />
           </Form.Item>
         </div>
