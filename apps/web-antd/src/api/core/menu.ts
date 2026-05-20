@@ -12,10 +12,10 @@ export async function getAllMenusApi() {
 export interface SysMenuAdminItem {
   children?: SysMenuAdminItem[];
   component?: string;
-  id: number;
+  id: string;
   meta?: Record<string, any>;
   name: string;
-  parentId: number;
+  parentId: string;
   path: string;
   redirect?: string;
   roles?: string;
@@ -25,10 +25,10 @@ export interface SysMenuAdminItem {
 
 export interface SysMenuSaveReq {
   component?: string;
-  id?: number;
+  id?: string;
   meta?: Record<string, any>;
   name: string;
-  parentId?: number;
+  parentId?: string;
   path: string;
   redirect?: string;
   roles?: string;
@@ -48,16 +48,16 @@ export async function createMenuApi(data: SysMenuSaveReq) {
   return requestClient.post<SysMenuAdminItem>('/menu/admin', data);
 }
 
-export async function updateMenuApi(id: number, data: SysMenuSaveReq) {
+export async function updateMenuApi(id: string, data: SysMenuSaveReq) {
   return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}`, data);
 }
 
-export async function updateMenuStatusApi(id: number, status: number) {
+export async function updateMenuStatusApi(id: string, status: number) {
   return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/status`, {
     status,
   });
 }
 
-export async function deleteMenuApi(id: number) {
+export async function deleteMenuApi(id: string) {
   return requestClient.delete<void>(`/menu/admin/${id}`);
 }

@@ -39,8 +39,8 @@ const list = ref<SysMenuAdminItem[]>([]);
 
 const editVisible = ref(false);
 const saving = ref(false);
-const editingId = ref<null | number>(null);
-const statusChanging = ref<Record<number, boolean>>({});
+const editingId = ref<null | string>(null);
+const statusChanging = ref<Record<string, boolean>>({});
 const accessStore = useAccessStore();
 const userStore = useUserStore();
 const authStore = useAuthStore();
@@ -48,7 +48,7 @@ const authStore = useAuthStore();
 const form = ref<SysMenuSaveReq>({
   name: '',
   path: '',
-  parentId: 0,
+  parentId: '0',
   status: 1,
   sort: 0,
   roles: '',
@@ -94,24 +94,24 @@ const parseRoles = (raw?: string) => {
 
 type ParentTreeNode = {
   children?: ParentTreeNode[];
-  key: number;
+  key: string;
   title: string;
-  value: number;
+  value: string;
 };
 
 const parentTreeOptions = computed<ParentTreeNode[]>(() => {
   const build = (nodes: SysMenuAdminItem[]): ParentTreeNode[] =>
     nodes.map((x) => ({
-      key: x.id,
+      key: String(x.id),
       title: `${x.name} (${x.path})`,
-      value: x.id,
+      value: String(x.id),
       children: x.children?.length ? build(x.children) : undefined,
     }));
   return [
     {
-      key: 0,
+      key: '0',
       title: '根节点 (0)',
-      value: 0,
+      value: '0',
       children: build(list.value),
     },
   ];
@@ -164,7 +164,7 @@ const openCreate = () => {
   form.value = {
     name: '',
     path: '',
-    parentId: 0,
+    parentId: '0',
     status: 1,
     sort: 0,
     roles: '',
@@ -181,12 +181,12 @@ const openCreate = () => {
 
 const openEdit = (row: any) => {
   const r = row as SysMenuAdminItem;
-  editingId.value = r.id;
+  editingId.value = String(r.id);
   form.value = {
-    id: r.id,
+    id: String(r.id),
     name: r.name,
     path: r.path,
-    parentId: r.parentId ?? 0,
+    parentId: r.parentId ? String(r.parentId) : '0',
     status: r.status ?? 1,
     sort: r.sort ?? 0,
     roles: r.roles ?? '',
@@ -263,7 +263,7 @@ const save = async () => {
 };
 
 const toggleStatus = async (row: Record<string, any>, status: number) => {
-  const id = Number(row.id);
+  const id = String(row.id);
   statusChanging.value = { ...statusChanging.value, [id]: true };
   try {
     await updateMenuStatusApi(id, status);
@@ -280,7 +280,7 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
 
 const handleDelete = async (row: Record<string, any>) => {
   try {
-    await deleteMenuApi(Number(row.id));
+    await deleteMenuApi(String(row.id));
     message.success('删除成功');
     await load();
     await refreshAccessibleMenus();
@@ -340,8 +340,15 @@ onMounted(() => {
           </template>
           <template v-else-if="column.key === 'action'">
             <div class="flex items-center gap-2">
-              <Button size="small" type="link" @click="openEdit(record)">
-                编辑
+              <Button
+                size="small"
+                type="link"
+                @click="openEdit(record)"
+                title="编辑"
+              >
+                <template #icon>
+                  <VbenIcon icon="lucide:edit" class="size-4" />
+                </template>
               </Button>
               <Popconfirm
                 title="确定要删除该菜单吗？"
@@ -352,8 +359,11 @@ onMounted(() => {
                   size="small"
                   type="link"
                   :disabled="isProtectedMenu(record)"
+                  title="删除"
                 >
-                  删除
+                  <template #icon>
+                    <VbenIcon icon="lucide:trash-2" class="size-4" />
+                  </template>
                 </Button>
               </Popconfirm>
             </div>
