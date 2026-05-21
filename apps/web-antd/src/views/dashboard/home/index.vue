@@ -26,6 +26,7 @@ import {
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
+import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 
 interface OverviewItem {
   icon: Component | string;
@@ -51,6 +52,14 @@ const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
 const isLongPress = ref(false);
+
+const editTaskModalVisible = ref(false);
+const editingWatchedTask = ref<WatchedTaskDetail | null>(null);
+
+function openEditTaskModal(task: WatchedTaskDetail) {
+  editingWatchedTask.value = task;
+  editTaskModalVisible.value = true;
+}
 
 // 定时器管理
 const refreshTimers = new Map<string, ReturnType<typeof setInterval>>();
@@ -507,10 +516,11 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
                 {{ getPriorityLabel(task.priority) }}
               </span>
               <span
-                class="text-sm font-medium leading-snug text-foreground"
+                class="cursor-pointer text-sm font-medium leading-snug text-foreground transition-colors hover:text-primary"
                 :class="{
                   'text-muted-foreground line-through': task.isCompleted === 1,
                 }"
+                @click.stop="openEditTaskModal(task)"
               >
                 {{ task.content }}
               </span>
@@ -613,5 +623,10 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
       @success="handleTimeTrackerSuccess"
     />
     <ExerciseAddModal ref="exerciseModalRef" @success="handleExerciseSuccess" />
+    <WatchedTaskEditModal
+      v-model:visible="editTaskModalVisible"
+      :task="editingWatchedTask"
+      @success="loadWatchedTasks"
+    />
   </div>
 </template>

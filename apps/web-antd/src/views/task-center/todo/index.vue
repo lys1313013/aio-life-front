@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
 
+import { VbenIcon } from '@vben/common-ui';
+
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -266,6 +268,7 @@ const newDetail = ref<any>({
   priority: 20,
   startTime: undefined,
   endTime: undefined,
+  isStarred: 0,
 });
 
 // 打开编辑模态框
@@ -295,10 +298,14 @@ const addDetail = () => {
   newDetail.value = {
     content: '',
     priority: 20,
-    startTime: undefined,
-    endTime: undefined,
+    timeRange: [],
+    isStarred: 0,
   };
   addDetailModalVisible.value = true;
+};
+
+const handleToggleNewDetailStar = () => {
+  newDetail.value.isStarred = newDetail.value.isStarred === 1 ? 0 : 1;
 };
 
 const handleAddDetailOk = async () => {
@@ -311,10 +318,13 @@ const handleAddDetailOk = async () => {
   }
 
   try {
+    const [startTime, endTime] = newDetail.value.timeRange || [];
     const res = await addTaskDetail({
       ...newDetail.value,
       taskId: editingTask.value.id,
       isCompleted: 0,
+      startTime: startTime ? startTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
+      endTime: endTime ? endTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
     });
     // Add to the beginning of the list to solve the "find it at the bottom" issue
     editingTask.value.details.unshift(res);
@@ -625,12 +635,13 @@ const handleEditColumnOk = async () => {
       </APopover>
     </div>
 
+    <!-- 编辑任务模态框 -->
     <AModal
       v-model:open="editModalVisible"
       title="编辑任务"
       width="1000px"
       :style="{ top: '20px' }"
-      :body-style="{ height: 'calc(100vh - 150px)', overflowY: 'auto' }"
+      :bodyStyle="{ minHeight: '400px', maxHeight: '750px', overflowY: 'auto' }"
       @ok="handleEditOk"
       @cancel="handleEditCancel"
     >
@@ -834,63 +845,62 @@ const handleEditColumnOk = async () => {
       </div>
     </AModal>
 
-    <!-- 添加任务明细弹窗 -->
+    <!-- 添加明细模态框 -->
     <AModal
       v-model:open="addDetailModalVisible"
-      title="添加"
-      @ok="handleAddDetailOk"
-      @cancel="addDetailModalVisible = false"
+      :closable="false"
+      :footer="null"
+      centered
+      class="todo-add-detail-modal"
     >
-      <div
-        style="
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-          padding: 10px 0;
-        "
-      >
-        <div>
-          <div style="margin-bottom: 5px; font-size: 12px; color: #666">
-            任务内容
-          </div>
-          <AInput
-            v-model:value="newDetail.content"
-            placeholder="输入任务内容..."
-            auto-focus
-          />
+      <div class="relative pt-2">
+        <div class="absolute right-0 top-0 z-10">
+          <button
+            type="button"
+            @click="handleToggleNewDetailStar"
+            :title="newDetail.isStarred === 1 ? '取消关注' : '添加关注'"
+            class="flex h-auto items-center justify-center p-0 outline-none transition-transform hover:scale-110 bg-transparent border-none cursor-pointer"
+          >
+            <VbenIcon
+              v-if="newDetail.isStarred === 1"
+              icon="mdi:star"
+              class="text-[22px] text-yellow-500"
+            />
+            <VbenIcon
+              v-else
+              icon="mdi:star-outline"
+              class="text-[22px] text-muted-foreground"
+            />
+          </button>
         </div>
-        <div class="task-dates-row">
-          <div class="date-col">
-            <div class="date-label">优先级</div>
-            <ASelect v-model:value="newDetail.priority" style="width: 100%">
-              <ASelectOption :value="20" label="低">
-                <ATag color="default" style="margin-right: 0"> 低 </ATag>
-              </ASelectOption>
-              <ASelectOption :value="10" label="中">
-                <ATag color="warning" style="margin-right: 0"> 中 </ATag>
-              </ASelectOption>
-              <ASelectOption :value="1" label="高">
-                <ATag color="error" style="margin-right: 0"> 高 </ATag>
-              </ASelectOption>
+        <div class="space-y-4 mt-4">
+          <div class="space-y-2">
+            <div class="text-sm">内容</div>
+            <ATextarea
+              v-model:value="newDetail.content"
+              :auto-size="{ minRows: 1, maxRows: 4 }"
+              placeholder="请输入明细内容"
+            />
+          </div>
+          <div class="space-y-2">
+            <div class="text-sm">优先级</div>
+            <ASelect v-model:value="newDetail.priority" class="w-full">
+              <ASelectOption :value="1">高</ASelectOption>
+              <ASelectOption :value="10">中</ASelectOption>
+              <ASelectOption :value="20">低</ASelectOption>
             </ASelect>
           </div>
-          <div class="date-col">
-            <div class="date-label">开始时间</div>
-            <ADatePicker
+          <div class="space-y-2">
+            <div class="text-sm">起止时间</div>
+            <ADatePicker.RangePicker
               show-time
-              v-model:value="newDetail.startTime"
-              placeholder="开始时间"
-              style="width: 100%"
+              v-model:value="newDetail.timeRange"
+              class="w-full"
             />
           </div>
-          <div class="date-col">
-            <div class="date-label">结束时间</div>
-            <ADatePicker
-              show-time
-              v-model:value="newDetail.endTime"
-              placeholder="结束时间"
-              style="width: 100%"
-            />
+          <div class="mt-6 flex justify-end gap-2">
+            <AButton @click="addDetailModalVisible = false">取消</AButton>
+            <AButton type="primary" @click="handleAddDetailOk">确定</AButton>
           </div>
         </div>
       </div>

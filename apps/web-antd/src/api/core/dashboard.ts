@@ -7,6 +7,7 @@ export interface WatchedTaskDetail {
   content: string;
   priority: number;
   isCompleted: number; // 0: uncompleted, 1: completed
+  isStarred?: number; // 0: not starred, 1: starred
   startTime?: string;
   endTime?: string;
 }
