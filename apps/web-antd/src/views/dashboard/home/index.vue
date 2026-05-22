@@ -435,14 +435,8 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
             <span
               class="cursor-pointer select-none text-lg font-semibold"
               @click="loadWatchedTasks"
-              >关注待办</span
+              >待办</span
             >
-          </div>
-          <div
-            v-if="watchedTasks.length > 0"
-            class="text-xs text-muted-foreground"
-          >
-            {{ watchedTasks.length }} 个任务
           </div>
         </div>
 

@@ -112,6 +112,7 @@ export function chatWithLLMStreamApi(
       const accessStore = useAccessStore();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
       };
 
       if (accessStore.accessToken) {
@@ -143,59 +144,38 @@ export function chatWithLLMStreamApi(
             if (value) {
               buffer += decoder.decode(value, { stream: true });
 
-              while (true) {
-                const doneIndex = buffer.indexOf('[DONE]');
-                const errorIndex = buffer.indexOf('[ERROR] ');
+              let newlineIndex;
+              while ((newlineIndex = buffer.indexOf('\n\n')) !== -1) {
+                const eventStr = buffer.slice(0, newlineIndex);
+                buffer = buffer.slice(newlineIndex + 2);
 
-                if (doneIndex !== -1) {
-                  const beforeDone = buffer.slice(0, doneIndex);
-                  const cleanBeforeDone = beforeDone
-                    .replaceAll('data:', '')
-                    .trim();
-                  if (cleanBeforeDone) {
-                    onData?.(cleanBeforeDone);
-                  }
+                const cleanChunk = eventStr.split('\n').map(line => line.replace(/^data: ?/, '')).join('\n');
+                const trimmedChunk = cleanChunk.trim();
+
+                if (trimmedChunk === '[DONE]') {
                   onDone?.();
                   return;
                 }
 
-                if (errorIndex !== -1) {
-                  const beforeError = buffer.slice(0, errorIndex);
-                  const cleanBeforeError = beforeError
-                    .replaceAll('data:', '')
-                    .trim();
-                  if (cleanBeforeError) {
-                    onData?.(cleanBeforeError);
-                  }
-                  const errorMsg = buffer.slice(errorIndex + 8);
-                  onError?.(errorMsg.replaceAll('data:', '').trim());
+                if (trimmedChunk.startsWith('[ERROR] ')) {
+                  onError?.(trimmedChunk.replace('[ERROR] ', '').trim());
                   return;
                 }
-
-                const nextDataIndex = buffer.indexOf('data:', 5);
-
-                if (nextDataIndex === -1) {
-                  break;
-                }
-
-                const chunk = buffer.slice(0, nextDataIndex);
-                const cleanChunk = chunk.replaceAll('data:', '').trim();
 
                 if (cleanChunk) {
                   onData?.(cleanChunk);
                 }
-
-                buffer = buffer.slice(nextDataIndex);
               }
             }
           }
 
           if (buffer.trim()) {
-            const cleanBuffer = buffer.replaceAll('data:', '').trim();
+            const cleanBuffer = buffer.split('\n').map(line => line.replace(/^data: ?/, '')).join('\n');
+            const trimmedBuffer = cleanBuffer.trim();
             if (
               cleanBuffer &&
-              cleanBuffer !== '[DONE]' &&
-              !cleanBuffer.startsWith('[ERROR] ')
+              trimmedBuffer !== '[DONE]' &&
+              !trimmedBuffer.startsWith('[ERROR] ')
             ) {
               onData?.(cleanBuffer);
             }
