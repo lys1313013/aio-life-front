@@ -54,7 +54,7 @@ const longPressTimer = ref<ReturnType<typeof setTimeout>>();
 const isLongPress = ref(false);
 
 const editTaskModalVisible = ref(false);
-const editingWatchedTask = ref<WatchedTaskDetail | null>(null);
+const editingWatchedTask = ref<null | WatchedTaskDetail>(null);
 
 function openEditTaskModal(task: WatchedTaskDetail) {
   editingWatchedTask.value = task;

@@ -323,7 +323,9 @@ const handleAddDetailOk = async () => {
       ...newDetail.value,
       taskId: editingTask.value.id,
       isCompleted: 0,
-      startTime: startTime ? startTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
+      startTime: startTime
+        ? startTime.format('YYYY-MM-DD HH:mm:ss')
+        : undefined,
       endTime: endTime ? endTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
     });
     // Add to the beginning of the list to solve the "find it at the bottom" issue
@@ -641,7 +643,11 @@ const handleEditColumnOk = async () => {
       title="编辑任务"
       width="1000px"
       :style="{ top: '20px' }"
-      :bodyStyle="{ minHeight: '400px', maxHeight: '750px', overflowY: 'auto' }"
+      :body-style="{
+        minHeight: '400px',
+        maxHeight: '750px',
+        overflowY: 'auto',
+      }"
       @ok="handleEditOk"
       @cancel="handleEditCancel"
     >
@@ -859,7 +865,7 @@ const handleEditColumnOk = async () => {
             type="button"
             @click="handleToggleNewDetailStar"
             :title="newDetail.isStarred === 1 ? '取消关注' : '添加关注'"
-            class="flex h-auto items-center justify-center p-0 outline-none transition-transform hover:scale-110 bg-transparent border-none cursor-pointer"
+            class="flex h-auto cursor-pointer items-center justify-center border-none bg-transparent p-0 outline-none transition-transform hover:scale-110"
           >
             <VbenIcon
               v-if="newDetail.isStarred === 1"
@@ -873,7 +879,7 @@ const handleEditColumnOk = async () => {
             />
           </button>
         </div>
-        <div class="space-y-4 mt-4">
+        <div class="mt-4 space-y-4">
           <div class="space-y-2">
             <div class="text-sm">内容</div>
             <ATextarea

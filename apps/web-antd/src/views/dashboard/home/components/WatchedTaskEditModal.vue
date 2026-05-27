@@ -4,6 +4,7 @@ import type { WatchedTaskDetail } from '#/api/core/dashboard';
 import { ref, watch } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
+
 import {
   Button as AButton,
   DatePicker as ADatePicker,
@@ -17,10 +18,14 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { starTaskDetail, unstarTaskDetail, updateTaskDetail } from '#/api/core/todo';
+import {
+  starTaskDetail,
+  unstarTaskDetail,
+  updateTaskDetail,
+} from '#/api/core/todo';
 
 const props = defineProps<{
-  task: WatchedTaskDetail | null;
+  task: null | WatchedTaskDetail;
   visible: boolean;
 }>();
 
@@ -152,9 +157,9 @@ const handleToggleStar = () => {
 
         <div class="mt-6 flex justify-end gap-2">
           <AButton @click="handleCancel">取消</AButton>
-          <AButton type="primary" @click="handleOk" :loading="loading"
-            >保存</AButton
-          >
+          <AButton type="primary" @click="handleOk" :loading="loading">
+            保存
+          </AButton>
         </div>
       </AForm>
     </div>

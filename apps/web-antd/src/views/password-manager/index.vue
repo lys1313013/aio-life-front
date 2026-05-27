@@ -427,47 +427,45 @@ onUnmounted(() => {
                 <p v-if="item.website" class="mt-1 text-sm text-slate-500">
                   {{ item.website }}
                 </p>
-                <div class="mt-2 flex gap-4">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm text-slate-500">账号：</span>
-                    <span class="font-mono text-sm">{{
+                <div class="mt-3 flex flex-col gap-2">
+                  <div v-if="item.username" class="flex items-center gap-2">
+                    <span class="shrink-0 text-sm text-slate-500">账号：</span>
+                    <span class="flex-1 truncate font-mono text-sm">{{
                       item.decryptedUsername || '******'
                     }}</span>
-                    <Tooltip title="复制账号">
-                      <CopyOutlined
-                        class="cursor-pointer text-slate-400 hover:text-blue-500"
-                        @click="handleCopy(item, 'username')"
-                      />
-                    </Tooltip>
                   </div>
-                </div>
-                <div class="mt-1 flex items-center gap-2">
-                  <span class="text-sm text-slate-500">密码：</span>
-                  <span class="font-mono text-sm">
-                    {{
-                      item.showPassword
-                        ? item.decryptedPassword || '******'
-                        : '******'
-                    }}
-                  </span>
-                  <Tooltip :title="item.showPassword ? '隐藏密码' : '显示密码'">
-                    <EyeOutlined
-                      v-if="!item.showPassword"
-                      class="cursor-pointer text-slate-400 hover:text-blue-500"
-                      @click="handleTogglePassword(item)"
-                    />
-                    <EyeInvisibleOutlined
-                      v-else
-                      class="cursor-pointer text-slate-400 hover:text-blue-500"
-                      @click="handleTogglePassword(item)"
-                    />
-                  </Tooltip>
-                  <Tooltip title="复制密码">
-                    <CopyOutlined
-                      class="cursor-pointer text-slate-400 hover:text-blue-500"
-                      @click="handleCopy(item, 'password')"
-                    />
-                  </Tooltip>
+                  <div class="flex items-center gap-2">
+                    <span class="shrink-0 text-sm text-slate-500">密码：</span>
+                    <span class="flex-1 truncate font-mono text-sm">
+                      {{
+                        item.showPassword
+                          ? item.decryptedPassword || '******'
+                          : '******'
+                      }}
+                    </span>
+                    <div class="flex shrink-0 items-center gap-2">
+                      <Tooltip
+                        :title="item.showPassword ? '隐藏密码' : '显示密码'"
+                      >
+                        <EyeOutlined
+                          v-if="!item.showPassword"
+                          class="cursor-pointer text-slate-400 hover:text-blue-500"
+                          @click="handleTogglePassword(item)"
+                        />
+                        <EyeInvisibleOutlined
+                          v-else
+                          class="cursor-pointer text-slate-400 hover:text-blue-500"
+                          @click="handleTogglePassword(item)"
+                        />
+                      </Tooltip>
+                      <Tooltip title="复制密码">
+                        <CopyOutlined
+                          class="cursor-pointer text-slate-400 hover:text-blue-500"
+                          @click="handleCopy(item, 'password')"
+                        />
+                      </Tooltip>
+                    </div>
+                  </div>
                 </div>
                 <p
                   v-if="item.decryptedRemark && item.showPassword"
@@ -513,8 +511,10 @@ onUnmounted(() => {
                 </Popconfirm>
               </div>
             </div>
-            <div class="mt-2 text-xs text-slate-400">
-              更新时间：{{ formatTime(item.updateTime) }}
+            <div class="mt-4 flex items-center justify-end">
+              <div class="text-xs text-slate-400">
+                编辑于 {{ formatTime(item.updateTime) }}
+              </div>
             </div>
           </div>
         </div>

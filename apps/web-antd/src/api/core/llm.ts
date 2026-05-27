@@ -149,7 +149,10 @@ export function chatWithLLMStreamApi(
                 const eventStr = buffer.slice(0, newlineIndex);
                 buffer = buffer.slice(newlineIndex + 2);
 
-                const cleanChunk = eventStr.split('\n').map(line => line.replace(/^data: ?/, '')).join('\n');
+                const cleanChunk = eventStr
+                  .split('\n')
+                  .map((line) => line.replace(/^data: ?/, ''))
+                  .join('\n');
                 const trimmedChunk = cleanChunk.trim();
 
                 if (trimmedChunk === '[DONE]') {
@@ -170,7 +173,10 @@ export function chatWithLLMStreamApi(
           }
 
           if (buffer.trim()) {
-            const cleanBuffer = buffer.split('\n').map(line => line.replace(/^data: ?/, '')).join('\n');
+            const cleanBuffer = buffer
+              .split('\n')
+              .map((line) => line.replace(/^data: ?/, ''))
+              .join('\n');
             const trimmedBuffer = cleanBuffer.trim();
             if (
               cleanBuffer &&
