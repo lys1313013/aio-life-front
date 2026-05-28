@@ -187,16 +187,8 @@ function navigateTo(
       </template>
 
       <div
-        class="border-border flex items-center justify-between border-t px-4 py-3"
+        class="border-border flex items-center justify-end border-t px-4 py-3"
       >
-        <VbenButton
-          :disabled="notifications.length <= 0"
-          size="sm"
-          variant="ghost"
-          @click="handleClear"
-        >
-          {{ $t('ui.widgets.clearNotifications') }}
-        </VbenButton>
         <VbenButton size="sm" @click="handleViewAll">
           {{ $t('ui.widgets.viewAll') }}
         </VbenButton>
