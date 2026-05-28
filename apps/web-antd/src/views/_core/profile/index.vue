@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref } from 'vue';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -16,26 +15,7 @@ import UserBindSetting from './user-bind.vue';
 
 const userStore = useUserStore();
 
-const route = useRoute();
-const router = useRouter();
-
-const availableTabs = new Set([
-  'api-key',
-  'basic',
-  'bind',
-  'cbti',
-  'llm',
-  'mbti',
-  'notice',
-  'password',
-]);
-
-const resolveTab = (value: unknown) => {
-  if (typeof value !== 'string') return 'basic';
-  return availableTabs.has(value) ? value : 'basic';
-};
-
-const tabsValue = ref<string>(resolveTab(route.query.tab));
+const tabsValue = ref<string>('basic');
 
 const tabs = ref([
   {
@@ -66,33 +46,7 @@ const tabs = ref([
     label: 'CBTI测试',
     value: 'cbti',
   },
-  // {
-  //   label: '新消息提醒',
-  //   value: 'notice',
-  // },
 ]);
-
-watch(
-  () => route.query.tab,
-  (tab) => {
-    const next = resolveTab(tab);
-    if (next !== tabsValue.value) {
-      tabsValue.value = next;
-    }
-  },
-);
-
-watch(tabsValue, (tab) => {
-  const current = route.query.tab;
-  if (tab === current) return;
-  const nextQuery: Record<string, any> = { ...route.query };
-  if (tab === 'basic') {
-    delete nextQuery.tab;
-  } else {
-    nextQuery.tab = tab;
-  }
-  router.replace({ query: nextQuery });
-});
 </script>
 <template>
   <Profile

@@ -19,6 +19,8 @@ const routes: RouteRecordRaw[] = [
     path: '/profile',
     component: () => import('#/views/_core/profile/index.vue'),
     meta: {
+      fullPathKey: false,
+      hideInTab: true,
       icon: 'lucide:user',
       hideInMenu: true,
       title: $t('page.auth.profile'),
