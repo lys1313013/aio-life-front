@@ -4,7 +4,7 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
@@ -407,10 +407,10 @@ const loadStatisticsData = async () => {
     const result = await getStatistics({});
     if (result) {
       tableData.value = result;
-      // 更新图表
-      nextTick(() => {
+      // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
+      setTimeout(() => {
         updateCharts();
-      });
+      }, 100);
     }
   } catch (error) {
     console.error('加载运动统计数据失败:', error);
@@ -425,10 +425,10 @@ const reloadStatsData = async (formValues: any) => {
     const result = await getStatistics(processedCondition);
     if (result) {
       tableData.value = result;
-      // 更新图表
-      nextTick(() => {
+      // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
+      setTimeout(() => {
         updateCharts();
-      });
+      }, 100);
     }
   } catch (error) {
     console.error('加载筛选后的统计数据失败:', error);
@@ -520,6 +520,21 @@ const gridOptions: VxeGridProps<RowType> = {
   rowConfig: {
     isHover: true,
     isCurrent: true,
+  },
+  // 显示表尾合计行
+  showFooter: true,
+  footerMethod: ({ columns, data }) => {
+    const footerData = columns.map((column) => {
+      if (column.field === 'exerciseCount') {
+        const total = data.reduce((sum, row) => sum + (Number(row.exerciseCount) || 0), 0);
+        return total;
+      }
+      if (column.field === 'exerciseTypeId') {
+        return '合计';
+      }
+      return '';
+    });
+    return [footerData];
   },
   columns: [
     { type: 'checkbox', title: '', width: 40 },
@@ -897,6 +912,12 @@ const tableReload = () => {
 /* 隐藏移动端的排序图标以节省空间，或者保留但变小 */
 :deep(.mobile-row .vxe-cell--sort) {
   display: none;
+}
+
+/* 表尾合计行样式 */
+:deep(.vxe-footer--column) {
+  background-color: #fafafa !important;
+  font-weight: 600;
 }
 
 .total-card {

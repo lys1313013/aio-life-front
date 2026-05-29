@@ -6,7 +6,7 @@ import type { Nullable } from '@vben/types';
 
 import type EchartsUI from './echarts-ui.vue';
 
-import { computed, nextTick, watch } from 'vue';
+import { computed, watch } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
@@ -91,7 +91,8 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
         }, 30);
         return;
       }
-      nextTick(() => {
+      // 使用 setTimeout 替代 nextTick 避免在 Vue 主进程中调用 setOption
+      useTimeoutFn(() => {
         const el = getChartEl();
         if (isElHidden(el)) {
           useTimeoutFn(async () => {
@@ -108,7 +109,7 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
           chartInstance?.setOption(getCurrentOptions());
           resolve(chartInstance);
         }, 30);
-      });
+      }, 30);
     });
   };
 
