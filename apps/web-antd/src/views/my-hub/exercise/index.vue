@@ -10,7 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, Popconfirm } from 'ant-design-vue';
+import { Button, Card, Modal, Popconfirm, Select } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -22,6 +22,7 @@ interface RowType {
   id: any;
   userId: number;
   exerciseTypeId: string;
+  exerciseCount: number;
   exerciseDate: string;
   description: string;
   createTime: string;
@@ -31,9 +32,14 @@ interface RowType {
 // 图表相关引用
 const lineChartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
+const dailyChartRef = ref<EchartsUIType>();
 const { renderEcharts: renderLineChart } = useEcharts(lineChartRef);
 const { renderEcharts: renderPieChart } = useEcharts(pieChartRef);
+const { renderEcharts: renderDailyChart } = useEcharts(dailyChartRef);
 const { isMobile } = usePreferences();
+
+// 运动类型筛选
+const selectedExerciseType = ref<string | undefined>(undefined);
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
@@ -46,6 +52,10 @@ const loadExerciseTypes = async () => {
   try {
     const res = await getByDictType('exercise_type');
     dictOptions.value = res.dictDetailList;
+    // 默认选择第一种运动类型
+    if (!selectedExerciseType.value && dictOptions.value.length > 0) {
+      selectedExerciseType.value = dictOptions.value[0].value;
+    }
   } catch (error) {
     console.error('加载运动类型失败:', error);
   }
@@ -112,27 +122,16 @@ const monthlyStats = computed(() => {
   return monthlyData;
 });
 
-// 计算运动类型统计数据（去重：同一天同一类型算一次）
+// 计算运动类型统计数据（求和：该类型的所有 exercise_count 之和）
 const exerciseTypeStats = computed(() => {
-  // 使用Set来去重同一天同一类型的记录
-  const uniqueExercises = new Map<string, Set<string>>();
+  // 按运动类型分组，累加 exercise_count
+  const typeData: Record<string, number> = {};
 
   tableData.value.forEach((row) => {
-    if (row.exerciseDate && row.exerciseTypeId) {
-      const dateTypeKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
+    if (row.exerciseTypeId) {
       const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
-
-      if (!uniqueExercises.has(typeLabel)) {
-        uniqueExercises.set(typeLabel, new Set());
-      }
-      uniqueExercises.get(typeLabel)?.add(dateTypeKey);
+      typeData[typeLabel] = (typeData[typeLabel] || 0) + (Number(row.exerciseCount) || 0);
     }
-  });
-
-  // 转换为统计数据
-  const typeData: Record<string, number> = {};
-  uniqueExercises.forEach((dates, typeLabel) => {
-    typeData[typeLabel] = dates.size;
   });
 
   const result = Object.entries(typeData).map(([name, value]) => ({
@@ -155,6 +154,35 @@ const totalExercise = computed(() => {
   });
 
   return uniqueExercises.size;
+});
+
+// 计算按天统计数据（支持按运动类型筛选）
+const dailyStats = computed(() => {
+  // 使用Map来统计每天的运动数量
+  const dailyData = new Map<string, number>();
+
+  tableData.value.forEach((row) => {
+    if (row.exerciseDate) {
+      // 如果选择了特定运动类型，只统计该类型
+      if (selectedExerciseType.value && row.exerciseTypeId !== selectedExerciseType.value) {
+        return;
+      }
+
+      const dateStr = row.exerciseDate;
+      const currentCount = dailyData.get(dateStr) || 0;
+      dailyData.set(dateStr, currentCount + (Number(row.exerciseCount) || 0));
+    }
+  });
+
+  // 按日期排序并转换为数组
+  const sortedEntries = Array.from(dailyData.entries()).sort((a, b) =>
+    a[0].localeCompare(b[0])
+  );
+
+  return {
+    dates: sortedEntries.map(([date]) => date),
+    counts: sortedEntries.map(([, count]) => count),
+  };
 });
 
 // 更新图表
@@ -385,9 +413,132 @@ const updateCharts = () => {
 watch(isMobile, () => {
   setTimeout(() => {
     updateCharts();
+    updateDailyChart();
     updateColumnsVisibility();
   }, 200);
 });
+
+// 监听运动类型筛选变化，更新按天统计图表
+watch(selectedExerciseType, () => {
+  setTimeout(() => {
+    updateDailyChart();
+  }, 100);
+});
+
+// 更新按天统计图表
+const updateDailyChart = () => {
+  const dailyData = dailyStats.value;
+
+  // 检查是否有数据
+  if (dailyData.dates.length === 0) {
+    return;
+  }
+
+  // 渲染按天统计柱状图
+  renderDailyChart({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+      },
+      formatter: (params: any) => {
+        const data = params[0];
+        return `<div style="font-weight:bold;margin-bottom:5px;">${data.name}</div>
+                <div style="display:flex;align-items:center;gap:4px;">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${data.color};"></span>
+                  <span>运动量:</span>
+                  <span style="font-weight:bold;">${data.value}</span>
+                </div>`;
+      },
+    },
+    dataZoom: dailyData.dates.length > 14
+      ? [
+          {
+            type: 'slider',
+            show: true,
+            start: 0,
+            end: 100,
+            height: 20,
+            bottom: 10,
+            borderColor: 'transparent',
+            backgroundColor: '#f5f5f5',
+            fillerColor: 'rgba(78, 205, 196, 0.2)',
+            handleStyle: {
+              color: '#4ecdc4',
+            },
+            textStyle: {
+              color: '#666',
+            },
+          },
+          {
+            type: 'inside',
+            start: 0,
+            end: 100,
+          },
+        ]
+      : undefined,
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: dailyData.dates.length > 14 ? 40 : 10,
+      top: 30,
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      data: dailyData.dates,
+      axisLabel: {
+        rotate: 45,
+        interval: isMobile.value ? 0 : 'auto',
+        formatter: (value: string) => {
+          // 只显示月-日
+          return value.slice(5);
+        },
+      },
+    },
+    yAxis: {
+      type: 'value',
+      name: '运动量',
+      axisLabel: {
+        formatter: '{value}',
+      },
+      splitLine: {
+        lineStyle: {
+          type: 'dashed',
+        },
+      },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: dailyData.counts,
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: '#4ecdc4' },
+              { offset: 1, color: '#26a69a' },
+            ],
+          },
+          borderRadius: [4, 4, 0, 0],
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (params: any) => {
+            return params.value > 0 ? `${params.value}` : '';
+          },
+          fontSize: 10,
+          color: '#666',
+        },
+      },
+    ],
+  });
+};
 
 // 在组件挂载时加载值集数据
 onMounted(() => {
@@ -410,6 +561,7 @@ const loadStatisticsData = async () => {
       // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
       setTimeout(() => {
         updateCharts();
+        updateDailyChart();
       }, 100);
     }
   } catch (error) {
@@ -428,6 +580,7 @@ const reloadStatsData = async (formValues: any) => {
       // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
       setTimeout(() => {
         updateCharts();
+        updateDailyChart();
       }, 100);
     }
   } catch (error) {
@@ -783,6 +936,21 @@ const tableReload = () => {
           <EchartsUI ref="pieChartRef" style="width: 100%; height: 300px" />
         </Card>
       </div>
+
+      <!-- 按天统计图表 -->
+      <Card class="daily-chart-card" title="每日运动统计">
+        <template #extra>
+          <Select
+            v-model:value="selectedExerciseType"
+            placeholder="全部运动类型"
+            allow-clear
+            style="width: 180px"
+            :options="dictOptions"
+            :field-names="{ label: 'label', value: 'value' }"
+          />
+        </template>
+        <EchartsUI ref="dailyChartRef" style="width: 100%; height: 300px" />
+      </Card>
     </div>
 
     <!-- 表格区域 -->
@@ -883,6 +1051,20 @@ const tableReload = () => {
   .total-amount {
     font-size: 24px;
   }
+
+  .daily-chart-card :deep(.ant-card-head-wrapper) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .daily-chart-card :deep(.ant-card-extra) {
+    width: 100%;
+  }
+
+  .daily-chart-card :deep(.ant-select) {
+    width: 100% !important;
+  }
 }
 
 .exercise-wrapper {
@@ -975,6 +1157,29 @@ const tableReload = () => {
 
 .chart-item :deep(.echarts-ui) {
   height: 300px;
+}
+
+.daily-chart-card {
+  margin-top: 12px;
+  border-radius: 8px;
+}
+
+.daily-chart-card :deep(.ant-card-head) {
+  min-height: 48px;
+}
+
+.daily-chart-card :deep(.ant-card-head-wrapper) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.daily-chart-card :deep(.ant-card-extra) {
+  margin: 0;
+}
+
+.daily-chart-card :deep(.ant-card-body) {
+  padding: 12px;
 }
 
 .mobile-card-item {
