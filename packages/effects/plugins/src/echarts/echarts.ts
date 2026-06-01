@@ -21,11 +21,11 @@ import {
 } from 'echarts/charts';
 import {
   CalendarComponent,
+  // 数据集组件
+  DatasetComponent,
   // 数据缩放组件
   DataZoomComponent,
   DataZoomInsideComponent,
-  // 数据集组件
-  DatasetComponent,
   GridComponent,
   LegendComponent,
   TitleComponent,

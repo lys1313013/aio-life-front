@@ -4,11 +4,11 @@ export interface McpToolInfo {
   name: string;
   description: string;
   inputSchema: {
-    type: string;
-    properties: Record<string, any>;
-    required?: string[];
     additionalProperties?: boolean;
     definitions?: Record<string, any>;
+    properties: Record<string, any>;
+    required?: string[];
+    type: string;
   };
 }
 
@@ -17,10 +17,13 @@ export async function getMcpToolsApi() {
 }
 
 export interface McpToolCallResult {
-  content: Array<{ type: string; text: string }>;
+  content: Array<{ text: string; type: string }>;
   isError: boolean;
 }
 
 export async function callMcpToolApi(name: string, args: Record<string, any>) {
-  return requestClient.post<McpToolCallResult>('/mcp/tools/call', { name, arguments: args });
+  return requestClient.post<McpToolCallResult>('/mcp/tools/call', {
+    name,
+    arguments: args,
+  });
 }

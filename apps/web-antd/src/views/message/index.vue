@@ -12,13 +12,11 @@ import { message as antMessage } from 'ant-design-vue';
 import { marked } from 'marked';
 
 import {
-  chatWithLLMApi,
   chatWithLLMStreamApi,
   createChatSessionApi,
   deleteChatSessionApi,
   getChatHistoryApi,
   getChatSessionsApi,
-  summarizeTimeRecordsApi,
   updateChatSessionApi,
 } from '#/api/core/llm';
 import {
@@ -77,7 +75,6 @@ const aiChatInput = ref('');
 const aiChatContext = ref('');
 const streamingContent = ref('');
 const isStreaming = ref(false);
-const summarizeLoading = ref(false);
 
 const fetchAISessions = async () => {
   try {
@@ -533,7 +530,7 @@ const handleAISendMessage = async () => {
   try {
     chatWithLLMStreamApi(
       content,
-      aiChatContext.value,
+      undefined,
       selectedConversationId.value,
       (token) => {
         streamingContent.value += token;
@@ -581,47 +578,6 @@ const updateContext = () => {
       return `${msg.role === 'user' ? 'User' : 'AI'}: ${msg.content}`;
     })
     .join('\n');
-};
-
-const handleSummarizeTimeRecords = async (type: 'today' | 'week') => {
-  try {
-    summarizeLoading.value = true;
-
-    // If no session selected, create one first
-    if (!selectedConversationId.value) {
-      const newSession = await createChatSessionApi(
-        `${type === 'today' ? '今日' : '本周'}时迹总结`,
-      );
-      aiSessions.value.unshift(newSession);
-      selectedConversationId.value = newSession.id;
-      handleSelectSession(newSession.id);
-    }
-
-    const summary = await summarizeTimeRecordsApi(type);
-
-    const summaryMessage: AIChatMessage = {
-      id: Date.now().toString(),
-      userId: Number(myId.value),
-      conversationId: selectedConversationId.value,
-      role: 'assistant',
-      content: summary,
-      modelName: 'AI Summary',
-      createTime: new Date().toISOString(),
-    };
-    aiChatMessages.value.push(summaryMessage);
-
-    // Also save this summary to the database as a message
-    await chatWithLLMApi(
-      `请记录以下总结：\n${summary}`,
-      undefined,
-      selectedConversationId.value,
-    );
-  } catch (error) {
-    console.error('Failed to summarize time records:', error);
-    antMessage.error('总结时迹记录失败，请检查大模型配置');
-  } finally {
-    summarizeLoading.value = false;
-  }
 };
 
 const renderMarkdown = (content: string) => {
@@ -800,32 +756,8 @@ onUnmounted(() => {
                       ?.title || 'AI 助手'
                   }}
                 </h3>
-                <p class="text-xs text-gray-500">智能对话与时迹分析</p>
+                <p class="text-xs text-gray-500">智能对话助手</p>
               </div>
-            </div>
-            <div class="flex gap-2">
-              <button
-                class="rounded-lg bg-green-100 px-3 py-1 text-sm text-green-800 transition-colors hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
-                @click="handleSummarizeTimeRecords('today')"
-                :disabled="summarizeLoading || isStreaming"
-              >
-                <span
-                  v-if="summarizeLoading"
-                  class="i-ant-design:loading-3-quarters-outlined mr-1 animate-spin"
-                ></span>
-                总结今日
-              </button>
-              <button
-                class="rounded-lg bg-green-100 px-3 py-1 text-sm text-green-800 transition-colors hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
-                @click="handleSummarizeTimeRecords('week')"
-                :disabled="summarizeLoading || isStreaming"
-              >
-                <span
-                  v-if="summarizeLoading"
-                  class="i-ant-design:loading-3-quarters-outlined mr-1 animate-spin"
-                ></span>
-                总结本周
-              </button>
             </div>
           </div>
 

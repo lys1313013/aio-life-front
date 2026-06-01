@@ -130,7 +130,8 @@ const exerciseTypeStats = computed(() => {
   tableData.value.forEach((row) => {
     if (row.exerciseTypeId) {
       const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
-      typeData[typeLabel] = (typeData[typeLabel] || 0) + (Number(row.exerciseCount) || 0);
+      typeData[typeLabel] =
+        (typeData[typeLabel] || 0) + (Number(row.exerciseCount) || 0);
     }
   });
 
@@ -164,7 +165,10 @@ const dailyStats = computed(() => {
   tableData.value.forEach((row) => {
     if (row.exerciseDate) {
       // 如果选择了特定运动类型，只统计该类型
-      if (selectedExerciseType.value && row.exerciseTypeId !== selectedExerciseType.value) {
+      if (
+        selectedExerciseType.value &&
+        row.exerciseTypeId !== selectedExerciseType.value
+      ) {
         return;
       }
 
@@ -176,7 +180,7 @@ const dailyStats = computed(() => {
 
   // 按日期排序并转换为数组
   const sortedEntries = Array.from(dailyData.entries()).sort((a, b) =>
-    a[0].localeCompare(b[0])
+    a[0].localeCompare(b[0]),
   );
 
   return {
@@ -451,32 +455,33 @@ const updateDailyChart = () => {
                 </div>`;
       },
     },
-    dataZoom: dailyData.dates.length > 14
-      ? [
-          {
-            type: 'slider',
-            show: true,
-            start: 0,
-            end: 100,
-            height: 20,
-            bottom: 10,
-            borderColor: 'transparent',
-            backgroundColor: '#f5f5f5',
-            fillerColor: 'rgba(78, 205, 196, 0.2)',
-            handleStyle: {
-              color: '#4ecdc4',
+    dataZoom:
+      dailyData.dates.length > 14
+        ? [
+            {
+              type: 'slider',
+              show: true,
+              start: 0,
+              end: 100,
+              height: 20,
+              bottom: 10,
+              borderColor: 'transparent',
+              backgroundColor: '#f5f5f5',
+              fillerColor: 'rgba(78, 205, 196, 0.2)',
+              handleStyle: {
+                color: '#4ecdc4',
+              },
+              textStyle: {
+                color: '#666',
+              },
             },
-            textStyle: {
-              color: '#666',
+            {
+              type: 'inside',
+              start: 0,
+              end: 100,
             },
-          },
-          {
-            type: 'inside',
-            start: 0,
-            end: 100,
-          },
-        ]
-      : undefined,
+          ]
+        : undefined,
     grid: {
       left: '3%',
       right: '4%',
@@ -679,7 +684,10 @@ const gridOptions: VxeGridProps<RowType> = {
   footerMethod: ({ columns, data }) => {
     const footerData = columns.map((column) => {
       if (column.field === 'exerciseCount') {
-        const total = data.reduce((sum, row) => sum + (Number(row.exerciseCount) || 0), 0);
+        const total = data.reduce(
+          (sum, row) => sum + (Number(row.exerciseCount) || 0),
+          0,
+        );
         return total;
       }
       if (column.field === 'exerciseTypeId') {

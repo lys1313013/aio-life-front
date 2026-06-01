@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue';
+import type { McpToolInfo } from '#/api/core/mcp';
+
+import { onMounted, ref } from 'vue';
 
 import {
   CaretRightOutlined,
@@ -13,17 +15,13 @@ import {
   Collapse,
   Empty,
   Input,
+  message,
   Modal,
   Spin,
   Tag,
-  message,
 } from 'ant-design-vue';
 
-import {
-  callMcpToolApi,
-  getMcpToolsApi,
-  type McpToolInfo,
-} from '#/api/core/mcp';
+import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
 
 const tools = ref<McpToolInfo[]>([]);
 const loading = ref(true);
@@ -57,8 +55,8 @@ const loadTools = async () => {
     const res = await getMcpToolsApi();
     tools.value = res;
     filterTools();
-  } catch (e: any) {
-    message.error(e?.message || '加载 MCP 工具失败');
+  } catch (error: any) {
+    message.error(error?.message || '加载 MCP 工具失败');
   } finally {
     loading.value = false;
   }
@@ -97,17 +95,36 @@ const fillDefaultArgs = () => {
   for (const [key, val] of Object.entries<any>(props)) {
     if (val.enum?.length) {
       defaults[key] = val.enum[0];
-    } else if (val.type === 'string') {
-      defaults[key] = '';
-    } else if (val.type === 'integer' || val.type === 'number') {
-      defaults[key] = 0;
-    } else if (val.type === 'boolean') {
-      defaults[key] = false;
-    } else if (val.type === 'array') {
-      defaults[key] = [];
-    } else if (val.type === 'object') {
-      defaults[key] = {};
-    }
+    } else
+      switch (val.type) {
+        case 'array': {
+          defaults[key] = [];
+
+          break;
+        }
+        case 'boolean': {
+          defaults[key] = false;
+
+          break;
+        }
+        case 'integer':
+        case 'number': {
+          defaults[key] = 0;
+
+          break;
+        }
+        case 'object': {
+          defaults[key] = {};
+
+          break;
+        }
+        case 'string': {
+          defaults[key] = '';
+
+          break;
+        }
+        // No default
+      }
   }
   modalArgs.value = JSON.stringify(defaults, null, 2);
 };
@@ -127,8 +144,8 @@ const callTool = async () => {
     const text = res.content?.map((c) => c.text).join('\n') || '无返回内容';
     modalResult.value = text;
     modalIsError.value = res.isError;
-  } catch (e: any) {
-    modalResult.value = e?.message || '调用失败';
+  } catch (error: any) {
+    modalResult.value = error?.message || '调用失败';
     modalIsError.value = true;
   } finally {
     modalCalling.value = false;
@@ -136,9 +153,11 @@ const callTool = async () => {
 };
 
 const copySchema = (tool: McpToolInfo) => {
-  navigator.clipboard.writeText(JSON.stringify(tool.inputSchema, null, 2)).then(() => {
-    message.success('已复制 Schema');
-  });
+  navigator.clipboard
+    .writeText(JSON.stringify(tool.inputSchema, null, 2))
+    .then(() => {
+      message.success('已复制 Schema');
+    });
 };
 
 const getTypeColor = (type: string) => {
@@ -180,7 +199,10 @@ onMounted(() => {
     </div>
 
     <Spin :spinning="loading">
-      <Empty v-if="!loading && filteredTools.length === 0" description="暂无 MCP 工具" />
+      <Empty
+        v-if="!loading && filteredTools.length === 0"
+        description="暂无 MCP 工具"
+      />
 
       <div v-else class="tools-grid">
         <Card
@@ -274,7 +296,7 @@ onMounted(() => {
         <Input.TextArea
           v-model:value="modalArgs"
           :auto-size="{ minRows: 4, maxRows: 10 }"
-          placeholder='{"key": "value"}'
+          placeholder="{&quot;key&quot;: &quot;value&quot;}"
           class="modal-textarea"
         />
 
@@ -290,10 +312,9 @@ onMounted(() => {
 
         <div v-if="modalResult" class="modal-result">
           <div class="result-label">返回结果</div>
-          <pre
-            class="result-content"
-            :class="{ 'is-error': modalIsError }"
-          >{{ modalResult }}</pre>
+          <pre class="result-content" :class="{ 'is-error': modalIsError }">{{
+            modalResult
+          }}</pre>
         </div>
       </div>
     </Modal>
