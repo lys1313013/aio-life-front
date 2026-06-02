@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { GraphData, PersonReq, RelationshipReq, PersonDetailVO } from '#/api/relationship';
+import type { PersonReq, PersonDetailVO, RelationshipReq } from '#/api/relationship';
 
 import { PlusOutlined, TeamOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Drawer, Empty, Form, FormItem, Input, message, Modal, Popconfirm, Select, SelectOption, Spin } from 'ant-design-vue';
 import { onMounted, ref } from 'vue';
-import { ForceGraph2D as VueForceGraph } from 'vue-force-graph-2d';
 
+import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
 import {
   createPerson,
   createRelationship,
@@ -68,9 +68,16 @@ const fetchGraphData = async () => {
   loading.value = true;
   try {
     const data = await getGraphData();
-    // 转换数据格式
+    const nodes = data.nodes || [];
+    // 预计算圆形初始位置，并固定 (fx/fy) 以避免力模拟把节点弹飞
+    const radius = 180;
     graphData.value = {
-      nodes: (data.nodes || []).map((n) => ({ id: n.id, name: n.name })),
+      nodes: nodes.map((n, i) => {
+        const angle = (2 * Math.PI * i) / Math.max(nodes.length, 1) - Math.PI / 2;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        return { id: n.id, name: n.name, x, y, fx: x, fy: y };
+      }),
       links: (data.edges || []).map((e) => ({
         source: e.source,
         target: e.target,
@@ -87,6 +94,10 @@ const fetchGraphData = async () => {
 
 // ==================== 交互处理 ====================
 const handleNodeClick = async (node: any) => {
+  if (!node?.id || node.id === 'null' || node.id === 'undefined') {
+    message.error('该人物数据缺少有效 ID，请到 Neo4j 删除该节点后重新添加');
+    return;
+  }
   try {
     selectedPersonDetail.value = await getPerson(node.id);
     drawerVisible.value = true;
@@ -244,14 +255,14 @@ onMounted(() => {
 
       <!-- 图谱区域 -->
       <div class="graph-container">
-        <VueForceGraph
+        <ForceGraph2DWrapper
           v-if="graphData.nodes?.length"
           :graph-data="graphData"
-          :node-label="'name'"
+          node-label="name"
           :node-val="40"
+          background-color="#fff"
           :link-directional-arrow-length="6"
           :link-directional-arrow-rel-pos="1"
-          background-color="#fff"
           @node-click="handleNodeClick"
         />
         <Empty
@@ -413,6 +424,12 @@ onMounted(() => {
   padding: 16px;
 }
 
+.relationship-page :deep(.ant-spin-container) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -421,6 +438,7 @@ onMounted(() => {
   padding: 12px 16px;
   background: #fff;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .toolbar-left {
@@ -439,7 +457,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 8px;
   position: relative;
-  min-height: 400px;
+  min-height: calc(100vh - 200px);
   overflow: hidden;
 }
 
