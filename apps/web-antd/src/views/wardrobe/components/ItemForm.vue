@@ -72,6 +72,16 @@ const isEdit = computed(() => !!props.item?.id);
 
 const title = computed(() => (isEdit.value ? '编辑衣物' : '添加衣物'));
 
+const purchaseDateModel = computed({
+  get: () =>
+    formData.value.purchaseDate
+      ? dayjs(formData.value.purchaseDate)
+      : undefined,
+  set: (val) => {
+    formData.value.purchaseDate = val ? val.format('YYYY-MM-DD') : undefined;
+  },
+});
+
 watch(
   () => props.visible,
   (val) => {
@@ -203,9 +213,7 @@ const seasons = ['春', '夏', '秋', '冬'];
 
       <FormItem label="购买日期" name="purchaseDate">
         <DatePicker
-          v-model:value="
-            formData.purchaseDate ? dayjs(formData.purchaseDate) : undefined
-          "
+          v-model:value="purchaseDateModel"
           value-format="YYYY-MM-DD"
           style="width: 100%"
         />
