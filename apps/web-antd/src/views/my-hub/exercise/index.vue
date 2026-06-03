@@ -10,7 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, Popconfirm, Select } from 'ant-design-vue';
+import { Button, Card, Modal, Popconfirm, Select, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { getByDictType } from '#/api/core/common';
@@ -25,8 +25,6 @@ interface RowType {
   exerciseCount: number;
   exerciseDate: string;
   description: string;
-  createTime: string;
-  updateTime: string;
 }
 
 // 图表相关引用
@@ -65,6 +63,27 @@ const loadExerciseTypes = async () => {
 const getExerciseTypeLabel = (value: string) => {
   const option = dictOptions.value.find((item) => item.value === value);
   return option ? option.label : String(value);
+};
+
+// 根据运动类型 value 派生稳定的 tag 颜色
+const typeColorMap = [
+  'blue',
+  'green',
+  'orange',
+  'purple',
+  'cyan',
+  'magenta',
+  'gold',
+  'geekblue',
+  'volcano',
+];
+const getExerciseTypeColor = (value: string) => {
+  if (!value) return 'default';
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return typeColorMap[hash % typeColorMap.length];
 };
 
 // 计算月份统计数据（按运动类型分类，同一天同一类型多次记录算作一次）
@@ -671,6 +690,7 @@ const gridOptions: VxeGridProps<RowType> = {
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
   maxHeight: 600, // 表格最大高度
+  size: 'medium',
   checkboxConfig: {
     isShiftKey: true,
   },
@@ -678,6 +698,10 @@ const gridOptions: VxeGridProps<RowType> = {
   rowConfig: {
     isHover: true,
     isCurrent: true,
+    height: 52,
+  },
+  cellConfig: {
+    padding: true,
   },
   // 显示表尾合计行
   showFooter: true,
@@ -698,67 +722,53 @@ const gridOptions: VxeGridProps<RowType> = {
     return [footerData];
   },
   columns: [
-    { type: 'checkbox', title: '', width: 40 },
-    { title: '序号', type: 'seq', width: 50, visible: !isMobile.value },
+    { type: 'checkbox', title: '', width: 50, fixed: 'left' },
+    {
+      title: '序号',
+      type: 'seq',
+      width: 80,
+      fixed: 'left',
+      visible: !isMobile.value,
+    },
     { title: '主键', visible: false },
-    {
-      field: 'exerciseTypeId',
-      title: '运动类型',
-      sortable: true,
-      headerAlign: 'center',
-      align: 'center',
-      width: 100,
-      formatter: ({ cellValue }) => {
-        return getExerciseTypeLabel(cellValue);
-      },
-    },
-    {
-      field: 'exerciseCount',
-      title: '数量',
-      sortable: true,
-      headerAlign: 'center',
-      align: 'center',
-      width: 110,
-    },
     {
       field: 'exerciseDate',
       title: '运动日期',
       sortable: true,
       headerAlign: 'center',
       align: 'center',
-      width: 100,
+    },
+    {
+      field: 'exerciseTypeId',
+      title: '运动类型',
+      sortable: true,
+      headerAlign: 'center',
+      align: 'center',
+      slots: { default: 'exerciseType' },
+    },
+    {
+      field: 'exerciseCount',
+      title: '数量',
+      sortable: true,
+      headerAlign: 'center',
+      align: 'right',
+      className: 'col-count',
+      slots: { default: 'exerciseCount' },
     },
     {
       field: 'description',
       title: '备注',
-      sortable: true,
       headerAlign: 'center',
       align: 'left',
-      minWidth: 100,
-    },
-    {
-      field: 'createTime',
-      title: '创建时间',
-      sortable: true,
-      headerAlign: 'center',
-      align: 'center',
-      width: 180,
-    },
-    {
-      field: 'updateTime',
-      title: '修改时间',
-      sortable: true,
-      headerAlign: 'center',
-      align: 'center',
-      width: 180,
-      visible: !isMobile.value,
+      showOverflow: 'tooltip',
     },
     {
       field: 'action',
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 100,
+      width: 130,
+      align: 'center',
       visible: !isMobile.value,
     },
     {
@@ -863,15 +873,25 @@ const updateColumnsVisibility = () => {
     if (col.field === 'mobileCard') {
       col.visible = false;
     } else if (
-      ['exerciseCount', 'exerciseDate', 'exerciseTypeId'].includes(col.field)
+      ['exerciseCount', 'exerciseDate', 'exerciseTypeId', 'description'].includes(
+        col.field,
+      )
     ) {
       col.visible = true;
       // 手机端自动调整宽度
       if (mobile) {
-        col.width = col.field === 'exerciseDate' ? 100 : 'auto';
+        if (col.field === 'exerciseDate') {
+          col.width = 110;
+        } else if (col.field === 'exerciseTypeId') {
+          col.width = 'auto';
+        } else if (col.field === 'exerciseCount') {
+          col.width = 90;
+        } else {
+          col.minWidth = 100;
+        }
       }
-    } else if (col.field === 'action' || col.field === 'updateTime') {
-      // 手机端隐藏操作列和修改时间列以节省空间
+    } else if (col.field === 'action') {
+      // 手机端隐藏操作列以节省空间
       col.visible = !mobile;
     } else if (col.type === 'checkbox' || col.type === 'seq') {
       // 手机端隐藏复选框、序号列
@@ -962,7 +982,7 @@ const tableReload = () => {
     </div>
 
     <!-- 表格区域 -->
-    <div class="table-wrapper">
+    <Card class="table-card" title="运动记录" :bordered="false">
       <Grid>
         <template #toolbar-tools>
           <Button class="mr-2" type="primary" @click="openAddFormModal">
@@ -991,6 +1011,14 @@ const tableReload = () => {
               <template #icon><DeleteOutlined /></template>
             </Button>
           </Popconfirm>
+        </template>
+        <template #exerciseType="{ row }">
+          <Tag :color="getExerciseTypeColor(row.exerciseTypeId)" class="type-tag">
+            {{ getExerciseTypeLabel(row.exerciseTypeId) }}
+          </Tag>
+        </template>
+        <template #exerciseCount="{ row }">
+          <span class="count-cell">{{ row.exerciseCount }}</span>
         </template>
         <template #mobile-card="{ row }">
           <div class="mobile-card-item">
@@ -1024,7 +1052,7 @@ const tableReload = () => {
           </div>
         </template>
       </Grid>
-    </div>
+    </Card>
 
     <!-- 表单模态框 -->
     <Modal
@@ -1060,6 +1088,14 @@ const tableReload = () => {
     font-size: 24px;
   }
 
+  .table-card :deep(.ant-card-body) {
+    padding: 8px;
+  }
+
+  .table-card :deep(.ant-card-head-title) {
+    font-size: 14px;
+  }
+
   .daily-chart-card :deep(.ant-card-head-wrapper) {
     flex-direction: column;
     align-items: flex-start;
@@ -1084,6 +1120,115 @@ const tableReload = () => {
   margin-bottom: 12px;
 }
 
+.table-card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+}
+
+.table-card :deep(.ant-card-head) {
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.table-card :deep(.ant-card-head-title) {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+
+.table-card :deep(.ant-card-body) {
+  padding: 12px 16px 16px;
+}
+
+.table-card :deep(.vxe-table) {
+  font-size: 14px;
+}
+
+.table-card :deep(.vxe-table--render-wrapper),
+.table-card :deep(.vxe-table--main-wrapper) {
+  width: 100%;
+}
+
+.table-card :deep(.vxe-table-vars) {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.table-card :deep(.vxe-table-vars) {
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.table-card :deep(.vxe-header--column) {
+  height: 44px;
+  padding: 0 12px;
+  font-weight: 600;
+  color: #262626;
+  background-color: #fafafa !important;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.table-card :deep(.vxe-body--column) {
+  padding: 0 12px;
+}
+
+.count-cell {
+  display: inline-block;
+  width: 100%;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1f1f1f;
+  text-align: right;
+}
+
+.table-card :deep(.col-count) {
+  padding-right: 8px !important;
+  padding-left: 4px !important;
+}
+
+.table-card :deep(.vxe-body--row:hover) {
+  background-color: #f0f9ff !important;
+}
+
+.table-card :deep(.vxe-body--row.row--current) {
+  background-color: #e6f4ff !important;
+}
+
+.table-card :deep(.vxe-footer--column) {
+  height: 44px;
+  padding: 0 12px;
+  font-weight: 600;
+  color: #1f1f1f;
+  background-color: #fafafa !important;
+  border-top: 1px solid #e8e8e8;
+}
+
+.table-card :deep(.vxe-footer--column.col--seq),
+.table-card :deep(.vxe-footer--column.col--checkbox) {
+  background-color: #fafafa !important;
+}
+
+.type-tag {
+  margin: 0;
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 10px;
+}
+
 :deep(.mobile-card-col) {
   padding: 0 !important;
   background-color: transparent !important;
@@ -1102,12 +1247,6 @@ const tableReload = () => {
 /* 隐藏移动端的排序图标以节省空间，或者保留但变小 */
 :deep(.mobile-row .vxe-cell--sort) {
   display: none;
-}
-
-/* 表尾合计行样式 */
-:deep(.vxe-footer--column) {
-  background-color: #fafafa !important;
-  font-weight: 600;
 }
 
 .total-card {
