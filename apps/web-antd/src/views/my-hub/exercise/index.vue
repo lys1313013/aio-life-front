@@ -52,7 +52,7 @@ const loadExerciseTypes = async () => {
     dictOptions.value = res.dictDetailList;
     // 默认选择第一种运动类型
     if (!selectedExerciseType.value && dictOptions.value.length > 0) {
-      selectedExerciseType.value = dictOptions.value[0].value;
+      selectedExerciseType.value = dictOptions.value[0]?.value;
     }
   } catch (error) {
     console.error('加载运动类型失败:', error);

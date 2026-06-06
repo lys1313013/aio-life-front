@@ -40,14 +40,6 @@ const localKeyword = ref(props.keyword || '');
 const handleSearch = () => {
   emit('update:keyword', localKeyword.value || undefined);
 };
-
-const clearCategory = () => {
-  emit('update:selectedCategoryId', undefined);
-};
-
-const clearSeason = () => {
-  emit('update:selectedSeason', undefined);
-};
 </script>
 
 <template>
@@ -58,7 +50,7 @@ const clearSeason = () => {
         placeholder="全部分类"
         style="width: 140px"
         allow-clear
-        @change="emit('update:selectedCategoryId', $event)"
+        @change="(val: any) => emit('update:selectedCategoryId', val as number | undefined)"
       >
         <SelectOption
           v-for="cat in flatCategories"

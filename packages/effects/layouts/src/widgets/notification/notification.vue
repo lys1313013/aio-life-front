@@ -65,10 +65,6 @@ function handleMakeAll() {
   emit('makeAll');
 }
 
-function handleClear() {
-  emit('clear');
-}
-
 function handleClick(item: NotificationItem) {
   // 如果通知项有链接，点击时跳转
   if (item.link) {
