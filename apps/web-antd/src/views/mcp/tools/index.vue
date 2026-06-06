@@ -3,21 +3,20 @@ import type { McpToolInfo } from '#/api/core/mcp';
 
 import { onMounted, ref } from 'vue';
 
-import {
-  CaretRightOutlined,
-  CopyOutlined,
-  RightOutlined,
-  SearchOutlined,
-} from '@ant-design/icons-vue';
+import { CaretRightOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
   Collapse,
   Empty,
+  Form,
   Input,
+  InputNumber,
   message,
   Modal,
+  Select,
   Spin,
+  Switch,
   Tag,
 } from 'ant-design-vue';
 
@@ -31,7 +30,7 @@ const filteredTools = ref<McpToolInfo[]>([]);
 // 弹窗状态
 const modalVisible = ref(false);
 const modalTool = ref<McpToolInfo | null>(null);
-const modalArgs = ref('{}');
+const modalFormValues = ref<Record<string, any>>({});
 const modalResult = ref('');
 const modalCalling = ref(false);
 const modalIsError = ref(false);
@@ -76,57 +75,44 @@ const getProperties = (tool: McpToolInfo) => {
 
 const openCallModal = (tool: McpToolInfo) => {
   modalTool.value = tool;
-  modalArgs.value = '{}';
+
+  // 初始化表单值
+  const values: Record<string, any> = {};
+  const props = tool.inputSchema?.properties;
+  if (props) {
+    for (const [key, val] of Object.entries<any>(props)) {
+      if (val.enum?.length) {
+        values[key] = val.enum[0];
+      } else
+        switch (val.type) {
+          case 'array': {
+            values[key] = ''; // 用户可以输入 JSON 字符串
+
+            break;
+          }
+          case 'boolean': {
+            values[key] = false;
+
+            break;
+          }
+          case 'integer':
+          case 'number': {
+            values[key] = undefined;
+
+            break;
+          }
+          default: {
+            values[key] = '';
+          }
+        }
+    }
+  }
+  modalFormValues.value = values;
+
   modalResult.value = '';
   modalCalling.value = false;
   modalIsError.value = false;
   modalVisible.value = true;
-};
-
-const fillDefaultArgs = () => {
-  const tool = modalTool.value;
-  if (!tool) return;
-  const props = tool.inputSchema?.properties;
-  if (!props || Object.keys(props).length === 0) {
-    modalArgs.value = '{}';
-    return;
-  }
-  const defaults: Record<string, any> = {};
-  for (const [key, val] of Object.entries<any>(props)) {
-    if (val.enum?.length) {
-      defaults[key] = val.enum[0];
-    } else
-      switch (val.type) {
-        case 'array': {
-          defaults[key] = [];
-
-          break;
-        }
-        case 'boolean': {
-          defaults[key] = false;
-
-          break;
-        }
-        case 'integer':
-        case 'number': {
-          defaults[key] = 0;
-
-          break;
-        }
-        case 'object': {
-          defaults[key] = {};
-
-          break;
-        }
-        case 'string': {
-          defaults[key] = '';
-
-          break;
-        }
-        // No default
-      }
-  }
-  modalArgs.value = JSON.stringify(defaults, null, 2);
 };
 
 const callTool = async () => {
@@ -136,12 +122,34 @@ const callTool = async () => {
   modalResult.value = '';
   modalIsError.value = false;
   try {
-    let args: Record<string, any> = {};
-    if (modalArgs.value.trim()) {
-      args = JSON.parse(modalArgs.value);
+    const args: Record<string, any> = {};
+    for (const prop of getProperties(tool)) {
+      const val = modalFormValues.value[prop.name];
+      if (val !== undefined && val !== '') {
+        if (prop.type === 'array' || prop.type === 'object') {
+          try {
+            args[prop.name] = typeof val === 'string' ? JSON.parse(val) : val;
+          } catch {
+            args[prop.name] = val; // 解析失败则直接传字符串
+          }
+        } else {
+          args[prop.name] = val;
+        }
+      }
     }
     const res = await callMcpToolApi(tool.name, args);
-    const text = res.content?.map((c) => c.text).join('\n') || '无返回内容';
+    const text =
+      res.content
+        ?.map((c) => {
+          try {
+            // 尝试格式化 JSON 字符串
+            const jsonObj = JSON.parse(c.text);
+            return JSON.stringify(jsonObj, null, 2);
+          } catch {
+            return c.text;
+          }
+        })
+        .join('\n') || '无返回内容';
     modalResult.value = text;
     modalIsError.value = res.isError;
   } catch (error: any) {
@@ -150,14 +158,6 @@ const callTool = async () => {
   } finally {
     modalCalling.value = false;
   }
-};
-
-const copySchema = (tool: McpToolInfo) => {
-  navigator.clipboard
-    .writeText(JSON.stringify(tool.inputSchema, null, 2))
-    .then(() => {
-      message.success('已复制 Schema');
-    });
 };
 
 const getTypeColor = (type: string) => {
@@ -228,10 +228,7 @@ onMounted(() => {
           <Collapse v-if="getProperties(tool).length > 0" ghost size="small">
             <Collapse.Panel key="params">
               <template #header>
-                <span class="schema-header">
-                  <RightOutlined class="collapse-icon" />
-                  输入参数
-                </span>
+                <span class="schema-header"> 输入参数 </span>
               </template>
               <div class="params-list">
                 <div
@@ -265,11 +262,8 @@ onMounted(() => {
           <div v-else class="no-params">该工具无需输入参数</div>
 
           <div class="card-footer">
-            <a class="action-btn" @click.stop="copySchema(tool)">
-              <CopyOutlined /> 复制 Schema
-            </a>
             <a class="action-btn primary" @click.stop="openCallModal(tool)">
-              <CaretRightOutlined /> 模拟调用
+              <CaretRightOutlined /> 调用
             </a>
           </div>
         </Card>
@@ -279,7 +273,7 @@ onMounted(() => {
     <!-- 模拟调用弹窗 -->
     <Modal
       v-model:open="modalVisible"
-      :title="modalTool ? `调用 - ${modalTool.name}` : '模拟调用'"
+      :title="modalTool ? `调用 - ${modalTool.name}` : '调用'"
       :footer="null"
       width="560px"
       destroy-on-close
@@ -288,17 +282,46 @@ onMounted(() => {
         <p class="modal-tool-desc">{{ modalTool.description }}</p>
 
         <div class="modal-toolbar">
-          <span class="modal-label">参数 JSON</span>
-          <Button size="small" type="link" @click="fillDefaultArgs">
-            填入默认值
-          </Button>
+          <span class="modal-label">参数配置</span>
         </div>
-        <Input.TextArea
-          v-model:value="modalArgs"
-          :auto-size="{ minRows: 4, maxRows: 10 }"
-          placeholder="{&quot;key&quot;: &quot;value&quot;}"
-          class="modal-textarea"
-        />
+
+        <Form
+          v-if="getProperties(modalTool).length > 0"
+          layout="vertical"
+          class="modal-form"
+        >
+          <Form.Item
+            v-for="param in getProperties(modalTool)"
+            :key="param.name"
+            :label="param.name"
+            :required="param.required"
+            :extra="param.description"
+          >
+            <Select
+              v-if="param.enum"
+              v-model:value="modalFormValues[param.name]"
+              :options="param.enum.map((e: any) => ({ label: e, value: e }))"
+              placeholder="请选择"
+              allow-clear
+            />
+            <Switch
+              v-else-if="param.type === 'boolean'"
+              v-model:checked="modalFormValues[param.name]"
+            />
+            <InputNumber
+              v-else-if="param.type === 'number' || param.type === 'integer'"
+              v-model:value="modalFormValues[param.name]"
+              style="width: 100%"
+              placeholder="请输入数字"
+            />
+            <Input
+              v-else
+              v-model:value="modalFormValues[param.name]"
+              placeholder="请输入"
+            />
+          </Form.Item>
+        </Form>
+        <div v-else class="no-params">该工具无需输入参数</div>
 
         <Button
           type="primary"
