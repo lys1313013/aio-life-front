@@ -13,7 +13,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, Popconfirm, Select, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getByDictType } from '#/api/core/common';
+import { getByDictType } from '#/api/core/userDictType';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
 
 import FormDrawerDemo from './form-drawer.vue';
@@ -49,7 +49,11 @@ const tableData = ref<RowType[]>([]);
 const loadExerciseTypes = async () => {
   try {
     const res = await getByDictType('exercise_type');
-    dictOptions.value = res.dictDetailList;
+    dictOptions.value = res.dictDetailList.map((item: any) => ({
+      id: Number(item.id), // Ensure compatibility if needed
+      label: item.dictLabel || item.label,
+      value: String(item.id),
+    }));
     // 默认选择第一种运动类型
     if (!selectedExerciseType.value && dictOptions.value.length > 0) {
       selectedExerciseType.value = dictOptions.value[0]?.value;

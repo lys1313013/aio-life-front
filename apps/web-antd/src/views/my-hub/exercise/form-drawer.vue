@@ -5,7 +5,7 @@ import { Button } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useVbenForm } from '#/adapter/form';
-import { getByDictType } from '#/api/core/common';
+import { getByDictType } from '#/api/core/userDictType';
 import { add, update } from '#/api/core/exerciseRecord';
 
 const props = defineProps<{
@@ -21,8 +21,8 @@ const loadExerciseTypes = async () => {
   try {
     const res = await getByDictType('exercise_type');
     exerciseTypeOptions.value = res.dictDetailList.map((item: any) => ({
-      label: item.label,
-      value: item.value,
+      label: item.dictLabel || item.label,
+      value: String(item.id),
     }));
   } catch (error) {
     console.error('加载运动类型失败:', error);
