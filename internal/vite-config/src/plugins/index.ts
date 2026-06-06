@@ -158,9 +158,10 @@ async function loadApplicationPlugins(
       plugins: async () => [await viteLicensePlugin()],
     },
     {
-      condition: pwa,
+      condition: true, // Always include plugin, but disable it if pwa is false
       plugins: () =>
         VitePWA({
+          disable: !pwa,
           injectRegister: false,
           workbox: {
             globPatterns: [],

@@ -4,8 +4,44 @@ export default defineConfig(async () => {
   return {
     application: {
       compress: true,
+      pwaOptions: {
+        registerType: 'prompt',
+        injectRegister: false,
+        devOptions: { enabled: true },
+        includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          cleanupOutdatedCaches: true,
+        },
+        manifest: {
+          name: 'AIO-LIFE',
+          short_name: 'AIO',
+          description: '个人生活全能管家 - 衣柜、日程、记账、健康一体化',
+          theme_color: '#1677ff',
+          background_color: '#ffffff',
+          display: 'standalone',
+          orientation: 'portrait',
+          start_url: '/',
+          scope: '/',
+          lang: 'zh-CN',
+          icons: [
+            { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+            {
+              src: 'maskable-icon-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+          ],
+        },
+      },
     },
     vite: {
+      optimizeDeps: {
+        exclude: ['@nuxt/kit', 'jiti', 'c12', 'unconfig', 'nitropack'],
+      },
       plugins: [
         {
           name: 'vite:leetcode-proxy',
@@ -92,7 +128,9 @@ export default defineConfig(async () => {
         },
       ],
       build: {
+        target: 'es2022',
         rollupOptions: {
+          external: (id) => /[\\/]jiti[\\/]/.test(id) || /[\\/]@nuxt[\\/]kit[\\/]/.test(id),
           output: {
             manualChunks: {
               'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],
