@@ -69,7 +69,7 @@ const form = reactive<ThoughtForm>({
 
 // 计算属性
 const modalTitle = computed(() =>
-  currentEditId.value === null ? '添加新思考' : '编辑思考',
+  currentEditId.value === null ? '' : '',
 );
 
 // 方法

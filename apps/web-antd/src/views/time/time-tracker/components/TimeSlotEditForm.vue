@@ -35,7 +35,7 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { getByDictType } from '#/api/core/common';
+import { getByDictType } from '#/api/core/userDictType';
 
 import {
   getCategoryColor,
@@ -157,8 +157,8 @@ const loadExerciseTypes = async () => {
     const res = await getByDictType('exercise_type');
     if (res && res.dictDetailList) {
       exerciseTypeOptions.value = res.dictDetailList.map((item: any) => ({
-        label: item.label,
-        value: item.value,
+        label: item.dictLabel || item.label,
+        value: String(item.id),
       }));
     }
   } catch (error) {
