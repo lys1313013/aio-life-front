@@ -61,58 +61,60 @@ function handleTitleClick(e: MouseEvent) {
 </script>
 
 <template>
-  <Card :body-style="{ padding: '16px' }" class="w-full select-none">
-    <div
-      :class="{
-        'cursor-pointer transition-colors hover:text-primary': !!titleClickUrl,
-      }"
-      class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
-      @click="handleTitleClick"
-    >
-      {{ title }}
-    </div>
-    <div class="flex items-center justify-between">
-      <div class="flex items-center">
-        <template v-if="loading">
-          <Skeleton.Button active :style="{ width: '120px', height: '28px' }" />
-        </template>
-        <span
-          v-else
-          :style="{ color: valueColor }"
-          class="text-lg font-bold sm:text-xl"
+  <Card :body-style="{ padding: 0 }" class="w-full select-none">
+    <div class="p-3 sm:p-4">
+      <div
+        :class="{
+          'cursor-pointer transition-colors hover:text-primary': !!titleClickUrl,
+        }"
+        class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
+        @click="handleTitleClick"
+      >
+        {{ title }}
+      </div>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <template v-if="loading">
+            <Skeleton.Button active :style="{ width: '120px', height: '28px' }" />
+          </template>
+          <span
+            v-else
+            :style="{ color: valueColor }"
+            class="text-lg font-bold sm:text-xl"
+          >
+            {{ value }}
+          </span>
+        </div>
+        <div
+          v-if="diffValue"
+          :style="{ color: diffColor }"
+          class="flex items-center text-xs font-normal"
         >
-          {{ value }}
-        </span>
+          {{ diffValue }}
+        </div>
+        <VbenIcon
+          v-else-if="icon"
+          :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
+          :icon="icon"
+          class="size-6 flex-shrink-0 sm:size-8"
+          @click="handleIconClick"
+        />
       </div>
       <div
-        v-if="diffValue"
-        :style="{ color: diffColor }"
-        class="flex items-center text-xs font-normal"
+        v-if="totalTitle"
+        class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm"
       >
-        {{ diffValue }}
-      </div>
-      <VbenIcon
-        v-else-if="icon"
-        :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
-        :icon="icon"
-        class="size-6 flex-shrink-0 sm:size-8"
-        @click="handleIconClick"
-      />
-    </div>
-    <div
-      v-if="totalTitle"
-      class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm"
-    >
-      <span>{{ totalTitle }}</span>
-      <div class="flex items-center">
-        <template v-if="loading">
-          <Skeleton.Button
-            active
-            size="small"
-            :style="{ width: '60px', height: '20px' }"
-          />
-        </template>
-        <span v-else>{{ totalValue }}</span>
+        <span>{{ totalTitle }}</span>
+        <div class="flex items-center">
+          <template v-if="loading">
+            <Skeleton.Button
+              active
+              size="small"
+              :style="{ width: '60px', height: '20px' }"
+            />
+          </template>
+          <span v-else>{{ totalValue }}</span>
+        </div>
       </div>
     </div>
   </Card>

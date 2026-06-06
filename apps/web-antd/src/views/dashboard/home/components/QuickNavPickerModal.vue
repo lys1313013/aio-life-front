@@ -98,7 +98,7 @@ function handleCancel() {
 <template>
   <AModal
     :open="visible"
-    title="添加快捷导航"
+    title=""
     :width="520"
     :footer="null"
     @cancel="handleCancel"
