@@ -20,6 +20,7 @@
     "build:analyze": "pnpm vite build --mode analyze",
     "dev": "pnpm vite --mode development",
     "preview": "vite preview",
+    "pwa-assets": "npx @vite-pwa/assets-generator@latest --preset minimal-2023 public/pwa-source.svg",
     "typecheck": "vue-tsc --noEmit --skipLibCheck"
   },
   "imports": {
@@ -64,6 +65,7 @@
     "xe-utils": "^3.8.2"
   },
   "devDependencies": {
-    "@types/qrcode": "catalog:"
+    "@types/qrcode": "catalog:",
+    "@vite-pwa/assets-generator": "^1.0.0"
   }
 }

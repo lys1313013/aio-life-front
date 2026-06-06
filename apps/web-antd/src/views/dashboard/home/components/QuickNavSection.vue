@@ -1,0 +1,370 @@
+<script setup lang="ts">
+import type { WorkbenchQuickNavItem } from '@vben/common-ui';
+
+import type {
+  QuickNavCandidate,
+  QuickNavItem,
+  QuickNavSaveItem,
+} from '#/api/core/quick-nav';
+
+import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
+
+import { VbenIcon } from '@vben/common-ui';
+
+import {
+  Button as AButton,
+  Card as ACard,
+  Empty as AEmpty,
+  Spin as ASpin,
+  message,
+} from 'ant-design-vue';
+import draggable from 'vuedraggable';
+
+import { getQuickNavCandidatesApi, QUICK_NAV_MAX } from '#/api/core/quick-nav';
+import { useQuickNavStore } from '#/store/quick-nav';
+
+import QuickNavPickerModal from './QuickNavPickerModal.vue';
+
+const store = useQuickNavStore();
+const router = useRouter();
+
+const editing = ref(false);
+const draft = ref<QuickNavItem[]>([]);
+const saving = ref(false);
+const pickerVisible = ref(false);
+
+const navItems = computed<WorkbenchQuickNavItem[]>(() =>
+  store.items.map((it) => ({
+    color: it.color,
+    icon: it.icon,
+    title: it.title,
+    url: it.path,
+  })),
+);
+
+const isLoading = computed(() => store.loading && !store.loaded);
+const loadFailed = computed(() => store.loaded && store.error !== null);
+const isEmpty = computed(
+  () => store.loaded && !store.error && store.items.length === 0,
+);
+
+watch(
+  () => store.items,
+  (items) => {
+    if (!editing.value) {
+      draft.value = items.map((i) => ({ ...i }));
+    }
+  },
+  { deep: true, immediate: true },
+);
+
+function enterEdit() {
+  draft.value = store.items.map((i) => ({ ...i }));
+  editing.value = true;
+}
+
+function cancelEdit() {
+  draft.value = store.items.map((i) => ({ ...i }));
+  editing.value = false;
+}
+
+async function saveEdit() {
+  if (draft.value.length > QUICK_NAV_MAX) {
+    message.warning(`快捷导航最多 ${QUICK_NAV_MAX} 项`);
+    return;
+  }
+  await persist(draft.value);
+  editing.value = false;
+}
+
+async function persist(items: QuickNavItem[]) {
+  const payload: QuickNavSaveItem[] = items.map((it, idx) => ({
+    enabled: it.enabled,
+    menuId: it.menuId,
+    sortOrder: idx,
+  }));
+  saving.value = true;
+  try {
+    await store.save(payload);
+    draft.value = items;
+    message.success('已保存');
+  } catch (error) {
+    message.error(`保存失败：${(error as Error).message ?? '未知错误'}`);
+  } finally {
+    saving.value = false;
+  }
+}
+
+function openPicker() {
+  pickerVisible.value = true;
+}
+
+async function onPickerConfirm(newMenuIds: string[]) {
+  pickerVisible.value = false;
+  const newIds = newMenuIds.filter(
+    (id) => !draft.value.some((d) => d.menuId === id),
+  );
+  if (newIds.length === 0) return;
+
+  const candidates: QuickNavCandidate[] = await getQuickNavCandidatesApi();
+  const byId = new Map(candidates.map((c) => [c.menuId, c]));
+  const additions: QuickNavItem[] = [];
+  for (const id of newIds) {
+    const c = byId.get(id);
+    if (!c) continue;
+    additions.push({
+      color: c.color,
+      enabled: 1,
+      icon: c.icon,
+      menuId: c.menuId,
+      path: c.path,
+      sortOrder: draft.value.length + additions.length,
+      target: c.target,
+      title: c.title,
+    });
+  }
+  let next = [...draft.value, ...additions];
+  if (next.length > QUICK_NAV_MAX) {
+    message.warning(`快捷导航最多 ${QUICK_NAV_MAX} 项，已截断多余项`);
+    next = next.slice(0, QUICK_NAV_MAX);
+  }
+
+  if (editing.value) {
+    draft.value = next;
+  } else {
+    await persist(next);
+  }
+}
+
+function removeItem(menuId: string) {
+  draft.value = draft.value.filter((d) => d.menuId !== menuId);
+}
+
+function handleItemClick(item: WorkbenchQuickNavItem) {
+  if (editing.value || !item.url) return;
+  if (item.url.startsWith('http')) {
+    window.open(item.url, '_blank');
+    return;
+  }
+  router.push(item.url);
+}
+
+function retryLoad() {
+  store.load();
+}
+
+// vuedraggable 改写 draft
+const draggableModel = computed({
+  get: () => draft.value,
+  set: (val: QuickNavItem[]) => {
+    draft.value = val;
+  },
+});
+
+function dragChange() {
+  // vuedraggable 内部已通过 setter 更新 draft，无需额外处理
+}
+</script>
+
+<template>
+  <ACard class="quick-nav-shell select-none h-full" :body-style="{ padding: 0 }">
+    <template #title>
+      <div class="flex items-center justify-between">
+        <span class="text-lg">快捷导航</span>
+        <!-- 编辑/保存按钮 -->
+        <div
+          v-if="!isLoading && !loadFailed"
+          class="flex items-center gap-1 font-normal"
+        >
+          <template v-if="editing">
+            <AButton size="small" @click="cancelEdit">取消</AButton>
+            <AButton
+              size="small"
+              type="primary"
+              :loading="saving"
+              @click="saveEdit"
+              >保存</AButton
+            >
+          </template>
+          <AButton
+            v-else-if="!isEmpty"
+            size="small"
+            type="text"
+            class="!px-1.5 text-muted-foreground hover:text-primary"
+            title="编辑快捷导航"
+            @click="enterEdit"
+          >
+            <VbenIcon icon="lucide:settings-2" class="size-4" />
+          </AButton>
+        </div>
+      </div>
+    </template>
+
+    <div class="w-full h-full">
+      <!-- 加载/失败/空态 -->
+      <div
+        v-if="isLoading || loadFailed || isEmpty"
+        class="flex min-h-[120px] items-center justify-center bg-card"
+      >
+        <ASpin v-if="isLoading" />
+        <AEmpty
+          v-else-if="loadFailed"
+          description="加载失败，点击重试"
+          class="py-6"
+        >
+          <AButton type="primary" size="small" @click="retryLoad">重试</AButton>
+        </AEmpty>
+        <div
+          v-else
+          class="m-3 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary"
+          role="button"
+          tabindex="0"
+          @click="openPicker"
+          @keydown.enter="openPicker"
+        >
+          <div
+            class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"
+          >
+            <span class="text-2xl leading-none">+</span>
+          </div>
+          <div class="text-sm font-medium">添加你的第一个快捷方式</div>
+          <div class="mt-1 text-xs text-muted-foreground">
+            从菜单中挑选最常用的入口，放到首页一触即达
+          </div>
+        </div>
+      </div>
+
+      <!-- 编辑态：3 列可拖网格 + 末尾 "+" 格 -->
+      <div
+        v-else-if="editing"
+        class="grid grid-cols-3 gap-px overflow-hidden border-t border-border bg-border p-0"
+      >
+        <draggable
+          v-model="draggableModel"
+          :animation="150"
+          item-key="menuId"
+          handle=".qn-drag-handle"
+          ghost-class="qn-ghost"
+          chosen-class="qn-chosen"
+          @change="dragChange"
+          :component-data="{ class: 'contents' }"
+          class="contents"
+        >
+          <template #item="{ element }">
+            <div
+              class="group relative flex flex-col items-center justify-center bg-card py-4 hover:shadow-xl sm:py-8"
+            >
+              <!-- 拖拽手柄 -->
+              <span
+                class="qn-drag-handle absolute left-2 top-2 cursor-grab p-1 text-muted-foreground opacity-30 transition-opacity hover:opacity-100"
+                title="拖拽排序"
+                aria-hidden="true"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="9" cy="12" r="1" />
+                  <circle cx="9" cy="5" r="1" />
+                  <circle cx="9" cy="19" r="1" />
+                  <circle cx="15" cy="12" r="1" />
+                  <circle cx="15" cy="5" r="1" />
+                  <circle cx="15" cy="19" r="1" />
+                </svg>
+              </span>
+              <AButton
+                size="small"
+                type="text"
+                class="!absolute right-1 top-1 z-10 !h-6 !w-6 !p-0 text-muted-foreground hover:text-destructive"
+                @click.stop="removeItem(element.menuId)"
+              >
+                ×
+              </AButton>
+              <div class="flex flex-col items-center justify-center">
+                <VbenIcon
+                  :color="element.color || undefined"
+                  :icon="element.icon"
+                  class="size-6 sm:size-8"
+                />
+                <span
+                  class="mt-1 truncate text-xs sm:mt-2 sm:text-base"
+                  :class="{ 'line-through opacity-50': element.enabled === 0 }"
+                  >{{ element.title }}</span
+                >
+              </div>
+            </div>
+          </template>
+        </draggable>
+
+        <!-- 末尾 "+"格：非拖拽项，与 draggable 的 items 共用 3 列网格 -->
+        <div
+          v-if="draft.length < QUICK_NAV_MAX"
+          class="text-muted-foreground flex cursor-pointer flex-col items-center justify-center bg-card py-4 transition-colors hover:bg-accent sm:py-8"
+          @click="openPicker"
+        >
+          <span class="text-2xl">+</span>
+          <span class="ml-1 text-xs">添加</span>
+        </div>
+
+        <!-- 补齐空格，保持网格边框完整 -->
+        <div
+          v-for="i in (3 - ((draft.length + (draft.length < QUICK_NAV_MAX ? 1 : 0)) % 3)) % 3"
+          :key="'empty-' + i"
+          class="bg-card"
+        ></div>
+      </div>
+
+      <!-- 默认态 -->
+      <div
+        v-else
+        class="flex flex-wrap p-0 border-t border-border"
+      >
+        <template v-for="(item, index) in navItems" :key="item.title">
+          <div
+            :class="{
+              'border-r-0': index % 3 === 2,
+              'border-b-0': index >= Math.floor((navItems.length - 1) / 3) * 3,
+            }"
+            class="group flex w-1/3 cursor-pointer flex-col items-center justify-center border-b border-r border-border py-4 hover:shadow-xl sm:py-8"
+            @click="handleItemClick(item)"
+          >
+            <VbenIcon
+              :color="item.color || undefined"
+              :icon="item.icon"
+              class="size-6 transition-all duration-300 group-hover:scale-125 sm:size-7"
+            />
+            <span class="mt-1 truncate text-xs sm:mt-2 sm:text-base">{{
+              item.title
+            }}</span>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <QuickNavPickerModal
+      v-model:visible="pickerVisible"
+      :existing-menu-ids="
+        editing ? draft.map((d) => d.menuId) : store.items.map((d) => d.menuId)
+      "
+      @cancel="pickerVisible = false"
+      @confirm="onPickerConfirm"
+    />
+  </ACard>
+</template>
+
+<style scoped>
+.quick-nav-shell :deep(.qn-ghost) {
+  opacity: 0.4;
+}
+.quick-nav-shell :deep(.qn-chosen) {
+  background: hsl(var(--primary) / 0.06);
+}
+</style>

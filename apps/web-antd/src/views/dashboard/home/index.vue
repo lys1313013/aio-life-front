@@ -1,14 +1,11 @@
 <script lang="ts" setup>
 import type { Component } from 'vue';
 
-import type { WorkbenchQuickNavItem } from '@vben/common-ui';
-
 import type { WatchedTaskDetail } from '#/api/core/dashboard';
 
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { WorkbenchQuickNav } from '@vben/common-ui';
 import { openWindow } from '@vben/utils';
 
 import {
@@ -22,10 +19,12 @@ import {
   ACTION_OPEN_EXERCISE_MODAL,
   ACTION_OPEN_TIME_TRACKER_MODAL,
 } from '#/constants/action';
+import { useQuickNavStore } from '#/store/quick-nav';
 
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
+import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 
 interface OverviewItem {
@@ -223,6 +222,7 @@ onUnmounted(() => {
 // 获取数据并设置 overviewItems
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
+  quickNavStore.load();
   try {
     loading.value = true;
     loadWatchedTasks();
@@ -328,62 +328,16 @@ function handleExerciseSuccess() {
   });
 }
 
-const quickNavItems: WorkbenchQuickNavItem[] = [
-  {
-    color: '#1fdaca',
-    icon: 'mdi:history',
-    title: '时迹',
-    url: '/time/time-tracker',
-  },
-  {
-    color: '#bf0c2c',
-    icon: 'mdi:run-fast',
-    title: '运动',
-    url: '/my-hub/exercise',
-  },
-  {
-    color: '#e18525',
-    icon: 'mdi:clipboard-text-clock-outline',
-    title: '待办',
-    url: '/task-center/todo',
-  },
-  {
-    color: '#3fb27f',
-    icon: 'mdi:lightbulb-on-outline',
-    title: '闪念',
-    url: '/my-hub/think',
-  },
-  {
-    color: '#1f2328',
-    icon: 'carbon:logo-github',
-    title: 'GitHub',
-    url: '/coding/github',
-  },
-  {
-    color: '#ffa116',
-    icon: 'devicon:leetcode',
-    title: 'LeetCode',
-    url: '/coding/leetcode',
-  },
-];
-
 const router = useRouter();
+const quickNavStore = useQuickNavStore();
 
-function navTo(nav: WorkbenchQuickNavItem) {
+function navTo(nav: { url?: string }) {
   if (nav.url?.startsWith('http')) {
     openWindow(nav.url);
     return;
   }
   if (nav.url) {
     router.push(nav.url);
-  }
-}
-
-function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
-  if (nav.title === '时迹' || nav.url?.includes('time-tracker')) {
-    timeTrackerModalRef.value?.open();
-  } else if (nav.title === '运动' || nav.url?.includes('exercise')) {
-    exerciseModalRef.value?.open();
   }
 }
 </script>
@@ -420,12 +374,7 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
       </template>
     </div>
     <div class="mt-5 grid gap-4 lg:grid-cols-2">
-      <WorkbenchQuickNav
-        :items="quickNavItems"
-        title="快捷导航"
-        @click="navTo"
-        @long-press="handleQuickNavLongPress"
-      />
+      <QuickNavSection />
       <div
         v-if="watchedTasks.length > 0 || !watchedLoading"
         class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
@@ -577,9 +526,7 @@ function handleQuickNavLongPress(nav: WorkbenchQuickNavItem) {
             :style="{ animationDelay: `${index * 50}ms` }"
             @click="
               navTo({
-                title: '闪念',
                 url: '/my-hub/think',
-                icon: 'mdi:lightbulb-on-outline',
               })
             "
           >
