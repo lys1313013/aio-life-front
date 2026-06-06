@@ -8,15 +8,40 @@ export async function query(data: any) {
 }
 
 /**
- * 新增或更新
+ * 新增
  */
-export async function insertOrUpdate(data: any) {
-  return await requestClient.post('/userDictData/insertOrUpdate', data);
+export async function insert(data: any) {
+  return await requestClient.post('/userDictData', data);
+}
+
+/**
+ * 更新
+ */
+export async function update(data: any) {
+  return await requestClient.put('/userDictData', data);
 }
 
 /**
  * 删除
  */
-export async function deleteData(data: any) {
-  return await requestClient.post('/userDictData/delete', data);
+export async function deleteData(id: string) {
+  return await requestClient.delete(`/userDictData/${id}`);
+}
+
+// ================= 管理员 API =================
+
+export async function adminQuery(data: any) {
+  return await requestClient.post('/userDictData/admin/query', data);
+}
+
+export async function adminInsert(data: any) {
+  return await requestClient.post('/userDictData/admin', data);
+}
+
+export async function adminUpdate(data: any) {
+  return await requestClient.put(`/userDictData/admin/${data.id}`, data);
+}
+
+export async function adminDelete(id: string) {
+  return await requestClient.delete(`/userDictData/admin/${id}`);
 }

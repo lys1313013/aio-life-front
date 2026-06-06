@@ -31,6 +31,16 @@ const routes: RouteRecordRaw[] = [
         path: '/system/menu',
         component: () => import('#/views/system/menu/index.vue'),
       },
+      {
+        meta: {
+          icon: 'mdi:book-open-page-variant',
+          title: '用户字典管理',
+          authority: ['admin'],
+        },
+        name: 'UserDictAdmin',
+        path: '/system/user-dict',
+        component: () => import('#/views/system/user-dict/index.vue'),
+      },
     ],
   },
 ];
