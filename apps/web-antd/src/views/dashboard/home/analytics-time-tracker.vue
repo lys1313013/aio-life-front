@@ -96,16 +96,16 @@ const loadData = async () => {
             show: true,
             position: 'outside',
             formatter: '{b}\n{d}%',
-            fontSize: 12,
+            fontSize: 10,
           },
           labelLine: {
             show: true,
-            length: 5,
-            length2: 10,
+            length: 3,
+            length2: 6,
           },
           name: '时间分类',
           radius: ['45%', '70%'],
-          center: ['50%', '45%'],
+          center: ['50%', '40%'],
           type: 'pie',
         },
       ],
@@ -127,7 +127,7 @@ defineExpose({
 </script>
 
 <template>
-  <div v-loading="loading" class="h-full min-h-[250px] w-full">
+  <div v-loading="loading" class="h-full min-h-[240px] w-full">
     <EchartsUI ref="chartRef" />
   </div>
 </template>

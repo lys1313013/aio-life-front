@@ -352,8 +352,8 @@ function navTo(nav: { url?: string }) {
 </script>
 
 <template>
-  <div class="p-3 sm:p-5">
-    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+  <div class="p-2 sm:p-4">
+    <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
       <template v-if="loading && overviewItems.length === 0">
         <AnalysisCard v-for="i in 4" :key="i" loading />
       </template>
@@ -382,23 +382,22 @@ function navTo(nav: { url?: string }) {
         />
       </template>
     </div>
-    <div class="mt-3 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">
+    <div class="mt-2 grid gap-2 sm:mt-3 sm:gap-3 lg:grid-cols-2">
       <QuickNavSection />
       <div
-        v-if="watchedTasks.length > 0 || !watchedLoading"
-        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+        class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
-        <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
+        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-lg font-semibold"
+              class="cursor-pointer select-none text-base font-semibold"
               @click="loadWatchedTasks"
               >待办</span
             >
           </div>
         </div>
 
-        <div v-if="watchedLoading" class="py-10 text-center">
+        <div v-if="watchedLoading" class="py-6 text-center">
           <div
             class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
           ></div>
@@ -406,10 +405,10 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-else-if="watchedTasks.length === 0"
-          class="m-3 rounded-xl border border-dashed border-border py-10 text-center sm:m-4"
+          class="m-2.5 rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
         >
           <svg
-            class="mx-auto mb-2 size-10 text-muted-foreground"
+            class="mx-auto mb-2 size-8 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -429,12 +428,12 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-else
-          class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2"
+          class="flex-1 space-y-1 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <div
             v-for="(task, index) in watchedTasks"
             :key="task.id"
-            class="group relative flex items-center gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground"
+            class="group relative flex items-center gap-2 rounded-xl p-2 transition-all hover:bg-accent hover:text-accent-foreground"
             :style="{ animationDelay: `${index * 50}ms` }"
           >
             <button
@@ -471,7 +470,7 @@ function navTo(nav: { url?: string }) {
                 {{ getPriorityLabel(task.priority) }}
               </span>
               <span
-                class="cursor-pointer text-sm font-medium leading-snug text-foreground transition-colors hover:text-primary"
+                class="cursor-pointer text-xs font-medium leading-snug text-foreground transition-colors hover:text-primary"
                 :class="{
                   'text-muted-foreground line-through': task.isCompleted === 1,
                 }"
@@ -509,35 +508,75 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
-      <!-- 固定闪念 -->
+      <!-- 今日时迹统计 -->
       <div
-        v-if="pinnedThoughts.length > 0 || thoughtsLoading"
         class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
-        <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
+        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-lg font-semibold"
+              class="cursor-pointer select-none text-base font-semibold"
+              @click="refreshTimeTracker"
+              >今日时迹</span
+            >
+          </div>
+        </div>
+        <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
+          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
+        </div>
+      </div>
+
+      <!-- 固定闪念 -->
+      <div
+        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+      >
+        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+          <div class="flex items-center gap-2">
+            <span
+              class="cursor-pointer select-none text-base font-semibold"
               @click="loadPinnedThoughts"
               >闪念</span
             >
           </div>
         </div>
 
-        <div v-if="thoughtsLoading" class="py-10 text-center">
+        <div v-if="thoughtsLoading" class="py-6 text-center">
           <div
             class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
           ></div>
         </div>
 
         <div
+          v-else-if="pinnedThoughts.length === 0"
+          class="m-2.5 rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
+        >
+          <svg
+            class="mx-auto mb-2 size-8 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
+          </svg>
+          <p class="text-sm text-muted-foreground">暂无固定的闪念</p>
+          <p class="mt-1 text-xs text-muted-foreground">
+            在闪念中点击星标固定到首页
+          </p>
+        </div>
+
+        <div
           v-else
-          class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2"
+          class="flex-1 space-y-1 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <div
             v-for="(thought, index) in pinnedThoughts"
             :key="thought.id"
-            class="group relative flex cursor-pointer items-start gap-3 rounded-xl p-2.5 transition-all hover:bg-accent hover:text-accent-foreground"
+            class="group relative flex cursor-pointer items-start gap-2 rounded-xl p-2 transition-all hover:bg-accent hover:text-accent-foreground"
             :style="{ animationDelay: `${index * 50}ms` }"
             @click="
               navTo({
@@ -556,10 +595,10 @@ function navTo(nav: { url?: string }) {
                 />
               </svg>
             </div>
-            <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <div class="flex min-w-0 flex-1 flex-col gap-0.5">
               <div class="flex items-start justify-between gap-2">
                 <span
-                  class="line-clamp-3 flex-1 whitespace-pre-wrap text-sm font-medium leading-snug text-foreground"
+                  class="line-clamp-3 flex-1 whitespace-pre-wrap text-xs font-medium leading-snug text-foreground"
                 >
                   {{ thought.content }}
                 </span>
@@ -571,24 +610,6 @@ function navTo(nav: { url?: string }) {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 今日时迹统计 -->
-      <div
-        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
-      >
-        <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
-          <div class="flex items-center gap-2">
-            <span
-              class="cursor-pointer select-none text-lg font-semibold"
-              @click="refreshTimeTracker"
-              >今日时迹</span
-            >
-          </div>
-        </div>
-        <div class="flex-1 overflow-hidden p-2 pt-0 sm:p-3 sm:pt-0">
-          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
         </div>
       </div>
     </div>

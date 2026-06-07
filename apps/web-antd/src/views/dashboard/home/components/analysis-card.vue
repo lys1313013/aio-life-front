@@ -62,13 +62,13 @@ function handleTitleClick(e: MouseEvent) {
 
 <template>
   <Card :body-style="{ padding: 0 }" class="w-full select-none">
-    <div class="p-3 sm:p-4">
+    <div class="p-2.5 sm:p-3">
       <div
         :class="{
           'cursor-pointer transition-colors hover:text-primary':
             !!titleClickUrl,
         }"
-        class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
+        class="mb-1.5 text-xs font-medium sm:mb-2 sm:text-sm sm:font-semibold"
         @click="handleTitleClick"
       >
         {{ title }}
@@ -78,13 +78,13 @@ function handleTitleClick(e: MouseEvent) {
           <template v-if="loading">
             <Skeleton.Button
               active
-              :style="{ width: '120px', height: '28px' }"
+              :style="{ width: '100px', height: '24px' }"
             />
           </template>
           <span
             v-else
             :style="{ color: valueColor }"
-            class="text-lg font-bold sm:text-xl"
+            class="text-base font-bold sm:text-lg"
           >
             {{ value }}
           </span>
@@ -92,7 +92,7 @@ function handleTitleClick(e: MouseEvent) {
         <div
           v-if="diffValue"
           :style="{ color: diffColor }"
-          class="flex items-center text-xs font-normal"
+          class="flex items-center text-[10px] font-normal"
         >
           {{ diffValue }}
         </div>
@@ -100,13 +100,13 @@ function handleTitleClick(e: MouseEvent) {
           v-else-if="icon"
           :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
           :icon="icon"
-          class="size-6 flex-shrink-0 sm:size-8"
+          class="size-5 flex-shrink-0 sm:size-6"
           @click="handleIconClick"
         />
       </div>
       <div
         v-if="totalTitle"
-        class="mt-2 flex justify-between text-xs text-gray-500 sm:mt-4 sm:text-sm"
+        class="mt-1.5 flex justify-between text-[10px] text-gray-500 sm:mt-2 sm:text-xs"
       >
         <span>{{ totalTitle }}</span>
         <div class="flex items-center">

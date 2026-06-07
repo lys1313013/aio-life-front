@@ -170,8 +170,8 @@ function dragChange() {
   <div
     class="quick-nav-shell flex h-full select-none flex-col rounded-xl bg-card text-card-foreground"
   >
-    <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
-      <span class="text-lg font-semibold">快捷导航</span>
+    <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+      <span class="text-base font-semibold">快捷导航</span>
       <!-- 编辑/保存按钮 -->
       <div
         v-if="!isLoading && !loadFailed"
@@ -217,19 +217,19 @@ function dragChange() {
         </AEmpty>
         <div
           v-else
-          class="m-3 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-6 text-center transition-colors hover:border-primary"
+          class="m-2.5 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-4 text-center transition-colors hover:border-primary"
           role="button"
           tabindex="0"
           @click="openPicker"
           @keydown.enter="openPicker"
         >
           <div
-            class="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"
+            class="mx-auto mb-1.5 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"
           >
-            <span class="text-2xl leading-none">+</span>
+            <span class="text-xl leading-none">+</span>
           </div>
-          <div class="text-sm font-medium">添加你的第一个快捷方式</div>
-          <div class="mt-1 text-xs text-muted-foreground">
+          <div class="text-xs font-medium">添加你的第一个快捷方式</div>
+          <div class="mt-1 text-[10px] text-muted-foreground">
             从菜单中挑选最常用的入口，放到首页一触即达
           </div>
         </div>
@@ -238,7 +238,7 @@ function dragChange() {
       <!-- 编辑态：4 列可拖网格 + 末尾 "+" 格 -->
       <div
         v-else-if="editing"
-        class="grid grid-cols-4 gap-1 overflow-hidden p-3 pt-2 sm:p-4 sm:pt-2"
+        class="grid grid-cols-4 gap-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
       >
         <draggable
           v-model="draggableModel"
@@ -253,7 +253,7 @@ function dragChange() {
         >
           <template #item="{ element }">
             <div
-              class="group relative flex flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-4"
+              class="group relative flex flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-3"
             >
               <!-- 拖拽手柄 -->
               <span
@@ -292,10 +292,10 @@ function dragChange() {
                 <VbenIcon
                   :color="element.color || undefined"
                   :icon="element.icon"
-                  class="size-6 sm:size-8"
+                  class="size-5 sm:size-6"
                 />
                 <span
-                  class="mt-1 truncate text-xs sm:mt-2 sm:text-base"
+                  class="mt-1 truncate text-[10px] sm:mt-1.5 sm:text-xs"
                   :class="{ 'line-through opacity-50': element.enabled === 0 }"
                   >{{ element.title }}</span
                 >
@@ -307,27 +307,27 @@ function dragChange() {
         <!-- 末尾 "+"格：非拖拽项，与 draggable 的 items 共用 4 列网格 -->
         <div
           v-if="draft.length < QUICK_NAV_MAX"
-          class="flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 text-muted-foreground transition-all hover:bg-accent sm:py-4"
+          class="flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 text-muted-foreground transition-all hover:bg-accent sm:py-3"
           @click="openPicker"
         >
-          <span class="text-2xl">+</span>
-          <span class="ml-1 text-xs">添加</span>
+          <span class="text-xl">+</span>
+          <span class="ml-1 text-[10px]">添加</span>
         </div>
       </div>
 
       <!-- 默认态 -->
-      <div v-else class="grid grid-cols-4 gap-1 p-3 pt-2 sm:p-4 sm:pt-2">
+      <div v-else class="grid grid-cols-4 gap-1 p-2.5 pt-1.5 sm:p-3 sm:pt-1.5">
         <template v-for="item in navItems" :key="item.title">
           <div
-            class="group flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-4"
+            class="group flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-3"
             @click="handleItemClick(item)"
           >
             <VbenIcon
               :color="item.color || undefined"
               :icon="item.icon"
-              class="size-6 transition-all duration-300 group-hover:scale-125 sm:size-7"
+              class="size-5 transition-all duration-300 group-hover:scale-125 sm:size-6"
             />
-            <span class="mt-1 truncate text-xs sm:mt-2 sm:text-base">{{
+            <span class="mt-1 truncate text-[10px] sm:mt-1.5 sm:text-xs">{{
               item.title
             }}</span>
           </div>
