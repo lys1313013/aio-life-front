@@ -6,6 +6,10 @@ ENV PATH="$PNPM_HOME:$PATH"
 ENV NODE_OPTIONS=--max-old-space-size=8192
 ENV TZ=Asia/Shanghai
 
+RUN apt-get update && apt-get install -y git openssh-client && rm -rf /var/lib/apt/lists/*
+
+RUN git config --global url."https://github.com/".insteadOf "git@github.com:" && git config --global url."https://".insteadOf "git://"
+
 RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
 WORKDIR /app
