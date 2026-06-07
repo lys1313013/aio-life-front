@@ -6,12 +6,12 @@ import { onMounted, reactive, ref } from 'vue';
 import { usePreferences } from '@vben/preferences';
 
 import {
-  ClockCircleOutlined,
   DeleteOutlined,
-  EditOutlined,
+  PlusOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
+  Card,
   Empty,
   Input,
   message,
@@ -116,90 +116,68 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col overflow-hidden p-3 sm:p-5">
-    <div class="flex-1 overflow-y-auto overflow-x-hidden">
-      <Spin :spinning="loading">
-        <div
-          v-if="memos.length > 0"
-          class="mx-auto columns-2 gap-3 sm:columns-2 sm:gap-5 lg:columns-3 xl:columns-3"
-        >
-          <div
-            v-for="item in memos"
-            :key="item.id"
-            class="mb-5 break-inside-avoid"
-          >
-            <div
-              class="hover:-translate-y-0.3 group relative flex flex-col rounded-xl border border-slate-200/60 bg-[var(--ant-color-bg-container)] p-3 transition-all duration-300 hover:shadow-md dark:border-slate-700/80"
+  <div class="memo-page">
+    <Spin :spinning="loading">
+      <template v-if="memos.length === 0 && !loading">
+        <div class="empty-wrap">
+          <Empty description="暂无笔记，点击右下角或下方按钮添加">
+            <Button
+              type="primary"
+              shape="round"
+              size="large"
+              @click="handleAdd"
             >
-              <!-- Content Area -->
-              <div
-                class="flex-1 cursor-pointer overflow-hidden"
-                @click="handleEdit(item)"
-              >
-                <h3
-                  v-if="item.title"
-                  class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200"
-                >
-                  {{ item.title }}
-                </h3>
-                <p
-                  class="line-clamp-[10] whitespace-pre-wrap break-words text-base leading-relaxed text-slate-700 dark:text-slate-300"
-                >
-                  {{ item.content }}
-                </p>
-              </div>
+              <template #icon><PlusOutlined /></template>
+              新建笔记
+            </Button>
+          </Empty>
+        </div>
+      </template>
 
-              <!-- Footer Area -->
-              <div
-                class="mt-3 flex items-center justify-between text-xs text-slate-400"
+      <div v-else class="cards-grid">
+        <Card
+          v-for="item in memos"
+          :key="item.id"
+          hoverable
+          :bordered="false"
+          class="memo-card group relative"
+          @click="handleEdit(item)"
+        >
+          <div class="card-content">
+            <h3 v-if="item.title" class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200">
+              {{ item.title }}
+            </h3>
+            {{ item.content }}
+          </div>
+          
+          <div class="card-footer">
+            <span class="card-date">{{ formatTime(item.updateTime) }}</span>
+            <div
+              class="flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+            >
+              <Popconfirm
+                title="确定要删除这条记录吗？"
+                ok-text="是"
+                cancel-text="否"
+                @confirm="handleDelete(item.id)"
+                @click.stop
               >
-                <div class="flex items-center gap-1">
-                  <ClockCircleOutlined />
-                  <Tooltip :title="new Date(item.updateTime).toLocaleString()">
-                    <span>{{ formatTime(item.updateTime) }}</span>
-                  </Tooltip>
-                </div>
-
-                <div
-                  class="flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                >
-                  <Tooltip title="编辑">
-                    <Button
-                      type="text"
-                      size="small"
-                      shape="circle"
-                      class="!text-slate-500 hover:bg-white/50 hover:!text-blue-500 dark:hover:bg-black/20"
-                      @click.stop="handleEdit(item)"
-                    >
-                      <template #icon><EditOutlined /></template>
-                    </Button>
-                  </Tooltip>
-                  <Popconfirm
-                    title="确定要删除这条记录吗？"
-                    ok-text="是"
-                    cancel-text="否"
-                    @confirm="handleDelete(item.id)"
-                    @click.stop
+                <Tooltip title="删除">
+                  <Button
+                    type="text"
+                    size="small"
+                    shape="circle"
+                    class="!text-slate-500 hover:bg-white/50 hover:!text-red-500 dark:hover:bg-black/20"
                   >
-                    <Tooltip title="删除">
-                      <Button
-                        type="text"
-                        size="small"
-                        shape="circle"
-                        class="!text-slate-500 hover:bg-white/50 hover:!text-red-500 dark:hover:bg-black/20"
-                      >
-                        <template #icon><DeleteOutlined /></template>
-                      </Button>
-                    </Tooltip>
-                  </Popconfirm>
-                </div>
-              </div>
+                    <template #icon><DeleteOutlined /></template>
+                  </Button>
+                </Tooltip>
+              </Popconfirm>
             </div>
           </div>
-        </div>
-        <Empty v-else-if="!loading" description="暂无笔记" class="mt-20" />
-      </Spin>
-    </div>
+        </Card>
+      </div>
+    </Spin>
 
     <Modal
       v-model:open="modalOpen"
@@ -237,5 +215,107 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Custom scrollbar for memo content if needed */
+.memo-page {
+  max-width: 1400px;
+  padding: 24px;
+  margin: 0 auto;
+}
+
+.empty-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 60px 20px;
+  background: transparent;
+}
+
+.cards-grid {
+  columns: 1;
+  gap: 24px;
+}
+
+.memo-card {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  break-inside: avoid;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgb(0, 0, 0, 0.04);
+}
+
+/* Mobile Adaptation */
+@media (max-width: 768px) {
+  .memo-page {
+    padding: 12px;
+  }
+
+  .cards-grid {
+    columns: 2;
+    column-gap: 12px;
+  }
+
+  .memo-card :deep(.ant-card-body) {
+    padding: 12px;
+  }
+
+  .memo-card {
+    margin-bottom: 12px;
+  }
+}
+
+@media (min-width: 640px) {
+  .cards-grid {
+    columns: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cards-grid {
+    columns: 3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .cards-grid {
+    columns: 4;
+  }
+}
+
+.memo-card:hover {
+  box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
+}
+
+.memo-card :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px;
+}
+
+.card-content {
+  display: -webkit-box;
+  flex: 1;
+  margin-bottom: 20px;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-line-clamp: 10;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  white-space: pre-wrap;
+  opacity: 0.85;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.card-date {
+  font-size: 13px;
+  opacity: 0.45;
+}
 </style>
