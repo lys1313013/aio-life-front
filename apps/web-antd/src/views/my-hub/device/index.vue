@@ -23,6 +23,7 @@ import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/common';
 import { deleteData, insertOrUpdate, query } from '#/api/core/device';
+import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 export default {
@@ -215,9 +216,13 @@ export default {
     },
     async getDeviceTypeOptions() {
       // 获取设备类型字典
-      const res = await getByDictType('device_type');
+      const res = await getUserDictType('device_type');
       if (res && res.dictDetailList) {
-        this.typeOptions = res.dictDetailList;
+        this.typeOptions = res.dictDetailList.map((item) => ({
+          ...item,
+          label: item.dictLabel || item.label,
+          value: String(item.id),
+        }));
       }
 
       // 赋值给页签

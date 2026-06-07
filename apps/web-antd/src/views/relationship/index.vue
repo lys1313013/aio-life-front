@@ -1,11 +1,33 @@
 <script setup lang="ts">
-import type { PersonReq, PersonDetailVO, RelationshipReq } from '#/api/relationship';
+import type {
+  PersonDetailVO,
+  PersonReq,
+  RelationshipReq,
+} from '#/api/relationship';
 
-import { PlusOutlined, TeamOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Drawer, Empty, Form, FormItem, Input, message, Modal, Popconfirm, Select, SelectOption, Spin } from 'ant-design-vue';
 import { onMounted, ref } from 'vue';
 
-import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
+import {
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  TeamOutlined,
+} from '@ant-design/icons-vue';
+import {
+  Button,
+  Drawer,
+  Empty,
+  Form,
+  FormItem,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  SelectOption,
+  Spin,
+} from 'ant-design-vue';
+
 import {
   createPerson,
   createRelationship,
@@ -16,14 +38,16 @@ import {
   updatePerson,
 } from '#/api/relationship';
 
+import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
+
 // ==================== 状态 ====================
 const loading = ref(false);
-const graphData = ref<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] });
-const selectedPersonDetail = ref<PersonDetailVO | null>(null);
+const graphData = ref<{ links: any[]; nodes: any[] }>({ nodes: [], links: [] });
+const selectedPersonDetail = ref<null | PersonDetailVO>(null);
 const drawerVisible = ref(false);
 const personFormVisible = ref(false);
 const relationshipFormVisible = ref(false);
-const editingPersonId = ref<string | null>(null);
+const editingPersonId = ref<null | string>(null);
 
 // 关系类型选项
 const relationTypes = [
@@ -73,7 +97,8 @@ const fetchGraphData = async () => {
     const radius = 180;
     graphData.value = {
       nodes: nodes.map((n, i) => {
-        const angle = (2 * Math.PI * i) / Math.max(nodes.length, 1) - Math.PI / 2;
+        const angle =
+          (2 * Math.PI * i) / Math.max(nodes.length, 1) - Math.PI / 2;
         const x = radius * Math.cos(angle);
         const y = radius * Math.sin(angle);
         return { id: n.id, name: n.name, x, y, fx: x, fy: y };
@@ -84,8 +109,8 @@ const fetchGraphData = async () => {
         relationType: e.relationType,
       })),
     };
-  } catch (e) {
-    console.error('Failed to fetch graph data:', e);
+  } catch (error) {
+    console.error('Failed to fetch graph data:', error);
     message.error('加载失败');
   } finally {
     loading.value = false;
@@ -204,7 +229,9 @@ const handleRelationshipSubmit = async () => {
     relationshipFormVisible.value = false;
     await fetchGraphData();
     if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(selectedPersonDetail.value.id);
+      selectedPersonDetail.value = await getPerson(
+        selectedPersonDetail.value.id,
+      );
     }
   } catch {
     message.error('保存失败');
@@ -221,7 +248,9 @@ const handleDeleteRelationship = async (targetId: string) => {
     message.success('删除成功');
     await fetchGraphData();
     if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(selectedPersonDetail.value.id);
+      selectedPersonDetail.value = await getPerson(
+        selectedPersonDetail.value.id,
+      );
     }
   } catch {
     message.error('删除失败');
@@ -240,10 +269,11 @@ onMounted(() => {
       <!-- 顶部工具栏 -->
       <div class="toolbar">
         <div class="toolbar-left">
-          <TeamOutlined style="font-size: 20px; margin-right: 8px;" />
-          <span style="font-size: 16px; font-weight: 500;">人际关系图谱</span>
-          <span style="margin-left: 16px; color: #999;">
-            {{ graphData.nodes?.length || 0 }} 人 · {{ graphData.links?.length || 0 }} 条关系
+          <TeamOutlined style="font-size: 20px; margin-right: 8px" />
+          <span style="font-size: 16px; font-weight: 500">人际关系图谱</span>
+          <span style="margin-left: 16px; color: #999">
+            {{ graphData.nodes?.length || 0 }} 人 ·
+            {{ graphData.links?.length || 0 }} 条关系
           </span>
         </div>
         <div class="toolbar-right">
@@ -283,23 +313,42 @@ onMounted(() => {
         <div class="person-detail">
           <div class="detail-section">
             <h4>基本信息</h4>
-            <p v-if="selectedPersonDetail.category"><strong>分类：</strong>{{ selectedPersonDetail.category }}</p>
-            <p v-if="selectedPersonDetail.description"><strong>简介：</strong>{{ selectedPersonDetail.description }}</p>
-            <p v-if="selectedPersonDetail.birthday"><strong>生日：</strong>{{ selectedPersonDetail.birthday }}</p>
-            <p v-if="selectedPersonDetail.phone"><strong>电话：</strong>{{ selectedPersonDetail.phone }}</p>
-            <p v-if="selectedPersonDetail.email"><strong>邮箱：</strong>{{ selectedPersonDetail.email }}</p>
-            <p v-if="selectedPersonDetail.tags"><strong>标签：</strong>{{ selectedPersonDetail.tags }}</p>
-            <p v-if="selectedPersonDetail.notes"><strong>备注：</strong>{{ selectedPersonDetail.notes }}</p>
+            <p v-if="selectedPersonDetail.category">
+              <strong>分类：</strong>{{ selectedPersonDetail.category }}
+            </p>
+            <p v-if="selectedPersonDetail.description">
+              <strong>简介：</strong>{{ selectedPersonDetail.description }}
+            </p>
+            <p v-if="selectedPersonDetail.birthday">
+              <strong>生日：</strong>{{ selectedPersonDetail.birthday }}
+            </p>
+            <p v-if="selectedPersonDetail.phone">
+              <strong>电话：</strong>{{ selectedPersonDetail.phone }}
+            </p>
+            <p v-if="selectedPersonDetail.email">
+              <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
+            </p>
+            <p v-if="selectedPersonDetail.tags">
+              <strong>标签：</strong>{{ selectedPersonDetail.tags }}
+            </p>
+            <p v-if="selectedPersonDetail.notes">
+              <strong>备注：</strong>{{ selectedPersonDetail.notes }}
+            </p>
           </div>
 
           <div class="detail-section">
             <div class="section-header">
-              <h4>关系 ({{ selectedPersonDetail.relationships?.length || 0 }})</h4>
+              <h4>
+                关系 ({{ selectedPersonDetail.relationships?.length || 0 }})
+              </h4>
               <Button type="link" size="small" @click="openRelationshipForm">
                 <PlusOutlined /> 添加关系
               </Button>
             </div>
-            <div v-if="selectedPersonDetail.relationships?.length" class="relationship-list">
+            <div
+              v-if="selectedPersonDetail.relationships?.length"
+              class="relationship-list"
+            >
               <div
                 v-for="rel in selectedPersonDetail.relationships"
                 :key="rel.id"
@@ -310,11 +359,17 @@ onMounted(() => {
                   <span class="rel-name"> → {{ rel.target?.name }}</span>
                 </div>
                 <div class="rel-actions">
-                  <DeleteOutlined @click="handleDeleteRelationship(rel.target?.id || '')" />
+                  <DeleteOutlined
+                    @click="handleDeleteRelationship(rel.target?.id || '')"
+                  />
                 </div>
               </div>
             </div>
-            <Empty v-else description="暂无关系" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+            <Empty
+              v-else
+              description="暂无关系"
+              :image="Empty.PRESENTED_IMAGE_SIMPLE"
+            />
           </div>
 
           <div class="detail-actions">
@@ -325,9 +380,7 @@ onMounted(() => {
               title="确定删除此人物？"
               @confirm="handleDeletePerson(selectedPersonDetail.id)"
             >
-              <Button type="primary" danger>
-                <DeleteOutlined /> 删除
-              </Button>
+              <Button type="primary" danger> <DeleteOutlined /> 删除 </Button>
             </Popconfirm>
           </div>
         </div>
@@ -347,19 +400,33 @@ onMounted(() => {
         </FormItem>
         <FormItem label="分类">
           <Select v-model:value="personForm.category" placeholder="请选择分类">
-            <SelectOption v-for="opt in categoryOptions" :key="opt.value" :value="opt.value">
+            <SelectOption
+              v-for="opt in categoryOptions"
+              :key="opt.value"
+              :value="opt.value"
+            >
               {{ opt.label }}
             </SelectOption>
           </Select>
         </FormItem>
         <FormItem label="简介">
-          <Input.TextArea v-model:value="personForm.description" placeholder="简短描述" :rows="2" />
+          <Input.TextArea
+            v-model:value="personForm.description"
+            placeholder="简短描述"
+            :rows="2"
+          />
         </FormItem>
         <FormItem label="标签">
-          <Input v-model:value="personForm.tags" placeholder="多个标签用逗号分隔" />
+          <Input
+            v-model:value="personForm.tags"
+            placeholder="多个标签用逗号分隔"
+          />
         </FormItem>
         <FormItem label="生日">
-          <Input v-model:value="personForm.birthday" placeholder="如：1990-01-01" />
+          <Input
+            v-model:value="personForm.birthday"
+            placeholder="如：1990-01-01"
+          />
         </FormItem>
         <FormItem label="电话">
           <Input v-model:value="personForm.phone" placeholder="手机号" />
@@ -368,7 +435,11 @@ onMounted(() => {
           <Input v-model:value="personForm.email" placeholder="邮箱" />
         </FormItem>
         <FormItem label="备注">
-          <Input.TextArea v-model:value="personForm.notes" placeholder="其他备注" :rows="2" />
+          <Input.TextArea
+            v-model:value="personForm.notes"
+            placeholder="其他备注"
+            :rows="2"
+          />
         </FormItem>
       </Form>
     </Modal>
@@ -382,16 +453,28 @@ onMounted(() => {
     >
       <Form layout="vertical">
         <FormItem label="关系类型" required>
-          <Select v-model:value="relationshipForm.relationType" placeholder="选择关系类型">
-            <SelectOption v-for="opt in relationTypes" :key="opt.value" :value="opt.value">
+          <Select
+            v-model:value="relationshipForm.relationType"
+            placeholder="选择关系类型"
+          >
+            <SelectOption
+              v-for="opt in relationTypes"
+              :key="opt.value"
+              :value="opt.value"
+            >
               {{ opt.label }}
             </SelectOption>
           </Select>
         </FormItem>
         <FormItem label="对方人物" required>
-          <Select v-model:value="relationshipForm.targetPersonId" placeholder="选择人物">
+          <Select
+            v-model:value="relationshipForm.targetPersonId"
+            placeholder="选择人物"
+          >
             <SelectOption
-              v-for="n in graphData.nodes?.filter(n => n.id !== selectedPersonDetail?.id)"
+              v-for="n in graphData.nodes?.filter(
+                (n) => n.id !== selectedPersonDetail?.id,
+              )"
               :key="n.id"
               :value="n.id"
             >
@@ -406,10 +489,17 @@ onMounted(() => {
           </Select>
         </FormItem>
         <FormItem label="描述">
-          <Input.TextArea v-model:value="relationshipForm.description" placeholder="关系描述" :rows="2" />
+          <Input.TextArea
+            v-model:value="relationshipForm.description"
+            placeholder="关系描述"
+            :rows="2"
+          />
         </FormItem>
         <FormItem label="标签">
-          <Input v-model:value="relationshipForm.tags" placeholder="多个标签用逗号分隔" />
+          <Input
+            v-model:value="relationshipForm.tags"
+            placeholder="多个标签用逗号分隔"
+          />
         </FormItem>
       </Form>
     </Modal>

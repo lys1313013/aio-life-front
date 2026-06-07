@@ -428,7 +428,7 @@ onMounted(() => {
             </Form.Item>
           </div>
           <div class="grid grid-cols-2 gap-x-4">
-            <Form.Item label="菜单图标（Icon）">
+            <Form.Item label="菜单图标">
               <Input
                 v-model:value="metaIcon"
                 placeholder="例如 mdi:clock-outline"

@@ -1,13 +1,39 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { Page, IconPicker } from '@vben/common-ui';
+import type { VbenFormProps } from '#/adapter/form';
+import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { Button, message, Popconfirm, Tag, Modal, Form, Input, Switch, Select } from 'ant-design-vue';
+import { onMounted, ref } from 'vue';
 
-import { useVbenVxeGrid, type VxeGridProps } from '#/adapter/vxe-table';
-import { adminDelete, adminQuery, adminInsert, adminUpdate } from '#/api/core/userDictData';
+import { IconPicker, Page } from '@vben/common-ui';
+
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import {
+  Button,
+  Form,
+  Input,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Switch,
+  Tag,
+  Tooltip,
+} from 'ant-design-vue';
+
+import { useVbenVxeGrid } from '#/adapter/vxe-table';
+import {
+  adminDelete,
+  adminInsert,
+  adminQuery,
+  adminUpdate,
+} from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
-import { getCategoryIcon, CATEGORY_COLOR_PRESETS, PRESET_ICONS, extractIconSet } from '#/views/my-hub/exercise/category-config/config';
+import {
+  CATEGORY_COLOR_PRESETS,
+  extractIconSet,
+  getCategoryIcon,
+  PRESET_ICONS,
+} from '#/views/my-hub/exercise/category-config/config';
 
 // 枚举数据
 const dictTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -23,9 +49,7 @@ onMounted(async () => {
 
 // 计算属性，用于在表格中显示中文标签
 const getDictTypeLabel = (dictType: string) => {
-  const option = dictTypeOptions.value.find(
-    (item) => item.value === dictType,
-  );
+  const option = dictTypeOptions.value.find((item) => item.value === dictType);
   return option ? option.label : dictType;
 };
 
@@ -50,15 +74,17 @@ const rules = {
   dictLabel: [{ required: true, message: '请输入字典名称' }],
 };
 
-const formOptions = {
-  items: [
+const formOptions: VbenFormProps = {
+  // 默认展开
+  collapsed: false,
+  // 控制表单是否显示折叠按钮
+  showCollapseButton: false,
+  submitButtonOptions: {
+    content: '查询',
+  },
+  schema: [
     {
-      field: 'userId',
-      component: 'Input',
-      label: '用户ID',
-    },
-    {
-      field: 'dictType',
+      fieldName: 'dictType',
       component: 'Select',
       label: '字典类型',
       componentProps: {
@@ -68,9 +94,22 @@ const formOptions = {
       },
     },
     {
-      field: 'dictLabel',
+      fieldName: 'dictLabel',
       component: 'Input',
       label: '字典名称',
+    },
+    {
+      fieldName: 'status',
+      component: 'Select',
+      label: '状态',
+      componentProps: {
+        placeholder: '请选择状态',
+        options: [
+          { label: '启用', value: '0' },
+          { label: '禁用', value: '1' },
+        ],
+        allowClear: true,
+      },
     },
   ],
 };
@@ -80,13 +119,14 @@ const gridOptions: VxeGridProps<any> = {
     custom: true,
     refresh: true,
     zoom: true,
+    // @ts-ignore 正式环境时有完整的类型声明
+    search: true,
   },
   checkboxConfig: {
     highlight: true,
   },
   columns: [
     { type: 'seq', width: 60, title: '序号', align: 'center' },
-    { field: 'userId', title: '用户ID', width: 150, align: 'center' },
     {
       field: 'dictType',
       title: '字典类型',
@@ -96,7 +136,7 @@ const gridOptions: VxeGridProps<any> = {
     {
       title: '字典名称',
       field: 'dictLabel',
-      width: 140,
+      minWidth: 140,
       align: 'center',
       slots: { default: 'dictLabelSlot' },
     },
@@ -115,7 +155,6 @@ const gridOptions: VxeGridProps<any> = {
       align: 'center',
       slots: { default: 'statusSlot' },
     },
-    { field: 'createTime', title: '创建时间', width: 160, align: 'center' },
     {
       title: '操作',
       width: 120,
@@ -124,7 +163,6 @@ const gridOptions: VxeGridProps<any> = {
       slots: { default: 'actionSlot' },
     },
   ],
-  height: 'auto',
   keepSource: true,
   pagerConfig: {
     enabled: true,
@@ -138,9 +176,9 @@ const gridOptions: VxeGridProps<any> = {
           page: page.currentPage,
           pageSize: page.pageSize,
           condition: {
-            userId: formValues.userId || undefined,
             dictType: formValues.dictType || undefined,
             dictLabel: formValues.dictLabel || undefined,
+            status: formValues.status || undefined,
           },
         });
         return {
@@ -218,79 +256,80 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <Page>
-    <div class="p-4 h-[calc(100vh-100px)]">
-      <Grid>
-        <!-- 表格顶部操作按钮 -->
-        <template #toolbar-actions>
-          <Button type="primary" @click="handleAdd">
-            添加分类
-          </Button>
-        </template>
+  <Page auto-content-height>
+    <Grid>
+      <!-- 表格顶部操作按钮 -->
+      <template #toolbar-actions>
+        <Button type="primary" @click="handleAdd"> 添加分类 </Button>
+      </template>
 
-        <!-- 字典类型 插槽 -->
-        <template #dictTypeSlot="{ row }">
-          {{ getDictTypeLabel(row.dictType) }}
-        </template>
+      <!-- 字典类型 插槽 -->
+      <template #dictTypeSlot="{ row }">
+        {{ getDictTypeLabel(row.dictType) }}
+      </template>
 
-        <!-- 字典名称 插槽 -->
-        <template #dictLabelSlot="{ row }">
-          <div
-            class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
-            :style="{
-              backgroundColor: `${row.color || '#1890ff'}10`,
-              color: row.color || '#1890ff',
-              borderWidth: '1px',
-              borderStyle: 'solid',
-              borderColor: `${row.color || '#1890ff'}20`,
-            }"
-          >
-            {{ row.dictLabel }}
-          </div>
-        </template>
+      <!-- 字典名称 插槽 -->
+      <template #dictLabelSlot="{ row }">
+        <div
+          class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+          :style="{
+            backgroundColor: `${row.color || '#1890ff'}10`,
+            color: row.color || '#1890ff',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: `${row.color || '#1890ff'}20`,
+          }"
+        >
+          {{ row.dictLabel }}
+        </div>
+      </template>
 
-        <!-- 图标/颜色 插槽 -->
-        <template #iconColorSlot="{ row }">
-          <div class="flex items-center justify-center">
-            <component
-              v-if="row.icon"
-              :is="getCategoryIcon(row.icon)"
-              class="size-5"
-              :style="{ color: row.color }"
-            />
-            <span v-else class="text-xs text-gray-400">无</span>
-          </div>
-        </template>
+      <!-- 图标/颜色 插槽 -->
+      <template #iconColorSlot="{ row }">
+        <div class="flex items-center justify-center">
+          <component
+            v-if="row.icon"
+            :is="getCategoryIcon(row.icon)"
+            class="size-5"
+            :style="{ color: row.color }"
+          />
+          <span v-else class="text-xs text-gray-400">无</span>
+        </div>
+      </template>
 
-        <!-- 状态 插槽 -->
-        <template #statusSlot="{ row }">
-          <Tag :color="row.status === '0' ? 'green' : 'red'">
-            {{ row.status === '0' ? '启用' : '禁用' }}
-          </Tag>
-        </template>
+      <!-- 状态 插槽 -->
+      <template #statusSlot="{ row }">
+        <Tag :color="row.status === '0' ? 'green' : 'red'">
+          {{ row.status === '0' ? '启用' : '禁用' }}
+        </Tag>
+      </template>
 
-        <!-- 操作 插槽 -->
-        <template #actionSlot="{ row }">
-          <div class="flex items-center justify-center gap-2">
+      <!-- 操作 插槽 -->
+      <template #actionSlot="{ row }">
+        <div class="flex items-center justify-center gap-2">
+          <Tooltip title="编辑">
             <Button
               v-if="row.userId === '0' || row.userId === 0"
               type="link"
               size="small"
               @click="handleEdit(row)"
             >
-              编辑
+              <template #icon><EditOutlined /></template>
             </Button>
-            <Popconfirm
-              title="确定要强制删除该用户的字典数据吗？"
-              @confirm="handleDelete(row)"
-            >
-              <Button type="link" danger size="small">删除</Button>
-            </Popconfirm>
-          </div>
-        </template>
-      </Grid>
-    </div>
-
+          </Tooltip>
+          <Popconfirm
+            title="确定要强制删除该用户的字典数据吗？"
+            @confirm="handleDelete(row)"
+          >
+            <Tooltip title="删除">
+              <Button type="link" danger size="small">
+                <template #icon><DeleteOutlined /></template>
+              </Button>
+            </Tooltip>
+          </Popconfirm>
+        </div>
+      </template>
+    </Grid>
     <!-- 添加/编辑基础值模态框 -->
     <Modal
       v-model:open="showEditModal"
@@ -307,14 +346,24 @@ const handleSave = async () => {
         class="mt-4"
       >
         <Form.Item label="字典类型 (dictType)" name="dictType">
-          <Select v-model:value="formState.dictType" placeholder="请选择字典类型">
-            <Select.Option v-for="item in dictTypeOptions" :key="item.value" :value="item.value">
+          <Select
+            v-model:value="formState.dictType"
+            placeholder="请选择字典类型"
+          >
+            <Select.Option
+              v-for="item in dictTypeOptions"
+              :key="item.value"
+              :value="item.value"
+            >
               {{ item.label }} ({{ item.value }})
             </Select.Option>
           </Select>
         </Form.Item>
         <Form.Item label="字典名称 (dictLabel)" name="dictLabel">
-          <Input v-model:value="formState.dictLabel" placeholder="请输入分类名称" />
+          <Input
+            v-model:value="formState.dictLabel"
+            placeholder="请输入分类名称"
+          />
         </Form.Item>
         <Form.Item label="排序 (dictSort)" name="dictSort">
           <Input type="number" v-model:value="formState.dictSort" />
@@ -353,7 +402,9 @@ const handleSave = async () => {
           <div class="space-y-3">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
-              <div class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+              <div
+                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
+              >
                 <div
                   v-for="item in PRESET_ICONS"
                   :key="item.icon"
@@ -364,10 +415,7 @@ const handleSave = async () => {
                   }"
                   @click="formState.icon = item.icon"
                 >
-                  <component
-                    :is="getCategoryIcon(item.icon)"
-                    class="size-6"
-                  />
+                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
                 </div>
               </div>
             </div>

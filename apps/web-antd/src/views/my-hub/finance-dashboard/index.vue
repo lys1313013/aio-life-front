@@ -552,12 +552,11 @@ onMounted(() => {
   <div class="finance-dashboard">
     <!-- 页面标题和年份选择 -->
     <div class="page-header">
-      <h1 class="page-title">财务综合看板</h1>
       <div class="year-selector">
         <Select
           v-model:value="selectedYear"
           :options="yearOptions"
-          style="width: 120px"
+          class="year-select"
           placeholder="选择年份"
         />
       </div>
@@ -565,7 +564,7 @@ onMounted(() => {
 
     <!-- 关键指标统计 -->
     <Row :gutter="[12, 12]" class="stats-row">
-      <Col :xs="24" :sm="12" :md="12" :lg="6">
+      <Col :xs="12" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总收入"
@@ -575,7 +574,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :xs="24" :sm="12" :md="12" :lg="6">
+      <Col :xs="12" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总支出"
@@ -585,7 +584,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :xs="24" :sm="12" :md="12" :lg="6">
+      <Col :xs="12" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="总结余"
@@ -595,7 +594,7 @@ onMounted(() => {
           />
         </Card>
       </Col>
-      <Col :xs="24" :sm="12" :md="12" :lg="6">
+      <Col :xs="12" :sm="12" :md="12" :lg="6">
         <Card>
           <Statistic
             title="结余率"
@@ -715,10 +714,18 @@ onMounted(() => {
     padding: 10px;
   }
 
-  .page-header {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
+  /* 优化统计卡片在手机端的显示 */
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
+
+  :deep(.ant-statistic-title) {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  :deep(.ant-statistic-content-value) {
+    font-size: 16px;
   }
 
   /* 响应式图表高度 */
@@ -756,7 +763,7 @@ onMounted(() => {
 .page-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px;
   margin-bottom: 12px;
   background: white;
@@ -764,11 +771,8 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgb(0 0 0 / 10%);
 }
 
-.page-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #262626;
+.year-select {
+  width: 120px;
 }
 
 .stats-row {

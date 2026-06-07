@@ -373,7 +373,7 @@ function navTo(nav: { url?: string }) {
         />
       </template>
     </div>
-    <div class="mt-3 sm:mt-5 grid gap-3 sm:gap-4 lg:grid-cols-2">
+    <div class="mt-3 grid gap-3 sm:mt-5 sm:gap-4 lg:grid-cols-2">
       <QuickNavSection />
       <div
         v-if="watchedTasks.length > 0 || !watchedLoading"
@@ -397,7 +397,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-else-if="watchedTasks.length === 0"
-          class="m-3 sm:m-4 rounded-xl border border-dashed border-border py-10 text-center"
+          class="m-3 rounded-xl border border-dashed border-border py-10 text-center sm:m-4"
         >
           <svg
             class="mx-auto mb-2 size-10 text-muted-foreground"
@@ -418,7 +418,10 @@ function navTo(nav: { url?: string }) {
           </p>
         </div>
 
-        <div v-else class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2">
+        <div
+          v-else
+          class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2"
+        >
           <div
             v-for="(task, index) in watchedTasks"
             :key="task.id"
@@ -518,7 +521,10 @@ function navTo(nav: { url?: string }) {
           ></div>
         </div>
 
-        <div v-else class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2">
+        <div
+          v-else
+          class="flex-1 space-y-1 overflow-y-auto p-3 pt-2 sm:p-4 sm:pt-2"
+        >
           <div
             v-for="(thought, index) in pinnedThoughts"
             :key="thought.id"

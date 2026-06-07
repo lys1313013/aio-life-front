@@ -50,7 +50,10 @@ const handleSearch = () => {
         placeholder="全部分类"
         style="width: 140px"
         allow-clear
-        @change="(val: any) => emit('update:selectedCategoryId', val as number | undefined)"
+        @change="
+          (val: any) =>
+            emit('update:selectedCategoryId', val as number | undefined)
+        "
       >
         <SelectOption
           v-for="cat in flatCategories"

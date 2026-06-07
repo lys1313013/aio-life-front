@@ -167,7 +167,9 @@ function dragChange() {
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-xl bg-card text-card-foreground quick-nav-shell select-none">
+  <div
+    class="quick-nav-shell flex h-full select-none flex-col rounded-xl bg-card text-card-foreground"
+  >
     <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
       <span class="text-lg font-semibold">快捷导航</span>
       <!-- 编辑/保存按钮 -->
@@ -182,8 +184,9 @@ function dragChange() {
             type="primary"
             :loading="saving"
             @click="saveEdit"
-            >保存</AButton
           >
+            保存
+          </AButton>
         </template>
         <AButton
           v-else-if="!isEmpty"
@@ -198,7 +201,7 @@ function dragChange() {
       </div>
     </div>
 
-    <div class="flex-1 w-full">
+    <div class="w-full flex-1">
       <!-- 加载/失败/空态 -->
       <div
         v-if="isLoading || loadFailed || isEmpty"
@@ -250,7 +253,7 @@ function dragChange() {
         >
           <template #item="{ element }">
             <div
-              class="group relative flex flex-col items-center justify-center py-2 hover:bg-accent rounded-xl transition-all sm:py-4"
+              class="group relative flex flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-4"
             >
               <!-- 拖拽手柄 -->
               <span
@@ -304,7 +307,7 @@ function dragChange() {
         <!-- 末尾 "+"格：非拖拽项，与 draggable 的 items 共用 4 列网格 -->
         <div
           v-if="draft.length < QUICK_NAV_MAX"
-          class="text-muted-foreground flex cursor-pointer flex-col items-center justify-center py-2 rounded-xl transition-all hover:bg-accent sm:py-4"
+          class="flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 text-muted-foreground transition-all hover:bg-accent sm:py-4"
           @click="openPicker"
         >
           <span class="text-2xl">+</span>
@@ -313,13 +316,10 @@ function dragChange() {
       </div>
 
       <!-- 默认态 -->
-      <div
-        v-else
-        class="grid grid-cols-4 gap-1 p-3 pt-2 sm:p-4 sm:pt-2"
-      >
+      <div v-else class="grid grid-cols-4 gap-1 p-3 pt-2 sm:p-4 sm:pt-2">
         <template v-for="item in navItems" :key="item.title">
           <div
-            class="group flex cursor-pointer flex-col items-center justify-center py-2 rounded-xl hover:bg-accent transition-all sm:py-4"
+            class="group flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-4"
             @click="handleItemClick(item)"
           >
             <VbenIcon
@@ -350,6 +350,7 @@ function dragChange() {
 .quick-nav-shell :deep(.qn-ghost) {
   opacity: 0.4;
 }
+
 .quick-nav-shell :deep(.qn-chosen) {
   background: hsl(var(--primary) / 0.06);
 }

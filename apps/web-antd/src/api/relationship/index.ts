@@ -173,6 +173,11 @@ export async function updateRelationship(id: number, data: RelationshipReq) {
 /**
  * 删除关系
  */
-export async function deleteRelationship(data: Partial<RelationshipReq> & { sourcePersonId: string; targetPersonId: string }) {
+export async function deleteRelationship(
+  data: Partial<RelationshipReq> & {
+    sourcePersonId: string;
+    targetPersonId: string;
+  },
+) {
   return requestClient.delete('/relationships', { data });
 }

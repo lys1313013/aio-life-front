@@ -65,7 +65,7 @@ function handleItemClick(item: WorkbenchQuickNavItem) {
     <CardContent class="grid grid-cols-4 gap-1 p-2">
       <template v-for="item in items" :key="item.title">
         <div
-          class="flex-col-center group cursor-pointer py-2 rounded-xl hover:bg-accent transition-all sm:py-4"
+          class="flex-col-center hover:bg-accent group cursor-pointer rounded-xl py-2 transition-all sm:py-4"
           @click="handleItemClick(item)"
           @mousedown="startLongPress(item)"
           @mouseleave="endLongPress"

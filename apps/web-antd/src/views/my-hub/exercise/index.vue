@@ -13,8 +13,8 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Card, Modal, Popconfirm, Select, Tag } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getByDictType } from '#/api/core/userDictType';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
+import { getByDictType } from '#/api/core/userDictType';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -877,21 +877,35 @@ const updateColumnsVisibility = () => {
     if (col.field === 'mobileCard') {
       col.visible = false;
     } else if (
-      ['exerciseCount', 'exerciseDate', 'exerciseTypeId', 'description'].includes(
-        col.field,
-      )
+      [
+        'description',
+        'exerciseCount',
+        'exerciseDate',
+        'exerciseTypeId',
+      ].includes(col.field)
     ) {
       col.visible = true;
       // 手机端自动调整宽度
       if (mobile) {
-        if (col.field === 'exerciseDate') {
-          col.width = 110;
-        } else if (col.field === 'exerciseTypeId') {
-          col.width = 'auto';
-        } else if (col.field === 'exerciseCount') {
-          col.width = 90;
-        } else {
-          col.minWidth = 100;
+        switch (col.field) {
+          case 'exerciseCount': {
+            col.width = 90;
+
+            break;
+          }
+          case 'exerciseDate': {
+            col.width = 110;
+
+            break;
+          }
+          case 'exerciseTypeId': {
+            col.width = 'auto';
+
+            break;
+          }
+          default: {
+            col.minWidth = 100;
+          }
         }
       }
     } else if (col.field === 'action') {
@@ -1017,7 +1031,10 @@ const tableReload = () => {
           </Popconfirm>
         </template>
         <template #exerciseType="{ row }">
-          <Tag :color="getExerciseTypeColor(row.exerciseTypeId)" class="type-tag">
+          <Tag
+            :color="getExerciseTypeColor(row.exerciseTypeId)"
+            class="type-tag"
+          >
             {{ getExerciseTypeLabel(row.exerciseTypeId) }}
           </Tag>
         </template>
@@ -1152,17 +1169,6 @@ const tableReload = () => {
 .table-card :deep(.vxe-table--render-wrapper),
 .table-card :deep(.vxe-table--main-wrapper) {
   width: 100%;
-}
-
-.table-card :deep(.vxe-table-vars) {
-  position: absolute !important;
-  width: 0 !important;
-  height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
 }
 
 .table-card :deep(.vxe-table-vars) {

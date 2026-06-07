@@ -11,6 +11,7 @@ import LLMSetting from './llm-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
+import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const userStore = useUserStore();
@@ -46,6 +47,10 @@ const tabs = ref([
     label: 'CBTI测试',
     value: 'cbti',
   },
+  {
+    label: '系统设置',
+    value: 'system',
+  },
 ]);
 </script>
 <template>
@@ -64,6 +69,7 @@ const tabs = ref([
       <MbtiSetting v-if="tabsValue === 'mbti'" />
       <CbtiSetting v-if="tabsValue === 'cbti'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />
+      <SystemSetting v-if="tabsValue === 'system'" />
     </template>
   </Profile>
 </template>

@@ -5,8 +5,8 @@ import { Button } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useVbenForm } from '#/adapter/form';
-import { getByDictType } from '#/api/core/userDictType';
 import { add, update } from '#/api/core/exerciseRecord';
+import { getByDictType } from '#/api/core/userDictType';
 
 const props = defineProps<{
   values: any;

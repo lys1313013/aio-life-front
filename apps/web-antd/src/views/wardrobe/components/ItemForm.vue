@@ -222,12 +222,15 @@ const seasons = ['春', '夏', '秋', '冬'];
       <FormItem label="照片" name="photoUrls">
         <Upload
           :file-list="
-            formData.photoUrls?.map((url, i) => ({
-              uid: String(i),
-              name: 'photo' + i,
-              url,
-              status: 'done',
-            } as any)) || []
+            formData.photoUrls?.map(
+              (url, i) =>
+                ({
+                  uid: String(i),
+                  name: `photo${i}`,
+                  url,
+                  status: 'done',
+                }) as any,
+            ) || []
           "
           list-type="picture-card"
           :max-count="5"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import ForceGraph2D from 'force-graph';
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+
+import ForceGraph2D from 'force-graph';
 
 interface GraphLink {
   source: string;
@@ -14,12 +15,12 @@ interface GraphPayload {
 }
 
 const props = defineProps<{
-  graphData: GraphPayload;
-  nodeLabel?: string;
-  nodeVal?: number;
   backgroundColor?: string;
+  graphData: GraphPayload;
   linkDirectionalArrowLength?: number;
   linkDirectionalArrowRelPos?: number;
+  nodeLabel?: string;
+  nodeVal?: number;
 }>();
 
 const emit = defineEmits<{
@@ -42,23 +43,27 @@ onMounted(() => {
     .enablePointerInteraction(true)
     .onNodeClick((node: any) => emit('node-click', node))
     .nodeCanvasObjectMode(() => 'after')
-    .nodeCanvasObject((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const label = node[props.nodeLabel ?? 'name'] ?? '';
-      if (!label) return;
-      const fontSize = 14 / globalScale;
-      ctx.font = `${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
-      ctx.fillStyle = '#333';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, node.x, node.y + (node.val ?? 20) + fontSize * 0.7);
-    })
-    .nodePointerAreaPaint((node: any, color: string, ctx: CanvasRenderingContext2D) => {
-      const r = (node.val ?? 20) + 6;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
-      ctx.fill();
-    });
+    .nodeCanvasObject(
+      (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        const label = node[props.nodeLabel ?? 'name'] ?? '';
+        if (!label) return;
+        const fontSize = 14 / globalScale;
+        ctx.font = `${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+        ctx.fillStyle = '#333';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, node.x, node.y + (node.val ?? 20) + fontSize * 0.7);
+      },
+    )
+    .nodePointerAreaPaint(
+      (node: any, color: string, ctx: CanvasRenderingContext2D) => {
+        const r = (node.val ?? 20) + 6;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r, 0, 2 * Math.PI, false);
+        ctx.fill();
+      },
+    );
 
   instance.d3Force('charge').strength(-260);
   instance.d3Force('link').distance(80);
@@ -87,7 +92,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="force-graph-wrapper" />
+  <div ref="container" class="force-graph-wrapper"></div>
 </template>
 
 <style scoped>

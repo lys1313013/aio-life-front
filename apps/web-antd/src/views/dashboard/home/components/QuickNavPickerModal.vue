@@ -69,17 +69,15 @@ async function loadCandidates() {
   error.value = null;
   try {
     candidates.value = await getQuickNavCandidatesApi();
-  } catch (e) {
-    error.value = (e as Error).message ?? '菜单加载失败';
+  } catch (error_) {
+    error.value = (error_ as Error).message ?? '菜单加载失败';
   } finally {
     loading.value = false;
   }
 }
 
-function onCheck(checkedKeys: (string | number)[]) {
-  const ids = checkedKeys
-    .map(String)
-    .filter((k) => !k.startsWith('__group__'));
+function onCheck(checkedKeys: (number | string)[]) {
+  const ids = checkedKeys.map(String).filter((k) => !k.startsWith('__group__'));
   if (ids.length > remaining.value) {
     message.warning(`快捷导航最多 ${QUICK_NAV_MAX} 项`);
   }

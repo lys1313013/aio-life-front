@@ -65,7 +65,8 @@ function handleTitleClick(e: MouseEvent) {
     <div class="p-3 sm:p-4">
       <div
         :class="{
-          'cursor-pointer transition-colors hover:text-primary': !!titleClickUrl,
+          'cursor-pointer transition-colors hover:text-primary':
+            !!titleClickUrl,
         }"
         class="mb-2 text-sm font-medium sm:mb-4 sm:text-base sm:font-semibold"
         @click="handleTitleClick"
@@ -75,7 +76,10 @@ function handleTitleClick(e: MouseEvent) {
       <div class="flex items-center justify-between">
         <div class="flex items-center">
           <template v-if="loading">
-            <Skeleton.Button active :style="{ width: '120px', height: '28px' }" />
+            <Skeleton.Button
+              active
+              :style="{ width: '120px', height: '28px' }"
+            />
           </template>
           <span
             v-else

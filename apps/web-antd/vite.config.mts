@@ -130,7 +130,8 @@ export default defineConfig(async () => {
       build: {
         target: 'es2022',
         rollupOptions: {
-          external: (id) => /[\\/]jiti[\\/]/.test(id) || /[\\/]@nuxt[\\/]kit[\\/]/.test(id),
+          external: (id) =>
+            /[\\/]jiti[\\/]/.test(id) || /[\\/]@nuxt[\\/]kit[\\/]/.test(id),
           output: {
             manualChunks: {
               'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],

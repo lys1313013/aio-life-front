@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import { IconPicker, Page } from '@vben/common-ui';
 import { useSortable } from '@vben/hooks';
 
 import {
-  ArrowLeftOutlined,
   DeleteOutlined,
   EditOutlined,
   HolderOutlined,
@@ -23,10 +21,13 @@ import {
   Select,
   Switch,
   Table,
+  TabPane,
+  Tabs,
   Tooltip,
 } from 'ant-design-vue';
 
 import { deleteData, insert, query, update } from '#/api/core/userDictData';
+import { getDictTypeEnum } from '#/api/core/userDictType';
 
 import {
   CATEGORY_COLOR_PRESETS,
@@ -35,11 +36,11 @@ import {
   PRESET_ICONS,
 } from './config';
 
-const router = useRouter();
-
 // 状态
 const loading = ref(false);
 const categories = ref<any[]>([]);
+const activeTab = ref('');
+const tabList = ref<any[]>([]);
 
 // 表格列配置
 const columns = [
@@ -93,13 +94,27 @@ const modalTitle = computed(() => {
 });
 
 // 方法
+const fetchTabs = async () => {
+  try {
+    const res = await getDictTypeEnum();
+    tabList.value = res || [];
+    if (tabList.value.length > 0 && !activeTab.value) {
+      activeTab.value = tabList.value[0].value;
+    }
+  } catch (error) {
+    console.error('Failed to fetch tabs:', error);
+    message.error('获取分类选项卡失败');
+  }
+};
+
 const fetchCategories = async () => {
+  if (!activeTab.value) return;
   loading.value = true;
   try {
     const res = await query({
       page: 1,
       pageSize: 500, // 假设数据量不大
-      condition: { dictType: 'exercise_type' },
+      condition: { dictType: activeTab.value },
     });
     // @ts-ignore
     categories.value = res.items || [];
@@ -111,6 +126,14 @@ const fetchCategories = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleTabChange = () => {
+  fetchCategories().then(() => {
+    nextTick(() => {
+      setTimeout(initSortable, 100);
+    });
+  });
 };
 
 const handleAddCategory = () => {
@@ -163,7 +186,7 @@ const handleSaveCategory = async () => {
 
     const payload = {
       ...formState.value,
-      dictType: 'exercise_type',
+      dictType: activeTab.value,
     };
 
     if (editingCategory.value?.id) {
@@ -226,7 +249,8 @@ const initSortable = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchTabs();
   fetchCategories().then(() => {
     nextTick(() => {
       setTimeout(initSortable, 100);
@@ -236,21 +260,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page header-sticky>
-    <template #title>
-      <div class="flex items-center gap-2">
-        <Button type="link" @click="router.back()">
-          <template #icon><ArrowLeftOutlined /></template>
-        </Button>
-        <span class="text-lg font-bold">运动分类配置</span>
-      </div>
-    </template>
-
+  <Page>
     <div class="space-y-4">
+      <Card :bordered="false" :body-style="{ padding: '0 16px' }">
+        <Tabs v-model:active-key="activeTab" @change="handleTabChange">
+          <TabPane v-for="tab in tabList" :key="tab.value" :tab="tab.label" />
+        </Tabs>
+      </Card>
+
       <Card
         title="分类列表"
         :bordered="false"
-        class="category-section"
         :head-style="{ padding: '0 12px' }"
         :body-style="{ padding: '12px' }"
       >
@@ -362,7 +382,10 @@ onMounted(() => {
         class="mt-4"
       >
         <Form.Item label="分类名称" name="dictLabel">
-          <Input v-model:value="formState.dictLabel" placeholder="请输入分类名称" />
+          <Input
+            v-model:value="formState.dictLabel"
+            placeholder="请输入分类名称"
+          />
         </Form.Item>
 
         <Form.Item label="颜色" name="color">
@@ -398,7 +421,9 @@ onMounted(() => {
           <div class="space-y-3">
             <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
               <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
-              <div class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10">
+              <div
+                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
+              >
                 <div
                   v-for="item in PRESET_ICONS"
                   :key="item.icon"
@@ -409,10 +434,7 @@ onMounted(() => {
                   }"
                   @click="formState.icon = item.icon"
                 >
-                  <component
-                    :is="getCategoryIcon(item.icon)"
-                    class="size-6"
-                  />
+                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
                 </div>
               </div>
             </div>
@@ -489,9 +511,3 @@ onMounted(() => {
     </Modal>
   </Page>
 </template>
-
-<style scoped>
-.category-section :deep(.ant-card-head) {
-  border-bottom: 2px solid #1890ff;
-}
-</style>
