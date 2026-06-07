@@ -71,10 +71,10 @@ export default {
     };
   },
   async mounted() {
+    // 获取状态枚举值 (优先请求 device_type)
+    await this.getDeviceTypeOptions();
     await this.query();
     await this.getDeviceStatusOptions();
-    // 获取状态枚举值
-    await this.getDeviceTypeOptions();
   },
   methods: {
     async query() {
