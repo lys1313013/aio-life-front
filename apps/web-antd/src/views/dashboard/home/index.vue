@@ -353,9 +353,9 @@ function navTo(nav: { url?: string }) {
 
 <template>
   <div class="p-2 sm:p-4">
-    <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+    <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
       <template v-if="loading && overviewItems.length === 0">
-        <AnalysisCard v-for="i in 4" :key="i" loading />
+        <AnalysisCard v-for="i in 5" :key="i" loading />
       </template>
       <template v-else>
         <AnalysisCard
