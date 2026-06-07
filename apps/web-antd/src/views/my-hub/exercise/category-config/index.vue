@@ -385,6 +385,7 @@ onMounted(async () => {
           <Input
             v-model:value="formState.dictLabel"
             placeholder="请输入分类名称"
+            :disabled="formState.isReadonly === 'Y'"
           />
         </Form.Item>
 
@@ -393,20 +394,28 @@ onMounted(async () => {
             <Input
               v-model:value="formState.color"
               placeholder="请输入颜色值（如 #1890ff）"
+              :disabled="formState.isReadonly === 'Y'"
             />
             <div
               class="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border transition-transform hover:scale-110"
               :style="{ backgroundColor: formState.color }"
+              :class="{
+                'cursor-not-allowed opacity-50': formState.isReadonly === 'Y',
+              }"
             >
               <input
                 type="color"
                 :value="formState.color"
                 class="absolute -inset-1 h-[200%] w-[200%] cursor-pointer opacity-0"
+                :disabled="formState.isReadonly === 'Y'"
                 @input="(e: any) => (formState.color = e.target.value)"
               />
             </div>
           </div>
-          <div class="mt-2 flex flex-wrap gap-2">
+          <div
+            class="mt-2 flex flex-wrap gap-2"
+            v-if="formState.isReadonly !== 'Y'"
+          >
             <div
               v-for="color in CATEGORY_COLOR_PRESETS"
               :key="color"
@@ -419,7 +428,10 @@ onMounted(async () => {
 
         <Form.Item label="图标" name="icon">
           <div class="space-y-3">
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div
+              class="rounded-lg border border-gray-200 bg-gray-50 p-3"
+              v-if="formState.isReadonly !== 'Y'"
+            >
               <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
               <div
                 class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
@@ -442,6 +454,7 @@ onMounted(async () => {
             <Button
               type="link"
               size="small"
+              v-if="formState.isReadonly !== 'Y'"
               @click="showIconPickerModal = true"
             >
               📋 选择更多图标...
@@ -460,11 +473,13 @@ onMounted(async () => {
                 placeholder="输入图标名称，如 lucide:run"
                 class="flex-1"
                 size="small"
+                :disabled="formState.isReadonly === 'Y'"
               />
               <Button
                 type="link"
                 size="small"
                 danger
+                v-if="formState.isReadonly !== 'Y'"
                 @click="formState.icon = ''"
               >
                 清除

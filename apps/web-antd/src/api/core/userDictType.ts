@@ -41,6 +41,7 @@ export interface UserDictDataEntity {
   color?: string;
   icon?: string;
   extData?: string;
+  isReadonly?: string; // 是否只读，Y 是，N 否
   // 为兼容现有逻辑，添加 label 和 value
   label?: string;
   value?: string;

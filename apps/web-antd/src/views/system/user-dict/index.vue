@@ -9,6 +9,7 @@ import { IconPicker, Page } from '@vben/common-ui';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import {
   Button,
+  Card,
   Form,
   Input,
   message,
@@ -16,6 +17,8 @@ import {
   Popconfirm,
   Select,
   Switch,
+  TabPane,
+  Tabs,
   Tag,
   Tooltip,
 } from 'ant-design-vue';
@@ -37,20 +40,26 @@ import {
 
 // 枚举数据
 const dictTypeOptions = ref<{ label: string; value: string }[]>([]);
+const activeTab = ref<string>('');
 
 onMounted(async () => {
   try {
     const res = await getDictTypeEnum();
     dictTypeOptions.value = res || [];
+    if (dictTypeOptions.value.length > 0) {
+      activeTab.value = dictTypeOptions.value[0]?.value || '';
+      // 等待 Tab 渲染后查询表格
+      setTimeout(() => {
+        gridApi.query();
+      }, 100);
+    }
   } catch (error) {
     console.error('Failed to load dict type enum', error);
   }
 });
 
-// 计算属性，用于在表格中显示中文标签
-const getDictTypeLabel = (dictType: string) => {
-  const option = dictTypeOptions.value.find((item) => item.value === dictType);
-  return option ? option.label : dictType;
+const handleTabChange = () => {
+  gridApi.query();
 };
 
 const showEditModal = ref(false);
@@ -67,6 +76,7 @@ const formState = ref<any>({
   icon: '',
   dictSort: 0,
   status: '0',
+  isReadonly: 'N',
 });
 
 const rules = {
@@ -83,16 +93,6 @@ const formOptions: VbenFormProps = {
     content: '查询',
   },
   schema: [
-    {
-      fieldName: 'dictType',
-      component: 'Select',
-      label: '字典类型',
-      componentProps: {
-        placeholder: '请选择字典类型',
-        options: dictTypeOptions,
-        allowClear: true,
-      },
-    },
     {
       fieldName: 'dictLabel',
       component: 'Input',
@@ -128,12 +128,6 @@ const gridOptions: VxeGridProps<any> = {
   columns: [
     { type: 'seq', width: 60, title: '序号', align: 'center' },
     {
-      field: 'dictType',
-      title: '字典类型',
-      width: 160,
-      slots: { default: 'dictTypeSlot' },
-    },
-    {
       title: '字典名称',
       field: 'dictLabel',
       minWidth: 140,
@@ -156,6 +150,13 @@ const gridOptions: VxeGridProps<any> = {
       slots: { default: 'statusSlot' },
     },
     {
+      field: 'isReadonly',
+      title: '是否只读',
+      width: 90,
+      align: 'center',
+      slots: { default: 'readonlySlot' },
+    },
+    {
       title: '操作',
       width: 120,
       align: 'center',
@@ -170,13 +171,17 @@ const gridOptions: VxeGridProps<any> = {
     pageSizes: [10, 20, 50, 100],
   },
   proxyConfig: {
+    autoLoad: false,
     ajax: {
       query: async ({ page }, formValues) => {
+        if (!activeTab.value && dictTypeOptions.value.length === 0) {
+          return { items: [], total: 0 };
+        }
         const res = await adminQuery({
           page: page.currentPage,
           pageSize: page.pageSize,
           condition: {
-            dictType: formValues.dictType || undefined,
+            dictType: activeTab.value || undefined,
             dictLabel: formValues.dictLabel || undefined,
             status: formValues.status || undefined,
           },
@@ -206,7 +211,7 @@ const handleAdd = () => {
   editingRecord.value = null;
   selectedIconSet.value = 'ant-design';
   formState.value = {
-    dictType: '',
+    dictType: activeTab.value,
     dictLabel: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
@@ -257,79 +262,98 @@ const handleSave = async () => {
 
 <template>
   <Page auto-content-height>
-    <Grid>
-      <!-- 表格顶部操作按钮 -->
-      <template #toolbar-actions>
-        <Button type="primary" @click="handleAdd"> 添加分类 </Button>
-      </template>
-
-      <!-- 字典类型 插槽 -->
-      <template #dictTypeSlot="{ row }">
-        {{ getDictTypeLabel(row.dictType) }}
-      </template>
-
-      <!-- 字典名称 插槽 -->
-      <template #dictLabelSlot="{ row }">
-        <div
-          class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
-          :style="{
-            backgroundColor: `${row.color || '#1890ff'}10`,
-            color: row.color || '#1890ff',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: `${row.color || '#1890ff'}20`,
-          }"
-        >
-          {{ row.dictLabel }}
-        </div>
-      </template>
-
-      <!-- 图标/颜色 插槽 -->
-      <template #iconColorSlot="{ row }">
-        <div class="flex items-center justify-center">
-          <component
-            v-if="row.icon"
-            :is="getCategoryIcon(row.icon)"
-            class="size-5"
-            :style="{ color: row.color }"
+    <div class="flex h-full flex-col space-y-4">
+      <Card
+        :bordered="false"
+        :body-style="{ padding: '0 16px', paddingTop: '12px' }"
+      >
+        <Tabs v-model:active-key="activeTab" @change="handleTabChange">
+          <TabPane
+            v-for="tab in dictTypeOptions"
+            :key="tab.value"
+            :tab="tab.label"
           />
-          <span v-else class="text-xs text-gray-400">无</span>
-        </div>
-      </template>
+        </Tabs>
+      </Card>
 
-      <!-- 状态 插槽 -->
-      <template #statusSlot="{ row }">
-        <Tag :color="row.status === '0' ? 'green' : 'red'">
-          {{ row.status === '0' ? '启用' : '禁用' }}
-        </Tag>
-      </template>
+      <div class="flex-1 overflow-hidden bg-white">
+        <Grid>
+          <!-- 表格顶部操作按钮 -->
+          <template #toolbar-actions>
+            <Button type="primary" @click="handleAdd"> 添加基础值 </Button>
+          </template>
 
-      <!-- 操作 插槽 -->
-      <template #actionSlot="{ row }">
-        <div class="flex items-center justify-center gap-2">
-          <Tooltip title="编辑">
-            <Button
-              v-if="row.userId === '0' || row.userId === 0"
-              type="link"
-              size="small"
-              @click="handleEdit(row)"
+          <!-- 字典名称 插槽 -->
+          <template #dictLabelSlot="{ row }">
+            <div
+              class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+              :style="{
+                backgroundColor: `${row.color || '#1890ff'}10`,
+                color: row.color || '#1890ff',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: `${row.color || '#1890ff'}20`,
+              }"
             >
-              <template #icon><EditOutlined /></template>
-            </Button>
-          </Tooltip>
-          <Popconfirm
-            title="确定要强制删除该用户的字典数据吗？"
-            @confirm="handleDelete(row)"
-          >
-            <Tooltip title="删除">
-              <Button type="link" danger size="small">
-                <template #icon><DeleteOutlined /></template>
-              </Button>
-            </Tooltip>
-          </Popconfirm>
-        </div>
-      </template>
-    </Grid>
+              {{ row.dictLabel }}
+            </div>
+          </template>
+
+          <!-- 图标/颜色 插槽 -->
+          <template #iconColorSlot="{ row }">
+            <div class="flex items-center justify-center">
+              <component
+                v-if="row.icon"
+                :is="getCategoryIcon(row.icon)"
+                class="size-5"
+                :style="{ color: row.color }"
+              />
+              <span v-else class="text-xs text-gray-400">无</span>
+            </div>
+          </template>
+
+          <!-- 状态 插槽 -->
+          <template #statusSlot="{ row }">
+            <Tag :color="row.status === '0' ? 'green' : 'red'">
+              {{ row.status === '0' ? '启用' : '禁用' }}
+            </Tag>
+          </template>
+
+          <!-- 是否只读 插槽 -->
+          <template #readonlySlot="{ row }">
+            <Tag :color="row.isReadonly === 'Y' ? 'blue' : 'default'">
+              {{ row.isReadonly === 'Y' ? '是' : '否' }}
+            </Tag>
+          </template>
+
+          <!-- 操作 插槽 -->
+          <template #actionSlot="{ row }">
+            <div class="flex items-center justify-center gap-2">
+              <Tooltip title="编辑">
+                <Button
+                  v-if="row.userId === '0' || row.userId === 0"
+                  type="link"
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <template #icon><EditOutlined /></template>
+                </Button>
+              </Tooltip>
+              <Popconfirm
+                title="确定要强制删除该用户的字典数据吗？"
+                @confirm="handleDelete(row)"
+              >
+                <Tooltip title="删除">
+                  <Button type="link" danger size="small">
+                    <template #icon><DeleteOutlined /></template>
+                  </Button>
+                </Tooltip>
+              </Popconfirm>
+            </div>
+          </template>
+        </Grid>
+      </div>
+    </div>
     <!-- 添加/编辑基础值模态框 -->
     <Modal
       v-model:open="showEditModal"
@@ -462,6 +486,18 @@ const handleSave = async () => {
             checked-children="启用"
             un-checked-children="停用"
           />
+        </Form.Item>
+        <Form.Item label="是否只读" name="isReadonly">
+          <Switch
+            v-model:checked="formState.isReadonly"
+            checked-value="Y"
+            un-checked-value="N"
+            checked-children="是"
+            un-checked-children="否"
+          />
+          <div class="mt-1 text-xs text-gray-400">
+            开启后，普通用户无法修改该分类的名称、颜色和图标，只能修改启用状态。
+          </div>
         </Form.Item>
       </Form>
     </Modal>
