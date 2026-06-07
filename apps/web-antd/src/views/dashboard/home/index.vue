@@ -23,6 +23,7 @@ import { useQuickNavStore } from '#/store/quick-nav';
 
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
+import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
@@ -49,6 +50,13 @@ const pinnedThoughts = ref<any[]>([]);
 const thoughtsLoading = ref(true);
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
+const timeTrackerCardRef = ref();
+
+function refreshTimeTracker() {
+  if (timeTrackerCardRef.value?.loadData) {
+    timeTrackerCardRef.value.loadData();
+  }
+}
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
 const isLongPress = ref(false);
 
@@ -307,6 +315,7 @@ function handleTitleClick(url: string) {
 }
 
 function handleTimeTrackerSuccess() {
+  refreshTimeTracker();
   overviewItems.value.forEach((item) => {
     if (
       item.titleClickUrl === ACTION_OPEN_TIME_TRACKER_MODAL ||
@@ -562,6 +571,24 @@ function navTo(nav: { url?: string }) {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 今日时迹统计 -->
+      <div
+        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+      >
+        <div class="flex items-center justify-between p-3 pb-2 sm:p-4 sm:pb-2">
+          <div class="flex items-center gap-2">
+            <span
+              class="cursor-pointer select-none text-lg font-semibold"
+              @click="refreshTimeTracker"
+              >今日时迹</span
+            >
+          </div>
+        </div>
+        <div class="flex-1 overflow-hidden p-2 pt-0 sm:p-3 sm:pt-0">
+          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
         </div>
       </div>
     </div>
