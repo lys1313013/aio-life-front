@@ -10,7 +10,7 @@ ENV TZ=Asia/Shanghai
 
 RUN apk add --no-cache git
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.22.0 --activate
 
 WORKDIR /app
 
