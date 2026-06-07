@@ -35,7 +35,7 @@ interface Transaction {
   successfulRefund: number;
   remark: string;
   fundStatus: string;
-  expTypeId?: number; // 支出类型字段
+  expTypeId?: string; // 支出类型字段
   transactionAmt?: number; // 交易金额字段
   payTypeId: string; // 支付类型ID，关联字典表
 }
@@ -237,7 +237,7 @@ const handleFile = async (file: File) => {
     if (dictOptions.value.length > 0) {
       // 检查是否有未设置支出类型的记录
       const hasUnmatchedRecords = transactions.value.some(
-        (t) => !t.expTypeId || t.expTypeId === 119,
+        (t) => !t.expTypeId || t.expTypeId === defaultExpTypeId.value,
       );
       if (hasUnmatchedRecords) {
         matchExpenseTypes();
@@ -351,7 +351,7 @@ const parseCSV = (csvText: string): ParseResult => {
         successfulRefund: Number.parseFloat(columns[13] || '0') || 0,
         remark: columns[14] || '',
         fundStatus: columns[15] ? columns[15] : '',
-        expTypeId: 119, // 初始化支出类型字段
+        expTypeId: defaultExpTypeId.value, // 初始化支出类型字段
         payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
@@ -542,7 +542,7 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
         successfulRefund: 0,
         remark: remark || '',
         fundStatus: paymentMethod || '',
-        expTypeId: 119, // 默认支出类型
+        expTypeId: defaultExpTypeId.value, // 默认支出类型
         payTypeId: wechatTypeId, // 微信支付类型
       };
 
@@ -659,7 +659,7 @@ const parseMobileCSV = (csvText: string): ParseResult => {
       const transactionType = columns[1] || '';
 
       // 根据交易分类匹配dictOptions的label，获取对应的id
-      let matchedExpTypeId = 119; // 默认值
+      let matchedExpTypeId = defaultExpTypeId.value; // 默认值
       if (transactionType && dictOptions.value.length > 0) {
         const matchedOption = dictOptions.value.find(
           (option) => option.label === transactionType,
@@ -1049,6 +1049,10 @@ const filteredTransactions = computed(() => {
 const dictOptions = ref<Array<any>>([]);
 const payTypeOptions = ref<Array<any>>([]);
 
+const defaultExpTypeId = computed(() => {
+  return dictOptions.value.length > 0 ? dictOptions.value[0].id : '';
+});
+
 // 添加一个计算属性来确保数据格式正确
 const selectOptions = computed(() => {
   return dictOptions.value.map((item) => ({
@@ -1094,8 +1098,11 @@ const matchExpenseTypes = () => {
   if (dictOptions.value.length === 0) return;
 
   transactions.value.forEach((transaction) => {
-    // 如果支出类型还没有设置，或者设置为默认值119，则尝试匹配
-    if (!transaction.expTypeId || transaction.expTypeId === 119) {
+    // 如果支出类型还没有设置，或者设置为默认值，则尝试匹配
+    if (
+      !transaction.expTypeId ||
+      transaction.expTypeId === defaultExpTypeId.value
+    ) {
       const transactionType = transaction.transactionType || transaction.type;
       if (transactionType) {
         // 查找匹配的支出类型
