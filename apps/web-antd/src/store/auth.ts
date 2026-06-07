@@ -1,7 +1,6 @@
 import type { Recordable, UserInfo } from '@vben/types';
 
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
@@ -13,11 +12,11 @@ import { defineStore } from 'pinia';
 import { getAccessCodesApi, loginApi, logoutApi } from '#/api/core/auth';
 import { getUserInfoApi } from '#/api/core/user';
 import { $t } from '#/locales';
+import { router } from '#/router';
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
   const userStore = useUserStore();
-  const router = useRouter();
 
   const loginLoading = ref(false);
 
