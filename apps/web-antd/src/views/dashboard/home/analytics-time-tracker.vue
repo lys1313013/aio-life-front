@@ -138,7 +138,7 @@ defineExpose({
 </script>
 
 <template>
-  <div v-loading="loading" class="h-full min-h-[240px] w-full">
+  <div v-loading="loading" class="h-full min-h-[300px] w-full sm:min-h-[240px]">
     <EchartsUI ref="chartRef" />
   </div>
 </template>

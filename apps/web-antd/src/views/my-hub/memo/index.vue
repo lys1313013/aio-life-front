@@ -5,10 +5,7 @@ import { onMounted, reactive, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import {
-  DeleteOutlined,
-  PlusOutlined,
-} from '@ant-design/icons-vue';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -144,12 +141,15 @@ onMounted(() => {
           @click="handleEdit(item)"
         >
           <div class="card-content">
-            <h3 v-if="item.title" class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200">
+            <h3
+              v-if="item.title"
+              class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200"
+            >
               {{ item.title }}
             </h3>
             {{ item.content }}
           </div>
-          
+
           <div class="card-footer">
             <span class="card-date">{{ formatTime(item.updateTime) }}</span>
             <div

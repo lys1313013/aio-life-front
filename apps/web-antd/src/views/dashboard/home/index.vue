@@ -387,7 +387,9 @@ function navTo(nav: { url?: string }) {
       <div
         class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
-        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
           <div class="flex items-center gap-2">
             <span
               class="cursor-pointer select-none text-base font-semibold"
@@ -510,9 +512,11 @@ function navTo(nav: { url?: string }) {
 
       <!-- 今日时迹统计 -->
       <div
-        class="flex max-h-[300px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+        class="flex max-h-[380px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px]"
       >
-        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
           <div class="flex items-center gap-2">
             <span
               class="cursor-pointer select-none text-base font-semibold"
@@ -530,7 +534,9 @@ function navTo(nav: { url?: string }) {
       <div
         class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
-        <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
           <div class="flex items-center gap-2">
             <span
               class="cursor-pointer select-none text-base font-semibold"

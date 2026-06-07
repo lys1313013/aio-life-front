@@ -170,7 +170,9 @@ function dragChange() {
   <div
     class="quick-nav-shell flex h-full select-none flex-col rounded-xl bg-card text-card-foreground"
   >
-    <div class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5">
+    <div
+      class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+    >
       <span class="text-base font-semibold">快捷导航</span>
       <!-- 编辑/保存按钮 -->
       <div
