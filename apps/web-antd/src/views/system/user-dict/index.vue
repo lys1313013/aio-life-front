@@ -369,7 +369,7 @@ const handleSave = async () => {
         layout="vertical"
         class="mt-4"
       >
-        <Form.Item label="字典类型 (dictType)" name="dictType">
+        <Form.Item label="字典类型" name="dictType">
           <Select
             v-model:value="formState.dictType"
             placeholder="请选择字典类型"
@@ -383,13 +383,13 @@ const handleSave = async () => {
             </Select.Option>
           </Select>
         </Form.Item>
-        <Form.Item label="字典名称 (dictLabel)" name="dictLabel">
+        <Form.Item label="字典名称" name="dictLabel">
           <Input
             v-model:value="formState.dictLabel"
             placeholder="请输入分类名称"
           />
         </Form.Item>
-        <Form.Item label="排序 (dictSort)" name="dictSort">
+        <Form.Item label="排序" name="dictSort">
           <Input type="number" v-model:value="formState.dictSort" />
         </Form.Item>
 
