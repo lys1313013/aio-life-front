@@ -95,7 +95,18 @@ const loadData = async () => {
           label: {
             show: true,
             position: 'outside',
-            formatter: '{b}\n{d}%',
+            formatter: (params: any) => {
+              const duration = params.value;
+              const hours = Math.floor(duration / 60);
+              const minutes = duration % 60;
+              if (hours > 0 && minutes > 0) {
+                return `${params.name}\n${hours}小时${minutes}分钟`;
+              } else if (hours > 0) {
+                return `${params.name}\n${hours}小时`;
+              } else {
+                return `${params.name}\n${minutes}分钟`;
+              }
+            },
             fontSize: 10,
           },
           labelLine: {
