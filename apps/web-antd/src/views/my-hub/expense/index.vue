@@ -11,9 +11,8 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getByDictType } from '#/api/core/common';
 import { deleteBatch, deleteData, query } from '#/api/core/expense';
-import { PAY_TYPE_OPTIONS } from '#/constants/expense';
+import { getByDictType } from '#/api/core/userDictType';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
@@ -27,6 +26,7 @@ interface RowType {
   releaseDate: string;
   amt: number;
   expTypeId: number;
+  payTypeId: string;
   remark: string;
   expTime: string;
   expDesc: string;
@@ -40,17 +40,18 @@ const dashboardRef = ref<InstanceType<typeof TransactionDashboard>>();
 
 const { isMobile } = usePreferences();
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
-const payTypeOptions =
-  ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
+const dictOptions = ref<Array<any>>([]);
+const payTypeOptions = ref<Array<any>>([]);
 const tableData = ref<RowType[]>([]);
 
 const loadExpTypes = async () => {
   try {
     const res = await getByDictType('exp_type');
-    dictOptions.value = res.dictDetailList;
+    dictOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
   } catch (error) {
     console.error('加载类型失败:', error);
   }
@@ -58,23 +59,31 @@ const loadExpTypes = async () => {
 
 const loadPayTypes = async () => {
   try {
-    // 使用预定义的支付方式选项
-    payTypeOptions.value = PAY_TYPE_OPTIONS;
+    const res = await getByDictType('pay_type');
+    payTypeOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
   } catch (error) {
     console.error('加载支付方式失败:', error);
   }
 };
 
 // 添加一个计算属性或方法来查找标签
-const getIncomeTypeLabel = (value: number) => {
+const getIncomeTypeLabel = (value: any) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
-  const option = dictOptions.value.find((item) => item.id === value);
+  const option = dictOptions.value.find(
+    (item) => String(item.id) === String(value),
+  );
   return option ? option.label : String(value);
 };
 
 // 获取支付方式标签
-const getPayTypeLabel = (value: number) => {
-  const option = payTypeOptions.value.find((item) => item.id === value);
+const getPayTypeLabel = (value: any) => {
+  const option = payTypeOptions.value.find(
+    (item) => String(item.id) === String(value),
+  );
   return option ? option.label : String(value);
 };
 

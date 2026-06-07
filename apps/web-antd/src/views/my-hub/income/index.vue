@@ -10,8 +10,8 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getByDictType } from '#/api/core/common';
 import { deleteData, query } from '#/api/core/income';
+import { getByDictType } from '#/api/core/userDictType';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
@@ -25,9 +25,7 @@ interface RowType {
   updateTime: string;
 }
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
+const dictOptions = ref<Array<any>>([]);
 
 // 跟踪选中的年份
 const selectedYear = ref<'all' | number>('all');
@@ -35,16 +33,22 @@ const selectedYear = ref<'all' | number>('all');
 const loadIncomeTypes = async () => {
   try {
     const res = await getByDictType('income_type');
-    dictOptions.value = res.dictDetailList;
+    dictOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
   } catch (error) {
     console.error('加载收入类型失败:', error);
   }
 };
 
 // 添加一个计算属性或方法来查找标签
-const getIncomeTypeLabel = (value: number) => {
+const getIncomeTypeLabel = (value: any) => {
   // 将 value 转换为字符串以匹配 dictOptions 中的值
-  const option = dictOptions.value.find((item) => item.id === value);
+  const option = dictOptions.value.find(
+    (item) => String(item.id) === String(value),
+  );
   return option ? option.label : String(value);
 };
 

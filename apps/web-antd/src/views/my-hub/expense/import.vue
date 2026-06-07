@@ -13,8 +13,8 @@ import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { getByDictType } from '#/api/core/common';
 import { saveBatch } from '#/api/core/expense';
+import { getByDictType } from '#/api/core/userDictType';
 
 interface Transaction {
   transactionId: string;
@@ -37,7 +37,7 @@ interface Transaction {
   fundStatus: string;
   expTypeId?: number; // 支出类型字段
   transactionAmt?: number; // 交易金额字段
-  payTypeId: number; // 支付类型ID，1=支付宝，2=微信
+  payTypeId: string; // 支付类型ID，关联字典表
 }
 
 // 表格行类型
@@ -285,6 +285,15 @@ const parseCSV = (csvText: string): ParseResult => {
   const transactions: Transaction[] = [];
   const validTimes: Date[] = [];
 
+  // 查找支付宝的 payTypeId
+  let alipayTypeId = '';
+  const alipayOption = payTypeOptions.value.find(
+    (o) => o.dictValue === '1' || o.label === '支付宝',
+  );
+  if (alipayOption) {
+    alipayTypeId = alipayOption.id;
+  }
+
   // 查找数据行开始位置（跳过标题和元数据）
   let dataStartIndex = 0;
   for (const [i, line] of lines.entries()) {
@@ -343,7 +352,7 @@ const parseCSV = (csvText: string): ParseResult => {
         remark: columns[14] || '',
         fundStatus: columns[15] ? columns[15] : '',
         expTypeId: 119, // 初始化支出类型字段
-        payTypeId: 1, // 支付宝支付类型
+        payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
@@ -387,6 +396,15 @@ const excelDateToString = (excelDate: any): string => {
 const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
   const transactions: Transaction[] = [];
   const validTimes: Date[] = [];
+
+  // 查找微信的 payTypeId
+  let wechatTypeId = '';
+  const wechatOption = payTypeOptions.value.find(
+    (o) => o.dictValue === '2' || o.label === '微信',
+  );
+  if (wechatOption) {
+    wechatTypeId = wechatOption.id;
+  }
 
   // 解析Excel文件
   const workbook = XLSX.read(arrayBuffer);
@@ -525,7 +543,7 @@ const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
         remark: remark || '',
         fundStatus: paymentMethod || '',
         expTypeId: 119, // 默认支出类型
-        payTypeId: 2, // 微信支付类型
+        payTypeId: wechatTypeId, // 微信支付类型
       };
 
       transactions.push(transaction);
@@ -546,6 +564,15 @@ const parseMobileCSV = (csvText: string): ParseResult => {
   const lines = csvText.split('\n');
   const transactions: Transaction[] = [];
   const validTimes: Date[] = [];
+
+  // 查找支付宝的 payTypeId
+  let alipayTypeId = '';
+  const alipayOption = payTypeOptions.value.find(
+    (o) => o.dictValue === '1' || o.label === '支付宝',
+  );
+  if (alipayOption) {
+    alipayTypeId = alipayOption.id;
+  }
 
   // 查找数据行开始位置（跳过标题和元数据）
   let dataStartIndex = 0;
@@ -663,7 +690,7 @@ const parseMobileCSV = (csvText: string): ParseResult => {
         remark: columns[11] || '', // 备注
         fundStatus: columns[7] || '', // 收/付款方式作为资金状态
         expTypeId: matchedExpTypeId, // 根据交易分类匹配的支出类型ID
-        payTypeId: 1, // 支付宝支付类型
+        payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
       // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
@@ -1018,10 +1045,9 @@ const filteredTransactions = computed(() => {
   );
 });
 
-// 支出类型
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
+// 支出类型和支付方式
+const dictOptions = ref<Array<any>>([]);
+const payTypeOptions = ref<Array<any>>([]);
 
 // 添加一个计算属性来确保数据格式正确
 const selectOptions = computed(() => {
@@ -1034,7 +1060,18 @@ const selectOptions = computed(() => {
 const loadExpTypes = async () => {
   try {
     const res = await getByDictType('exp_type');
-    dictOptions.value = res.dictDetailList;
+    dictOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
+
+    const res2 = await getByDictType('pay_type');
+    payTypeOptions.value = res2.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
 
     // 更新表格列的支出类型选项
     if (gridOptions.columns) {
@@ -1048,7 +1085,7 @@ const loadExpTypes = async () => {
     // 自动匹配支出类型
     matchExpenseTypes();
   } catch (error) {
-    console.error('加载支出类型失败:', error);
+    console.error('加载字典数据失败:', error);
   }
 };
 

@@ -4,8 +4,8 @@ import { onMounted, ref, toRaw } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { getByDictType } from '#/api/core/common';
 import { insertOrUpdate } from '#/api/core/income';
+import { getByDictType } from '#/api/core/userDictType';
 
 defineOptions({
   name: 'FormModal',
@@ -16,14 +16,16 @@ const tableReload = () => {
   emit('tableReload');
 };
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
+const dictOptions = ref<Array<any>>([]);
 
 async function loadDictOptions() {
   try {
     const res = await getByDictType('income_type');
-    dictOptions.value = res.dictDetailList;
+    dictOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }

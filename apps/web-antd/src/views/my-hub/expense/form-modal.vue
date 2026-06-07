@@ -4,9 +4,8 @@ import { nextTick, onMounted, ref, toRaw } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { getByDictType } from '#/api/core/common';
 import { insertData, updateData } from '#/api/core/expense';
-import { PAY_TYPE_OPTIONS } from '#/constants/expense';
+import { getByDictType } from '#/api/core/userDictType';
 
 defineOptions({
   name: 'FormModalDemo',
@@ -21,19 +20,24 @@ const tableReload = () => {
   emit('tableReload');
 };
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
-  [],
-);
-
-const payTypeOptions =
-  ref<Array<{ id: number; label: string; value: string }>>(PAY_TYPE_OPTIONS);
+const dictOptions = ref<Array<any>>([]);
+const payTypeOptions = ref<Array<any>>([]);
 
 async function loadDictOptions() {
   try {
     const res = await getByDictType('exp_type');
-    dictOptions.value = res.dictDetailList;
-    // 使用预定义的支付方式选项
-    payTypeOptions.value = PAY_TYPE_OPTIONS;
+    dictOptions.value = res.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
+
+    const res2 = await getByDictType('pay_type');
+    payTypeOptions.value = res2.dictDetailList.map((item) => ({
+      ...item,
+      label: item.dictLabel || item.label,
+      value: item.dictValue || item.value,
+    }));
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
