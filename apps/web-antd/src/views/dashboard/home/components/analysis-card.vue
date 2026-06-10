@@ -84,7 +84,7 @@ function handleTitleClick(e: MouseEvent) {
           <span
             v-else
             :style="{ color: valueColor }"
-            class="text-base font-bold sm:text-lg"
+            class="text-xs font-bold sm:text-lg"
           >
             {{ value }}
           </span>

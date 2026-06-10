@@ -36,12 +36,16 @@ const loadData = async () => {
     const pieData = categories
       .map((category) => {
         const duration = categoryDurations[category.id || ''] || 0;
+        const isSmall = duration < 30;
         return {
           name: category.name,
           value: duration,
           itemStyle: {
             color: category.color,
           },
+          // 时长小于 30 分钟的不显示外部标签和指引线,避免拥挤
+          label: { show: !isSmall },
+          labelLine: { show: !isSmall },
         };
       })
       .filter((item) => item.value > 0);
@@ -54,11 +58,12 @@ const loadData = async () => {
           const hours = Math.floor(duration / 60);
           const minutes = duration % 60;
           const percentage = params.percent;
-          return `${params.name}<br/>${hours}小时${minutes}分钟 (${percentage}%)<br/>总时长: ${duration}分钟`;
+          return `${params.name}<br/>${hours}时${minutes}分 (${percentage}%)<br/>总时长: ${duration}分钟`;
         },
       },
       legend: {
-        bottom: '2%',
+        // bottom 值越大,图例越往上(离饼图越近)
+        bottom: '20%',
         left: 'center',
       },
       series: [
@@ -100,11 +105,11 @@ const loadData = async () => {
               const hours = Math.floor(duration / 60);
               const minutes = duration % 60;
               if (hours > 0 && minutes > 0) {
-                return `${params.name}\n${hours}小时${minutes}分钟`;
+                return `${params.name}\n${hours}时${minutes}分`;
               } else if (hours > 0) {
-                return `${params.name}\n${hours}小时`;
+                return `${params.name}\n${hours}时`;
               } else {
-                return `${params.name}\n${minutes}分钟`;
+                return `${params.name}\n${minutes}分`;
               }
             },
             fontSize: 10,
@@ -115,8 +120,9 @@ const loadData = async () => {
             length2: 6,
           },
           name: '时间分类',
-          radius: ['45%', '70%'],
-          center: ['50%', '40%'],
+          radius: ['22%', '42%'],
+          // center: [水平位置, 垂直位置] - 第二个值越小,饼图越靠上,上方留白越少(如改为 '30%' 会更靠上)
+          center: ['50%', '30%'],
           type: 'pie',
         },
       ],

@@ -382,8 +382,29 @@ function navTo(nav: { url?: string }) {
         />
       </template>
     </div>
-    <div class="mt-2 grid gap-2 sm:mt-3 sm:gap-3 lg:grid-cols-2">
+    <div class="mt-2 grid gap-2 sm:mt-3 sm:gap-3 lg:grid-cols-3">
+      <!-- 今日时迹统计 -->
+      <div
+        class="flex max-h-[380px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px]"
+      >
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="cursor-pointer select-none text-base font-semibold"
+              @click="refreshTimeTracker"
+              >今日时迹</span
+            >
+          </div>
+        </div>
+        <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
+          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
+        </div>
+      </div>
+
       <QuickNavSection />
+
       <div
         class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
       >
@@ -507,26 +528,6 @@ function navTo(nav: { url?: string }) {
               </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 今日时迹统计 -->
-      <div
-        class="flex max-h-[380px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px]"
-      >
-        <div
-          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
-        >
-          <div class="flex items-center gap-2">
-            <span
-              class="cursor-pointer select-none text-base font-semibold"
-              @click="refreshTimeTracker"
-              >今日时迹</span
-            >
-          </div>
-        </div>
-        <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
-          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
         </div>
       </div>
 
