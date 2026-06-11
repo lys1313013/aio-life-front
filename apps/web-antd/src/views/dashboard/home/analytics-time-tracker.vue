@@ -63,7 +63,7 @@ const loadData = async () => {
       },
       legend: {
         // bottom 值越大,图例越往上(离饼图越近)
-        bottom: '20%',
+        bottom: '30%',
         left: 'center',
       },
       series: [
@@ -144,7 +144,10 @@ defineExpose({
 </script>
 
 <template>
-  <div v-loading="loading" class="h-full min-h-[300px] w-full sm:min-h-[240px]">
+  <div
+    v-loading="loading"
+    class="h-full min-h-[240px] w-full sm:min-h-[240px] lg:min-h-[220px]"
+  >
     <EchartsUI ref="chartRef" />
   </div>
 </template>
