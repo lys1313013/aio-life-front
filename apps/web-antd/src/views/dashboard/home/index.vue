@@ -383,7 +383,7 @@ function navTo(nav: { url?: string }) {
       </template>
     </div>
     <div
-      class="mt-2 grid gap-2 sm:mt-3 sm:gap-3 md:grid-cols-2 lg:grid-cols-3"
+      class="mt-2 grid items-start gap-x-2 gap-y-0 sm:mt-3 sm:gap-x-3 sm:gap-y-0 md:grid-cols-2 lg:grid-cols-3"
     >
       <!-- 今日时迹统计 -->
       <div
