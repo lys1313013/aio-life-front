@@ -114,10 +114,10 @@ function handleTitleClick(e: MouseEvent) {
         />
       </div>
       <div
-        v-if="totalTitle"
+        v-if="totalTitle || isUpdating"
         class="mt-1.5 flex justify-between text-[10px] text-gray-500 sm:mt-2 sm:text-xs"
       >
-        <span>{{ totalTitle }}</span>
+        <span>{{ totalTitle || '—' }}</span>
         <div class="flex min-h-[16px] items-center">
           <span>{{ loading && !totalValue ? '—' : totalValue }}</span>
         </div>
@@ -131,6 +131,16 @@ function handleTitleClick(e: MouseEvent) {
 .analysis-card {
   position: relative;
   overflow: hidden;
+  /* 高度兜底：保证首屏/无 totalTitle 的卡片与正常态等高
+     mobile ~ 12+18+6+18+6+15+12 = 87px  → 88px
+     sm+   ~ 12+21+8+27+8+18+12 = 106px → 108px */
+  min-height: 88px;
+}
+
+@media (min-width: 640px) {
+  .analysis-card {
+    min-height: 108px;
+  }
 }
 
 .analysis-card.is-updating {

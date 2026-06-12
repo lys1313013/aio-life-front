@@ -7,6 +7,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { openWindow } from '@vben/utils';
+import dayjs from 'dayjs';
 
 import {
   getDashboardCardDetail,
@@ -14,6 +15,7 @@ import {
   getWatchedTaskDetails,
 } from '#/api/core/dashboard';
 import { getPinnedThoughts } from '#/api/core/think';
+import { query as queryTimeRecord } from '#/api/core/time-tracker';
 import { updateTaskDetail } from '#/api/core/todo';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
@@ -52,10 +54,30 @@ const thoughtsLoading = ref(true);
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const timeTrackerCardRef = ref();
+const timeTrackerHasData = ref(false);
 
-function refreshTimeTracker() {
-  if (timeTrackerCardRef.value?.loadData) {
-    timeTrackerCardRef.value.loadData();
+async function checkTimeTrackerHasData(): Promise<boolean> {
+  try {
+    const today = dayjs().format('YYYY-MM-DD');
+    const res = await queryTimeRecord({ condition: { date: today } });
+    const records = res?.items || [];
+    // eslint-disable-next-line no-console
+    console.log('[今日时迹调试]', {
+      today,
+      recordsCount: records.length,
+    });
+    return records.length > 0;
+  } catch (error) {
+    console.error('查询今日时迹失败:', error);
+    return false;
+  }
+}
+
+async function refreshTimeTracker() {
+  // 先判断有无数据，决定是否重新挂载组件
+  timeTrackerHasData.value = await checkTimeTrackerHasData();
+  if (timeTrackerHasData.value && timeTrackerCardRef.value?.loadData) {
+    await timeTrackerCardRef.value.loadData();
   }
 }
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
@@ -232,6 +254,8 @@ onUnmounted(() => {
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   quickNavStore.load();
+  // 单独判断今日时迹：先查接口再决定是否渲染
+  timeTrackerHasData.value = await checkTimeTrackerHasData();
   try {
     loading.value = true;
     loadWatchedTasks();
@@ -395,8 +419,9 @@ function navTo(nav: { url?: string }) {
     <div
       class="mt-2 grid items-start gap-x-2 gap-y-0 sm:mt-3 sm:gap-x-3 sm:gap-y-0 md:grid-cols-2 lg:grid-cols-3"
     >
-      <!-- 今日时迹统计 -->
+      <!-- 今日时迹统计：无今日数据时不展示 -->
       <div
+        v-if="timeTrackerHasData"
         class="flex max-h-[280px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px] lg:max-h-[260px]"
       >
         <div
