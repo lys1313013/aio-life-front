@@ -61,11 +61,6 @@ async function checkTimeTrackerHasData(): Promise<boolean> {
     const today = dayjs().format('YYYY-MM-DD');
     const res = await queryTimeRecord({ condition: { date: today } });
     const records = res?.items || [];
-    // eslint-disable-next-line no-console
-    console.log('[今日时迹调试]', {
-      today,
-      recordsCount: records.length,
-    });
     return records.length > 0;
   } catch (error) {
     console.error('查询今日时迹失败:', error);
