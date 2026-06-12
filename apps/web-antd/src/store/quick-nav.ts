@@ -34,5 +34,12 @@ export const useQuickNavStore = defineStore('quick-nav', () => {
     items.value = await saveMyQuickNavApi([]);
   }
 
-  return { clear, error, items, load, loaded, loading, save };
+  function $reset() {
+    items.value = [];
+    loaded.value = false;
+    loading.value = false;
+    error.value = null;
+  }
+
+  return { $reset, clear, error, items, load, loaded, loading, save };
 });

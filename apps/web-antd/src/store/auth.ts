@@ -83,7 +83,12 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       // 不做任何处理
     }
-    resetAllStores();
+    try {
+      resetAllStores();
+    } catch (error_) {
+      // 某个 setup-style store 未实现 $reset 时会抛错，吞掉以确保后续跳转执行
+      console.error('resetAllStores failed during logout', error_);
+    }
     accessStore.setLoginExpired(false);
 
     // 回登录页带上当前路由地址

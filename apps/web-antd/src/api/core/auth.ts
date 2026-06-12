@@ -1,3 +1,5 @@
+import { useAccessStore } from '@vben/stores';
+
 import { baseRequestClient, requestClient } from '#/api/request';
 
 export namespace AuthApi {
@@ -86,11 +88,19 @@ export async function refreshTokenApi() {
 
 /**
  * 退出登录
+ * 用 baseRequestClient 而非 requestClient，避免 401 拦截器在登出失败时再次触发 logout 造成死循环。
+ * 手动拼 Bearer header 以满足后端鉴权前缀要求。
  */
 export async function logoutApi() {
-  return baseRequestClient.post('/auth/logout', {
-    withCredentials: true,
-  });
+  const token = useAccessStore().accessToken;
+  return baseRequestClient.post(
+    '/auth/logout',
+    null,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      withCredentials: true,
+    },
+  );
 }
 
 /**
