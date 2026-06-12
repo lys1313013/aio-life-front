@@ -38,6 +38,7 @@ interface OverviewItem {
   value?: number | string;
   valueColor?: string;
   loading?: boolean;
+  refreshing?: boolean;
   type?: string;
   refreshInterval?: number;
 }
@@ -268,6 +269,7 @@ onMounted(async () => {
             ...overviewItems.value[index],
             ...res,
             loading: false,
+            refreshing: false,
           };
           setupCardRefresh(overviewItems.value[index]);
         }
@@ -282,19 +284,26 @@ onMounted(async () => {
 });
 
 async function refreshCard(item: OverviewItem) {
-  if (item.loading || !item.type) {
+  if (item.loading || item.refreshing || !item.type) {
     return;
   }
 
+  // 静默刷新：保留旧数据 + 顶部进度条，不替换为 skeleton 以避免高度抖动
+  item.refreshing = true;
   try {
-    item.loading = true;
     const res = await getDashboardCardDetail(item.type);
-
-    Object.assign(item, res, { loading: false });
+    // 仅在数据真正变化时刷新（避免无意义重渲染）
+    const hasChanged =
+      item.value !== res.value || item.totalValue !== res.totalValue;
+    if (hasChanged) {
+      Object.assign(item, res, { refreshing: false });
+    } else {
+      item.refreshing = false;
+    }
     setupCardRefresh(item);
   } catch (error) {
     console.error(`Failed to refresh card ${item.title}`, error);
-    item.loading = false;
+    item.refreshing = false;
   }
 }
 
@@ -362,6 +371,7 @@ function navTo(nav: { url?: string }) {
           v-for="item in overviewItems"
           :key="item.type || item.title"
           :loading="item.loading"
+          :refreshing="item.refreshing"
           :icon="item.icon"
           :icon-click-url="item.iconClickUrl"
           :title="item.title"

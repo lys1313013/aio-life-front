@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { Component } from 'vue';
 
+import { computed } from 'vue';
+
 import { VbenIcon } from '@vben/common-ui';
 
-import { Card, Skeleton } from 'ant-design-vue';
+import { Card } from 'ant-design-vue';
 
 interface Props {
   icon?: Component | string;
   iconClickUrl?: string;
   loading?: boolean;
+  refreshing?: boolean;
   title?: string;
   titleClickUrl?: string;
   totalTitle?: string;
@@ -27,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
   icon: '',
   iconClickUrl: '',
   loading: false,
+  refreshing: false,
   title: '',
   titleClickUrl: '',
   totalTitle: '',
@@ -40,6 +44,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'title-click', url: string): void;
 }>();
+
+// 首次加载（loading）也用同一套滑动条样式：保留高度，只把数值换成 "—" 占位
+const isUpdating = computed(() => props.loading || props.refreshing);
 
 function handleIconClick(e: MouseEvent) {
   if (props.iconClickUrl) {
@@ -61,7 +68,16 @@ function handleTitleClick(e: MouseEvent) {
 </script>
 
 <template>
-  <Card :body-style="{ padding: 0 }" class="w-full select-none">
+  <Card
+    :body-style="{ padding: 0 }"
+    class="analysis-card w-full select-none"
+    :class="{ 'is-updating': isUpdating }"
+  >
+    <!-- 顶部 2px 静默刷新进度条：transform scaleX 动画，不触发 reflow -->
+    <div v-if="isUpdating" class="analysis-card-progress" aria-hidden="true">
+      <div class="analysis-card-progress-bar" />
+    </div>
+
     <div class="p-2.5 sm:p-3">
       <div
         :class="{
@@ -74,19 +90,12 @@ function handleTitleClick(e: MouseEvent) {
         {{ title }}
       </div>
       <div class="flex items-center justify-between">
-        <div class="flex items-center">
-          <template v-if="loading">
-            <Skeleton.Button
-              active
-              :style="{ width: '100px', height: '24px' }"
-            />
-          </template>
+        <div class="flex min-h-[20px] items-center">
           <span
-            v-else
             :style="{ color: valueColor }"
-            class="text-xs font-bold sm:text-lg"
+            class="analysis-card-value text-xs font-bold sm:text-lg"
           >
-            {{ value }}
+            {{ loading && !value ? '—' : value }}
           </span>
         </div>
         <div
@@ -109,15 +118,8 @@ function handleTitleClick(e: MouseEvent) {
         class="mt-1.5 flex justify-between text-[10px] text-gray-500 sm:mt-2 sm:text-xs"
       >
         <span>{{ totalTitle }}</span>
-        <div class="flex items-center">
-          <template v-if="loading">
-            <Skeleton.Button
-              active
-              size="small"
-              :style="{ width: '60px', height: '20px' }"
-            />
-          </template>
-          <span v-else>{{ totalValue }}</span>
+        <div class="flex min-h-[16px] items-center">
+          <span>{{ loading && !totalValue ? '—' : totalValue }}</span>
         </div>
       </div>
     </div>
@@ -125,5 +127,68 @@ function handleTitleClick(e: MouseEvent) {
 </template>
 
 <style scoped>
-/* 移除原有的 head-title 样式，因为不再使用 Card 的 title 属性 */
+/* 静默刷新态：整卡轻微降透明，给出"正在更新"的视觉反馈 */
+.analysis-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-card.is-updating {
+  opacity: 0.85;
+  transition: opacity 200ms ease-out;
+}
+
+/* 顶部 2px 进度条轨道：absolute 不占布局 */
+.analysis-card-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  background: hsl(var(--border) / 0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.analysis-card-progress-bar {
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary)) 50%,
+    transparent 100%
+  );
+  transform-origin: left center;
+  animation: analysis-card-progress 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes analysis-card-progress {
+  0% {
+    transform: translateX(-100%) scaleX(1);
+  }
+  100% {
+    transform: translateX(380%) scaleX(1);
+  }
+}
+
+/* 数值用 opacity 过渡，data 切换时平滑 fade */
+.analysis-card-value {
+  transition: opacity 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-card-progress-bar {
+    animation-duration: 2s;
+  }
+  .analysis-card.is-updating {
+    transition: none;
+  }
+  .analysis-card-value {
+    transition: none;
+  }
+}
 </style>
