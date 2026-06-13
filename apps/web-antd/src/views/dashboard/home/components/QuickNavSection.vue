@@ -240,7 +240,7 @@ function dragChange() {
       <!-- 编辑态：4 列可拖网格 + 末尾 "+" 格 -->
       <div
         v-else-if="editing"
-        class="grid grid-cols-4 gap-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+        class="grid grid-cols-5 gap-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
       >
         <draggable
           v-model="draggableModel"
@@ -318,7 +318,7 @@ function dragChange() {
       </div>
 
       <!-- 默认态 -->
-      <div v-else class="grid grid-cols-4 gap-1 p-2.5 pt-1.5 sm:p-3 sm:pt-1.5">
+      <div v-else class="grid grid-cols-5 gap-1 p-2.5 pt-1.5 sm:p-3 sm:pt-1.5">
         <template v-for="item in navItems" :key="item.title">
           <div
             class="group flex cursor-pointer flex-col items-center justify-center rounded-xl py-2 transition-all hover:bg-accent sm:py-3"
