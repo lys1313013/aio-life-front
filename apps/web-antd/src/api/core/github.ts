@@ -1,10 +1,23 @@
 import dayjs from 'dayjs';
 
+import { requestClient } from '#/api/request';
+
 export interface GithubContributionStats {
   currentStreak: number;
   todayContribution: number;
   totalContributions: number;
   contributions: any[];
+}
+
+export interface GithubCommitVO {
+  id?: string;
+  repo?: string;
+  repoUrl?: string;
+  commitUrl?: string;
+  message?: string;
+  date?: string;
+  avatar?: string;
+  actor?: string;
 }
 
 export async function getGithubContributionStats(
@@ -124,3 +137,12 @@ export async function getGithubContributionStats(
     totalContributions: calendar.totalContributions,
   };
 }
+
+/**
+ * 通过后端代理获取当前绑定 GitHub 账号的最近提交列表（规避浏览器 CORS）
+ */
+export const getRecentCommitsApi = (perPage = 20) => {
+  return requestClient.get<GithubCommitVO[]>('/github/recent-commits', {
+    params: { perPage },
+  });
+};

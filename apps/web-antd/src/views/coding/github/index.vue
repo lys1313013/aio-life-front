@@ -12,10 +12,13 @@ import {
   StarOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
-import { Card, List, message, Spin, Table, Tag } from 'ant-design-vue';
+import { Card, List, message, Skeleton, Spin, Table, Tag } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { getGithubContributionStats } from '#/api/core/github';
+import {
+  getGithubContributionStats,
+  getRecentCommitsApi,
+} from '#/api/core/github';
 import { getUserBindListApi } from '#/api/core/user-bind';
 
 import CodingDashboardLayout from '../components/CodingDashboardLayout.vue';
@@ -172,41 +175,11 @@ async function fetchRepoStats(user: string, repos: any[]) {
   });
 }
 
-async function fetchRecentActivity(user: string) {
+async function fetchRecentActivity(_user: string) {
   activitiesLoading.value = true;
   recentActivities.value = [];
   try {
-    const headers: HeadersInit = {
-      Accept: 'application/vnd.github.v3+json',
-    };
-    if (githubToken.value) {
-      headers.Authorization = `Bearer ${githubToken.value}`;
-    }
-
-    const res = await fetch(
-      `https://api.github.com/search/commits?q=author:${user}&sort=committer-date&order=desc&per_page=20`,
-      {
-        headers,
-      },
-    );
-    if (!res.ok) throw new Error('Failed to fetch commits');
-    const data = await res.json();
-
-    const commits = data.items.map((item: any) => {
-      const repoName = item.repository.name;
-      return {
-        id: item.sha,
-        repo: repoName,
-        repoUrl: item.repository.html_url,
-        commitUrl: item.html_url,
-        message: item.commit.message,
-        date: item.commit.author.date,
-        avatar: item.author?.avatar_url,
-        actor: item.author?.login || user,
-      };
-    });
-
-    recentActivities.value = commits;
+    recentActivities.value = (await getRecentCommitsApi(20)) || [];
   } catch (error_) {
     console.error(error_);
   } finally {
@@ -426,29 +399,34 @@ watch(
 </script>
 
 <template>
-  <CodingDashboardLayout
-    :loading="loading"
-    :error="error"
-    :error-message="errorMessage"
-  >
-    <template #skeleton>
-      <Card :bordered="false" class="shadow-sm">
-        <Skeleton active :paragraph="{ rows: 4 }" />
-      </Card>
-    </template>
-
+  <CodingDashboardLayout :error="error" :error-message="errorMessage">
     <div
       class="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6"
     >
-      <StatCard title="最活跃的月份" :value="bestMonth.date" color="blue">
+      <StatCard
+        title="最活跃的月份"
+        :value="bestMonth.date"
+        :loading="loading"
+        color="blue"
+      >
         <template #icon><CalendarOutlined /></template>
       </StatCard>
 
-      <StatCard title="日均提交" :value="dailyAverage" color="green">
+      <StatCard
+        title="日均提交"
+        :value="dailyAverage"
+        :loading="loading"
+        color="green"
+      >
         <template #icon><BarChartOutlined /></template>
       </StatCard>
 
-      <StatCard title="总 Star 数" :value="totalStars" color="yellow">
+      <StatCard
+        title="总 Star 数"
+        :value="totalStars"
+        :loading="loading"
+        color="yellow"
+      >
         <template #icon><StarOutlined /></template>
       </StatCard>
 
@@ -457,6 +435,7 @@ watch(
         :value="busiestDay.count"
         unit="次"
         :sub-value="busiestDay.date"
+        :loading="loading"
         color="orange"
       >
         <template #icon><ThunderboltOutlined /></template>
@@ -467,6 +446,7 @@ watch(
         :value="longestStreak.days"
         unit="天"
         :sub-value="`${longestStreak.start}-${longestStreak.end}`"
+        :loading="loading"
         color="red"
       >
         <template #icon><FireOutlined /></template>
@@ -476,6 +456,7 @@ watch(
         title="今日提交次数"
         :value="todayContribution"
         unit="次"
+        :loading="loading"
         color="cyan"
       >
         <template #icon><CheckCircleOutlined /></template>
@@ -513,7 +494,13 @@ watch(
         class="w-full overflow-x-auto overflow-y-hidden transition-all"
       >
         <div class="h-[125px] min-w-[720px] md:h-[130px]">
-          <ContributionGraph :data="graphData" height="100%" />
+          <Skeleton
+            v-if="loading"
+            active
+            :paragraph="{ rows: 0 }"
+            class="h-full"
+          />
+          <ContributionGraph v-else :data="graphData" height="100%" />
         </div>
       </div>
     </Card>
