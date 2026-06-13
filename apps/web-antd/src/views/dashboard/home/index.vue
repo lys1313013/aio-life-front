@@ -7,6 +7,7 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { openWindow } from '@vben/utils';
+
 import dayjs from 'dayjs';
 
 import {
@@ -17,6 +18,7 @@ import {
 import { getPinnedThoughts } from '#/api/core/think';
 import { query as queryTimeRecord } from '#/api/core/time-tracker';
 import { updateTaskDetail } from '#/api/core/todo';
+import { getUserBindListApi } from '#/api/core/user-bind';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
   ACTION_OPEN_TIME_TRACKER_MODAL,
@@ -27,6 +29,7 @@ import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
 import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
+import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 
@@ -55,6 +58,8 @@ const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const timeTrackerCardRef = ref();
 const timeTrackerHasData = ref(false);
+const githubBound = ref(false);
+const githubUsername = ref('');
 
 async function checkTimeTrackerHasData(): Promise<boolean> {
   try {
@@ -73,6 +78,23 @@ async function refreshTimeTracker() {
   timeTrackerHasData.value = await checkTimeTrackerHasData();
   if (timeTrackerHasData.value && timeTrackerCardRef.value?.loadData) {
     await timeTrackerCardRef.value.loadData();
+  }
+}
+
+async function checkGithubBound(): Promise<boolean> {
+  try {
+    const binds = await getUserBindListApi(true);
+    const githubBind = binds.find(
+      (item) => item.platform === 'github' && item.platformUsername,
+    );
+    if (githubBind?.platformUsername) {
+      githubUsername.value = githubBind.platformUsername;
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('查询 GitHub 绑定失败:', error);
+    return false;
   }
 }
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
@@ -251,6 +273,8 @@ onMounted(async () => {
   quickNavStore.load();
   // 单独判断今日时迹：先查接口再决定是否渲染
   timeTrackerHasData.value = await checkTimeTrackerHasData();
+  // 判断 GitHub 绑定状态：未绑定则不展示最近提交卡片
+  githubBound.value = await checkGithubBound();
   try {
     loading.value = true;
     loadWatchedTasks();
@@ -650,6 +674,42 @@ function navTo(nav: { url?: string }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- GitHub 最近提交：未绑定时不渲染 -->
+      <div
+        v-if="githubBound"
+        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px]"
+      >
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
+          <div class="flex items-center gap-2">
+            <a
+              v-if="githubUsername"
+              :href="`https://github.com/${githubUsername}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex cursor-pointer text-foreground transition-colors hover:text-primary"
+              :title="`访问 ${githubUsername} 的 GitHub 主页`"
+            >
+              <svg class="size-4" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+            </a>
+            <span v-else class="inline-flex text-foreground">
+              <svg class="size-4" fill="currentColor" viewBox="0 0 16 16">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+            </span>
+            <span class="select-none text-base font-semibold">最近提交</span>
+          </div>
+        </div>
+        <GithubRecentCommits />
       </div>
     </div>
     <TimeTrackerModal
