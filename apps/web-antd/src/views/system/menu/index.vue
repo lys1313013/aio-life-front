@@ -406,27 +406,19 @@ onMounted(() => {
                 allow-clear
               />
             </Form.Item>
-            <Form.Item label="Path（路由 path）">
+            <Form.Item label="路由">
               <Input
                 v-model:value="form.path"
                 placeholder="例如 /time-management"
               />
             </Form.Item>
           </div>
-          <div class="grid grid-cols-2 gap-x-4">
-            <Form.Item label="Component">
-              <Input
-                v-model:value="form.component"
-                placeholder="例如 BasicLayout 或 system/menu/index"
-              />
-            </Form.Item>
-            <Form.Item label="Redirect（可选）">
-              <Input
-                v-model:value="form.redirect"
-                placeholder="例如 /time-management/time-tracker"
-              />
-            </Form.Item>
-          </div>
+          <Form.Item label="前端组件">
+            <Input
+              v-model:value="form.component"
+              placeholder="例如 BasicLayout 或 system/menu/index"
+            />
+          </Form.Item>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="菜单图标">
               <Input

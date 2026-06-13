@@ -18,6 +18,7 @@ import {
   message,
   Modal,
   Popconfirm,
+  Radio,
   Select,
   Switch,
   Table,
@@ -41,6 +42,8 @@ const loading = ref(false);
 const categories = ref<any[]>([]);
 const activeTab = ref('');
 const tabList = ref<any[]>([]);
+// 状态过滤: '' 全部 / '0' 已启用 / '1' 已禁用（与后端 char(1) 状态字段一致）
+const statusFilter = ref<'' | '0' | '1'>('');
 
 // 表格列配置
 const columns = [
@@ -81,7 +84,7 @@ const formState = ref<any>({
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
   dictSort: 0,
-  status: 1,
+  status: '0',
 });
 
 const rules = {
@@ -114,7 +117,10 @@ const fetchCategories = async () => {
     const res = await query({
       page: 1,
       pageSize: 500, // 假设数据量不大
-      condition: { dictType: activeTab.value },
+      condition: {
+        dictType: activeTab.value,
+        status: statusFilter.value === '' ? undefined : statusFilter.value,
+      },
     });
     // @ts-ignore
     categories.value = res.items || [];
@@ -136,6 +142,14 @@ const handleTabChange = () => {
   });
 };
 
+const handleStatusFilterChange = () => {
+  fetchCategories().then(() => {
+    nextTick(() => {
+      setTimeout(initSortable, 100);
+    });
+  });
+};
+
 const handleAddCategory = () => {
   editingCategory.value = null;
   selectedIconSet.value = 'ant-design';
@@ -143,7 +157,7 @@ const handleAddCategory = () => {
     dictLabel: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
-    status: 1,
+    status: '0',
     dictSort: categories.value.length * 10,
   };
   showEditModal.value = true;
@@ -157,13 +171,18 @@ const handleEditClick = (record: any) => {
 };
 
 const handleToggleStatus = async (record: any, checked: boolean) => {
+  const newStatus = checked ? '0' : '1';
+  const previousStatus = record.status;
+  // 乐观更新：先改本地状态，避免整页 refetch 造成的 loading 闪烁
+  record.status = newStatus;
   try {
     await update({
       ...record,
-      status: checked ? 1 : 0,
+      status: newStatus,
     });
-    fetchCategories();
   } catch {
+    // 失败时回滚到原状态
+    record.status = previousStatus;
     message.error('操作失败');
   }
 };
@@ -275,23 +294,35 @@ onMounted(async () => {
         :body-style="{ padding: '12px' }"
       >
         <template #extra>
-          <Button
-            type="primary"
-            size="small"
-            class="sm:hidden"
-            @click="handleAddCategory"
-          >
-            <template #icon><PlusOutlined /></template>
-            添加
-          </Button>
-          <Button
-            type="primary"
-            class="hidden sm:inline-flex"
-            @click="handleAddCategory"
-          >
-            <template #icon><PlusOutlined /></template>
-            添加分类
-          </Button>
+          <div class="flex items-center gap-3">
+            <Radio.Group
+              v-model:value="statusFilter"
+              size="small"
+              button-style="solid"
+              @change="handleStatusFilterChange"
+            >
+              <Radio.Button value="">全部</Radio.Button>
+              <Radio.Button value="0">已启用</Radio.Button>
+              <Radio.Button value="1">已禁用</Radio.Button>
+            </Radio.Group>
+            <Button
+              type="primary"
+              size="small"
+              class="sm:hidden"
+              @click="handleAddCategory"
+            >
+              <template #icon><PlusOutlined /></template>
+              添加
+            </Button>
+            <Button
+              type="primary"
+              class="hidden sm:inline-flex"
+              @click="handleAddCategory"
+            >
+              <template #icon><PlusOutlined /></template>
+              添加分类
+            </Button>
+          </div>
         </template>
 
         <Table
@@ -333,7 +364,7 @@ onMounted(async () => {
             </template>
             <template v-else-if="column.key === 'status'">
               <Switch
-                :checked="record.status === 1"
+                :checked="record.status === '0'"
                 size="small"
                 @change="(checked: any) => handleToggleStatus(record, checked)"
               />
@@ -491,8 +522,8 @@ onMounted(async () => {
         <Form.Item label="状态" name="status">
           <Switch
             v-model:checked="formState.status"
-            :checked-value="1"
-            :un-checked-value="0"
+            checked-value="0"
+            un-checked-value="1"
           />
         </Form.Item>
       </Form>
