@@ -420,7 +420,6 @@ onUnmounted(() => {
         </Select.Option>
       </Select>
       <div class="flex items-center gap-2 sm:ml-auto">
-        <Button @click="fetchPasswords">刷新</Button>
         <Tooltip :title="store.isUnlocked ? '锁定密码库' : '解锁密码库'">
           <Button
             @click="store.isUnlocked ? handleManualLock() : requireUnlock(() => {})"
@@ -433,10 +432,6 @@ onUnmounted(() => {
             <span class="hidden sm:inline">{{ store.isUnlocked ? '锁定' : '解锁' }}</span>
           </Button>
         </Tooltip>
-        <Button type="primary" @click="handleAdd" class="hidden sm:inline-flex">
-          <template #icon><PlusOutlined /></template>
-          新建
-        </Button>
       </div>
     </div>
 
@@ -601,8 +596,8 @@ onUnmounted(() => {
       </Spin>
     </div>
 
-    <!-- Mobile Float Button -->
-    <GlobalFloatBtn class="sm:hidden" @click="handleAdd" />
+    <!-- Add Float Button -->
+    <GlobalFloatBtn @click="handleAdd" />
 
     <!-- Unlock Modal -->
     <Modal
