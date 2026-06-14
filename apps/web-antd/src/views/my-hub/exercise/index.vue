@@ -145,16 +145,21 @@ const monthlyStats = computed(() => {
   return monthlyData;
 });
 
-// 计算运动类型统计数据（求和：该类型的所有 exercise_count 之和）
+// 计算运动类型统计数据（按天计算：同一天同一类型算作一次）
 const exerciseTypeStats = computed(() => {
-  // 按运动类型分组，累加 exercise_count
+  // 使用 Set 来去重同一天同一类型的记录
+  const uniqueDailyExercises = new Set<string>();
   const typeData: Record<string, number> = {};
 
   tableData.value.forEach((row) => {
-    if (row.exerciseTypeId) {
-      const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
-      typeData[typeLabel] =
-        (typeData[typeLabel] || 0) + (Number(row.exerciseCount) || 0);
+    if (row.exerciseDate && row.exerciseTypeId) {
+      const uniqueKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
+      if (!uniqueDailyExercises.has(uniqueKey)) {
+        uniqueDailyExercises.add(uniqueKey);
+        
+        const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
+        typeData[typeLabel] = (typeData[typeLabel] || 0) + 1;
+      }
     }
   });
 
