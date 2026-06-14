@@ -364,21 +364,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col overflow-hidden p-5">
+  <div class="flex h-full flex-col overflow-hidden p-4 sm:p-5">
     <!-- Header Search -->
-    <div class="mb-4 flex gap-3">
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
       <Input
         v-model:value="searchText"
         placeholder="搜索标题或网站..."
-        class="flex-1"
+        class="w-full sm:max-w-xs"
         allow-clear
       >
-        <template #prefix><SearchOutlined /></template>
+        <template #prefix><SearchOutlined class="text-slate-400" /></template>
       </Input>
       <Select
         v-model:value="selectedCategory"
-        placeholder="选择分类"
-        class="w-32"
+        placeholder="所有分类"
+        class="w-full sm:w-32"
         allow-clear
         show-search
       >
@@ -386,24 +386,30 @@ onUnmounted(() => {
           {{ cat }}
         </Select.Option>
       </Select>
-      <Button @click="fetchPasswords"> 刷新 </Button>
-      <Tooltip :title="store.isUnlocked ? '锁定密码库' : '解锁密码库'">
-        <Button
-          @click="
-            store.isUnlocked ? handleManualLock() : requireUnlock(() => {})
-          "
-        >
-          <template #icon>
-            <UnlockOutlined v-if="store.isUnlocked" class="text-green-500" />
-            <LockOutlined v-else class="text-slate-400" />
-          </template>
+      <div class="flex items-center gap-2 sm:ml-auto">
+        <Button @click="fetchPasswords">刷新</Button>
+        <Tooltip :title="store.isUnlocked ? '锁定密码库' : '解锁密码库'">
+          <Button
+            @click="store.isUnlocked ? handleManualLock() : requireUnlock(() => {})"
+            :danger="store.isUnlocked"
+          >
+            <template #icon>
+              <UnlockOutlined v-if="store.isUnlocked" />
+              <LockOutlined v-else class="text-slate-400" />
+            </template>
+            <span class="hidden sm:inline">{{ store.isUnlocked ? '锁定' : '解锁' }}</span>
+          </Button>
+        </Tooltip>
+        <Button type="primary" @click="handleAdd" class="hidden sm:inline-flex">
+          <template #icon><PlusOutlined /></template>
+          新建
         </Button>
-      </Tooltip>
+      </div>
     </div>
 
     <!-- Password List -->
-    <div class="flex-1 overflow-y-auto">
-      <Spin :spinning="loading">
+    <div class="flex-1 overflow-y-auto pr-1">
+      <Spin :spinning="loading" class="min-h-[200px]">
         <div
           v-if="filteredPasswords.length > 0"
           class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -411,89 +417,111 @@ onUnmounted(() => {
           <div
             v-for="item in filteredPasswords"
             :key="item.id"
-            class="group rounded-lg border border-slate-200 bg-white p-4 transition-all hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+            class="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-slate-300 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600"
           >
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <h3 class="text-lg font-semibold">{{ item.title }}</h3>
-                  <span
-                    v-if="item.category"
-                    class="rounded-full bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-700"
-                  >
-                    {{ item.category }}
-                  </span>
-                </div>
-                <p v-if="item.website" class="mt-1 text-sm text-slate-500">
-                  {{ item.website }}
-                </p>
-                <div class="mt-3 flex flex-col gap-2">
-                  <div v-if="item.username" class="flex items-center gap-2">
-                    <span class="shrink-0 text-sm text-slate-500">账号：</span>
-                    <span class="flex-1 truncate font-mono text-sm">{{
-                      item.decryptedUsername || '******'
-                    }}</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="shrink-0 text-sm text-slate-500">密码：</span>
-                    <span class="flex-1 truncate font-mono text-sm">
-                      {{
-                        item.showPassword
-                          ? item.decryptedPassword || '******'
-                          : '******'
-                      }}
-                    </span>
-                    <div class="flex shrink-0 items-center gap-2">
-                      <Tooltip
-                        :title="item.showPassword ? '隐藏密码' : '显示密码'"
-                      >
-                        <EyeOutlined
-                          v-if="!item.showPassword"
-                          class="cursor-pointer text-slate-400 hover:text-blue-500"
-                          @click="handleTogglePassword(item)"
-                        />
-                        <EyeInvisibleOutlined
-                          v-else
-                          class="cursor-pointer text-slate-400 hover:text-blue-500"
-                          @click="handleTogglePassword(item)"
-                        />
-                      </Tooltip>
-                      <Tooltip title="复制密码">
-                        <CopyOutlined
-                          class="cursor-pointer text-slate-400 hover:text-blue-500"
-                          @click="handleCopy(item, 'password')"
-                        />
-                      </Tooltip>
-                    </div>
-                  </div>
-                </div>
-                <p
-                  v-if="item.decryptedRemark && item.showPassword"
-                  class="mt-2 text-sm text-slate-400"
+            <!-- Top part: Title and Category -->
+            <div class="mb-4 flex items-start justify-between gap-3">
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <h3 class="truncate text-base font-semibold text-slate-800 dark:text-slate-100" :title="item.title">
+                  {{ item.title }}
+                </h3>
+                <a
+                  v-if="item.website"
+                  :href="item.website.startsWith('http') ? item.website : `https://${item.website}`"
+                  target="_blank"
+                  class="truncate text-sm text-slate-400 transition-colors hover:text-blue-500"
+                  :title="item.website"
                 >
-                  备注：{{ item.decryptedRemark }}
-                </p>
+                  {{ item.website }}
+                </a>
               </div>
-              <div
-                class="flex flex-col gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-              >
+              <div class="flex shrink-0 items-center gap-1">
+                <span
+                  v-if="item.category"
+                  class="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700/50 dark:text-slate-300"
+                >
+                  {{ item.category }}
+                </span>
                 <Tooltip title="收藏">
                   <Button
                     type="text"
                     size="small"
+                    class="!px-1"
                     @click="handleToggleFavorite(item)"
                   >
                     <template #icon>
-                      <StarFilled
-                        v-if="item.favorite"
-                        class="text-yellow-500"
-                      />
-                      <StarOutlined v-else />
+                      <StarFilled v-if="item.favorite" class="text-yellow-500" />
+                      <StarOutlined v-else class="text-slate-400 hover:text-yellow-500" />
                     </template>
                   </Button>
                 </Tooltip>
+              </div>
+            </div>
+
+            <!-- Credentials part -->
+            <div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+              <!-- Username -->
+              <div v-if="item.username" class="flex items-center justify-between gap-2">
+                <span class="shrink-0 text-sm text-slate-500">账号</span>
+                <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+                  <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300" :title="item.decryptedUsername || '******'">
+                    {{ item.decryptedUsername || '******' }}
+                  </span>
+                  <Tooltip title="复制账号">
+                    <CopyOutlined
+                      class="shrink-0 cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                      @click="handleCopy(item, 'username')"
+                    />
+                  </Tooltip>
+                </div>
+              </div>
+              
+              <!-- Password -->
+              <div class="flex items-center justify-between gap-2">
+                <span class="shrink-0 text-sm text-slate-500">密码</span>
+                <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+                  <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300">
+                    {{ item.showPassword ? item.decryptedPassword || '******' : '••••••••' }}
+                  </span>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <Tooltip :title="item.showPassword ? '隐藏密码' : '显示密码'">
+                      <EyeOutlined
+                        v-if="!item.showPassword"
+                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        @click="handleTogglePassword(item)"
+                      />
+                      <EyeInvisibleOutlined
+                        v-else
+                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        @click="handleTogglePassword(item)"
+                      />
+                    </Tooltip>
+                    <Tooltip title="复制密码">
+                      <CopyOutlined
+                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        @click="handleCopy(item, 'password')"
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Remark -->
+            <p
+              v-if="item.decryptedRemark && item.showPassword"
+              class="mt-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400"
+              :title="item.decryptedRemark"
+            >
+              {{ item.decryptedRemark }}
+            </p>
+
+            <!-- Bottom Actions & Time -->
+            <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700/50">
+              <span class="text-xs text-slate-400">{{ formatTime(item.updateTime) }}</span>
+              <div class="flex items-center gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
                 <Tooltip title="编辑">
-                  <Button type="text" size="small" @click="handleEdit(item.id)">
+                  <Button type="text" size="small" class="!text-slate-400 hover:!text-blue-500" @click="handleEdit(item.id)">
                     <template #icon><EditOutlined /></template>
                   </Button>
                 </Tooltip>
@@ -501,50 +529,46 @@ onUnmounted(() => {
                   title="确定要删除这条记录吗？"
                   ok-text="是"
                   cancel-text="否"
+                  placement="topRight"
                   @confirm="handleDelete(item.id)"
                 >
                   <Tooltip title="删除">
-                    <Button type="text" size="small" danger>
+                    <Button type="text" size="small" class="!text-slate-400 hover:!text-red-500">
                       <template #icon><DeleteOutlined /></template>
                     </Button>
                   </Tooltip>
                 </Popconfirm>
               </div>
             </div>
-            <div class="mt-4 flex items-center justify-end">
-              <div class="text-xs text-slate-400">
-                编辑于 {{ formatTime(item.updateTime) }}
-              </div>
-            </div>
           </div>
         </div>
-        <Empty
-          v-else-if="isFirstTime && !loading"
-          description="首次使用，请先设置主密码并添加密码"
-        >
-          <Button type="primary" @click="handleAdd">
-            <PlusOutlined /> 添加密码
-          </Button>
-        </Empty>
-        <Empty v-else-if="!loading" description="暂无密码">
-          <Button type="primary" @click="handleAdd">
-            <PlusOutlined /> 添加密码
-          </Button>
-        </Empty>
+        
+        <!-- Empty States -->
+        <div v-else-if="!loading" class="flex h-[400px] flex-col items-center justify-center">
+          <Empty
+            :description="isFirstTime ? '首次使用，请先设置主密码并添加密码' : (searchText || selectedCategory ? '未找到匹配的密码' : '暂无密码')"
+          >
+            <Button type="primary" @click="handleAdd" class="mt-2">
+              <PlusOutlined /> 添加密码
+            </Button>
+          </Empty>
+        </div>
       </Spin>
     </div>
 
-    <GlobalFloatBtn @click="handleAdd" />
+    <!-- Mobile Float Button -->
+    <GlobalFloatBtn class="sm:hidden" @click="handleAdd" />
 
     <!-- Unlock Modal -->
     <Modal
       v-model:open="showUnlockModal"
       :title="isFirstTime ? '设置主密码' : '解锁密码库'"
       :confirm-loading="unlockLoading"
+      centered
       @ok="handleUnlockSubmit"
       @cancel="showUnlockModal = false"
     >
-      <Form layout="vertical" @submit.prevent="handleUnlockSubmit">
+      <Form layout="vertical" class="mt-4" @submit.prevent="handleUnlockSubmit">
         <FormItem :label="isFirstTime ? '设置主密码' : '主密码'">
           <Input
             v-model:value="masterPasswordInput"

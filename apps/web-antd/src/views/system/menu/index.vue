@@ -379,10 +379,6 @@ onMounted(() => {
       :width="820"
       @ok="save"
     >
-      <div class="mb-3 text-xs text-stone-400">
-        建议优先填写
-        Name、Path、Component；只有启用状态的菜单会在前端侧边栏显示。
-      </div>
       <Form layout="vertical">
         <div class="mb-3 rounded-md border border-stone-200 p-3">
           <div class="grid grid-cols-2 gap-x-4">
