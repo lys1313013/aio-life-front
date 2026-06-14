@@ -62,9 +62,7 @@ const loadData = async () => {
         },
       },
       legend: {
-        // bottom 值越大,图例越往上(离饼图越近)
-        bottom: '30%',
-        left: 'center',
+        show: false,
       },
       series: [
         {

@@ -436,12 +436,12 @@ function navTo(nav: { url?: string }) {
       </template>
     </div>
     <div
-      class="mt-2 grid items-start gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3"
+      class="mt-2 grid items-start gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3 lg:items-stretch"
     >
       <!-- 今日时迹统计：无今日数据时不展示 -->
       <div
         v-if="timeTrackerHasData"
-        class="flex max-h-[280px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px] lg:max-h-[260px]"
+        class="flex max-h-[280px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px] lg:max-h-[220px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -462,7 +462,7 @@ function navTo(nav: { url?: string }) {
       <QuickNavSection />
 
       <div
-        class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+        class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -589,7 +589,7 @@ function navTo(nav: { url?: string }) {
 
       <!-- 固定闪念 -->
       <div
-        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all"
+        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -679,7 +679,7 @@ function navTo(nav: { url?: string }) {
       <!-- GitHub 最近提交：未绑定时不渲染 -->
       <div
         v-if="githubBound"
-        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px]"
+        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] lg:max-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
