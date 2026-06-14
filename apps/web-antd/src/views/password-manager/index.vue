@@ -74,7 +74,7 @@ const isFirstTime = computed(
 );
 
 const filteredPasswords = computed(() => {
-  let result = decryptedPasswords.value;
+  let result = [...decryptedPasswords.value];
   if (searchText.value) {
     const search = searchText.value.toLowerCase();
     result = result.filter(
@@ -86,8 +86,41 @@ const filteredPasswords = computed(() => {
   if (selectedCategory.value) {
     result = result.filter((p) => p.category === selectedCategory.value);
   }
-  return result;
+  return result.sort((a, b) => {
+    if (a.favorite && !b.favorite) return -1;
+    if (!a.favorite && b.favorite) return 1;
+    return 0;
+  });
 });
+
+const getCategoryColorClass = (category?: string) => {
+  if (!category) return 'text-slate-500 dark:text-slate-400';
+  
+  // Create a simple hash to assign consistent colors to categories
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const colors = [
+    'text-blue-500 dark:text-blue-400',
+    'text-emerald-500 dark:text-emerald-400',
+    'text-violet-500 dark:text-violet-400',
+    'text-amber-500 dark:text-amber-400',
+    'text-orange-500 dark:text-orange-400',
+    'text-rose-500 dark:text-rose-400',
+    'text-pink-500 dark:text-pink-400',
+    'text-fuchsia-500 dark:text-fuchsia-400',
+    'text-purple-500 dark:text-purple-400',
+    'text-indigo-500 dark:text-indigo-400',
+    'text-cyan-500 dark:text-cyan-400',
+    'text-sky-500 dark:text-sky-400',
+    'text-teal-500 dark:text-teal-400',
+  ];
+  
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
 
 const fetchPasswords = async () => {
   loading.value = true;
@@ -417,52 +450,64 @@ onUnmounted(() => {
           <div
             v-for="item in filteredPasswords"
             :key="item.id"
-            class="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-5 transition-colors hover:border-slate-300 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600"
+            class="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600"
           >
             <!-- Top part: Title and Category -->
-            <div class="mb-4 flex items-start justify-between gap-3">
-              <div class="flex min-w-0 flex-1 flex-col gap-1">
-                <h3 class="truncate text-base font-semibold text-slate-800 dark:text-slate-100" :title="item.title">
-                  {{ item.title }}
-                </h3>
-                <a
-                  v-if="item.website"
-                  :href="item.website.startsWith('http') ? item.website : `https://${item.website}`"
-                  target="_blank"
-                  class="truncate text-sm text-slate-400 transition-colors hover:text-blue-500"
-                  :title="item.website"
-                >
-                  {{ item.website }}
-                </a>
-              </div>
-              <div class="flex shrink-0 items-center gap-1">
-                <span
-                  v-if="item.category"
-                  class="text-xs font-medium text-slate-500 dark:text-slate-400"
-                >
-                  {{ item.category }}
-                </span>
-                <Tooltip title="收藏">
+            <div class="mb-3 flex flex-col">
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex min-w-0 flex-1 items-center gap-2">
+                  <h3 class="truncate text-base font-semibold text-slate-800 dark:text-slate-100" :title="item.title">
+                    {{ item.title }}
+                  </h3>
+                  <span
+                    v-if="item.category"
+                    class="shrink-0 text-xs font-medium"
+                    :class="getCategoryColorClass(item.category)"
+                  >
+                    {{ item.category }}
+                  </span>
+                </div>
+                <Tooltip v-if="item.favorite" title="取消收藏">
                   <Button
                     type="text"
                     size="small"
-                    class="!px-1"
+                    class="shrink-0 !px-1"
                     @click="handleToggleFavorite(item)"
                   >
                     <template #icon>
-                      <StarFilled v-if="item.favorite" class="text-yellow-500" />
-                      <StarOutlined v-else class="text-slate-400 hover:text-yellow-500" />
+                      <StarFilled class="text-yellow-500" />
+                    </template>
+                  </Button>
+                </Tooltip>
+                <Tooltip v-else title="设为收藏">
+                  <Button
+                    type="text"
+                    size="small"
+                    class="shrink-0 !px-1 opacity-0 transition-opacity group-hover:opacity-100 sm:opacity-0"
+                    @click="handleToggleFavorite(item)"
+                  >
+                    <template #icon>
+                      <StarOutlined class="text-slate-400 hover:text-yellow-500" />
                     </template>
                   </Button>
                 </Tooltip>
               </div>
+              <a
+                v-if="item.website"
+                :href="item.website.startsWith('http') ? item.website : `https://${item.website}`"
+                target="_blank"
+                class="mt-1 truncate text-xs text-slate-400 transition-colors hover:text-blue-500"
+                :title="item.website"
+              >
+                {{ item.website }}
+              </a>
             </div>
 
             <!-- Credentials part -->
-            <div class="flex flex-col gap-2 pt-2">
+            <div class="flex flex-col gap-1.5 pt-1">
               <!-- Username -->
               <div v-if="item.username" class="flex items-center justify-between gap-2">
-                <span class="shrink-0 text-sm text-slate-400">账号</span>
+                <span class="shrink-0 text-xs text-slate-400">账号</span>
                 <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
                   <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300" :title="item.decryptedUsername || '******'">
                     {{ item.decryptedUsername || '******' }}
@@ -478,7 +523,7 @@ onUnmounted(() => {
               
               <!-- Password -->
               <div class="flex items-center justify-between gap-2">
-                <span class="shrink-0 text-sm text-slate-400">密码</span>
+                <span class="shrink-0 text-xs text-slate-400">密码</span>
                 <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
                   <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300">
                     {{ item.showPassword ? item.decryptedPassword || '******' : '••••••••' }}
@@ -510,15 +555,15 @@ onUnmounted(() => {
             <!-- Remark -->
             <p
               v-if="item.decryptedRemark && item.showPassword"
-              class="mt-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400"
+              class="mt-2 line-clamp-1 text-xs text-slate-500 dark:text-slate-400"
               :title="item.decryptedRemark"
             >
               {{ item.decryptedRemark }}
             </p>
 
             <!-- Bottom Actions & Time -->
-            <div class="mt-4 flex items-center justify-between">
-              <span class="text-xs text-slate-400">{{ formatTime(item.updateTime) }}</span>
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-[11px] text-slate-400">{{ formatTime(item.updateTime) }}</span>
               <div class="flex items-center gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
                 <Tooltip title="编辑">
                   <Button type="text" size="small" class="!text-slate-400 hover:!text-blue-500" @click="handleEdit(item.id)">

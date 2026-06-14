@@ -242,24 +242,28 @@ defineExpose({ openModal });
     v-model:open="visible"
     :title="isEdit ? '编辑密码' : '添加密码'"
     :confirm-loading="loading"
-    width="600px"
+    width="500px"
+    centered
     destroy-on-close
     @ok="handleSubmit"
   >
     <Spin :spinning="loading">
-      <Form layout="vertical" class="mt-4">
-        <FormItem label="标题" required>
-          <Input v-model:value="formState.title" placeholder="如：GitHub" />
-        </FormItem>
+      <Form layout="vertical" class="mt-4 flex flex-col gap-3">
+        <div class="flex gap-4">
+          <FormItem label="标题" required class="mb-0 flex-1">
+            <Input v-model:value="formState.title" placeholder="如：GitHub" />
+          </FormItem>
+          
+          <FormItem label="分类" class="mb-0 w-32 shrink-0">
+            <AutoComplete
+              v-model:value="formState.category"
+              :options="categories.map((c) => ({ value: c }))"
+              placeholder="分类"
+            />
+          </FormItem>
+        </div>
 
-        <FormItem label="网站/应用">
-          <Input
-            v-model:value="formState.website"
-            placeholder="如：https://github.com"
-          />
-        </FormItem>
-
-        <FormItem label="账号">
+        <FormItem label="账号" class="mb-0">
           <Input
             v-model:value="formState.username"
             placeholder="请输入账号"
@@ -267,7 +271,7 @@ defineExpose({ openModal });
           />
         </FormItem>
 
-        <FormItem label="密码" required>
+        <FormItem label="密码" required class="mb-0">
           <div class="flex gap-2">
             <Input.Password
               v-model:value="formState.password"
@@ -281,23 +285,22 @@ defineExpose({ openModal });
           </div>
         </FormItem>
 
-        <FormItem label="分类">
-          <AutoComplete
-            v-model:value="formState.category"
-            :options="categories.map((c) => ({ value: c }))"
-            placeholder="请选择或输入分类"
+        <FormItem label="网站/应用" class="mb-0">
+          <Input
+            v-model:value="formState.website"
+            placeholder="如：https://github.com"
           />
         </FormItem>
 
-        <FormItem label="备注">
+        <FormItem label="备注" class="mb-0">
           <Input.TextArea
             v-model:value="formState.remark"
             placeholder="可选备注信息"
-            :rows="3"
+            :rows="2"
           />
         </FormItem>
 
-        <FormItem label="收藏">
+        <FormItem label="收藏" class="mb-0">
           <Switch v-model:checked="formState.favorite" />
         </FormItem>
       </Form>
@@ -310,6 +313,7 @@ defineExpose({ openModal });
     title="密码生成器"
     :footer="null"
     width="400px"
+    centered
   >
     <div class="space-y-4">
       <FormItem label="密码长度">
@@ -371,7 +375,10 @@ defineExpose({ openModal });
 </template>
 
 <style scoped>
-:deep(.ant-form-item) {
-  margin-bottom: 12px;
+:deep(.ant-form-item-label) {
+  padding-bottom: 2px;
+}
+:deep(.ant-form-item-label > label) {
+  height: 22px;
 }
 </style>
