@@ -64,3 +64,40 @@ export async function deleteBatch(data: any) {
 export async function get(data: any) {
   return await requestClient.get(`/exerciseRecord/get/${data.id}`);
 }
+
+/**
+ * 首页运动汇总（按天 × 运动类型聚合），游标分页
+ */
+export interface ExerciseDashboardItemVO {
+  exerciseTypeId?: string;
+  typeLabel?: string;
+  icon?: string;
+  color?: string;
+  count?: number;
+  prevDate?: string;
+  prevCount?: number;
+  deltaCount?: number;
+  deltaPercent?: number;
+}
+
+export interface ExerciseDashboardDayVO {
+  date?: string;
+  totalCount?: number;
+  items?: ExerciseDashboardItemVO[];
+}
+
+export interface ExerciseDashboardSummaryVO {
+  lastDate?: string;
+  hasMore?: boolean;
+  days?: ExerciseDashboardDayVO[];
+}
+
+export async function getDashboardSummaryApi(params?: {
+  lastDate?: string;
+  limit?: number;
+}) {
+  return await requestClient.get<ExerciseDashboardSummaryVO>(
+    '/exerciseRecord/dashboardSummary',
+    { params },
+  );
+}

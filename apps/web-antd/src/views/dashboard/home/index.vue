@@ -29,6 +29,7 @@ import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
 import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
+import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
@@ -56,6 +57,7 @@ const pinnedThoughts = ref<any[]>([]);
 const thoughtsLoading = ref(true);
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
+const exerciseSummaryCardRef = ref();
 const timeTrackerCardRef = ref();
 const timeTrackerHasData = ref(false);
 const githubBound = ref(false);
@@ -387,6 +389,7 @@ function handleExerciseSuccess() {
       refreshCard(item);
     }
   });
+  exerciseSummaryCardRef.value?.reload?.();
 }
 
 const router = useRouter();
@@ -710,6 +713,35 @@ function navTo(nav: { url?: string }) {
           </div>
         </div>
         <GithubRecentCommits />
+      </div>
+
+      <!-- 运动汇总：按天 × 运动类型向下滚动加载 -->
+      <div
+        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] lg:max-h-[260px]"
+      >
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
+          <div class="flex items-center gap-2">
+            <span class="inline-flex text-foreground">
+              <svg
+                class="size-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+                <path d="M4 22h16" />
+                <path d="M5 17l4-6 3 4 4-7 4 6" />
+              </svg>
+            </span>
+            <span class="select-none text-base font-semibold">运动汇总</span>
+          </div>
+        </div>
+        <ExerciseSummaryCard ref="exerciseSummaryCardRef" />
       </div>
     </div>
     <TimeTrackerModal
