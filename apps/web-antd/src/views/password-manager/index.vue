@@ -438,7 +438,7 @@ onUnmounted(() => {
               <div class="flex shrink-0 items-center gap-1">
                 <span
                   v-if="item.category"
-                  class="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-700/50 dark:text-slate-300"
+                  class="text-xs font-medium text-slate-500 dark:text-slate-400"
                 >
                   {{ item.category }}
                 </span>
@@ -459,17 +459,17 @@ onUnmounted(() => {
             </div>
 
             <!-- Credentials part -->
-            <div class="flex flex-col gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50">
+            <div class="flex flex-col gap-2 pt-2">
               <!-- Username -->
               <div v-if="item.username" class="flex items-center justify-between gap-2">
-                <span class="shrink-0 text-sm text-slate-500">账号</span>
-                <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+                <span class="shrink-0 text-sm text-slate-400">账号</span>
+                <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
                   <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300" :title="item.decryptedUsername || '******'">
                     {{ item.decryptedUsername || '******' }}
                   </span>
                   <Tooltip title="复制账号">
                     <CopyOutlined
-                      class="shrink-0 cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                      class="shrink-0 cursor-pointer text-slate-300 opacity-0 transition-all hover:text-blue-500 group-hover/copy:opacity-100 dark:text-slate-500"
                       @click="handleCopy(item, 'username')"
                     />
                   </Tooltip>
@@ -478,27 +478,27 @@ onUnmounted(() => {
               
               <!-- Password -->
               <div class="flex items-center justify-between gap-2">
-                <span class="shrink-0 text-sm text-slate-500">密码</span>
-                <div class="flex min-w-0 flex-1 items-center justify-end gap-2">
+                <span class="shrink-0 text-sm text-slate-400">密码</span>
+                <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
                   <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300">
                     {{ item.showPassword ? item.decryptedPassword || '******' : '••••••••' }}
                   </span>
-                  <div class="flex shrink-0 items-center gap-2">
+                  <div class="flex shrink-0 items-center gap-2 opacity-0 transition-all group-hover/copy:opacity-100">
                     <Tooltip :title="item.showPassword ? '隐藏密码' : '显示密码'">
                       <EyeOutlined
                         v-if="!item.showPassword"
-                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
                         @click="handleTogglePassword(item)"
                       />
                       <EyeInvisibleOutlined
                         v-else
-                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
                         @click="handleTogglePassword(item)"
                       />
                     </Tooltip>
                     <Tooltip title="复制密码">
                       <CopyOutlined
-                        class="cursor-pointer text-slate-400 transition-colors hover:text-blue-500"
+                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
                         @click="handleCopy(item, 'password')"
                       />
                     </Tooltip>
@@ -517,7 +517,7 @@ onUnmounted(() => {
             </p>
 
             <!-- Bottom Actions & Time -->
-            <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700/50">
+            <div class="mt-4 flex items-center justify-between">
               <span class="text-xs text-slate-400">{{ formatTime(item.updateTime) }}</span>
               <div class="flex items-center gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
                 <Tooltip title="编辑">
