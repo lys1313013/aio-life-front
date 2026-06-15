@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 
 import { openWindow } from '@vben/utils';
 
+import { Skeleton } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import {
@@ -32,6 +33,7 @@ import AnalysisCard from './components/analysis-card.vue';
 import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
+import RefreshButton from './components/RefreshButton.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 
 interface OverviewItem {
@@ -59,6 +61,7 @@ const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const exerciseSummaryCardRef = ref();
 const timeTrackerCardRef = ref();
+const githubRecentCommitsRef = ref();
 const timeTrackerHasData = ref(false);
 const githubBound = ref(false);
 const githubUsername = ref('');
@@ -410,7 +413,7 @@ function navTo(nav: { url?: string }) {
   <div class="p-2 sm:p-4">
     <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
       <template v-if="loading && overviewItems.length === 0">
-        <AnalysisCard v-for="i in 5" :key="i" loading />
+        <AnalysisCard v-for="i in 5" :key="i" loading class="min-w-0" />
       </template>
       <template v-else>
         <AnalysisCard
@@ -426,7 +429,7 @@ function navTo(nav: { url?: string }) {
           :total-value="item.totalValue"
           :value="item.value"
           :value-color="item.valueColor"
-          class="cursor-pointer"
+          class="min-w-0 cursor-pointer"
           @click="handleCardClick(item)"
           @mousedown="startLongPress(item)"
           @touchstart="startLongPress(item)"
@@ -444,45 +447,57 @@ function navTo(nav: { url?: string }) {
       <!-- 今日时迹统计：无今日数据时不展示 -->
       <div
         v-if="timeTrackerHasData"
-        class="flex max-h-[280px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[300px] lg:max-h-[220px]"
+        class="flex max-h-[220px] min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
         >
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-base font-semibold"
-              @click="refreshTimeTracker"
+              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
+              title="进入时迹"
+              @click="navTo({ url: '/time/time-tracker' })"
               >今日时迹</span
             >
           </div>
+          <RefreshButton @click="refreshTimeTracker" />
         </div>
         <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
           <AnalyticsTimeTracker ref="timeTrackerCardRef" />
         </div>
       </div>
 
-      <QuickNavSection />
+      <!-- 快捷导航 -->
+      <QuickNavSection class="lg:max-h-[260px] lg:min-h-[260px]" />
 
       <div
-        class="flex max-h-[240px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[300px]"
+        class="flex max-h-[220px] min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
         >
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-base font-semibold"
-              @click="loadWatchedTasks"
+              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
+              title="进入待办"
+              @click="navTo({ url: '/task/todo' })"
               >待办</span
             >
           </div>
+          <RefreshButton @click="loadWatchedTasks" />
         </div>
 
-        <div v-if="watchedLoading" class="py-6 text-center">
-          <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
-          ></div>
+        <div
+          v-if="watchedLoading"
+          class="flex-1 space-y-2 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+        >
+          <Skeleton
+            v-for="i in 4"
+            :key="i"
+            :paragraph="{ rows: 1 }"
+            active
+            class="!w-full"
+          />
         </div>
 
         <div
@@ -592,24 +607,33 @@ function navTo(nav: { url?: string }) {
 
       <!-- 固定闪念 -->
       <div
-        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[260px]"
+        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
         >
           <div class="flex items-center gap-2">
             <span
-              class="cursor-pointer select-none text-base font-semibold"
-              @click="loadPinnedThoughts"
+              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
+              title="进入闪念"
+              @click="navTo({ url: '/my-hub/think' })"
               >闪念</span
             >
           </div>
+          <RefreshButton @click="loadPinnedThoughts" />
         </div>
 
-        <div v-if="thoughtsLoading" class="py-6 text-center">
-          <div
-            class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary"
-          ></div>
+        <div
+          v-if="thoughtsLoading"
+          class="flex-1 space-y-2 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+        >
+          <Skeleton
+            v-for="i in 4"
+            :key="i"
+            :paragraph="{ rows: 1 }"
+            active
+            class="!w-full"
+          />
         </div>
 
         <div
@@ -679,10 +703,46 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
+      <!-- 运动：按天 × 运动类型向下滚动加载 -->
+      <div
+        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
+      >
+        <div
+          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+        >
+          <div class="flex items-center gap-2">
+            <span class="inline-flex text-foreground">
+              <svg
+                class="size-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+                <path d="M4 22h16" />
+                <path d="M5 17l4-6 3 4 4-7 4 6" />
+              </svg>
+            </span>
+            <span
+              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
+              title="进入运动记录"
+              @click="navTo({ url: '/my-hub/exercise' })"
+            >
+              运动
+            </span>
+          </div>
+          <RefreshButton @click="exerciseSummaryCardRef?.reload?.()" />
+        </div>
+        <ExerciseSummaryCard ref="exerciseSummaryCardRef" />
+      </div>
+
       <!-- GitHub 最近提交：未绑定时不渲染 -->
       <div
         v-if="githubBound"
-        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] lg:max-h-[260px]"
+        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -709,39 +769,23 @@ function navTo(nav: { url?: string }) {
                 />
               </svg>
             </span>
-            <span class="select-none text-base font-semibold">最近提交</span>
+            <a
+              v-if="githubUsername"
+              :href="`https://github.com/${githubUsername}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
+              :title="`访问 ${githubUsername} 的 GitHub 主页`"
+            >
+              最近提交
+            </a>
+            <span v-else class="select-none text-base font-semibold"
+              >最近提交</span
+            >
           </div>
+          <RefreshButton @click="githubRecentCommitsRef?.load?.()" />
         </div>
-        <GithubRecentCommits />
-      </div>
-
-      <!-- 运动汇总：按天 × 运动类型向下滚动加载 -->
-      <div
-        class="flex max-h-[260px] flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] lg:max-h-[260px]"
-      >
-        <div
-          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
-        >
-          <div class="flex items-center gap-2">
-            <span class="inline-flex text-foreground">
-              <svg
-                class="size-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
-                <path d="M4 22h16" />
-                <path d="M5 17l4-6 3 4 4-7 4 6" />
-              </svg>
-            </span>
-            <span class="select-none text-base font-semibold">运动汇总</span>
-          </div>
-        </div>
-        <ExerciseSummaryCard ref="exerciseSummaryCardRef" />
+        <GithubRecentCommits ref="githubRecentCommitsRef" />
       </div>
     </div>
     <TimeTrackerModal

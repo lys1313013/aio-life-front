@@ -168,7 +168,7 @@ function dragChange() {
 
 <template>
   <div
-    class="quick-nav-shell flex h-full select-none flex-col rounded-xl bg-card text-card-foreground"
+    class="quick-nav-shell flex min-h-[220px] min-w-0 select-none flex-col rounded-xl bg-card text-card-foreground sm:min-h-[240px]"
   >
     <div
       class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"

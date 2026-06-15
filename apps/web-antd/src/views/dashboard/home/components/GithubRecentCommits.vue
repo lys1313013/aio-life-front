@@ -108,14 +108,14 @@ defineExpose({ load });
             :href="item.commitUrl"
             target="_blank"
             rel="noopener noreferrer"
-            class="line-clamp-2 break-all text-xs text-muted-foreground transition-colors hover:text-primary"
+            class="truncate text-xs text-muted-foreground transition-colors hover:text-primary"
             :title="item.message"
           >
             {{ item.message }}
           </a>
           <span
             v-else
-            class="line-clamp-2 break-all text-xs text-muted-foreground"
+            class="truncate text-xs text-muted-foreground"
             :title="item.message"
           >
             {{ item.message }}

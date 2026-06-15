@@ -75,7 +75,7 @@ function handleTitleClick(e: MouseEvent) {
   >
     <!-- 顶部 2px 静默刷新进度条：transform scaleX 动画，不触发 reflow -->
     <div v-if="isUpdating" class="analysis-card-progress" aria-hidden="true">
-      <div class="analysis-card-progress-bar" />
+      <div class="analysis-card-progress-bar"></div>
     </div>
 
     <div class="p-2.5 sm:p-3">
@@ -131,6 +131,7 @@ function handleTitleClick(e: MouseEvent) {
 .analysis-card {
   position: relative;
   overflow: hidden;
+
   /* 高度兜底：保证首屏/无 totalTitle 的卡片与正常态等高
      mobile ~ 12+18+6+18+6+15+12 = 87px  → 88px
      sm+   ~ 12+21+8+27+8+18+12 = 106px → 108px */
@@ -180,6 +181,7 @@ function handleTitleClick(e: MouseEvent) {
   0% {
     transform: translateX(-100%) scaleX(1);
   }
+
   100% {
     transform: translateX(380%) scaleX(1);
   }
@@ -194,9 +196,11 @@ function handleTitleClick(e: MouseEvent) {
   .analysis-card-progress-bar {
     animation-duration: 2s;
   }
+
   .analysis-card.is-updating {
     transition: none;
   }
+
   .analysis-card-value {
     transition: none;
   }
