@@ -95,13 +95,13 @@ const filteredPasswords = computed(() => {
 
 const getCategoryColorClass = (category?: string) => {
   if (!category) return 'text-slate-500 dark:text-slate-400';
-  
+
   // Create a simple hash to assign consistent colors to categories
   let hash = 0;
   for (let i = 0; i < category.length; i++) {
     hash = category.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const colors = [
     'text-blue-500 dark:text-blue-400',
     'text-emerald-500 dark:text-emerald-400',
@@ -117,7 +117,7 @@ const getCategoryColorClass = (category?: string) => {
     'text-sky-500 dark:text-sky-400',
     'text-teal-500 dark:text-teal-400',
   ];
-  
+
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 };
@@ -422,14 +422,18 @@ onUnmounted(() => {
       <div class="flex items-center gap-2 sm:ml-auto">
         <Tooltip :title="store.isUnlocked ? '锁定密码库' : '解锁密码库'">
           <Button
-            @click="store.isUnlocked ? handleManualLock() : requireUnlock(() => {})"
+            @click="
+              store.isUnlocked ? handleManualLock() : requireUnlock(() => {})
+            "
             :danger="store.isUnlocked"
           >
             <template #icon>
               <UnlockOutlined v-if="store.isUnlocked" />
               <LockOutlined v-else class="text-slate-400" />
             </template>
-            <span class="hidden sm:inline">{{ store.isUnlocked ? '锁定' : '解锁' }}</span>
+            <span class="hidden sm:inline">{{
+              store.isUnlocked ? '锁定' : '解锁'
+            }}</span>
           </Button>
         </Tooltip>
       </div>
@@ -451,7 +455,10 @@ onUnmounted(() => {
             <div class="mb-3 flex flex-col">
               <div class="flex items-center justify-between gap-3">
                 <div class="flex min-w-0 flex-1 items-center gap-2">
-                  <h3 class="truncate text-base font-semibold text-slate-800 dark:text-slate-100" :title="item.title">
+                  <h3
+                    class="truncate text-base font-semibold text-slate-800 dark:text-slate-100"
+                    :title="item.title"
+                  >
                     {{ item.title }}
                   </h3>
                   <span
@@ -482,14 +489,20 @@ onUnmounted(() => {
                     @click="handleToggleFavorite(item)"
                   >
                     <template #icon>
-                      <StarOutlined class="text-slate-400 hover:text-yellow-500" />
+                      <StarOutlined
+                        class="text-slate-400 hover:text-yellow-500"
+                      />
                     </template>
                   </Button>
                 </Tooltip>
               </div>
               <a
                 v-if="item.website"
-                :href="item.website.startsWith('http') ? item.website : `https://${item.website}`"
+                :href="
+                  item.website.startsWith('http')
+                    ? item.website
+                    : `https://${item.website}`
+                "
                 target="_blank"
                 class="mt-1 truncate text-xs text-slate-400 transition-colors hover:text-blue-500"
                 :title="item.website"
@@ -501,10 +514,18 @@ onUnmounted(() => {
             <!-- Credentials part -->
             <div class="flex flex-col gap-1.5 pt-1">
               <!-- Username -->
-              <div v-if="item.username" class="flex items-center justify-between gap-2">
+              <div
+                v-if="item.username"
+                class="flex items-center justify-between gap-2"
+              >
                 <span class="shrink-0 text-xs text-slate-400">账号</span>
-                <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
-                  <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300" :title="item.decryptedUsername || '******'">
+                <div
+                  class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2"
+                >
+                  <span
+                    class="truncate font-mono text-sm text-slate-700 dark:text-slate-300"
+                    :title="item.decryptedUsername || '******'"
+                  >
                     {{ item.decryptedUsername || '******' }}
                   </span>
                   <Tooltip title="复制账号">
@@ -515,16 +536,28 @@ onUnmounted(() => {
                   </Tooltip>
                 </div>
               </div>
-              
+
               <!-- Password -->
               <div class="flex items-center justify-between gap-2">
                 <span class="shrink-0 text-xs text-slate-400">密码</span>
-                <div class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2">
-                  <span class="truncate font-mono text-sm text-slate-700 dark:text-slate-300">
-                    {{ item.showPassword ? item.decryptedPassword || '******' : '••••••••' }}
+                <div
+                  class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2"
+                >
+                  <span
+                    class="truncate font-mono text-sm text-slate-700 dark:text-slate-300"
+                  >
+                    {{
+                      item.showPassword
+                        ? item.decryptedPassword || '******'
+                        : '••••••••'
+                    }}
                   </span>
-                  <div class="flex shrink-0 items-center gap-2 opacity-0 transition-all group-hover/copy:opacity-100">
-                    <Tooltip :title="item.showPassword ? '隐藏密码' : '显示密码'">
+                  <div
+                    class="flex shrink-0 items-center gap-2 opacity-0 transition-all group-hover/copy:opacity-100"
+                  >
+                    <Tooltip
+                      :title="item.showPassword ? '隐藏密码' : '显示密码'"
+                    >
                       <EyeOutlined
                         v-if="!item.showPassword"
                         class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
@@ -558,10 +591,19 @@ onUnmounted(() => {
 
             <!-- Bottom Actions & Time -->
             <div class="mt-3 flex items-center justify-between">
-              <span class="text-[11px] text-slate-400">{{ formatTime(item.updateTime) }}</span>
-              <div class="flex items-center gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 group-hover:opacity-100">
+              <span class="text-[11px] text-slate-400">{{
+                formatTime(item.updateTime)
+              }}</span>
+              <div
+                class="flex items-center gap-1 opacity-100 transition-opacity duration-200 group-hover:opacity-100 sm:opacity-0"
+              >
                 <Tooltip title="编辑">
-                  <Button type="text" size="small" class="!text-slate-400 hover:!text-blue-500" @click="handleEdit(item.id)">
+                  <Button
+                    type="text"
+                    size="small"
+                    class="!text-slate-400 hover:!text-blue-500"
+                    @click="handleEdit(item.id)"
+                  >
                     <template #icon><EditOutlined /></template>
                   </Button>
                 </Tooltip>
@@ -573,7 +615,11 @@ onUnmounted(() => {
                   @confirm="handleDelete(item.id)"
                 >
                   <Tooltip title="删除">
-                    <Button type="text" size="small" class="!text-slate-400 hover:!text-red-500">
+                    <Button
+                      type="text"
+                      size="small"
+                      class="!text-slate-400 hover:!text-red-500"
+                    >
                       <template #icon><DeleteOutlined /></template>
                     </Button>
                   </Tooltip>
@@ -582,11 +628,20 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        
+
         <!-- Empty States -->
-        <div v-else-if="!loading" class="flex h-[400px] flex-col items-center justify-center">
+        <div
+          v-else-if="!loading"
+          class="flex h-[400px] flex-col items-center justify-center"
+        >
           <Empty
-            :description="isFirstTime ? '首次使用，请先设置主密码并添加密码' : (searchText || selectedCategory ? '未找到匹配的密码' : '暂无密码')"
+            :description="
+              isFirstTime
+                ? '首次使用，请先设置主密码并添加密码'
+                : searchText || selectedCategory
+                  ? '未找到匹配的密码'
+                  : '暂无密码'
+            "
           >
             <Button type="primary" @click="handleAdd" class="mt-2">
               <PlusOutlined /> 添加密码

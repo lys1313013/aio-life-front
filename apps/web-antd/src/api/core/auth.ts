@@ -93,14 +93,10 @@ export async function refreshTokenApi() {
  */
 export async function logoutApi() {
   const token = useAccessStore().accessToken;
-  return baseRequestClient.post(
-    '/auth/logout',
-    null,
-    {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      withCredentials: true,
-    },
-  );
+  return baseRequestClient.post('/auth/logout', null, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    withCredentials: true,
+  });
 }
 
 /**

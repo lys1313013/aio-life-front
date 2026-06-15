@@ -253,7 +253,7 @@ defineExpose({ openModal });
           <FormItem label="标题" required class="mb-0 flex-1">
             <Input v-model:value="formState.title" placeholder="如：GitHub" />
           </FormItem>
-          
+
           <FormItem label="分类" class="mb-0 w-32 shrink-0">
             <AutoComplete
               v-model:value="formState.category"
@@ -378,6 +378,7 @@ defineExpose({ openModal });
 :deep(.ant-form-item-label) {
   padding-bottom: 2px;
 }
+
 :deep(.ant-form-item-label > label) {
   height: 22px;
 }

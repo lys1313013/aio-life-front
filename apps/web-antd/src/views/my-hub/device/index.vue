@@ -453,71 +453,6 @@ export default {
 </template>
 
 <style scoped>
-@media screen and (max-width: 768px) {
-  /* 覆盖 Ant Design Card 样式 */
-  :deep(.ant-card-body) {
-    padding: 12px !important;
-  }
-
-  :deep(.ant-card-head) {
-    min-height: 46px;
-    padding: 0 12px !important;
-  }
-
-  :deep(.ant-tabs-tab) {
-    padding: 8px 0 !important;
-    margin: 0 12px 0 0 !important;
-  }
-
-  .electronics-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .electronics-container {
-    padding: 0;
-  }
-
-  .total-static {
-    margin-bottom: 12px;
-  }
-
-  .card-content {
-    padding: 8px;
-  }
-
-  .card-content h3 {
-    margin-bottom: 5px;
-    font-size: 14px;
-  }
-
-  .price,
-  .purchase-date,
-  .usage-days,
-  .avg-cost {
-    margin: 2px 0;
-    font-size: 12px;
-  }
-
-  /* 隐藏部分不重要的信息以节省空间，或者调整显示 */
-  .purchase-date {
-    display: none;
-  }
-
-  .status-badge {
-    top: 5px;
-    right: 5px;
-    padding: 1px 6px;
-    font-size: 10px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .delete-btn {
-    display: none;
-  }
-}
-
 .header {
   display: flex;
   align-items: center;
@@ -699,5 +634,68 @@ export default {
 
 .device-form :deep(.ant-form-item) {
   margin-bottom: 12px;
+}
+
+@media screen and (max-width: 768px) {
+  /* 覆盖 Ant Design Card 样式 */
+  :deep(.ant-card-body) {
+    padding: 12px !important;
+  }
+
+  :deep(.ant-card-head) {
+    min-height: 46px;
+    padding: 0 12px !important;
+  }
+
+  :deep(.ant-tabs-tab) {
+    padding: 8px 0 !important;
+    margin: 0 12px 0 0 !important;
+  }
+
+  .electronics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .electronics-container {
+    padding: 0;
+  }
+
+  .total-static {
+    margin-bottom: 12px;
+  }
+
+  .card-content {
+    padding: 8px;
+  }
+
+  .card-content h3 {
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .price,
+  .purchase-date,
+  .usage-days,
+  .avg-cost {
+    margin: 2px 0;
+    font-size: 12px;
+  }
+
+  /* 隐藏部分不重要的信息以节省空间，或者调整显示 */
+  .purchase-date {
+    display: none;
+  }
+
+  .status-badge {
+    top: 5px;
+    right: 5px;
+    padding: 1px 6px;
+    font-size: 10px;
+  }
+
+  .delete-btn {
+    display: none;
+  }
 }
 </style>

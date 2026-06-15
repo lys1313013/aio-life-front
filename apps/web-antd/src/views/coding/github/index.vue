@@ -12,7 +12,15 @@ import {
   StarOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons-vue';
-import { Card, List, message, Skeleton, Spin, Table, Tag } from 'ant-design-vue';
+import {
+  Card,
+  List,
+  message,
+  Skeleton,
+  Spin,
+  Table,
+  Tag,
+} from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import {

@@ -43,7 +43,7 @@ const categories = ref<any[]>([]);
 const activeTab = ref('');
 const tabList = ref<any[]>([]);
 // 状态过滤: '' 全部 / '0' 已启用 / '1' 已禁用（与后端 char(1) 状态字段一致）
-const statusFilter = ref<'' | '0' | '1'>('');
+const statusFilter = ref<'0' | '1' | ''>('');
 
 // 表格列配置
 const columns = [
