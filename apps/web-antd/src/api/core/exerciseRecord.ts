@@ -66,7 +66,7 @@ export async function get(data: any) {
 }
 
 /**
- * 首页运动汇总（按天 × 运动类型聚合），游标分页
+ * 首页运动（按天 × 运动类型聚合），游标分页
  */
 export interface ExerciseDashboardItemVO {
   exerciseTypeId?: string;

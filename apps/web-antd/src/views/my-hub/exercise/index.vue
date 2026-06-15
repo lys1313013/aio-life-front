@@ -10,7 +10,8 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, Popconfirm, Select, Tag } from 'ant-design-vue';
+import { Button, Card, Modal, Popconfirm, Select, Tag, RangePicker } from 'ant-design-vue';
+import type { Dayjs } from 'dayjs';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
@@ -38,6 +39,8 @@ const { isMobile } = usePreferences();
 
 // 运动类型筛选
 const selectedExerciseType = ref<string | undefined>(undefined);
+// 每日统计时间区间筛选
+const globalDateRange = ref<[Dayjs, Dayjs] | undefined>(undefined);
 
 const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
   [],
@@ -156,7 +159,7 @@ const exerciseTypeStats = computed(() => {
       const uniqueKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
       if (!uniqueDailyExercises.has(uniqueKey)) {
         uniqueDailyExercises.add(uniqueKey);
-        
+
         const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
         typeData[typeLabel] = (typeData[typeLabel] || 0) + 1;
       }
@@ -190,6 +193,15 @@ const dailyStats = computed(() => {
   // 使用Map来统计每天的运动数量
   const dailyData = new Map<string, number>();
 
+  // 时间区间过滤
+  let startDate = '';
+  let endDate = '';
+  if (globalDateRange.value && globalDateRange.value.length === 2) {
+    // 对于月份选择器，过滤区间应为所选月份的第一天和最后一天
+    startDate = globalDateRange.value[0].startOf('month').format('YYYY-MM-DD');
+    endDate = globalDateRange.value[1].endOf('month').format('YYYY-MM-DD');
+  }
+
   tableData.value.forEach((row) => {
     if (row.exerciseDate) {
       // 如果选择了特定运动类型，只统计该类型
@@ -198,6 +210,13 @@ const dailyStats = computed(() => {
         row.exerciseTypeId !== selectedExerciseType.value
       ) {
         return;
+      }
+
+      // 过滤时间区间
+      if (startDate && endDate) {
+        if (row.exerciseDate < startDate || row.exerciseDate > endDate) {
+          return;
+        }
       }
 
       const dateStr = row.exerciseDate;
@@ -451,10 +470,15 @@ watch(isMobile, () => {
 });
 
 // 监听运动类型筛选变化，更新按天统计图表
-watch(selectedExerciseType, () => {
+watch([selectedExerciseType], () => {
   setTimeout(() => {
     updateDailyChart();
   }, 100);
+});
+
+// 监听全局时间区间变化，更新表格数据（会自动触发图表更新）
+watch(globalDateRange, () => {
+  gridApi?.reload();
 });
 
 // 更新按天统计图表
@@ -471,7 +495,7 @@ const updateDailyChart = () => {
     tooltip: {
       trigger: 'axis',
       axisPointer: {
-        type: 'shadow',
+        type: 'line',
       },
       formatter: (params: any) => {
         const data = params[0];
@@ -483,37 +507,23 @@ const updateDailyChart = () => {
                 </div>`;
       },
     },
-    dataZoom:
-      dailyData.dates.length > 14
-        ? [
-            {
-              type: 'slider',
-              show: true,
-              start: 0,
-              end: 100,
-              height: 20,
-              bottom: 10,
-              borderColor: 'transparent',
-              backgroundColor: '#f5f5f5',
-              fillerColor: 'rgba(78, 205, 196, 0.2)',
-              handleStyle: {
-                color: '#4ecdc4',
-              },
-              textStyle: {
-                color: '#666',
-              },
-            },
-            {
-              type: 'inside',
-              start: 0,
-              end: 100,
-            },
-          ]
-        : undefined,
+    dataZoom: [
+      {
+        type: 'inside',
+        // 电脑端默认显示最近60天，手机端默认显示最近15天
+        startValue: dailyData.dates.length > (isMobile.value ? 15 : 60) 
+          ? dailyData.dates.length - (isMobile.value ? 15 : 60) 
+          : 0,
+        endValue: dailyData.dates.length > 0 ? dailyData.dates.length - 1 : 0,
+        zoomOnMouseWheel: false, // 禁用滚轮缩放，只允许平移
+        moveOnMouseWheel: true,
+        moveOnMouseMove: true,
+      },
+    ],
     grid: {
       left: '3%',
       right: '4%',
-      bottom: dailyData.dates.length > 14 ? 40 : 10,
+      bottom: 10,
       top: 30,
       containLabel: true,
     },
@@ -522,7 +532,7 @@ const updateDailyChart = () => {
       data: dailyData.dates,
       axisLabel: {
         rotate: 45,
-        interval: isMobile.value ? 0 : 'auto',
+        interval: (isMobile.value && dailyData.dates.length <= 15) || (!isMobile.value && dailyData.dates.length <= 60) ? 0 : 'auto',
         formatter: (value: string) => {
           // 只显示月-日
           return value.slice(5);
@@ -543,9 +553,13 @@ const updateDailyChart = () => {
     },
     series: [
       {
-        type: 'bar',
+        type: 'line',
         data: dailyData.counts,
+        smooth: true,
         itemStyle: {
+          color: '#4ecdc4',
+        },
+        areaStyle: {
           color: {
             type: 'linear',
             x: 0,
@@ -553,11 +567,10 @@ const updateDailyChart = () => {
             x2: 0,
             y2: 1,
             colorStops: [
-              { offset: 0, color: '#4ecdc4' },
-              { offset: 1, color: '#26a69a' },
+              { offset: 0, color: 'rgba(78, 205, 196, 0.5)' },
+              { offset: 1, color: 'rgba(78, 205, 196, 0.05)' },
             ],
           },
-          borderRadius: [4, 4, 0, 0],
         },
         label: {
           show: true,
@@ -575,32 +588,13 @@ const updateDailyChart = () => {
 
 // 在组件挂载时加载值集数据
 onMounted(() => {
-  loadExerciseTypes();
-  // 加载统计数据用于统计图表
-  loadStatisticsData();
   // 延迟调整列显隐，确保 Grid 已初始化
   setTimeout(() => {
     updateColumnsVisibility();
   }, 500);
 });
 
-// 加载统计数据用于统计图表（带默认时间限制）
-const loadStatisticsData = async () => {
-  try {
-    // 使用新的 statistics 接口获取统计数据用于统计，默认限制时间为最近一年
-    const result = await getStatistics({});
-    if (result) {
-      tableData.value = result;
-      // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
-      setTimeout(() => {
-        updateCharts();
-        updateDailyChart();
-      }, 100);
-    }
-  } catch (error) {
-    console.error('加载运动统计数据失败:', error);
-  }
-};
+
 
 // 监听筛选条件变化，重新加载统计图表数据
 const reloadStatsData = async (formValues: any) => {
@@ -652,17 +646,6 @@ const formOptions: VbenFormProps = {
       },
       fieldName: 'exerciseTypeId',
       label: '运动类型',
-    },
-    {
-      component: 'RangePicker',
-      componentProps: {
-        placeholder: ['开始日期', '结束日期'],
-        format: 'YYYY-MM-DD',
-        valueFormat: 'YYYY-MM-DD',
-        style: { width: '100%' },
-      },
-      fieldName: 'exerciseDateRange',
-      label: '日期区间',
     },
     {
       component: 'Input',
@@ -941,16 +924,24 @@ const deleteRow = async (row: RowType) => {
 // 处理查询条件，将日期区间转换为开始时间和结束时间
 const processQueryCondition = (formValues: any) => {
   const condition = { ...formValues };
-  // 处理日期区间
+  
+  // 处理全局时间区间
+  if (globalDateRange.value && globalDateRange.value.length === 2) {
+    // 对于月份选择器，startDate是当月第一天，endDate是当月最后一天
+    condition.startDate = globalDateRange.value[0].startOf('month').format('YYYY-MM-DD');
+    condition.endDate = globalDateRange.value[1].endOf('month').format('YYYY-MM-DD');
+  }
+
+  // 兼容旧的表格查询条件，如果有的话（虽然已移除）
   if (
     condition.exerciseDateRange &&
     Array.isArray(condition.exerciseDateRange)
   ) {
     const [startDate, endDate] = condition.exerciseDateRange;
-    if (startDate) {
+    if (startDate && !condition.startDate) {
       condition.startDate = startDate;
     }
-    if (endDate) {
+    if (endDate && !condition.endDate) {
       condition.endDate = endDate;
     }
     // 删除原始的日期区间字段
@@ -970,16 +961,27 @@ const tableReload = () => {
     <div class="charts-section">
       <!-- 总运动次数卡片 -->
       <div class="total-card">
-        <div class="total-content">
-          <div class="total-info">
+        <div class="total-content flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="total-info text-center w-full sm:w-auto flex-1">
             <div class="total-label">总运动次数</div>
             <div class="total-amount">{{ totalExercise }}次</div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            <span class="text-white/90 text-sm sm:text-base">统计时间：</span>
+            <RangePicker
+              v-model:value="globalDateRange"
+              picker="month"
+              format="YYYY-MM"
+              value-format="YYYY-MM"
+              class="w-full sm:w-[240px]"
+              allow-clear
+            />
           </div>
         </div>
       </div>
 
       <!-- 图表容器 -->
-      <div class="chart-container">
+      <div class="chart-container grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <Card class="chart-item">
           <EchartsUI ref="lineChartRef" style="width: 100%; height: 300px" />
         </Card>
@@ -989,13 +991,13 @@ const tableReload = () => {
       </div>
 
       <!-- 按天统计图表 -->
-      <Card class="daily-chart-card" title="每日运动统计">
+      <Card class="daily-chart-card mb-3" title="每日运动统计">
         <template #extra>
           <Select
             v-model:value="selectedExerciseType"
             placeholder="全部运动类型"
             allow-clear
-            style="width: 180px"
+            class="w-full sm:w-[180px]"
             :options="dictOptions"
             :field-names="{ label: 'label', value: 'value' }"
           />
@@ -1273,17 +1275,6 @@ const tableReload = () => {
   box-shadow: 0 4px 20px rgb(78 205 196 / 30%);
 }
 
-.total-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.total-info {
-  flex: 1;
-}
-
 .total-label {
   margin-bottom: 8px;
   font-size: 16px;
@@ -1294,13 +1285,6 @@ const tableReload = () => {
   font-size: 32px;
   font-weight: 700;
   letter-spacing: 0.5px;
-}
-
-.chart-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  height: 350px;
 }
 
 .chart-item {
@@ -1332,8 +1316,11 @@ const tableReload = () => {
 
 .daily-chart-card :deep(.ant-card-head-wrapper) {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .daily-chart-card :deep(.ant-card-extra) {

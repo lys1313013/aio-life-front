@@ -34,7 +34,7 @@ function logError(scope: string, error: any) {
     error?.message ||
     (typeof error === 'string' ? error : 'unknown error');
   console.error(
-    `[运动汇总] ${scope} 失败: status=${status ?? '-'} url=${url ?? '-'} message=${message}`,
+    `[运动] ${scope} 失败: status=${status ?? '-'} url=${url ?? '-'} message=${message}`,
     { data, error },
   );
 }
