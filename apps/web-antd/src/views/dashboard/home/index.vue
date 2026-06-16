@@ -470,8 +470,9 @@ function navTo(nav: { url?: string }) {
       <!-- 快捷导航 -->
       <QuickNavSection class="lg:max-h-[260px] lg:min-h-[260px]" />
 
+      <!-- 待办。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
-        class="flex max-h-[220px] min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
+        class="flex max-h-[220px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -605,9 +606,9 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
-      <!-- 固定闪念 -->
+      <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
-        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all lg:max-h-[300px] lg:min-h-[300px]"
+        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[260px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -703,9 +704,9 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
-      <!-- 运动：按天 × 运动类型向下滚动加载 -->
+      <!-- 运动：按天 × 运动类型向下滚动加载。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
-        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
+        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -739,10 +740,10 @@ function navTo(nav: { url?: string }) {
         <ExerciseSummaryCard ref="exerciseSummaryCardRef" />
       </div>
 
-      <!-- GitHub 最近提交：未绑定时不渲染 -->
+      <!-- GitHub 最近提交：未绑定时不渲染。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="githubBound"
-        class="flex max-h-[260px] min-h-[260px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
+        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"

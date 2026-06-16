@@ -167,8 +167,9 @@ function dragChange() {
 </script>
 
 <template>
+  <!-- 注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
   <div
-    class="quick-nav-shell flex min-h-[220px] min-w-0 select-none flex-col rounded-xl bg-card text-card-foreground sm:min-h-[240px]"
+    class="quick-nav-shell flex min-h-0 min-w-0 select-none flex-col rounded-xl bg-card text-card-foreground sm:min-h-[240px]"
   >
     <div
       class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
