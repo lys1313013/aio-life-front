@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Dayjs } from 'dayjs';
+
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
 import type { VbenFormProps } from '#/adapter/form';
@@ -10,8 +12,15 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Modal, Popconfirm, Select, Tag, RangePicker } from 'ant-design-vue';
-import type { Dayjs } from 'dayjs';
+import {
+  Button,
+  Card,
+  Modal,
+  Popconfirm,
+  RangePicker,
+  Select,
+  Tag,
+} from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
@@ -213,10 +222,12 @@ const dailyStats = computed(() => {
       }
 
       // 过滤时间区间
-      if (startDate && endDate) {
-        if (row.exerciseDate < startDate || row.exerciseDate > endDate) {
-          return;
-        }
+      if (
+        startDate &&
+        endDate &&
+        (row.exerciseDate < startDate || row.exerciseDate > endDate)
+      ) {
+        return;
       }
 
       const dateStr = row.exerciseDate;
@@ -511,9 +522,10 @@ const updateDailyChart = () => {
       {
         type: 'inside',
         // 电脑端默认显示最近60天，手机端默认显示最近15天
-        startValue: dailyData.dates.length > (isMobile.value ? 15 : 60) 
-          ? dailyData.dates.length - (isMobile.value ? 15 : 60) 
-          : 0,
+        startValue:
+          dailyData.dates.length > (isMobile.value ? 15 : 60)
+            ? dailyData.dates.length - (isMobile.value ? 15 : 60)
+            : 0,
         endValue: dailyData.dates.length > 0 ? dailyData.dates.length - 1 : 0,
         zoomOnMouseWheel: false, // 禁用滚轮缩放，只允许平移
         moveOnMouseWheel: true,
@@ -532,7 +544,11 @@ const updateDailyChart = () => {
       data: dailyData.dates,
       axisLabel: {
         rotate: 45,
-        interval: (isMobile.value && dailyData.dates.length <= 15) || (!isMobile.value && dailyData.dates.length <= 60) ? 0 : 'auto',
+        interval:
+          (isMobile.value && dailyData.dates.length <= 15) ||
+          (!isMobile.value && dailyData.dates.length <= 60)
+            ? 0
+            : 'auto',
         formatter: (value: string) => {
           // 只显示月-日
           return value.slice(5);
@@ -593,8 +609,6 @@ onMounted(() => {
     updateColumnsVisibility();
   }, 500);
 });
-
-
 
 // 监听筛选条件变化，重新加载统计图表数据
 const reloadStatsData = async (formValues: any) => {
@@ -924,12 +938,16 @@ const deleteRow = async (row: RowType) => {
 // 处理查询条件，将日期区间转换为开始时间和结束时间
 const processQueryCondition = (formValues: any) => {
   const condition = { ...formValues };
-  
+
   // 处理全局时间区间
   if (globalDateRange.value && globalDateRange.value.length === 2) {
     // 对于月份选择器，startDate是当月第一天，endDate是当月最后一天
-    condition.startDate = globalDateRange.value[0].startOf('month').format('YYYY-MM-DD');
-    condition.endDate = globalDateRange.value[1].endOf('month').format('YYYY-MM-DD');
+    condition.startDate = globalDateRange.value[0]
+      .startOf('month')
+      .format('YYYY-MM-DD');
+    condition.endDate = globalDateRange.value[1]
+      .endOf('month')
+      .format('YYYY-MM-DD');
   }
 
   // 兼容旧的表格查询条件，如果有的话（虽然已移除）
@@ -961,13 +979,17 @@ const tableReload = () => {
     <div class="charts-section">
       <!-- 总运动次数卡片 -->
       <div class="total-card">
-        <div class="total-content flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div class="total-info text-center w-full sm:w-auto flex-1">
+        <div
+          class="total-content flex flex-col items-center justify-between gap-4 sm:flex-row"
+        >
+          <div class="total-info w-full flex-1 text-center sm:w-auto">
             <div class="total-label">总运动次数</div>
             <div class="total-amount">{{ totalExercise }}次</div>
           </div>
-          <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
-            <span class="text-white/90 text-sm sm:text-base">统计时间：</span>
+          <div
+            class="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row"
+          >
+            <span class="text-sm text-white/90 sm:text-base">统计时间：</span>
             <RangePicker
               v-model:value="globalDateRange"
               picker="month"
@@ -981,7 +1003,7 @@ const tableReload = () => {
       </div>
 
       <!-- 图表容器 -->
-      <div class="chart-container grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+      <div class="chart-container mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
         <Card class="chart-item">
           <EchartsUI ref="lineChartRef" style="width: 100%; height: 300px" />
         </Card>
@@ -1316,10 +1338,9 @@ const tableReload = () => {
 
 .daily-chart-card :deep(.ant-card-head-wrapper) {
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
 }
 
