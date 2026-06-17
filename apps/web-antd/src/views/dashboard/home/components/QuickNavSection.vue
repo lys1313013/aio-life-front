@@ -220,7 +220,7 @@ function dragChange() {
         </AEmpty>
         <div
           v-else
-          class="m-2.5 w-full cursor-pointer rounded-xl border-2 border-dashed border-border p-4 text-center transition-colors hover:border-primary"
+          class="m-2.5 w-full cursor-pointer rounded-xl p-4 text-center transition-colors hover:bg-accent"
           role="button"
           tabindex="0"
           @click="openPicker"

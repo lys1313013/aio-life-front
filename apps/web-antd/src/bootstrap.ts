@@ -112,6 +112,16 @@ async function registerServiceWorker() {
     onOfflineReady() {
       // 离线就绪，不需要弹窗提醒
     },
+    onRegistered(r) {
+      // 每小时检查一次更新
+      r &&
+        setInterval(
+          () => {
+            r.update();
+          },
+          60 * 60 * 1000,
+        );
+    },
   });
 }
 

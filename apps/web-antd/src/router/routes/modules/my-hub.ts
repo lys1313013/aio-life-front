@@ -102,6 +102,16 @@ const routes: RouteRecordRaw[] = [
         path: '/my-hub/honor',
         component: () => import('#/views/my-hub/honor/index.vue'),
       },
+      {
+        meta: {
+          title: '阅读记录',
+          icon: 'mdi:book-open-page-variant',
+          backTop: false,
+        },
+        name: 'readRecord',
+        path: '/my-hub/read-record',
+        component: () => import('#/views/my-hub/read-record/index.vue'),
+      },
     ],
   },
 ];

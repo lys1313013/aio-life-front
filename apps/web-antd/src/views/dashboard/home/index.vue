@@ -60,6 +60,14 @@ const thoughtsLoading = ref(true);
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const exerciseSummaryCardRef = ref();
+const exerciseLoading = ref(true);
+const exerciseEmpty = ref(false);
+
+function handleExerciseLoaded(isEmpty: boolean) {
+  exerciseLoading.value = false;
+  exerciseEmpty.value = isEmpty;
+}
+
 const timeTrackerCardRef = ref();
 const githubRecentCommitsRef = ref();
 const timeTrackerHasData = ref(false);
@@ -416,29 +424,30 @@ function navTo(nav: { url?: string }) {
         <AnalysisCard v-for="i in 5" :key="i" loading class="min-w-0" />
       </template>
       <template v-else>
-        <AnalysisCard
-          v-for="item in overviewItems"
-          :key="item.type || item.title"
-          :loading="item.loading"
-          :refreshing="item.refreshing"
-          :icon="item.icon"
-          :icon-click-url="item.iconClickUrl"
-          :title="item.title"
-          :title-click-url="item.titleClickUrl"
-          :total-title="item.totalTitle"
-          :total-value="item.totalValue"
-          :value="item.value"
-          :value-color="item.valueColor"
-          class="min-w-0 cursor-pointer"
-          @click="handleCardClick(item)"
-          @mousedown="startLongPress(item)"
-          @touchstart="startLongPress(item)"
-          @mouseup="endLongPress"
-          @touchend="endLongPress"
-          @mouseleave="cancelLongPress"
-          @touchmove="cancelLongPress"
-          @title-click="handleTitleClick"
-        />
+        <template v-for="item in overviewItems" :key="item.type || item.title">
+          <AnalysisCard
+            v-if="item.loading || (item.value !== undefined && item.value !== null && item.value !== '' && item.value !== 0 && item.value !== '0')"
+            :loading="item.loading"
+            :refreshing="item.refreshing"
+            :icon="item.icon"
+            :icon-click-url="item.iconClickUrl"
+            :title="item.title"
+            :title-click-url="item.titleClickUrl"
+            :total-title="item.totalTitle"
+            :total-value="item.totalValue"
+            :value="item.value"
+            :value-color="item.valueColor"
+            class="min-w-0 cursor-pointer"
+            @click="handleCardClick(item)"
+            @mousedown="startLongPress(item)"
+            @touchstart="startLongPress(item)"
+            @mouseup="endLongPress"
+            @touchend="endLongPress"
+            @mouseleave="cancelLongPress"
+            @touchmove="cancelLongPress"
+            @title-click="handleTitleClick"
+          />
+        </template>
       </template>
     </div>
     <div
@@ -472,6 +481,7 @@ function navTo(nav: { url?: string }) {
 
       <!-- 待办。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
+        v-if="watchedLoading || watchedTasks.length > 0"
         class="flex max-h-[220px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
       >
         <div
@@ -608,6 +618,7 @@ function navTo(nav: { url?: string }) {
 
       <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
+        v-if="thoughtsLoading || pinnedThoughts.length > 0"
         class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[260px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
@@ -706,6 +717,7 @@ function navTo(nav: { url?: string }) {
 
       <!-- 运动：按天 × 运动类型向下滚动加载。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
+        v-if="exerciseLoading || !exerciseEmpty"
         class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
       >
         <div
@@ -737,7 +749,7 @@ function navTo(nav: { url?: string }) {
           </div>
           <RefreshButton @click="exerciseSummaryCardRef?.reload?.()" />
         </div>
-        <ExerciseSummaryCard ref="exerciseSummaryCardRef" />
+        <ExerciseSummaryCard ref="exerciseSummaryCardRef" @loaded="handleExerciseLoaded" />
       </div>
 
       <!-- GitHub 最近提交：未绑定时不渲染。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->

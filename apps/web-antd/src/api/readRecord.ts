@@ -1,0 +1,85 @@
+import { requestClient } from '#/api/request';
+
+/**
+ * 阅读记录接口
+ */
+export namespace ReadRecordApi {
+  export interface ReadRecordQuery {
+    title?: string;
+    type?: number;
+    status?: number;
+    current?: number;
+    size?: number;
+  }
+
+  export interface ReadRecordVO {
+    id: string;
+    title: string;
+    type: number;
+    author: string;
+    url: string;
+    coverImg: string;
+    status: number;
+    totalProgress: number;
+    currentProgress: number;
+    startTime: string;
+    finishTime: string;
+    remark: string;
+    createTime: string;
+    updateTime: string;
+  }
+
+  export interface ReadRecordReq {
+    id?: string;
+    title: string;
+    type: number;
+    author?: string;
+    url?: string;
+    coverImg?: string;
+    status?: number;
+    totalProgress?: number;
+    currentProgress?: number;
+    startTime?: string;
+    finishTime?: string;
+    remark?: string;
+  }
+
+  /**
+   * 分页查询
+   */
+  export function pageList(data: ReadRecordQuery) {
+    return requestClient.post('/read-record/page', data);
+  }
+
+  /**
+   * 新增
+   */
+  export function save(data: ReadRecordReq) {
+    return requestClient.post('/read-record', data);
+  }
+
+  /**
+   * 更新
+   */
+  export function update(data: ReadRecordReq) {
+    return requestClient.put('/read-record', data);
+  }
+
+  /**
+   * 删除
+   */
+  export function remove(id: string) {
+    return requestClient.delete(`/read-record/${id}`);
+  }
+
+  /**
+   * 解析豆瓣链接
+   */
+  export function parseDouban(url: string) {
+    return requestClient.get<ReadRecordReq>('/read-record/parse-douban', { params: { url } });
+  }
+
+  export const uploadCover = (file: File) => {
+    return requestClient.upload<string>('/read-record/upload-cover', { file });
+  };
+}

@@ -57,11 +57,24 @@ const loadData = async () => {
     );
     recentRecords.value = sortedRecords.slice(0, 5).map((record) => {
       const category = categories.find((c) => c.id === record.categoryId);
+      const duration = record.endTime - record.startTime;
+      const d = duration <= 0 ? 1 : duration;
+      const h = Math.floor(d / 60);
+      const m = d % 60;
+      let durationStr = '';
+      if (h > 0 && m > 0) {
+        durationStr = `${h}h${m}m`;
+      } else if (h > 0) {
+        durationStr = `${h}h`;
+      } else {
+        durationStr = `${m}m`;
+      }
+
       return {
         id: record.id || Math.random().toString(),
         categoryName: category?.name || '未知',
         categoryColor: category?.color || '#ccc',
-        timeRangeStr: `${formatTime(record.startTime)}-${formatTime(record.endTime)}`,
+        timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
       };
     });
 

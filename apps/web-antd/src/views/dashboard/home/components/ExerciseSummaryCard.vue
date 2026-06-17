@@ -13,6 +13,10 @@ import dayjs from 'dayjs';
 
 import { getDashboardSummaryApi } from '#/api/core/exerciseRecord';
 
+const emit = defineEmits<{
+  loaded: [isEmpty: boolean];
+}>();
+
 const PAGE_SIZE = 7;
 
 const days = ref<ExerciseDashboardDayVO[]>([]);
@@ -84,6 +88,7 @@ async function init() {
   } finally {
     loading.value = false;
     loaded.value = true;
+    emit('loaded', days.value.length === 0);
     // 内容不足一屏时主动再拉一次，确保向下滚动体验连贯
     requestAnimationFrame(() => maybeLoadMore());
   }

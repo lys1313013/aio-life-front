@@ -43,7 +43,7 @@ export const PRESET_ICONS = [
   { icon: 'mdi:arm-flex' },
   { icon: 'mdi:stretching' },
   { icon: 'mdi:shoe-sneaker' },
-  { icon: 'mdi:tshirt-crew' },
+  { icon: 'mdi:tshirt-crew' }, // cspell:disable-line
   { icon: 'mdi:water' },
   { icon: 'mdi:fire' },
   { icon: 'mdi:heart-pulse' },
