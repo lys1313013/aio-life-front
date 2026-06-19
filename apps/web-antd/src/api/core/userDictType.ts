@@ -1,33 +1,5 @@
 import { requestClient } from '#/api/request';
 
-/**
- * 查询
- */
-export async function query(data: any) {
-  return await requestClient.post('/userDictType/query', data);
-}
-
-/**
- * 新增
- */
-export async function insert(data: any) {
-  return await requestClient.post('/userDictType', data);
-}
-
-/**
- * 更新
- */
-export async function update(data: any) {
-  return await requestClient.put('/userDictType', data);
-}
-
-/**
- * 删除
- */
-export async function deleteData(id: string) {
-  return await requestClient.delete(`/userDictType/${id}`);
-}
-
 export interface UserDictTypeEntity {
   id: string;
   dictName: string;
@@ -71,14 +43,4 @@ export async function getByDictType(
  */
 export async function getDictTypeEnum() {
   return await requestClient.get('/userDictType/dictTypeEnum');
-}
-
-// ================= 管理员 API =================
-
-export async function adminQuery(data: any) {
-  return await requestClient.post('/userDictType/admin/query', data);
-}
-
-export async function adminDelete(id: string) {
-  return await requestClient.delete(`/userDictType/admin/${id}`);
 }
