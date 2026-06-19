@@ -4,7 +4,7 @@ import type { WardrobeItemVO } from '#/api/wardrobe';
 import { computed } from 'vue';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Card, Image, Popconfirm, Tooltip } from 'ant-design-vue';
+import { Card, CardMeta, Image, Popconfirm, Tooltip } from 'ant-design-vue';
 
 const props = defineProps<{
   item: WardrobeItemVO;

@@ -5,6 +5,8 @@ import type {
   WardrobeItemVO,
 } from '#/api/wardrobe';
 
+import { uploadWardrobePhoto } from '#/api/wardrobe';
+
 import { computed, ref, watch } from 'vue';
 
 import { UploadOutlined } from '@ant-design/icons-vue';
@@ -82,6 +84,8 @@ const purchaseDateModel = computed({
   },
 });
 
+const fileList = ref<any[]>([]);
+
 watch(
   () => props.visible,
   (val) => {
@@ -114,6 +118,15 @@ watch(
           memo: '',
         };
       }
+      
+      // 初始化上传列表
+      fileList.value =
+        formData.value.photoUrls?.map((url, i) => ({
+          uid: `uid-${Date.now()}-${i}`,
+          name: `photo-${i}.png`,
+          status: 'done',
+          url,
+        })) || [];
     }
   },
 );
@@ -134,12 +147,27 @@ const handleSubmit = async () => {
   }
 };
 
-const handleUploadChange = (info: { fileList: any[] }) => {
-  // TODO: 实现实际上传逻辑
-  const urls = info.fileList
-    .filter((f) => f.status === 'done')
-    .map((f) => f.response?.url || f.url);
-  formData.value.photoUrls = urls;
+const handleUploadChange = (info: { fileList: any[]; file: any }) => {
+  fileList.value = info.fileList;
+  if (info.file.status === 'done' || info.file.status === 'removed') {
+    const urls = info.fileList
+      .filter((f) => f.status === 'done')
+      .map((f) => f.response?.url || f.url)
+      .filter(Boolean);
+    formData.value.photoUrls = urls;
+  }
+};
+
+const customRequest = async (options: any) => {
+  const { file, onSuccess, onError, onProgress } = options;
+  try {
+    onProgress({ percent: 50 });
+    const url = await uploadWardrobePhoto(file);
+    onProgress({ percent: 100 });
+    onSuccess({ url });
+  } catch (err) {
+    onError(err);
+  }
 };
 
 const seasons = ['春', '夏', '秋', '冬'];
@@ -221,19 +249,10 @@ const seasons = ['春', '夏', '秋', '冬'];
 
       <FormItem label="照片" name="photoUrls">
         <Upload
-          :file-list="
-            formData.photoUrls?.map(
-              (url, i) =>
-                ({
-                  uid: String(i),
-                  name: `photo${i}`,
-                  url,
-                  status: 'done',
-                }) as any,
-            ) || []
-          "
+          v-model:file-list="fileList"
           list-type="picture-card"
           :max-count="5"
+          :custom-request="customRequest"
           @change="handleUploadChange"
         >
           <div>

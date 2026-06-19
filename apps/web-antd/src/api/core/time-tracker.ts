@@ -107,6 +107,8 @@ export async function recommendNext(params: { date: string }): Promise<{
 /**
  * 获取时迹关联业务类型列表
  */
-export async function getRelateTypes(): Promise<Array<{ value: number; label: string }>> {
+export async function getRelateTypes(): Promise<
+  Array<{ label: string; value: number }>
+> {
   return await requestClient.get('/timeRecord/relateTypes');
 }

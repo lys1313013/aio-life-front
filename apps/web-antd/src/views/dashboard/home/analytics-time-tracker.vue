@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
+import type { TimeSlot } from '#/views/time/time-tracker/types';
+
 import { onMounted, ref } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
@@ -10,7 +12,6 @@ import dayjs from 'dayjs';
 import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
-import type { TimeSlot } from '#/views/time/time-tracker/types';
 
 const chartRef = ref<EchartsUIType>();
 const timeTrackerModalRef = ref();
@@ -306,7 +307,7 @@ defineExpose({
         </div>
       </div>
     </div>
-    
+
     <!-- 编辑记录弹窗 -->
     <TimeTrackerModal ref="timeTrackerModalRef" @success="handleModalSuccess" />
   </div>

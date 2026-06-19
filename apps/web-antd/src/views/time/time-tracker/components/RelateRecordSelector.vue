@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { Button, Modal, Card, Tag, Image, Spin, Empty } from 'ant-design-vue';
-import { ReadRecordApi } from '#/api/readRecord';
+
+import { Button, Card, Empty, Image, Modal, Spin, Tag } from 'ant-design-vue';
+
 import { MovieApi } from '#/api/movie';
+import { ReadRecordApi } from '#/api/readRecord';
 
 const props = defineProps<{
   relateId?: string;
@@ -36,7 +38,7 @@ const loadData = async () => {
 
     // 如果已经有关联ID，找到它并回显
     if (props.relateId) {
-      const item = data.find(d => d.id === props.relateId);
+      const item = data.find((d) => d.id === props.relateId);
       if (item) {
         selectedItem.value = item;
       }
@@ -79,35 +81,55 @@ const getStatusColor = (status: number) => {
 };
 
 // 监听 props.relateType 的变化，如果类型变了，清空当前选择
-watch(() => props.relateType, (newVal, oldVal) => {
-  if (newVal !== oldVal) {
-    if (oldVal !== undefined) {
-      handleClear();
+watch(
+  () => props.relateType,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+      if (oldVal !== undefined) {
+        handleClear();
+      }
+      if (newVal && props.relateId) {
+        loadData();
+      }
     }
-    if (newVal && props.relateId) {
-      loadData();
-    }
-  }
-}, { immediate: true });
+  },
+  { immediate: true },
+);
 
-watch(() => props.relateId, (newVal) => {
-  if (newVal && !selectedItem.value && props.relateType) {
-    loadData();
-  } else if (!newVal) {
-    selectedItem.value = null;
-  }
-});
+watch(
+  () => props.relateId,
+  (newVal) => {
+    if (newVal && !selectedItem.value && props.relateType) {
+      loadData();
+    } else if (!newVal) {
+      selectedItem.value = null;
+    }
+  },
+);
 </script>
 
 <template>
   <div class="relate-record-selector">
-    <div v-if="selectedItem" class="selected-card" @click="openModal" style="cursor: pointer;">
+    <div
+      v-if="selectedItem"
+      class="selected-card"
+      @click="openModal"
+      style="cursor: pointer"
+    >
       <div class="card-content">
-        <Image :src="selectedItem.coverImg" :width="60" :height="80" style="object-fit: cover; border-radius: 4px;" :preview="false" />
+        <Image
+          :src="selectedItem.coverImg"
+          :width="60"
+          :height="80"
+          style="object-fit: cover; border-radius: 4px"
+          :preview="false"
+        />
         <div class="info">
           <div class="title">{{ selectedItem.title }}</div>
           <div class="progress">
-            <Tag :color="getStatusColor(selectedItem.status)">{{ getStatusText(selectedItem.status) }}</Tag>
+            <Tag :color="getStatusColor(selectedItem.status)">
+              {{ getStatusText(selectedItem.status) }}
+            </Tag>
           </div>
         </div>
         <div class="actions" @click.stop>
@@ -116,7 +138,7 @@ watch(() => props.relateId, (newVal) => {
       </div>
     </div>
     <div v-else class="empty-select">
-      <Button type="dashed" block @click="openModal" style="height: 60px;">
+      <Button type="dashed" block @click="openModal" style="height: 60px">
         <span class="icon-plus">+</span>
       </Button>
     </div>
@@ -127,7 +149,7 @@ watch(() => props.relateId, (newVal) => {
       :width="isMobile ? '95vw' : 600"
       :footer="null"
       :centered="true"
-      destroyOnClose
+      destroy-on-close
     >
       <Spin :spinning="loading">
         <div v-if="recordList.length > 0" class="record-grid">
@@ -140,7 +162,17 @@ watch(() => props.relateId, (newVal) => {
             @click="handleSelect(item)"
           >
             <div class="card-inner aspect-[3/4]">
-              <Image :src="item.coverImg" style="width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 4px;" :preview="false" />
+              <Image
+                :src="item.coverImg"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  display: block;
+                  border-radius: 4px;
+                "
+                :preview="false"
+              />
             </div>
           </Card>
         </div>
@@ -154,6 +186,7 @@ watch(() => props.relateId, (newVal) => {
 .relate-record-selector {
   width: 100%;
 }
+
 .selected-card {
   border: 1px solid #d9d9d9;
   border-radius: 6px;
@@ -161,19 +194,23 @@ watch(() => props.relateId, (newVal) => {
   background-color: #fafafa;
   transition: all 0.3s;
 }
+
 .selected-card:hover {
   border-color: #1890ff;
   background-color: #f0f7ff;
 }
+
 .card-content {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .info {
   flex: 1;
   min-width: 0;
 }
+
 .title {
   font-weight: 500;
   font-size: 14px;
@@ -182,6 +219,7 @@ watch(() => props.relateId, (newVal) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .progress {
   display: flex;
   align-items: center;
@@ -189,10 +227,12 @@ watch(() => props.relateId, (newVal) => {
   font-size: 12px;
   color: #666;
 }
+
 .actions {
   display: flex;
   flex-direction: column;
 }
+
 .actions .ant-btn {
   padding: 0;
   height: auto;
@@ -225,14 +265,17 @@ watch(() => props.relateId, (newVal) => {
   padding: 0 !important;
   border-radius: 4px;
 }
+
 .record-card :deep(.ant-card-body) {
   padding: 0;
 }
+
 .record-card.is-selected {
   border-color: #d9d9d9;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 2px rgb(0, 0, 0, 0.1);
   transform: scale(0.98);
 }
+
 .card-inner {
   display: block;
   width: 100%;

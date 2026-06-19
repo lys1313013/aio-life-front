@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 
 import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Empty, Radio, Spin, theme } from 'ant-design-vue';
+import { Button, Radio, Spin, theme } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 
@@ -11,11 +11,6 @@ import { listCategories } from '#/api/core/time-tracker-category';
 
 import AnalysisCard from '../../dashboard/home/components/analysis-card.vue';
 import CategoryFilter from '../time-tracker/components/CategoryFilter.vue';
-import DailyCategoryBarChart from '../time-tracker/components/DailyCategoryBarChart.vue';
-import TimeCategoryBarChart from '../time-tracker/components/TimeCategoryBarChart.vue';
-import TimeCategoryPieChart from '../time-tracker/components/TimeCategoryPieChart.vue';
-import TimeCategoryStackedAreaChart from '../time-tracker/components/TimeCategoryStackedAreaChart.vue';
-import TimeTypePieChart from '../time-tracker/components/TimeTypePieChart.vue';
 import { defaultConfig } from '../time-tracker/config';
 import { formatDuration } from '../time-tracker/utils';
 
@@ -31,13 +26,6 @@ const categories = ref(defaultConfig.categories);
 
 const { useToken } = theme;
 const { token } = useToken();
-
-const barChartTitle = computed(() => {
-  if (statMode.value !== 'day' && selectedFilterCategoryIds.value.length > 0) {
-    return '分类分布 (按天)';
-  }
-  return '分类分布';
-});
 
 const dateDisplay = computed(() => {
   if (statMode.value === 'day') {
@@ -208,33 +196,50 @@ onMounted(async () => {
 
 <template>
   <div class="p-4">
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <h2 class="text-xl font-bold">时迹看板</h2>
+    <div
+      class="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+    >
+      <div class="flex flex-wrap items-center gap-3">
+        <h2 class="m-0 whitespace-nowrap text-xl font-bold">时迹看板</h2>
         <Radio.Group
           v-model:value="statMode"
           @change="loadData"
           :disabled="loading"
+          class="flex-shrink-0"
         >
           <Radio.Button value="day">日</Radio.Button>
           <Radio.Button value="week">周</Radio.Button>
           <Radio.Button value="month">月</Radio.Button>
         </Radio.Group>
-        <CategoryFilter
-          :categories="categories"
-          :loading="loading"
-          multiple
-          @filter-change="handleFilterChange"
-        />
+        <div class="flex-shrink-0">
+          <CategoryFilter
+            :categories="categories"
+            :loading="loading"
+            multiple
+            @filter-change="handleFilterChange"
+          />
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <Button @click="goToPreviousPeriod" :disabled="loading">
+      <div
+        class="flex items-center justify-center rounded-md bg-gray-100 p-1 md:justify-end dark:bg-gray-800"
+      >
+        <Button
+          @click="goToPreviousPeriod"
+          :disabled="loading"
+          type="text"
+          size="small"
+        >
           <template #icon><LeftOutlined /></template>
         </Button>
-        <span class="min-w-[120px] text-center font-medium">
+        <span class="px-2 text-center font-medium sm:min-w-[120px]">
           {{ dateDisplay }}
         </span>
-        <Button @click="goToNextPeriod" :disabled="loading">
+        <Button
+          @click="goToNextPeriod"
+          :disabled="loading"
+          type="text"
+          size="small"
+        >
           <template #icon><RightOutlined /></template>
         </Button>
       </div>
@@ -242,7 +247,9 @@ onMounted(async () => {
 
     <Spin :spinning="loading">
       <!-- 摘要统计卡片 -->
-      <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div
+        class="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+      >
         <AnalysisCard
           v-for="card in trackedCards"
           :key="card.id"
@@ -252,98 +259,6 @@ onMounted(async () => {
           :diff-color="card.diffColor"
           :loading="loading"
         />
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <!-- 分类概览 -->
-        <Card
-          title="分类分布"
-          :bordered="false"
-          class="overflow-hidden shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
-          <div class="h-[280px]">
-            <TimeCategoryPieChart
-              v-if="timeSlots.length > 0"
-              :time-slots="timeSlots"
-              :categories="categories"
-              :selected-date="selectedDate"
-              :selected-filter-category-ids="selectedFilterCategoryIds"
-            />
-            <Empty v-else description="暂无数据" class="mt-10" />
-          </div>
-        </Card>
-
-        <!-- 类型概览 -->
-        <TimeTypePieChart
-          v-if="timeSlots.length > 0"
-          :time-slots="timeSlots"
-          :categories="categories"
-          :selected-date="selectedDate"
-          :selected-filter-category-ids="selectedFilterCategoryIds"
-          :bordered="false"
-        />
-        <Card
-          v-else
-          title="类型统计"
-          :bordered="false"
-          class="overflow-hidden shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
-          <Empty description="暂无数据" class="mt-10" />
-        </Card>
-
-        <!-- 详细统计 -->
-        <Card
-          :title="barChartTitle"
-          :bordered="false"
-          class="overflow-hidden shadow-sm"
-          :body-style="{ padding: '12px' }"
-        >
-          <div class="h-[280px]">
-            <template v-if="timeSlots.length > 0">
-              <DailyCategoryBarChart
-                v-if="
-                  statMode !== 'day' && selectedFilterCategoryIds.length > 0
-                "
-                :time-slots="timeSlots"
-                :categories="categories"
-                :selected-date="selectedDate"
-                :stat-mode="statMode"
-                :selected-filter-category-ids="selectedFilterCategoryIds"
-              />
-              <TimeCategoryBarChart
-                v-else
-                :time-slots="timeSlots"
-                :categories="categories"
-                :selected-date="selectedDate"
-                :selected-filter-category-ids="selectedFilterCategoryIds"
-              />
-            </template>
-            <Empty v-else description="暂无数据" class="mt-20" />
-          </div>
-        </Card>
-
-        <!-- 趋势分析 (周/月) -->
-        <Card
-          v-if="statMode !== 'day'"
-          title="时间趋势"
-          :bordered="false"
-          class="shadow-sm lg:col-span-3"
-          :body-style="{ paddingBottom: '12px' }"
-        >
-          <div class="h-[320px]">
-            <TimeCategoryStackedAreaChart
-              v-if="timeSlots.length > 0"
-              :time-slots="timeSlots"
-              :categories="categories"
-              :selected-date="selectedDate"
-              :stat-mode="statMode"
-              :selected-filter-category-ids="selectedFilterCategoryIds"
-            />
-            <Empty v-else description="暂无数据" class="mt-20" />
-          </div>
-        </Card>
       </div>
     </Spin>
   </div>

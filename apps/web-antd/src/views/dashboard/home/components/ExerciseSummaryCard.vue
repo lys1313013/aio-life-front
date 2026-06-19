@@ -289,7 +289,7 @@ defineExpose({ reload });
             <span class="font-semibold tabular-nums">{{ item.count }}</span>
             <span
               v-if="deltaInfo(item)"
-              class="rounded-full px-1 text-[10px] tabular-nums bg-white/60 dark:bg-black/20"
+              class="rounded-full bg-white/60 px-1 text-[10px] tabular-nums dark:bg-black/20"
               :class="deltaTone(item) === 'down' ? 'text-red-500' : ''"
               :title="`上次 ${item.prevDate || ''}：${item.prevCount ?? '-'} 次`"
             >

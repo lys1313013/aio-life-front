@@ -35,8 +35,8 @@ import {
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { getByDictType } from '#/api/core/userDictType';
 import { getRelateTypes } from '#/api/core/time-tracker';
+import { getByDictType } from '#/api/core/userDictType';
 
 import {
   getCategoryColor,
@@ -49,7 +49,6 @@ import {
   minutesToTime,
   timeToMinutes,
 } from '../utils';
-
 import RelateRecordSelector from './RelateRecordSelector.vue';
 
 interface Props {
@@ -140,7 +139,7 @@ const formState = ref<LocalFormState>({
 });
 
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
-const relateTypeList = ref<Array<{ value: number; label: string }>>([]);
+const relateTypeList = ref<Array<{ label: string; value: number }>>([]);
 
 // 加载关联类型枚举
 const loadRelateTypes = async () => {
@@ -175,9 +174,11 @@ const isExistingSlot = computed(() => {
 const currentRelateType = computed(() => {
   const categoryId = formState.value.categoryId;
   if (!categoryId || relateTypeList.value.length === 0) return undefined;
-  const category = props.categories.find(c => c.id === categoryId);
+  const category = props.categories.find((c) => c.id === categoryId);
   if (!category) return undefined;
-  const matchedEnum = relateTypeList.value.find(e => category.name.includes(e.label));
+  const matchedEnum = relateTypeList.value.find((e) =>
+    category.name.includes(e.label),
+  );
   return matchedEnum ? Number(matchedEnum.value) : undefined;
 });
 
@@ -407,15 +408,15 @@ const handleCategoryChange = () => {
       { exerciseTypeId: '', exerciseCount: undefined },
     ];
   }
-  
+
   // 切换分类时如果不需要关联了，清除掉
-  if (!currentRelateType.value) {
+  if (currentRelateType.value) {
+    formState.value.relateType = currentRelateType.value;
+  } else {
     formState.value.relateId = undefined;
     formState.value.relateType = undefined;
-  } else {
-    formState.value.relateType = currentRelateType.value;
   }
-  
+
   formRef.value?.validateFields(['categoryId']).catch(() => {});
 };
 
@@ -877,16 +878,22 @@ onUnmounted(() => {
         </div>
       </Form.Item>
 
-      <Form.Item v-if="currentRelateType" name="relateId" :style="{ marginBottom: '16px' }">
+      <Form.Item
+        v-if="currentRelateType"
+        name="relateId"
+        :style="{ marginBottom: '16px' }"
+      >
         <RelateRecordSelector
-          v-model:relateId="formState.relateId"
-          :relateType="currentRelateType"
-          @change="(item) => {
-            formState.relateType = currentRelateType;
-            if (item && !formState.title) {
-              formState.title = item.title;
+          v-model:relate-id="formState.relateId"
+          :relate-type="currentRelateType"
+          @change="
+            (item) => {
+              formState.relateType = currentRelateType;
+              if (item && !formState.title) {
+                formState.title = item.title;
+              }
             }
-          }"
+          "
         />
       </Form.Item>
 

@@ -119,6 +119,13 @@ export async function getWardrobeStats() {
   return requestClient.get<WardrobeStatsVO>('/wardrobe/stats');
 }
 
+/**
+ * 上传衣物照片
+ */
+export async function uploadWardrobePhoto(file: File) {
+  return requestClient.upload<string>('/wardrobe/upload-photo', { file });
+}
+
 // ==================== 分类接口 ====================
 
 /**
