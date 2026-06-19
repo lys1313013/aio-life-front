@@ -953,12 +953,7 @@ onUnmounted(() => {
               v-if="getDisplayIcon(category)"
               :is="getDisplayIcon(category)"
               class="category-icon-large"
-              :style="{
-                color:
-                  formState.categoryId === category.id
-                    ? getDisplayColor(category)
-                    : 'inherit',
-              }"
+              :style="{ color: getDisplayColor(category) }"
             />
             <div
               v-else
@@ -1034,8 +1029,8 @@ onUnmounted(() => {
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
   max-height: 60vh;
   padding: 4px;
   overflow-y: auto;
@@ -1055,46 +1050,52 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 4px;
+  padding: 6px 2px;
   cursor: pointer;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s;
 }
 
 .category-grid-item:hover {
-  background-color: v-bind('token.controlItemBgHover');
+  background-color: v-bind('token.colorFillQuaternary');
 }
 
 .category-grid-item.active {
-  background-color: v-bind('token.controlItemBgActive');
+  background-color: v-bind('token.colorFillTertiary');
+  border-color: v-bind('token.colorBorderSecondary');
 }
 
 .category-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
+  height: 22px;
   margin-bottom: 4px;
 }
 
 .category-icon-large {
-  font-size: 24px;
+  font-size: 20px;
   color: v-bind('token.colorTextSecondary');
   transition: color 0.2s;
 }
 
 .category-color-dot-large {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
 }
 
 .category-name-large {
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 11px;
+  line-height: 1.1;
   color: v-bind('token.colorText');
   text-align: center;
+  transition: font-weight 0.2s;
+}
+
+.category-grid-item.active .category-name-large {
+  font-weight: 600;
 }
 
 .duration-display {

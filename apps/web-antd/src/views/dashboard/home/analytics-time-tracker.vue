@@ -9,8 +9,11 @@ import dayjs from 'dayjs';
 
 import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
+import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
+import type { TimeSlot } from '#/views/time/time-tracker/types';
 
 const chartRef = ref<EchartsUIType>();
+const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 const loading = ref(false);
 
@@ -19,6 +22,7 @@ interface RecentRecord {
   categoryName: string;
   categoryColor: string;
   timeRangeStr: string;
+  originalRecord: TimeSlot;
 }
 
 interface TimelineBlock {
@@ -30,6 +34,7 @@ interface TimelineBlock {
 
 const recentRecords = ref<RecentRecord[]>([]);
 const timelineBlocks = ref<TimelineBlock[]>([]);
+const existingSlots = ref<TimeSlot[]>([]);
 
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60)
@@ -50,6 +55,7 @@ const loadData = async () => {
 
     const categories = categoriesRes || [];
     const records = recordsRes.items || [];
+    existingSlots.value = records;
 
     // 处理最新记录
     const sortedRecords = [...records].sort(
@@ -75,6 +81,7 @@ const loadData = async () => {
         categoryName: category?.name || '未知',
         categoryColor: category?.color || '#ccc',
         timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
+        originalRecord: record as TimeSlot,
       };
     });
 
@@ -125,7 +132,15 @@ const loadData = async () => {
           const hours = Math.floor(duration / 60);
           const minutes = duration % 60;
           const percentage = params.percent;
-          return `${params.name}<br/>${hours}时${minutes}分 (${percentage}%)<br/>总时长: ${duration}分钟`;
+          let timeStr = '';
+          if (hours > 0 && minutes > 0) {
+            timeStr = `${hours}h${minutes}m`;
+          } else if (hours > 0) {
+            timeStr = `${hours}h`;
+          } else {
+            timeStr = `${minutes}m`;
+          }
+          return `${params.name}<br/>${timeStr} (${percentage}%)<br/>总时长: ${duration}m`;
         },
       },
       legend: {
@@ -170,11 +185,11 @@ const loadData = async () => {
               const hours = Math.floor(duration / 60);
               const minutes = duration % 60;
               if (hours > 0 && minutes > 0) {
-                return `${params.name}\n${hours}时${minutes}分`;
+                return `${params.name}\n${hours}h${minutes}m`;
               } else if (hours > 0) {
-                return `${params.name}\n${hours}时`;
+                return `${params.name}\n${hours}h`;
               } else {
-                return `${params.name}\n${minutes}分`;
+                return `${params.name}\n${minutes}m`;
               }
             },
             fontSize: 10,
@@ -198,6 +213,14 @@ const loadData = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handleEditRecord = (record: TimeSlot) => {
+  timeTrackerModalRef.value?.open(record, undefined, existingSlots.value);
+};
+
+const handleModalSuccess = () => {
+  loadData();
 };
 
 onMounted(() => {
@@ -261,8 +284,9 @@ defineExpose({
           <div
             v-for="record in recentRecords"
             :key="record.id"
-            class="flex items-center justify-end gap-1.5 font-mono text-[10px] sm:gap-2 sm:text-[11px]"
+            class="flex cursor-pointer items-center justify-end gap-1.5 font-mono text-[10px] transition-opacity hover:opacity-70 sm:gap-2 sm:text-[11px]"
             :style="{ color: record.categoryColor }"
+            @click="handleEditRecord(record.originalRecord)"
           >
             <!-- 时间段 -->
             <span class="shrink-0">
@@ -282,5 +306,8 @@ defineExpose({
         </div>
       </div>
     </div>
+    
+    <!-- 编辑记录弹窗 -->
+    <TimeTrackerModal ref="timeTrackerModalRef" @success="handleModalSuccess" />
   </div>
 </template>
