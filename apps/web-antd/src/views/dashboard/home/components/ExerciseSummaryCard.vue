@@ -197,14 +197,14 @@ function deltaTone(item: ExerciseDashboardItemVO): DeltaInfo['tone'] {
 
 function deltaColor(item: ExerciseDashboardItemVO, base: string): string {
   const tone = deltaTone(item);
-  if (tone === 'up') return '#16a34a';
+  if (tone === 'up') return '#10B981';
   // down 情况下不再让整个 chip 变红，只返回基础色
   return base;
 }
 
 function deltaBg(item: ExerciseDashboardItemVO, base: string): string {
   const tone = deltaTone(item);
-  if (tone === 'up') return 'rgba(22, 163, 74, 0.12)';
+  if (tone === 'up') return 'rgba(16, 185, 129, 0.12)';
   // down 情况下不再使用红色背景
   return `${base}1A`;
 }
@@ -289,9 +289,8 @@ defineExpose({ reload });
             <span class="font-semibold tabular-nums">{{ item.count }}</span>
             <span
               v-if="deltaInfo(item)"
-              class="rounded-full px-1 text-[10px] tabular-nums"
+              class="rounded-full px-1 text-[10px] tabular-nums bg-white/60 dark:bg-black/20"
               :class="deltaTone(item) === 'down' ? 'text-red-500' : ''"
-              :style="{ backgroundColor: 'rgba(255,255,255,0.5)' }"
               :title="`上次 ${item.prevDate || ''}：${item.prevCount ?? '-'} 次`"
             >
               {{ deltaInfo(item)?.text }}
