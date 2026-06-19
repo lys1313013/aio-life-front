@@ -81,6 +81,13 @@ export namespace MovieApi {
     });
   }
 
+  /**
+   * 获取未开始和进行中的数据
+   */
+  export function listActive() {
+    return requestClient.get<MovieVO[]>('/movie/active');
+  }
+
   export const uploadCover = (file: File) => {
     return requestClient.upload<string>('/movie/upload-cover', { file });
   };

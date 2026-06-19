@@ -81,6 +81,13 @@ export namespace ReadRecordApi {
     });
   }
 
+  /**
+   * 获取未开始和进行中的数据
+   */
+  export function listActive() {
+    return requestClient.get<ReadRecordVO[]>('/read-record/active');
+  }
+
   export const uploadCover = (file: File) => {
     return requestClient.upload<string>('/read-record/upload-cover', { file });
   };

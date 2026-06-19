@@ -188,6 +188,8 @@ const handleSave = async (formData: TimeSlotFormData) => {
     description: formData.description || '',
     date: targetDate,
     exercises: formData.exercises,
+    relateId: formData.relateId,
+    relateType: formData.relateType,
   };
 
   // 检查重叠时，只考虑同一天内的时间段，且排除当前正在编辑的记录

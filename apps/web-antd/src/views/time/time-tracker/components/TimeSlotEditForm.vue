@@ -36,6 +36,7 @@ import {
 import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/userDictType';
+import { getRelateTypes } from '#/api/core/time-tracker';
 
 import {
   getCategoryColor,
@@ -48,6 +49,8 @@ import {
   minutesToTime,
   timeToMinutes,
 } from '../utils';
+
+import RelateRecordSelector from './RelateRecordSelector.vue';
 
 interface Props {
   slot: TimeSlot;
@@ -119,6 +122,8 @@ interface LocalFormState {
   title?: string;
   description?: string;
   exercises: ExerciseDetail[];
+  relateId?: string;
+  relateType?: number;
 }
 
 const formRef = ref<FormInstance>();
@@ -130,9 +135,24 @@ const formState = ref<LocalFormState>({
   title: '',
   description: '',
   exercises: [],
+  relateId: undefined,
+  relateType: undefined,
 });
 
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
+const relateTypeList = ref<Array<{ value: number; label: string }>>([]);
+
+// 加载关联类型枚举
+const loadRelateTypes = async () => {
+  try {
+    const res = await getRelateTypes();
+    if (res) {
+      relateTypeList.value = res;
+    }
+  } catch (error) {
+    console.error('加载关联类型失败:', error);
+  }
+};
 
 // 判断是否为运动分类
 const isExerciseCategory = computed(() => {
@@ -149,6 +169,16 @@ const isExistingSlot = computed(() => {
     return props.existingSlots.some((slot) => slot.id === formState.value.id);
   }
   return true; // 如果没有提供 existingSlots，默认如果 id 存在则认为是已有的
+});
+
+// 动态识别关联类型 (消除硬编码)
+const currentRelateType = computed(() => {
+  const categoryId = formState.value.categoryId;
+  if (!categoryId || relateTypeList.value.length === 0) return undefined;
+  const category = props.categories.find(c => c.id === categoryId);
+  if (!category) return undefined;
+  const matchedEnum = relateTypeList.value.find(e => category.name.includes(e.label));
+  return matchedEnum ? Number(matchedEnum.value) : undefined;
 });
 
 // 加载运动类型
@@ -168,6 +198,7 @@ const loadExerciseTypes = async () => {
 
 onMounted(() => {
   loadExerciseTypes();
+  loadRelateTypes();
   window.addEventListener('resize', updateIsMobile);
 });
 
@@ -313,6 +344,8 @@ const initializeForm = (slot: TimeSlot) => {
     title: slot.title,
     description: slot.description || '',
     exercises,
+    relateId: slot.relateId || undefined,
+    relateType: slot.relateType || undefined,
   };
 };
 
@@ -374,6 +407,15 @@ const handleCategoryChange = () => {
       { exerciseTypeId: '', exerciseCount: undefined },
     ];
   }
+  
+  // 切换分类时如果不需要关联了，清除掉
+  if (!currentRelateType.value) {
+    formState.value.relateId = undefined;
+    formState.value.relateType = undefined;
+  } else {
+    formState.value.relateType = currentRelateType.value;
+  }
+  
   formRef.value?.validateFields(['categoryId']).catch(() => {});
 };
 
@@ -400,7 +442,11 @@ const handleSave = async () => {
       categoryId: formState.value.categoryId,
       title: formState.value.title,
       description: formState.value.description,
-      exercises: formState.value.exercises,
+      exercises: isExerciseCategory.value
+        ? formState.value.exercises.filter((e) => e.exerciseTypeId)
+        : [],
+      relateId: formState.value.relateId,
+      relateType: formState.value.relateType,
     };
 
     emit('save', saveData);
@@ -829,6 +875,19 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+      </Form.Item>
+
+      <Form.Item v-if="currentRelateType" name="relateId" :style="{ marginBottom: '16px' }">
+        <RelateRecordSelector
+          v-model:relateId="formState.relateId"
+          :relateType="currentRelateType"
+          @change="(item) => {
+            formState.relateType = currentRelateType;
+            if (item && !formState.title) {
+              formState.title = item.title;
+            }
+          }"
+        />
       </Form.Item>
 
       <!-- 运动相关字段 -->

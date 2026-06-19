@@ -7,9 +7,9 @@ export enum TimeType {
 
 // 时间类型配置
 export const TIME_TYPE_CONFIG = {
-  [TimeType.REQUIRED]: { label: '必须', color: '#8c8c8c' },
-  [TimeType.POSITIVE]: { label: '积极', color: '#52c41a' },
-  [TimeType.NEGATIVE]: { label: '休闲', color: '#f5222d' },
+  [TimeType.REQUIRED]: { label: '必须', color: '#3b82f6' }, // 现代蓝 (Blue 500)
+  [TimeType.POSITIVE]: { label: '积极', color: '#10b981' }, // 翡翠绿 (Emerald 500)
+  [TimeType.NEGATIVE]: { label: '休闲', color: '#f59e0b' }, // 琥珀暖黄 (Amber 500)
 } as const;
 
 // 时间段类型定义
@@ -23,6 +23,8 @@ export interface TimeSlot {
   color?: string; // 颜色
   date: string; // 日期（YYYY-MM-DD格式）
   exercises?: ExerciseDetail[]; // 多个运动明细
+  relateId?: string; // 关联业务ID
+  relateType?: number; // 关联业务类型：1-阅读，2-观影
 }
 
 export interface ExerciseDetail {
@@ -89,6 +91,8 @@ export interface TimeSlotFormData {
   title?: string;
   description?: string;
   exercises?: ExerciseDetail[];
+  relateId?: string;
+  relateType?: number;
 }
 
 // 拖拽操作类型

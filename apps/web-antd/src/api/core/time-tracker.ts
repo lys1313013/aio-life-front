@@ -23,6 +23,8 @@ export interface TimeRecordEntity {
   createTime: string;
   updateTime: string;
   exercises?: ExerciseDetail[]; // Allow sending exercises to backend
+  relateId?: string;
+  relateType?: number;
 }
 
 /**
@@ -100,4 +102,11 @@ export async function recommendNext(params: { date: string }): Promise<{
   records: TimeRecordEntity[];
 }> {
   return await requestClient.get('/timeRecord/recommendNext', { params });
+}
+
+/**
+ * 获取时迹关联业务类型列表
+ */
+export async function getRelateTypes(): Promise<Array<{ value: number; label: string }>> {
+  return await requestClient.get('/timeRecord/relateTypes');
 }
