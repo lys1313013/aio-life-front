@@ -14,7 +14,7 @@ import {
   Spin,
 } from 'ant-design-vue';
 
-import { ReadRecordApi } from '#/api/readRecord';
+import { MovieApi } from '#/api/movie';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormDrawerDemo from './form-drawer.vue';
@@ -25,7 +25,7 @@ const modalVisible = ref(false);
 const currentRow = ref<any>(null);
 const loading = ref(false);
 const hasMore = ref(true);
-const records = ref<ReadRecordApi.ReadRecordVO[]>([]);
+const records = ref<MovieApi.MovieVO[]>([]);
 const total = ref(0);
 
 const queryForm = ref({
@@ -38,9 +38,9 @@ const queryForm = ref({
 
 // 状态映射
 const statusMap: Record<number, { color: string; label: string }> = {
-  0: { label: '未开始', color: 'default' },
-  1: { label: '阅读中', color: 'processing' },
-  2: { label: '已完成', color: 'success' },
+  0: { label: '想看', color: 'default' },
+  1: { label: '在看', color: 'processing' },
+  2: { label: '看过', color: 'success' },
   3: { label: '搁置', color: 'warning' },
 };
 
@@ -52,8 +52,7 @@ const loadData = async (isLoadMore = false) => {
   }
 
   try {
-    const res = await ReadRecordApi.pageList(queryForm.value);
-    // 假设返回结构为 { records: [], total: number }，如果不同请根据实际调整
+    const res = await MovieApi.pageList(queryForm.value);
     const newRecords = (res as any).records || [];
     const totalCount = Number((res as any).total) || 0;
     total.value = totalCount;
@@ -67,8 +66,8 @@ const loadData = async (isLoadMore = false) => {
     // 判断是否还有更多数据
     hasMore.value = records.value.length < totalCount;
   } catch (error) {
-    console.error('Failed to load read records', error);
-    message.error('加载阅读记录失败');
+    console.error('Failed to load movie records', error);
+    message.error('加载观影记录失败');
   } finally {
     loading.value = false;
   }
@@ -119,7 +118,7 @@ const tableReload = () => {
         <div class="flex flex-wrap gap-4">
           <Input
             v-model:value="queryForm.title"
-            placeholder="搜索标题或作者"
+            placeholder="搜索影视名称或导演"
             allow-clear
             class="w-full md:w-64"
             @press-enter="handleSearch"
@@ -135,19 +134,22 @@ const tableReload = () => {
             class="w-full md:w-32"
             @change="handleSearch"
           >
-            <Select.Option :value="1">书籍</Select.Option>
-            <Select.Option :value="2">文章/网页</Select.Option>
+            <Select.Option :value="1">电影</Select.Option>
+            <Select.Option :value="2">剧集</Select.Option>
+            <Select.Option :value="3">动漫</Select.Option>
+            <Select.Option :value="4">纪录片</Select.Option>
+            <Select.Option :value="5">其他</Select.Option>
           </Select>
           <Select
             v-model:value="queryForm.status"
-            placeholder="阅读状态"
+            placeholder="观看状态"
             allow-clear
             class="w-full md:w-32"
             @change="handleSearch"
           >
-            <Select.Option :value="0">未开始</Select.Option>
-            <Select.Option :value="1">阅读中</Select.Option>
-            <Select.Option :value="2">已完成</Select.Option>
+            <Select.Option :value="0">想看</Select.Option>
+            <Select.Option :value="1">在看</Select.Option>
+            <Select.Option :value="2">看过</Select.Option>
             <Select.Option :value="3">搁置</Select.Option>
           </Select>
           <Button type="primary" ghost @click="handleSearch">搜索</Button>
@@ -158,7 +160,7 @@ const tableReload = () => {
         </div>
       </div>
 
-      <!-- 书架网格 -->
+      <!-- 影视网格 -->
       <div
         class="flex h-[calc(100vh-200px)] flex-col overflow-y-auto pb-10"
         @scroll="handleScroll"
@@ -172,10 +174,10 @@ const tableReload = () => {
             v-if="!loading && records.length === 0"
             class="mt-20 flex flex-col items-center justify-center"
           >
-            <Empty description="空空如也，快去添加阅读记录吧" />
+            <Empty description="空空如也，快去添加观影记录吧" />
           </div>
 
-          <!-- 书籍网格 -->
+          <!-- 影视网格 -->
           <div
             v-if="records.length > 0"
             class="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10"
@@ -201,7 +203,7 @@ const tableReload = () => {
                 >
                   <span
                     class="mb-2 text-2xl text-gray-300 drop-shadow-sm dark:text-gray-600"
-                    >📖</span
+                    >🎬</span
                   >
                   <span
                     class="line-clamp-2 px-1 text-[10px] font-medium leading-tight text-gray-400 dark:text-gray-500"

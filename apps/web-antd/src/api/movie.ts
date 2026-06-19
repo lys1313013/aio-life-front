@@ -1,10 +1,10 @@
 import { requestClient } from '#/api/request';
 
 /**
- * 阅读记录接口
+ * 观影记录接口
  */
-export namespace ReadRecordApi {
-  export interface ReadRecordQuery {
+export namespace MovieApi {
+  export interface MovieQuery {
     title?: string;
     type?: number;
     status?: number;
@@ -12,11 +12,11 @@ export namespace ReadRecordApi {
     size?: number;
   }
 
-  export interface ReadRecordVO {
+  export interface MovieVO {
     id: string;
     title: string;
     type: number;
-    author: string;
+    director: string;
     url: string;
     coverImg: string;
     status: number;
@@ -29,11 +29,11 @@ export namespace ReadRecordApi {
     updateTime: string;
   }
 
-  export interface ReadRecordReq {
+  export interface MovieReq {
     id?: string;
     title: string;
     type: number;
-    author?: string;
+    director?: string;
     url?: string;
     coverImg?: string;
     status?: number;
@@ -47,41 +47,41 @@ export namespace ReadRecordApi {
   /**
    * 分页查询
    */
-  export function pageList(data: ReadRecordQuery) {
-    return requestClient.post('/read-record/page', data);
+  export function pageList(data: MovieQuery) {
+    return requestClient.post('/movie/page', data);
   }
 
   /**
    * 新增
    */
-  export function save(data: ReadRecordReq) {
-    return requestClient.post('/read-record', data);
+  export function save(data: MovieReq) {
+    return requestClient.post('/movie', data);
   }
 
   /**
    * 更新
    */
-  export function update(data: ReadRecordReq) {
-    return requestClient.put('/read-record', data);
+  export function update(data: MovieReq) {
+    return requestClient.put('/movie', data);
   }
 
   /**
    * 删除
    */
   export function remove(id: string) {
-    return requestClient.delete(`/read-record/${id}`);
+    return requestClient.delete(`/movie/${id}`);
   }
 
   /**
    * 解析豆瓣链接
    */
   export function parseDouban(url: string) {
-    return requestClient.get<ReadRecordReq>('/read-record/parse-douban', {
+    return requestClient.get<MovieReq>('/movie/parse-douban', {
       params: { url },
     });
   }
 
   export const uploadCover = (file: File) => {
-    return requestClient.upload<string>('/read-record/upload-cover', { file });
+    return requestClient.upload<string>('/movie/upload-cover', { file });
   };
 }

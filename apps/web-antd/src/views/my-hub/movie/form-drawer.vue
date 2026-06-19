@@ -6,7 +6,7 @@ import { IconifyIcon } from '@vben/icons';
 import { Button, Input, message, Popconfirm, Upload } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
-import { ReadRecordApi } from '#/api/readRecord';
+import { MovieApi } from '#/api/movie';
 
 const props = defineProps<{
   values?: any;
@@ -15,14 +15,17 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'table-reload']);
 
 const typeOptions = [
-  { label: '书籍', value: 1 },
-  { label: '文章/网页', value: 2 },
+  { label: '电影', value: 1 },
+  { label: '剧集', value: 2 },
+  { label: '动漫', value: 3 },
+  { label: '纪录片', value: 4 },
+  { label: '其他', value: 5 },
 ];
 
 const statusOptions = [
-  { label: '未开始', value: 0 },
-  { label: '阅读中', value: 1 },
-  { label: '已完成', value: 2 },
+  { label: '想看', value: 0 },
+  { label: '在看', value: 1 },
+  { label: '看过', value: 2 },
   { label: '搁置', value: 3 },
 ];
 
@@ -39,7 +42,7 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'Select',
       fieldName: 'type',
-      label: '阅读类型',
+      label: '影视类型',
       componentProps: {
         options: typeOptions,
       },
@@ -49,7 +52,7 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'Select',
       fieldName: 'status',
-      label: '阅读状态',
+      label: '观看状态',
       componentProps: {
         options: statusOptions,
       },
@@ -68,22 +71,18 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'Input',
       fieldName: 'title',
-      label: '标题',
+      label: '名称',
       rules: 'required',
     },
     {
       component: 'Input',
-      fieldName: 'author',
-      label: '作者',
-      dependencies: {
-        show: (values) => values.type === 1,
-        triggerFields: ['type'],
-      },
+      fieldName: 'director',
+      label: '导演/演员',
     },
     {
       component: 'InputNumber',
       fieldName: 'currentProgress',
-      label: '当前页数/当前进度',
+      label: '当前集数/当前时长',
       componentProps: {
         min: 0,
       },
@@ -92,7 +91,7 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'InputNumber',
       fieldName: 'totalProgress',
-      label: '总页数/总进度(%)',
+      label: '总集数/总时长',
       componentProps: {
         min: 0,
       },
@@ -109,10 +108,10 @@ const [Form, formApi] = useVbenForm({
     },
     {
       fieldName: 'finishTime',
-      label: '读完时间',
+      label: '看完时间',
       component: 'DatePicker',
       componentProps: {
-        placeholder: '请选择读完时间',
+        placeholder: '请选择看完时间',
         showTime: false,
         valueFormat: 'YYYY-MM-DD 00:00:00',
         style: { width: '100%' },
@@ -125,7 +124,7 @@ const [Form, formApi] = useVbenForm({
     {
       component: 'Textarea',
       fieldName: 'remark',
-      label: '书评',
+      label: '短评/备注',
       formItemClass: 'col-span-2 mb-0',
       componentProps: {
         rows: 2,
@@ -165,12 +164,13 @@ const handleParseDouban = async () => {
   }
   try {
     parseLoading.value = true;
-    const res = await ReadRecordApi.parseDouban(doubanUrl.value);
+    const res = await MovieApi.parseDouban(doubanUrl.value);
     if (res) {
       // 将获取到的信息回填到表单中
       const parsedValues: Record<string, any> = {};
       if (res.title) parsedValues.title = res.title;
-      if (res.author) parsedValues.author = res.author;
+      if (res.director) parsedValues.director = res.director;
+      if (res.type) parsedValues.type = res.type;
       if (res.coverImg) {
         parsedValues.coverImg = res.coverImg;
         previewImg.value = res.coverImg;
@@ -198,7 +198,7 @@ const handleParseDouban = async () => {
 const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
   try {
     uploadLoading.value = true;
-    const res = await ReadRecordApi.uploadCover(file as File);
+    const res = await MovieApi.uploadCover(file as File);
     if (res) {
       formApi.setValues({ coverImg: res });
       previewImg.value = res;
@@ -242,10 +242,10 @@ const onSubmit = async () => {
     values.url = doubanUrl.value;
 
     if (props.values?.id) {
-      await ReadRecordApi.update({ ...values, id: props.values.id } as any);
+      await MovieApi.update({ ...values, id: props.values.id } as any);
       message.success('更新成功');
     } else {
-      await ReadRecordApi.save(values as any);
+      await MovieApi.save(values as any);
       message.success('添加成功');
     }
     emit('table-reload');
@@ -260,7 +260,7 @@ const onSubmit = async () => {
 const handleDelete = async () => {
   if (!props.values?.id) return;
   try {
-    await ReadRecordApi.remove(props.values.id);
+    await MovieApi.remove(props.values.id);
     message.success('删除成功');
     emit('table-reload');
     emit('close');

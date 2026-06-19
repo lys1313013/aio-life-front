@@ -426,7 +426,12 @@ function navTo(nav: { url?: string }) {
       <template v-else>
         <template v-for="item in overviewItems" :key="item.type || item.title">
           <AnalysisCard
-            v-if="item.loading || (item.value !== undefined && item.value !== null && item.value !== '')"
+            v-if="
+              item.loading ||
+              (item.value !== undefined &&
+                item.value !== null &&
+                item.value !== '')
+            "
             :loading="item.loading"
             :refreshing="item.refreshing"
             :icon="item.icon"
@@ -749,7 +754,10 @@ function navTo(nav: { url?: string }) {
           </div>
           <RefreshButton @click="exerciseSummaryCardRef?.reload?.()" />
         </div>
-        <ExerciseSummaryCard ref="exerciseSummaryCardRef" @loaded="handleExerciseLoaded" />
+        <ExerciseSummaryCard
+          ref="exerciseSummaryCardRef"
+          @loaded="handleExerciseLoaded"
+        />
       </div>
 
       <!-- GitHub 最近提交：未绑定时不渲染。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
