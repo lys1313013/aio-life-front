@@ -198,10 +198,8 @@ const handleSubmitCategory = async () => {
 
     if (isEdit.value) {
       await adminUpdateCategory(formState.value);
-      message.success('更新成功');
     } else {
       await adminSaveCategory(formState.value);
-      message.success('新增成功');
     }
 
     editModalVisible.value = false;

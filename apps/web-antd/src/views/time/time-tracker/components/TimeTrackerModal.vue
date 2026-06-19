@@ -202,12 +202,10 @@ const handleSave = async (formData: TimeSlotFormData) => {
       loading.value = true;
       if (isEditMode.value) {
         await update(newSlot as any);
-        message.success('更新成功');
         visible.value = false;
         emit('success', { action: 'update', slot: newSlot });
       } else {
         await save(newSlot as any);
-        message.success('记录成功');
         visible.value = false;
         emit('success', { action: 'add', slot: newSlot });
       }

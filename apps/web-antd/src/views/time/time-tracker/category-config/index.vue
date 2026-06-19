@@ -324,11 +324,9 @@ const handleSaveCategory = async () => {
         ...formState.value,
         id: editingCategory.value.id,
       });
-      message.success('更新成功');
     } else {
       // 新增私有分类
       await saveCategory(formState.value);
-      message.success('添加成功');
     }
 
     showEditModal.value = false;
