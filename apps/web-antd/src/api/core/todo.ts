@@ -21,8 +21,8 @@ export async function reSortColumn(data: any) {
 }
 
 export interface Detail {
-  id: number;
-  taskId: number;
+  id: string;
+  taskId: string;
   content: string;
   isCompleted: number; // 0: uncompleted, 1: completed
   priority: number; // 1: very important, 10: important, 20: normal
@@ -32,8 +32,8 @@ export interface Detail {
 }
 
 export interface Task {
-  id: number;
-  columnId: number;
+  id: string;
+  columnId: string;
   content: string;
   detail?: string;
   startTime?: string;
@@ -51,7 +51,7 @@ export async function getTaskList(data: any) {
   return await requestClient.get<TaskListResult>('/tasks', { params: data });
 }
 
-export async function getTaskDetail(taskId: number) {
+export async function getTaskDetail(taskId: string) {
   return await requestClient.get<Detail[]>('/taskDetails', {
     params: { taskId },
   });
@@ -65,7 +65,7 @@ export async function updateTaskDetail(data: Partial<Detail>) {
   return await requestClient.put<boolean>('/taskDetails', data);
 }
 
-export async function deleteTaskDetail(id: number | string) {
+export async function deleteTaskDetail(id: string) {
   return await requestClient.delete<void>(`/taskDetails/${id}`);
 }
 
@@ -73,11 +73,11 @@ export async function reSortTaskDetail(data: any) {
   return await requestClient.post('/taskDetails/reSort', data);
 }
 
-export async function starTaskDetail(id: number) {
+export async function starTaskDetail(id: string) {
   return await requestClient.post<boolean>(`/taskDetails/star/${id}`);
 }
 
-export async function unstarTaskDetail(id: number) {
+export async function unstarTaskDetail(id: string) {
   return await requestClient.post<boolean>(`/taskDetails/unstar/${id}`);
 }
 

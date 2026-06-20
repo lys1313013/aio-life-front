@@ -141,7 +141,7 @@ const columnCount = computed(() => {
 const memoColumns = computed(() => {
   const cols: Memo[][] = Array.from({ length: columnCount.value }, () => []);
   memos.value.forEach((item, index) => {
-    cols[index % columnCount.value].push(item);
+    cols[index % columnCount.value]?.push(item);
   });
   return cols;
 });

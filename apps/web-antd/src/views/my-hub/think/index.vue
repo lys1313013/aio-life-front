@@ -289,7 +289,7 @@ const columnCount = computed(() => {
 const thoughtColumns = computed(() => {
   const cols: Thought[][] = Array.from({ length: columnCount.value }, () => []);
   thoughts.value.forEach((item, index) => {
-    cols[index % columnCount.value].push(item);
+    cols[index % columnCount.value]?.push(item);
   });
   return cols;
 });

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, nextTick } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
+import { useSortable } from '@vben/hooks';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import {
@@ -28,6 +29,7 @@ import {
   getMenuRoleOptionsApi,
   updateMenuApi,
   updateMenuStatusApi,
+  updateMenuSortApi,
 } from '#/api/core/menu';
 import { resetRoutes, router } from '#/router';
 import { generateAccess } from '#/router/access';
@@ -36,6 +38,10 @@ import { useAuthStore } from '#/store';
 
 const loading = ref(false);
 const list = ref<SysMenuAdminItem[]>([]);
+
+const isDragSortEnabled = ref(false);
+const expandedRowKeys = ref<string[]>([]);
+const isAllExpanded = ref(false);
 
 const editVisible = ref(false);
 const saving = ref(false);
@@ -103,7 +109,7 @@ const parentTreeOptions = computed<ParentTreeNode[]>(() => {
   const build = (nodes: SysMenuAdminItem[]): ParentTreeNode[] =>
     nodes.map((x) => ({
       key: String(x.id),
-      title: `${x.name} (${x.path})`,
+      title: x.meta?.title ?? x.name,
       value: String(x.id),
       children: x.children?.length ? build(x.children) : undefined,
     }));
@@ -121,10 +127,42 @@ const load = async () => {
   loading.value = true;
   try {
     list.value = await getMenuAdminTreeApi();
+    if (isAllExpanded.value) {
+      expandAll();
+    }
   } catch (error: any) {
     message.error(error?.message || '加载菜单失败');
   } finally {
     loading.value = false;
+  }
+};
+
+const extractAllRowKeys = (nodes: SysMenuAdminItem[]): string[] => {
+  let keys: string[] = [];
+  for (const node of nodes) {
+    if (node.children && node.children.length > 0) {
+      keys.push(String(node.id));
+      keys = keys.concat(extractAllRowKeys(node.children));
+    }
+  }
+  return keys;
+};
+
+const expandAll = () => {
+  expandedRowKeys.value = extractAllRowKeys(list.value);
+  isAllExpanded.value = true;
+};
+
+const collapseAll = () => {
+  expandedRowKeys.value = [];
+  isAllExpanded.value = false;
+};
+
+const toggleExpandAll = () => {
+  if (isAllExpanded.value) {
+    collapseAll();
+  } else {
+    expandAll();
   }
 };
 
@@ -278,6 +316,100 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
   }
 };
 
+const handleDragSortToggle = (checked: boolean) => {
+  isDragSortEnabled.value = checked;
+  if (checked) {
+    nextTick(() => {
+      setTimeout(initSortable, 100);
+    });
+  }
+};
+
+const initSortable = () => {
+  const tables = document.querySelectorAll('.ant-table-tbody');
+  if (tables.length > 0) {
+    const { initializeSortable } = useSortable(tables[0] as HTMLElement, {
+      handle: '.drag-handle',
+      animation: 150,
+      onEnd: async (evt: any) => {
+        const itemEl = evt.item as HTMLElement;
+        const draggedId = itemEl.getAttribute('data-id');
+        if (!draggedId) return;
+
+        let siblings: SysMenuAdminItem[] | null = null;
+
+        const findSiblings = (nodes: SysMenuAdminItem[]) => {
+          if (nodes.some(n => String(n.id) === draggedId)) {
+            siblings = nodes;
+            return true;
+          }
+          for (const node of nodes) {
+            if (node.children && findSiblings(node.children)) {
+              return true;
+            }
+          }
+          return false;
+        };
+
+        findSiblings(list.value);
+        if (!siblings) {
+          if (isDragSortEnabled.value) {
+            nextTick(() => setTimeout(initSortable, 100));
+          }
+          return;
+        }
+
+        const tbody = itemEl.parentElement;
+        if (!tbody) return;
+
+        const domIds = Array.from(tbody.querySelectorAll('tr[data-id]'))
+          .map(tr => tr.getAttribute('data-id'))
+          .filter(Boolean) as string[];
+
+        const validSiblings = siblings as SysMenuAdminItem[];
+        const siblingIdsInNewOrder = domIds.filter(id => validSiblings.some(s => String(s.id) === id));
+
+        const existingSorts = validSiblings.map(s => s.sort ?? 0).sort((a, b) => a - b);
+
+        const updates: Promise<any>[] = [];
+        let changed = false;
+
+        siblingIdsInNewOrder.forEach((id, index) => {
+          const node = validSiblings.find(s => String(s.id) === id);
+          const newSort = existingSorts[index] !== undefined ? existingSorts[index] : index;
+          if (node && node.sort !== newSort) {
+            changed = true;
+            updates.push(updateMenuSortApi(id, newSort));
+          }
+        });
+
+        if (changed) {
+          try {
+            loading.value = true;
+            await Promise.all(updates);
+            message.success('排序更新成功');
+            await load();
+            await refreshAccessibleMenus();
+          } catch (error: any) {
+            message.error(error?.message || '排序更新失败');
+            await load();
+          } finally {
+            loading.value = false;
+          }
+        } else {
+          // If no changes were made to backend, we still want Vue to re-render to revert the drag
+          list.value = [...list.value];
+        }
+
+        if (isDragSortEnabled.value) {
+          nextTick(() => setTimeout(initSortable, 100));
+        }
+      }
+    });
+    initializeSortable();
+  }
+};
+
 const handleDelete = async (row: Record<string, any>) => {
   try {
     await deleteMenuApi(String(row.id));
@@ -299,7 +431,17 @@ onMounted(() => {
   <div class="p-4">
     <div class="mb-3 flex items-center justify-between">
       <div class="text-lg font-bold">权限菜单</div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-stone-500">拖拽排序</span>
+          <Switch
+            :checked="isDragSortEnabled"
+            @change="(checked: any) => handleDragSortToggle(checked)"
+          />
+        </div>
+        <Button @click="toggleExpandAll">
+          {{ isAllExpanded ? '全部折叠' : '全部展开' }}
+        </Button>
         <Button @click="load">刷新</Button>
         <Button type="primary" @click="openCreate">新增</Button>
       </div>
@@ -311,7 +453,16 @@ onMounted(() => {
         :columns="columns"
         :pagination="false"
         row-key="id"
-        :default-expand-all-rows="true"
+        v-model:expandedRowKeys="expandedRowKeys"
+        @expand="(expanded: boolean, record: any) => {
+          if (expanded) {
+            expandedRowKeys.push(String(record.id));
+          } else {
+            expandedRowKeys = expandedRowKeys.filter(k => k !== String(record.id));
+            isAllExpanded = false;
+          }
+        }"
+        :custom-row="(record: any) => ({ 'data-id': String(record.id) } as any)"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'title'">
@@ -337,6 +488,16 @@ onMounted(() => {
               "
               @change="toggleStatus(record, $event ? 1 : 0)"
             />
+          </template>
+          <template v-else-if="column.key === 'sort'">
+            <div class="flex items-center gap-2">
+              <VbenIcon
+                v-if="isDragSortEnabled"
+                icon="lucide:grip-vertical"
+                class="drag-handle cursor-move text-stone-400 hover:text-blue-500"
+              />
+              <span>{{ record.sort }}</span>
+            </div>
           </template>
           <template v-else-if="column.key === 'action'">
             <div class="flex items-center gap-2">

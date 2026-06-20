@@ -1,8 +1,8 @@
 import { requestClient } from '#/api/request';
 
 export interface WatchedTaskDetail {
-  id: number;
-  taskId: number;
+  id: string;
+  taskId: string;
   taskName: string;
   content: string;
   priority: number;

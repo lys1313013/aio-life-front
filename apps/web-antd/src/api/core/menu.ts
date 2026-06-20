@@ -58,6 +58,12 @@ export async function updateMenuStatusApi(id: string, status: number) {
   });
 }
 
+export async function updateMenuSortApi(id: string, sort: number) {
+  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/sort`, {
+    sort,
+  });
+}
+
 export async function deleteMenuApi(id: string) {
   return requestClient.delete<void>(`/menu/admin/${id}`);
 }

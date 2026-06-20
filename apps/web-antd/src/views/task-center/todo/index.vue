@@ -26,8 +26,10 @@ import {
   Popover as APopover,
   Select as ASelect,
   SelectOption as ASelectOption,
+  Spin as ASpin,
   Tag as ATag,
   Textarea as ATextarea,
+  message,
   theme,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -54,8 +56,8 @@ import {
 } from '#/api/core/todo';
 
 interface Detail {
-  id: number;
-  taskId: number;
+  id: string;
+  taskId: string;
   content: string;
   isCompleted: number;
   priority: number; // 1: very important, 10: important, 20: normal
@@ -64,7 +66,7 @@ interface Detail {
 }
 
 interface Task {
-  id: number;
+  id: string;
   content: string;
   detail?: string;
   details?: Detail[];
@@ -73,176 +75,134 @@ interface Task {
   endTime?: any;
   dueDate?: any;
   createdAt?: any;
-  columnId?: number;
+  columnId?: string;
 }
 
 const { useToken } = theme;
 const { token } = useToken();
 
-// 预定义列主题颜色（仿照设计图）
-const columnThemes = [
-  {
-    bg: '#eff3f9',
-    headerBg: '#dae5f5',
-    headerColor: '#5285c5',
-    label: '未开始',
-  }, // 蓝
-  {
-    bg: '#fff9e6',
-    headerBg: '#fff2cc',
-    headerColor: '#d4a017',
-    label: '修复中',
-  }, // 黄
-  {
-    bg: '#f0f0ff',
-    headerBg: '#e6e6ff',
-    headerColor: '#6c5ce7',
-    label: '验证中',
-  }, // 紫
-  {
-    bg: '#eff9ef',
-    headerBg: '#dcf0dc',
-    headerColor: '#4b9e4b',
-    label: '已完成',
-  }, // 绿
-];
-
-// 获取列样式的辅助函数
-const getColumnStyle = (column: any, index: number) => {
-  const themeIndex = index % columnThemes.length;
-  const currentTheme = columnThemes[themeIndex] ||
-    columnThemes[0] || {
-      bg: '#eff3f9',
-      headerBg: '#dae5f5',
-      headerColor: '#5285c5',
-    };
-
-  // 优先使用列自身配置的 bgColor
-  const bg = column.bgColor || currentTheme.bg;
-
-  // 如果是自定义背景色，标题标签使用半透明遮罩以适应各种背景，否则使用主题配套颜色
-  const headerBg = column.bgColor
-    ? 'rgba(0, 0, 0, 0.06)'
-    : currentTheme.headerBg;
-  const headerColor = column.bgColor
-    ? 'rgba(0, 0, 0, 0.65)'
-    : currentTheme.headerColor;
-
+const getColumnStyle = (column: any) => {
+  const bg = column.bgColor || token.value.colorFillAlter;
   return {
     bg,
-    headerBg,
-    headerColor,
   };
 };
 
 const columns = ref<
   Array<{
     bgColor?: string;
-    id: number;
+    id: string;
     tasks: Task[];
     title: string;
   }>
 >([]);
 
-onMounted(async () => {
-  // 初始化列
-  const res = await getTaskColumnList({});
-  console.log('getTaskColumnList', res);
-  columns.value = res.items.map((item: any) => ({
-    ...item,
-    tasks: item.tasks || [],
-  }));
+const loading = ref(false);
 
-  getTaskList({}).then((res) => {
-    console.log('getTaskList', res);
+onMounted(async () => {
+  loading.value = true;
+  try {
+    const res = await getTaskColumnList({});
+    columns.value = res.items.map((item: any) => ({
+      ...item,
+      tasks: item.tasks || [],
+    }));
+
+    const tasksRes = await getTaskList({});
     columns.value.forEach((column) => {
-      column.tasks = res.items.filter(
-        (item: { columnId: number }) => item.columnId === column.id,
+      column.tasks = tasksRes.items.filter(
+        (item: { columnId: string }) => item.columnId === column.id,
       );
     });
-  });
+  } catch (error) {
+    console.error('初始化数据失败', error);
+  } finally {
+    loading.value = false;
+  }
 });
 
 const newColumnName = ref('');
 
-const addTask = async (columnId: number) => {
+const addTask = async (columnId: string) => {
   const column = columns.value.find((col) => col.id === columnId);
   if (column) {
-    const newTask: Task = {
-      id: 0,
-      content: '新任务',
-      detail: '',
-      createdAt: new Date(),
-      columnId,
-    };
-    const savedTask = await saveTask(newTask);
-    column.tasks.push(savedTask);
+    const hide = message.loading('添加中...', 0);
+    try {
+      const newTask: any = {
+        content: '新任务',
+        detail: '',
+        columnId,
+      };
+      const savedTask = await saveTask(newTask);
+      column.tasks.push(savedTask);
+    } finally {
+      hide();
+    }
   }
 };
 
-// 添加列
 const addColumn = async () => {
   if (!newColumnName.value.trim()) return;
 
-  // 生成一个随机id
-  const newColumnId = Math.floor(Math.random() * 1_000_000);
-  let newColumn = {
-    id: newColumnId,
-    title: newColumnName.value,
-    tasks: [],
-  };
+  const hide = message.loading('添加中...', 0);
+  try {
+    const newColumn = {
+      title: newColumnName.value,
+      tasks: [],
+    };
 
-  columns.value.push(newColumn);
-  newColumn = await saveColumn(newColumn);
-
-  newColumnName.value = '';
+    const savedColumn = await saveColumn(newColumn);
+    columns.value.push({ ...savedColumn, tasks: [] });
+    newColumnName.value = '';
+  } finally {
+    hide();
+  }
 };
 
-const onDragEnd = (event: any) => {
-  console.log('完整拖拽事件:', event);
-  const fromColumnId = Number(event.from.dataset.columnId);
-  const toColumnId = Number(event.to.dataset.columnId);
-  const taskId = Number(event.item.dataset.taskId);
-
-  console.log('移动前列ID:', fromColumnId);
-  console.log('移动后列ID:', toColumnId);
-  console.log('移动的任务ID:', taskId);
-  console.log('原始位置:', event.oldIndex);
-  console.log('新位置:', event.newIndex);
-
-  // 获取目标列
+const onDragEnd = async (event: any) => {
+  const toColumnId = event.to.dataset.columnId;
   const toColumn = columns.value.find((col) => col.id === toColumnId);
   if (!toColumn) return;
 
-  // 准备重排序数据
   const sortedTasks = toColumn.tasks.map((task, index) => ({
     id: task.id,
     columnId: toColumnId,
     sortOrder: index + 1,
   }));
-  console.log('排序后的数据:', sortedTasks);
 
-  // 调用API更新排序
-  reSortTask(sortedTasks);
+  const hide = message.loading('更新排序中...', 0);
+  try {
+    await reSortTask(sortedTasks);
+  } finally {
+    hide();
+  }
 };
 
-const onColumnDragEnd = (event: any) => {
-  console.log('列已移动', event);
-  // 只传输id和sortOrder
+const onColumnDragEnd = async () => {
   const sortedData = columns.value.map((col, index) => ({
     id: col.id,
     sortOrder: index + 1,
   }));
-  reSortColumn(sortedData);
+  const hide = message.loading('更新排序中...', 0);
+  try {
+    await reSortColumn(sortedData);
+  } finally {
+    hide();
+  }
 };
 
-const onDetailDragEnd = () => {
+const onDetailDragEnd = async () => {
   if (!editingTask.value.details) return;
   const sortedData = editingTask.value.details.map((detail, index) => ({
     id: detail.id,
     sort: index + 1,
   }));
-  reSortTaskDetail(sortedData);
+  const hide = message.loading('更新排序中...', 0);
+  try {
+    await reSortTaskDetail(sortedData);
+  } finally {
+    hide();
+  }
 };
 
 const formatDate = (date: any) => {
@@ -252,7 +212,7 @@ const formatDate = (date: any) => {
 
 const editModalVisible = ref(false);
 const editingTask = ref<Task>({
-  id: 0,
+  id: '',
   content: '',
   detail: '',
   details: [],
@@ -271,7 +231,6 @@ const newDetail = ref<any>({
   isStarred: 0,
 });
 
-// 打开编辑模态框
 const openEditModal = async (task: Task) => {
   const startTime = task.startTime ? dayjs(task.startTime) : undefined;
   const endTime = task.endTime ? dayjs(task.endTime) : undefined;
@@ -279,18 +238,21 @@ const openEditModal = async (task: Task) => {
 
   editingTask.value = {
     ...task,
-    details: [], // 先清空，等待加载
+    details: [],
     startTime,
     endTime,
     dueDate,
   };
   editModalVisible.value = true;
 
+  const hide = message.loading('加载明细中...', 0);
   try {
     const details = await getTaskDetail(task.id);
     editingTask.value.details = details;
   } catch (error) {
     console.error('获取任务明细失败', error);
+  } finally {
+    hide();
   }
 };
 
@@ -317,6 +279,7 @@ const handleAddDetailOk = async () => {
     editingTask.value.details = [];
   }
 
+  const hide = message.loading('添加中...', 0);
   try {
     const [startTime, endTime] = newDetail.value.timeRange || [];
     const res = await addTaskDetail({
@@ -328,15 +291,17 @@ const handleAddDetailOk = async () => {
         : undefined,
       endTime: endTime ? endTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
     });
-    // Add to the beginning of the list to solve the "find it at the bottom" issue
     editingTask.value.details.unshift(res);
     addDetailModalVisible.value = false;
   } catch (error) {
     console.error('添加明细失败', error);
+  } finally {
+    hide();
   }
 };
 
 const removeDetail = async (index: number, detail: Detail) => {
+  const hide = message.loading('删除中...', 0);
   try {
     if (detail.id !== undefined && detail.id !== null) {
       await deleteTaskDetail(detail.id);
@@ -344,17 +309,21 @@ const removeDetail = async (index: number, detail: Detail) => {
     editingTask.value.details?.splice(index, 1);
   } catch (error) {
     console.error('删除明细失败', error);
+  } finally {
+    hide();
   }
 };
 
 const handleDetailCheck = async (detail: Detail, checked: boolean) => {
   detail.isCompleted = checked ? 1 : 0;
+  const hide = message.loading('更新中...', 0);
   try {
     await updateTaskDetail(detail);
   } catch (error) {
     console.error('更新状态失败', error);
-    // 回滚状态
     detail.isCompleted = checked ? 0 : 1;
+  } finally {
+    hide();
   }
 };
 
@@ -385,16 +354,21 @@ const getPriorityLabel = (priority: number) => {
 };
 
 const handleStar = async (detail: any) => {
-  if (detail.isStarred === 1) {
-    detail.isStarred = 0;
-    await unstarTaskDetail(detail.id);
-  } else {
-    detail.isStarred = 1;
-    await starTaskDetail(detail.id);
+  const hide = message.loading('更新中...', 0);
+  try {
+    if (detail.isStarred === 1) {
+      detail.isStarred = 0;
+      await unstarTaskDetail(detail.id);
+    } else {
+      detail.isStarred = 1;
+      await starTaskDetail(detail.id);
+    }
+  } finally {
+    hide();
   }
 };
 
-const refreshTask = async (taskId: number) => {
+const refreshTask = async (taskId: string) => {
   try {
     const res = await getTaskList({ taskId });
     if (res.items) {
@@ -417,7 +391,6 @@ const handleEditCancel = () => {
   refreshTask(editingTask.value.id);
 };
 
-// 编辑任务
 const handleEditOk = async () => {
   const column = columns.value.find((col) =>
     col.tasks.some((task) => task.id === editingTask.value.id),
@@ -431,12 +404,17 @@ const handleEditOk = async () => {
       column.tasks[taskIndex] = { ...editingTask.value };
     }
   }
-  await updateTask(editingTask.value);
-  await refreshTask(editingTask.value.id);
-  editModalVisible.value = false;
+  const hide = message.loading('保存中...', 0);
+  try {
+    await updateTask(editingTask.value);
+    await refreshTask(editingTask.value.id);
+    editModalVisible.value = false;
+  } finally {
+    hide();
+  }
 };
 
-const confirmDeleteColumn = (columnId: number) => {
+const confirmDeleteColumn = (columnId: string) => {
   AModal.confirm({
     title: '确认删除列',
     content: '删除列将同时删除该列下的所有任务，确定要删除吗？',
@@ -449,32 +427,38 @@ const confirmDeleteColumn = (columnId: number) => {
   });
 };
 
-const deleteColumnMethod = (columnId: number) => {
-  deleteColumn({ id: columnId });
-  columns.value = columns.value.filter((col) => col.id !== columnId);
+const deleteColumnMethod = async (columnId: string) => {
+  const hide = message.loading('删除中...', 0);
+  try {
+    await deleteColumn({ id: columnId });
+    columns.value = columns.value.filter((col) => col.id !== columnId);
+  } finally {
+    hide();
+  }
 };
 
-const deleteTaskFunc = async (taskId: number) => {
-  await deleteTask({ id: taskId });
-  columns.value.forEach((column) => {
-    column.tasks = column.tasks.filter(
-      (task: { id: number }) => task.id !== taskId,
-    );
-  });
+const deleteTaskFunc = async (taskId: string) => {
+  const hide = message.loading('删除中...', 0);
+  try {
+    await deleteTask({ id: taskId });
+    columns.value.forEach((column) => {
+      column.tasks = column.tasks.filter(
+        (task: { id: string }) => task.id !== taskId,
+      );
+    });
+  } finally {
+    hide();
+  }
 };
 
 const editColumnModalVisible = ref(false);
 const editingColumn = ref({
-  id: null,
+  id: '',
   title: '',
   bgColor: '#fff',
 });
 
-const openEditColumnModal = (
-  column:
-    | { bgColor: string; id: null; title: string }
-    | { bgColor: string; id: null; title: string },
-) => {
+const openEditColumnModal = (column: any) => {
   editingColumn.value = { ...column };
   editColumnModalVisible.value = true;
 };
@@ -484,136 +468,142 @@ const handleEditColumnOk = async () => {
   if (column) {
     column.title = editingColumn.value.title;
     column.bgColor = editingColumn.value.bgColor;
-    await updateColumn(column);
+    const hide = message.loading('保存中...', 0);
+    try {
+      await updateColumn(column);
+      editColumnModalVisible.value = false;
+    } finally {
+      hide();
+    }
   }
-  editColumnModalVisible.value = false;
 };
 </script>
 
 <template>
   <div class="kanban-board">
-    <draggable
-      v-model="columns"
-      group="columns"
-      @end="onColumnDragEnd"
-      item-key="id"
-      class="columns-container"
-      handle=".column-header"
-    >
-      <template #item="{ element: column, index }">
-        <div
-          class="kanban-column"
-          :style="{ backgroundColor: getColumnStyle(column, index).bg }"
-        >
-          <div class="column-header">
-            <div class="header-left">
-              <span
-                class="column-title-tag"
-                :style="{
-                  backgroundColor: getColumnStyle(column, index).headerBg,
-                  color: getColumnStyle(column, index).headerColor,
-                }"
-                @click="openEditColumnModal(column)"
-              >
-                {{ column.title }}
-              </span>
-              <span class="task-count">{{ column.tasks.length }}</span>
-            </div>
-
-            <ADropdown :trigger="['click']">
-              <AButton type="text" size="small" class="more-btn">
-                <template #icon><MoreOutlined /></template>
-              </AButton>
-              <template #overlay>
-                <AMenu>
-                  <AMenuItem key="edit" @click="openEditColumnModal(column)">
-                    <EditOutlined /> 编辑
-                  </AMenuItem>
-                  <AMenuItem
-                    key="delete"
-                    danger
-                    @click="confirmDeleteColumn(column.id)"
-                  >
-                    <DeleteOutlined /> 删除
-                  </AMenuItem>
-                </AMenu>
-              </template>
-            </ADropdown>
-          </div>
-          <draggable
-            v-model="column.tasks"
-            group="tasks"
-            @end="onDragEnd"
-            item-key="id"
-            :data-column-id="column.id"
-            class="task-list"
+    <div v-if="loading" class="loading-wrapper">
+      <ASpin size="large" />
+    </div>
+    <template v-else>
+      <draggable
+        v-model="columns"
+        group="columns"
+        @end="onColumnDragEnd"
+        item-key="id"
+        class="columns-container"
+        handle=".column-header"
+      >
+        <template #item="{ element: column }">
+          <div
+            class="kanban-column"
+            :style="{ backgroundColor: getColumnStyle(column).bg }"
           >
-            <template #item="{ element }">
-              <div
-                class="kanban-task"
-                :data-task-id="element.id"
-                @click="openEditModal(element)"
-              >
-                <div class="task-header">
-                  <span class="task-title">{{ element.content }}</span>
-                  <APopconfirm
-                    title="确定要删除这个任务吗?"
-                    ok-text="确定"
-                    cancel-text="取消"
-                    trigger="click"
-                    @confirm="deleteTaskFunc(element.id)"
-                  >
-                    <AButton
-                      type="text"
-                      size="small"
-                      danger
-                      class="delete-task-btn"
-                      @click.stop
-                    >
-                      <template #icon><DeleteOutlined /></template>
-                    </AButton>
-                  </APopconfirm>
-                </div>
-
-                <div class="task-meta" v-if="element.detail">
-                  <div class="task-detail-text">
-                    {{
-                      element.detail.length > 50
-                        ? `${element.detail.substring(0, 50)}...`
-                        : element.detail
-                    }}
-                  </div>
-                </div>
-
-                <div class="task-footer">
-                  <div class="footer-left">
-                    <ClockCircleOutlined class="prop-icon" />
-                    <span class="uncompleted-count"
-                      >待办: {{ element.unCompletedCount || 0 }}</span
-                    >
-                  </div>
-                  <span class="due-date">{{
-                    formatDate(element.dueDate)
-                  }}</span>
-                </div>
-              </div>
-            </template>
-            <template #footer>
-              <div class="add-task-wrapper">
-                <AButton
-                  type="text"
-                  block
-                  class="simple-add-btn"
-                  @click="addTask(column.id)"
+            <div class="column-header">
+              <div class="header-left">
+                <span
+                  class="column-title-tag"
+                  @click="openEditColumnModal(column)"
                 >
-                  <template #icon><PlusOutlined /></template>
-                </AButton>
+                  {{ column.title }}
+                </span>
+                <span class="task-count">{{ column.tasks.length }}</span>
               </div>
-            </template>
-          </draggable>
-        </div>
-      </template>
-    </draggable>
+
+              <ADropdown :trigger="['click']">
+                <AButton type="text" size="small" class="more-btn">
+                  <template #icon><MoreOutlined /></template>
+                </AButton>
+                <template #overlay>
+                  <AMenu>
+                    <AMenuItem key="edit" @click="openEditColumnModal(column)">
+                      <EditOutlined /> 编辑
+                    </AMenuItem>
+                    <AMenuItem
+                      key="delete"
+                      danger
+                      @click="confirmDeleteColumn(column.id)"
+                    >
+                      <DeleteOutlined /> 删除
+                    </AMenuItem>
+                  </AMenu>
+                </template>
+              </ADropdown>
+            </div>
+            <draggable
+              v-model="column.tasks"
+              group="tasks"
+              @end="onDragEnd"
+              item-key="id"
+              :data-column-id="column.id"
+              class="task-list"
+            >
+              <template #item="{ element }">
+                <div
+                  class="kanban-task"
+                  :data-task-id="element.id"
+                  @click="openEditModal(element)"
+                >
+                  <div class="task-header">
+                    <span class="task-title">{{ element.content }}</span>
+                    <APopconfirm
+                      title="确定要删除这个任务吗?"
+                      ok-text="确定"
+                      cancel-text="取消"
+                      trigger="click"
+                      @confirm="deleteTaskFunc(element.id)"
+                    >
+                      <AButton
+                        type="text"
+                        size="small"
+                        danger
+                        class="delete-task-btn"
+                        @click.stop
+                      >
+                        <template #icon><DeleteOutlined /></template>
+                      </AButton>
+                    </APopconfirm>
+                  </div>
+
+                  <div class="task-meta" v-if="element.detail">
+                    <div class="task-detail-text">
+                      {{
+                        element.detail.length > 50
+                          ? `${element.detail.substring(0, 50)}...`
+                          : element.detail
+                      }}
+                    </div>
+                  </div>
+
+                  <div class="task-footer">
+                    <div class="footer-left">
+                      <ClockCircleOutlined class="prop-icon" />
+                      <span class="uncompleted-count"
+                        >待办: {{ element.unCompletedCount || 0 }}</span
+                      >
+                    </div>
+                    <span class="due-date">{{
+                      formatDate(element.dueDate)
+                    }}</span>
+                  </div>
+                </div>
+              </template>
+              <template #footer>
+                <div class="add-task-wrapper">
+                  <AButton
+                    type="text"
+                    block
+                    class="simple-add-btn"
+                    @click="addTask(column.id)"
+                  >
+                    <template #icon><PlusOutlined /></template>
+                  </AButton>
+                </div>
+              </template>
+            </draggable>
+          </div>
+        </template>
+      </draggable>
+    </template>
 
     <div class="floating-add-column">
       <APopover placement="topRight" trigger="click" :auto-focus="false">
@@ -640,12 +630,12 @@ const handleEditColumnOk = async () => {
     <!-- 编辑任务模态框 -->
     <AModal
       v-model:open="editModalVisible"
-      title="编辑任务"
+      :title="null"
       width="1000px"
-      :style="{ top: '20px' }"
+      centered
       :body-style="{
         minHeight: '400px',
-        maxHeight: '750px',
+        maxHeight: '75vh',
         overflowY: 'auto',
       }"
       @ok="handleEditOk"
@@ -914,7 +904,8 @@ const handleEditColumnOk = async () => {
 
     <AModal
       v-model:open="editColumnModalVisible"
-      title="编辑"
+      :title="null"
+      centered
       @ok="handleEditColumnOk"
     >
       <AInput
@@ -996,12 +987,21 @@ const handleEditColumnOk = async () => {
 }
 
 .kanban-board {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: calc(100vh - 40px);
   padding: 20px;
   overflow: auto hidden;
-  background: linear-gradient(180deg, #fafbfc 0%, #f5f7fa 100%);
+  background: v-bind('token.colorBgLayout');
+}
+
+.loading-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 /* 自定义横向滚动条样式 */
@@ -1014,32 +1014,32 @@ const handleEditColumnOk = async () => {
 }
 
 .kanban-board::-webkit-scrollbar-thumb {
-  background: rgb(0 0 0 / 8%);
+  background: v-bind('token.colorFillSecondary');
   border-radius: 4px;
   transition: background 0.2s ease;
 }
 
 .kanban-board::-webkit-scrollbar-thumb:hover {
-  background: rgb(0 0 0 / 15%);
+  background: v-bind('token.colorFill');
 }
 
 .columns-container {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   width: max-content;
   min-width: 100%;
   height: 100%;
-  padding: 10px 10px 20px;
+  padding: 0 0 20px;
 }
 
 .kanban-column {
   display: flex;
-  flex: 0 0 320px;
+  flex: 0 0 300px;
   flex-direction: column;
-  min-width: 320px;
-  max-width: 320px;
-  padding: 16px;
-  border-radius: 16px;
+  min-width: 300px;
+  max-width: 300px;
+  padding: 12px;
+  border-radius: 12px;
   transition: all 0.3s ease;
 }
 
@@ -1047,8 +1047,8 @@ const handleEditColumnOk = async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
-  margin-bottom: 16px;
+  padding: 4px 8px;
+  margin-bottom: 12px;
   cursor: grab;
 }
 
@@ -1058,65 +1058,70 @@ const handleEditColumnOk = async () => {
 
 .header-left {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
 .column-title-tag {
-  padding: 6px 14px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
+  color: v-bind('token.colorText');
   cursor: pointer;
-  border-radius: 20px;
-  transition: all 0.3s ease;
+  transition: opacity 0.2s;
 }
 
 .column-title-tag:hover {
-  filter: brightness(0.9);
+  opacity: 0.8;
 }
 
 .task-count {
   min-width: 20px;
   padding: 2px 8px;
   font-size: 12px;
-  font-weight: 600;
-  color: #8c8c8c;
+  font-weight: 500;
+  color: v-bind('token.colorTextSecondary');
   text-align: center;
-  background: rgb(0 0 0 / 4%);
+  background: v-bind('token.colorFillSecondary');
   border-radius: 10px;
 }
 
 .more-btn {
-  color: #8c8c8c;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .task-list {
   flex: 1;
   min-height: 50px;
-  padding: 4px 0;
+  padding: 2px;
   overflow-y: auto;
+}
+
+/* Custom vertical scrollbar for task list */
+.task-list::-webkit-scrollbar {
+  width: 4px;
+}
+.task-list::-webkit-scrollbar-thumb {
+  background: v-bind('token.colorFillSecondary');
+  border-radius: 2px;
 }
 
 .kanban-task {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 16px;
+  gap: 8px;
+  padding: 12px;
   margin-bottom: 10px;
   cursor: pointer;
-  background: #fff;
-  border: none;
-  border-radius: 12px;
-  box-shadow:
-    0 1px 3px rgb(0 0 0 / 4%),
-    0 2px 6px rgb(0 0 0 / 3%);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: v-bind('token.colorBgElevated');
+  border: 1px solid v-bind('token.colorBorderSecondary');
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 3%);
+  transition: all 0.2s ease;
 }
 
 .kanban-task:hover {
-  box-shadow:
-    0 4px 12px rgb(0 0 0 / 8%),
-    0 2px 4px rgb(0 0 0 / 4%);
+  border-color: v-bind('token.colorPrimary');
+  box-shadow: 0 4px 12px 0 rgb(0 0 0 / 8%);
 }
 
 .task-header {
@@ -1129,38 +1134,35 @@ const handleEditColumnOk = async () => {
 .task-title {
   flex: 1;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.5;
-  color: #1a1a1a;
+  color: v-bind('token.colorText');
   letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 .delete-task-btn {
   margin-left: 4px;
   opacity: 0;
-  transform: scale(0.9);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .kanban-task:hover .delete-task-btn {
   opacity: 1;
-  transform: scale(1);
 }
 
 .task-meta {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .task-detail-text {
   padding: 6px 10px;
   font-size: 12px;
-  line-height: 1.6;
-  color: #8c8c8c;
+  line-height: 1.5;
+  color: v-bind('token.colorTextSecondary');
   word-break: break-all;
-  background: #fafafa;
-  border-radius: 8px;
+  background: v-bind('token.colorFillQuaternary');
+  border-radius: 6px;
 }
 
 .task-footer {
@@ -1170,26 +1172,23 @@ const handleEditColumnOk = async () => {
   padding-top: 8px;
   margin-top: 4px;
   font-size: 12px;
-  color: #8c8c8c;
+  color: v-bind('token.colorTextSecondary');
+  border-top: 1px dashed v-bind('token.colorBorderSecondary');
 }
 
 .footer-left {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
-  font-size: 12px;
-  color: #8c8c8c;
 }
 
 .footer-left .prop-icon {
   font-size: 13px;
-  opacity: 0.7;
 }
 
 .due-date {
   font-size: 12px;
-  font-weight: 500;
-  color: #a0a0a0;
+  color: v-bind('token.colorTextDescription');
 }
 
 .add-task-wrapper {
@@ -1203,22 +1202,14 @@ const handleEditColumnOk = async () => {
   align-items: center;
   justify-content: center;
   height: 32px;
-  font-size: 18px;
-  color: #bfbfbf;
+  font-size: 16px;
+  color: v-bind('token.colorTextSecondary');
+  border-radius: 8px;
 }
 
 .simple-add-btn:hover {
-  color: #8c8c8c;
-  background: rgb(0 0 0 / 2%);
-}
-
-/* 隐藏不必要的样式 */
-.delete-column-btn {
-  display: none;
-}
-
-.add-task-card {
-  display: none;
+  color: v-bind('token.colorText');
+  background: v-bind('token.colorFillTertiary');
 }
 
 .subtasks-section {
@@ -1244,12 +1235,6 @@ const handleEditColumnOk = async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-
-  /* max-height: 500px; */
-
-  /* Removed to allow modal body to scroll */
-
-  /* overflow-y: auto; */
   padding-right: 4px;
 }
 
@@ -1257,6 +1242,7 @@ const handleEditColumnOk = async () => {
   display: flex;
   align-items: center;
   padding: 4px 0;
+  border-radius: 6px;
   transition: background 0.3s;
 }
 
@@ -1289,22 +1275,22 @@ const handleEditColumnOk = async () => {
 }
 
 .floating-add-column {
-  position: fixed;
+  position: absolute;
   right: 30px;
   bottom: 30px;
   z-index: 99;
 }
 
 .floating-button {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   font-size: 20px;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 15%);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 10%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .floating-button:hover {
-  box-shadow: 0 6px 20px rgb(0 0 0 / 25%);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 20%);
   transform: scale(1.08) translateY(-2px);
 }
 
@@ -1322,7 +1308,7 @@ const handleEditColumnOk = async () => {
 .date-label {
   margin-bottom: 5px;
   font-size: 12px;
-  color: #666;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .subtask-input {
