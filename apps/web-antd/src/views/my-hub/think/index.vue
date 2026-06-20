@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, toRaw } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, toRaw } from 'vue';
 
 import {
   DeleteOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   PlusOutlined,
   PushpinFilled,
 } from '@ant-design/icons-vue';
@@ -41,6 +43,7 @@ interface Thought {
   likes: number;
   createTime: string;
   isPinned: number;
+  hiddenContent: boolean;
 }
 
 const thoughts = ref<Thought[]>([]);
@@ -53,11 +56,13 @@ interface ThoughtForm {
   content: string;
   events: Event[];
   isPinned: number;
+  hiddenContent: boolean;
 }
 
 const form = reactive<ThoughtForm>({
   content: '',
   isPinned: 0,
+  hiddenContent: false,
   events: [
     {
       id: 1,
@@ -74,6 +79,7 @@ const modalTitle = computed(() => (currentEditId.value === null ? '' : ''));
 const openAddModal = () => {
   form.content = '';
   form.isPinned = 0;
+  form.hiddenContent = false;
   form.events = [
     {
       id: Date.now(),
@@ -90,6 +96,7 @@ const openEditModal = (id: number | string) => {
   if (thought) {
     form.content = thought.content;
     form.isPinned = thought.isPinned ?? 0;
+    form.hiddenContent = thought.hiddenContent ?? false;
     const evs = Array.isArray(thought.events) ? thought.events : [];
     form.events =
       evs.length > 0
@@ -143,6 +150,7 @@ const saveCard = async () => {
   const payload: any = {
     content: form.content.trim(),
     isPinned: form.isPinned,
+    hiddenContent: form.hiddenContent,
     events: validEvents.map((e) => ({ ...e })),
   };
 
@@ -161,6 +169,7 @@ const saveCard = async () => {
       ...saved,
       id: saved?.id ?? currentEditId.value, // 确保 ID 不丢失
       isPinned: saved?.isPinned ?? form.isPinned,
+      hiddenContent: saved?.hiddenContent ?? form.hiddenContent,
       content:
         saved?.content ??
         saved?.text ??
@@ -207,6 +216,17 @@ const handleDelete = async (id: number | string) => {
   }
 };
 
+const handleToggleHide = async (item: Thought) => {
+  try {
+    const newHiddenState = !item.hiddenContent;
+    await updateThink({ id: item.id, hiddenContent: newHiddenState });
+    item.hiddenContent = newHiddenState;
+    message.success(newHiddenState ? '内容已隐藏' : '内容已显示');
+  } catch {
+    // Error handled
+  }
+};
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   const padZero = (num: number) => num.toString().padStart(2, '0');
@@ -230,6 +250,7 @@ const loadThoughts = async () => {
       .map((t: any) => ({
         ...t,
         isPinned: t?.isPinned ?? 0,
+        hiddenContent: t?.hiddenContent ?? false,
         content: t?.content ?? t?.text ?? t?.title ?? t?.summary ?? '',
         events: Array.isArray(t?.events)
           ? t.events.map((e: any) => ({
@@ -252,8 +273,34 @@ const loadThoughts = async () => {
   }
 };
 
+const windowWidth = ref(window.innerWidth);
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+const columnCount = computed(() => {
+  if (windowWidth.value >= 1280) return 4;
+  if (windowWidth.value >= 1024) return 3;
+  if (windowWidth.value >= 640) return 2;
+  return 2;
+});
+
+const thoughtColumns = computed(() => {
+  const cols: Thought[][] = Array.from({ length: columnCount.value }, () => []);
+  thoughts.value.forEach((item, index) => {
+    cols[index % columnCount.value].push(item);
+  });
+  return cols;
+});
+
 onMounted(async () => {
+  window.addEventListener('resize', onResize);
   await loadThoughts();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize);
 });
 </script>
 
@@ -277,28 +324,64 @@ onMounted(async () => {
       </template>
 
       <div v-else class="cards-grid">
-        <Card
-          v-for="thought in thoughts"
-          :key="thought.id"
-          hoverable
-          :bordered="false"
-          class="thought-card"
-          @click="openEditModal(thought.id)"
+        <div
+          v-for="(col, colIndex) in thoughtColumns"
+          :key="colIndex"
+          class="card-column"
         >
-          <div class="card-content">{{ thought.content }}</div>
-          <div class="card-footer">
-            <span class="card-date">{{ formatDate(thought.createTime) }}</span>
-            <div style="display: flex; gap: 8px; align-items: center">
-              <PushpinFilled
-                v-if="thought.isPinned === 1"
-                style="color: #faad14"
-              />
-              <div class="event-badge" v-if="(thought.events || []).length > 0">
-                {{ (thought.events || []).length }}
+          <Card
+            v-for="thought in col"
+            :key="thought.id"
+            hoverable
+            :bordered="false"
+            class="thought-card group relative"
+            @click="openEditModal(thought.id)"
+          >
+            <div
+              class="card-content"
+              :class="{ 'is-hidden': thought.hiddenContent }"
+            >
+              {{ thought.content }}
+            </div>
+            <div class="card-footer">
+              <span class="card-date">{{
+                formatDate(thought.createTime)
+              }}</span>
+              <div style="display: flex; gap: 8px; align-items: center">
+                <div
+                  class="flex items-center opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                >
+                  <Tooltip
+                    :title="thought.hiddenContent ? '显示内容' : '隐藏内容'"
+                  >
+                    <Button
+                      type="text"
+                      size="small"
+                      shape="circle"
+                      class="!text-slate-500 hover:bg-white/50 dark:hover:bg-black/20"
+                      @click.stop="handleToggleHide(thought)"
+                    >
+                      <template #icon>
+                        <EyeOutlined v-if="thought.hiddenContent" />
+                        <EyeInvisibleOutlined v-else />
+                      </template>
+                    </Button>
+                  </Tooltip>
+                </div>
+                <PushpinFilled
+                  v-if="thought.isPinned === 1"
+                  style="color: #faad14"
+                />
+                <div
+                  class="event-badge"
+                  v-if="(thought.events || []).length > 0"
+                >
+                  {{ (thought.events || []).length }}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
     </Spin>
 
@@ -382,12 +465,32 @@ onMounted(async () => {
             </Popconfirm>
           </div>
           <Space>
+            <div style="display: flex; align-items: center">
+              <Tooltip :title="form.hiddenContent ? '显示内容' : '隐藏内容'">
+                <Button
+                  type="text"
+                  shape="circle"
+                  @click="form.hiddenContent = !form.hiddenContent"
+                  :class="
+                    form.hiddenContent
+                      ? '!text-slate-400'
+                      : '!text-slate-600 dark:!text-slate-300'
+                  "
+                >
+                  <template #icon>
+                    <EyeOutlined v-if="form.hiddenContent" />
+                    <EyeInvisibleOutlined v-else />
+                  </template>
+                </Button>
+              </Tooltip>
+            </div>
             <div
               style="
                 display: flex;
                 align-items: center;
                 gap: 8px;
                 margin-right: 16px;
+                margin-left: 8px;
               "
             >
               <span style="font-size: 14px; opacity: 0.85">添加到首页</span>
@@ -410,7 +513,7 @@ onMounted(async () => {
 <style scoped>
 .think-page {
   max-width: 1400px;
-  padding: 24px;
+  padding: 16px;
   margin: 0 auto;
 }
 
@@ -424,15 +527,39 @@ onMounted(async () => {
 }
 
 .cards-grid {
-  columns: 1;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 640px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .cards-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.card-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .thought-card {
-  margin-bottom: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  break-inside: avoid;
   overflow: hidden;
   box-shadow: 0 2px 8px rgb(0, 0, 0, 0.04);
 }
@@ -441,37 +568,6 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .think-page {
     padding: 12px;
-  }
-
-  .cards-grid {
-    columns: 2;
-    column-gap: 12px;
-  }
-
-  .thought-card :deep(.ant-card-body) {
-    padding: 12px;
-  }
-
-  .thought-card {
-    margin-bottom: 12px;
-  }
-}
-
-@media (min-width: 640px) {
-  .cards-grid {
-    columns: 2;
-  }
-}
-
-@media (min-width: 1024px) {
-  .cards-grid {
-    columns: 3;
-  }
-}
-
-@media (min-width: 1280px) {
-  .cards-grid {
-    columns: 4;
   }
 }
 
@@ -483,13 +579,13 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 24px;
+  padding: 16px 16px 12px;
 }
 
 .card-content {
   display: -webkit-box;
   flex: 1;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   overflow: hidden;
   font-size: 15px;
   line-height: 1.7;
@@ -498,6 +594,12 @@ onMounted(async () => {
   word-break: break-word;
   white-space: pre-wrap;
   opacity: 0.85; /* 文字颜色自适应 */
+  transition: filter 0.3s ease;
+}
+
+.card-content.is-hidden {
+  filter: blur(5px);
+  user-select: none;
 }
 
 .card-footer {

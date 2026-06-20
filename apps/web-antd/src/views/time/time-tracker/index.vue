@@ -2094,7 +2094,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 800px; /* 设置固定高度 */
+  height: calc(100vh - 200px); /* 恢复自适应高度，替代固定的 800px */
   overflow: hidden;
   background: v-bind('token.colorBgContainer');
   border: 1px solid v-bind('token.colorBorder');
@@ -2134,14 +2134,14 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 800px;
+  height: calc(100vh - 200px);
 }
 
 .month-timeline-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 800px;
+  height: calc(100vh - 200px);
 
   /* 声明默认值以消除 IDE/Linter 警告 */
   --month-day-count: 30;

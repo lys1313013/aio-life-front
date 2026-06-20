@@ -9,7 +9,15 @@ import type {
 import { computed, onMounted, ref } from 'vue';
 
 import { PlusOutlined } from '@ant-design/icons-vue';
-import { Card, Col, Empty, message, Row, Spin, Statistic } from 'ant-design-vue';
+import {
+  Card,
+  Col,
+  Empty,
+  message,
+  Row,
+  Spin,
+  Statistic,
+} from 'ant-design-vue';
 
 import {
   deleteWardrobeItem,

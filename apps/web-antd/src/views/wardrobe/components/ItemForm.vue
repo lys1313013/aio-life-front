@@ -5,8 +5,6 @@ import type {
   WardrobeItemVO,
 } from '#/api/wardrobe';
 
-import { uploadWardrobePhoto } from '#/api/wardrobe';
-
 import { computed, ref, watch } from 'vue';
 
 import { UploadOutlined } from '@ant-design/icons-vue';
@@ -24,6 +22,8 @@ import {
   Upload,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
+
+import { uploadWardrobePhoto } from '#/api/wardrobe';
 
 const props = defineProps<{
   categories: CategoryVO[];
@@ -118,7 +118,7 @@ watch(
           memo: '',
         };
       }
-      
+
       // 初始化上传列表
       fileList.value =
         formData.value.photoUrls?.map((url, i) => ({
@@ -147,7 +147,7 @@ const handleSubmit = async () => {
   }
 };
 
-const handleUploadChange = (info: { fileList: any[]; file: any }) => {
+const handleUploadChange = (info: { file: any; fileList: any[] }) => {
   fileList.value = info.fileList;
   if (info.file.status === 'done' || info.file.status === 'removed') {
     const urls = info.fileList
@@ -165,8 +165,8 @@ const customRequest = async (options: any) => {
     const url = await uploadWardrobePhoto(file);
     onProgress({ percent: 100 });
     onSuccess({ url });
-  } catch (err) {
-    onError(err);
+  } catch (error) {
+    onError(error);
   }
 };
 

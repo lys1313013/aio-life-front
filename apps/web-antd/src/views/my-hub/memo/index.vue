@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import type { Memo } from '#/api/core/memo';
 
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import {
+  DeleteOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  PlusOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -39,6 +44,7 @@ const formState = reactive({
   id: '',
   title: '',
   content: '',
+  hiddenContent: false,
 });
 
 const fetchMemos = async () => {
@@ -57,6 +63,7 @@ const handleAdd = () => {
   formState.id = '';
   formState.title = '';
   formState.content = '';
+  formState.hiddenContent = false;
   modalOpen.value = true;
 };
 
@@ -65,7 +72,18 @@ const handleEdit = (item: Memo) => {
   formState.id = item.id;
   formState.title = item.title;
   formState.content = item.content;
+  formState.hiddenContent = item.hiddenContent ?? false;
   modalOpen.value = true;
+};
+
+const handleToggleHide = async (item: Memo) => {
+  try {
+    const newHiddenState = !item.hiddenContent;
+    await updateMemoApi({ id: item.id, hiddenContent: newHiddenState });
+    item.hiddenContent = newHiddenState;
+  } catch {
+    // Error handled
+  }
 };
 
 const handleDelete = async (id: string) => {
@@ -107,8 +125,34 @@ const formatTime = (time: string) => {
   }
 };
 
+const windowWidth = ref(window.innerWidth);
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
+const columnCount = computed(() => {
+  if (windowWidth.value >= 1280) return 4;
+  if (windowWidth.value >= 1024) return 3;
+  if (windowWidth.value >= 640) return 2;
+  return 2;
+});
+
+const memoColumns = computed(() => {
+  const cols: Memo[][] = Array.from({ length: columnCount.value }, () => []);
+  memos.value.forEach((item, index) => {
+    cols[index % columnCount.value].push(item);
+  });
+  return cols;
+});
+
 onMounted(() => {
+  window.addEventListener('resize', onResize);
   fetchMemos();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize);
 });
 </script>
 
@@ -132,50 +176,73 @@ onMounted(() => {
       </template>
 
       <div v-else class="cards-grid">
-        <Card
-          v-for="item in memos"
-          :key="item.id"
-          hoverable
-          :bordered="false"
-          class="memo-card group relative"
-          @click="handleEdit(item)"
+        <div
+          v-for="(col, colIndex) in memoColumns"
+          :key="colIndex"
+          class="card-column"
         >
-          <div class="card-content">
-            <h3
-              v-if="item.title"
-              class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200"
-            >
-              {{ item.title }}
-            </h3>
-            {{ item.content }}
-          </div>
-
-          <div class="card-footer">
-            <span class="card-date">{{ formatTime(item.updateTime) }}</span>
+          <Card
+            v-for="item in col"
+            :key="item.id"
+            hoverable
+            :bordered="false"
+            class="memo-card group relative"
+            @click="handleEdit(item)"
+          >
             <div
-              class="flex gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              class="card-content"
+              :class="{ 'is-hidden': item.hiddenContent }"
             >
-              <Popconfirm
-                title="确定要删除这条记录吗？"
-                ok-text="是"
-                cancel-text="否"
-                @confirm="handleDelete(item.id)"
-                @click.stop
+              <h3
+                v-if="item.title"
+                class="mb-1 truncate text-lg font-bold text-slate-800 dark:text-slate-200"
               >
-                <Tooltip title="删除">
+                {{ item.title }}
+              </h3>
+              {{ item.content }}
+            </div>
+
+            <div class="card-footer">
+              <span class="card-date">{{ formatTime(item.updateTime) }}</span>
+              <div
+                class="flex items-center opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              >
+                <Tooltip :title="item.hiddenContent ? '显示内容' : '隐藏内容'">
                   <Button
                     type="text"
                     size="small"
                     shape="circle"
-                    class="!text-slate-500 hover:bg-white/50 hover:!text-red-500 dark:hover:bg-black/20"
+                    class="!text-slate-500 hover:bg-white/50 dark:hover:bg-black/20"
+                    @click.stop="handleToggleHide(item)"
                   >
-                    <template #icon><DeleteOutlined /></template>
+                    <template #icon>
+                      <EyeOutlined v-if="item.hiddenContent" />
+                      <EyeInvisibleOutlined v-else />
+                    </template>
                   </Button>
                 </Tooltip>
-              </Popconfirm>
+                <Popconfirm
+                  title="确定要删除这条记录吗？"
+                  ok-text="是"
+                  cancel-text="否"
+                  @confirm="handleDelete(item.id)"
+                  @click.stop
+                >
+                  <Tooltip title="删除">
+                    <Button
+                      type="text"
+                      size="small"
+                      shape="circle"
+                      class="!text-slate-500 hover:bg-white/50 hover:!text-red-500 dark:hover:bg-black/20"
+                    >
+                      <template #icon><DeleteOutlined /></template>
+                    </Button>
+                  </Tooltip>
+                </Popconfirm>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </div>
     </Spin>
 
@@ -208,6 +275,27 @@ onMounted(() => {
         :bordered="false"
         style="height: 100%"
       />
+      <div
+        class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800"
+      >
+        <Tooltip :title="formState.hiddenContent ? '显示内容' : '隐藏内容'">
+          <Button
+            type="text"
+            shape="circle"
+            @click="formState.hiddenContent = !formState.hiddenContent"
+            :class="
+              formState.hiddenContent
+                ? '!text-slate-400'
+                : '!text-slate-600 dark:!text-slate-300'
+            "
+          >
+            <template #icon>
+              <EyeOutlined v-if="formState.hiddenContent" />
+              <EyeInvisibleOutlined v-else />
+            </template>
+          </Button>
+        </Tooltip>
+      </div>
     </Modal>
 
     <GlobalFloatBtn @click="handleAdd" />
@@ -217,7 +305,7 @@ onMounted(() => {
 <style scoped>
 .memo-page {
   max-width: 1400px;
-  padding: 24px;
+  padding: 16px;
   margin: 0 auto;
 }
 
@@ -231,54 +319,38 @@ onMounted(() => {
 }
 
 .cards-grid {
-  columns: 1;
-  gap: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.card-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
 
 .memo-card {
-  margin-bottom: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  break-inside: avoid;
   overflow: hidden;
   box-shadow: 0 2px 8px rgb(0, 0, 0, 0.04);
 }
 
 /* Mobile Adaptation */
 @media (max-width: 768px) {
-  .memo-page {
-    padding: 12px;
+  .cards-grid {
+    gap: 12px;
   }
 
-  .cards-grid {
-    columns: 2;
-    column-gap: 12px;
+  .card-column {
+    gap: 12px;
   }
 
   .memo-card :deep(.ant-card-body) {
     padding: 12px;
-  }
-
-  .memo-card {
-    margin-bottom: 12px;
-  }
-}
-
-@media (min-width: 640px) {
-  .cards-grid {
-    columns: 2;
-  }
-}
-
-@media (min-width: 1024px) {
-  .cards-grid {
-    columns: 3;
-  }
-}
-
-@media (min-width: 1280px) {
-  .cards-grid {
-    columns: 4;
   }
 }
 
@@ -290,13 +362,13 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 24px;
+  padding: 16px 16px 12px;
 }
 
 .card-content {
   display: -webkit-box;
   flex: 1;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   overflow: hidden;
   font-size: 15px;
   line-height: 1.7;
@@ -305,13 +377,19 @@ onMounted(() => {
   word-break: break-word;
   white-space: pre-wrap;
   opacity: 0.85;
+  transition: filter 0.3s ease;
+}
+
+.card-content.is-hidden {
+  filter: blur(5px);
+  user-select: none;
 }
 
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
 .card-date {
