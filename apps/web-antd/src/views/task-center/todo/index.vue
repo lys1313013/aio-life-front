@@ -1100,6 +1100,7 @@ const handleEditColumnOk = async () => {
 .task-list::-webkit-scrollbar {
   width: 4px;
 }
+
 .task-list::-webkit-scrollbar-thumb {
   background: v-bind('token.colorFillSecondary');
   border-radius: 2px;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
 
-import { computed, onMounted, ref, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
 import { useSortable } from '@vben/hooks';
@@ -28,8 +28,8 @@ import {
   getMenuAdminTreeApi,
   getMenuRoleOptionsApi,
   updateMenuApi,
-  updateMenuStatusApi,
   updateMenuSortApi,
+  updateMenuStatusApi,
 } from '#/api/core/menu';
 import { resetRoutes, router } from '#/router';
 import { generateAccess } from '#/router/access';
@@ -285,10 +285,8 @@ const save = async () => {
     }
     if (editingId.value == null) {
       await createMenuApi(payload);
-      message.success('新增成功');
     } else {
       await updateMenuApi(editingId.value, payload);
-      message.success('更新成功');
     }
     editVisible.value = false;
     await load();
@@ -333,13 +331,13 @@ const initSortable = () => {
       animation: 150,
       onEnd: async (evt: any) => {
         const itemEl = evt.item as HTMLElement;
-        const draggedId = itemEl.getAttribute('data-id');
+        const draggedId = itemEl.dataset.id;
         if (!draggedId) return;
 
-        let siblings: SysMenuAdminItem[] | null = null;
+        let siblings: null | SysMenuAdminItem[] = null;
 
         const findSiblings = (nodes: SysMenuAdminItem[]) => {
-          if (nodes.some(n => String(n.id) === draggedId)) {
+          if (nodes.some((n) => String(n.id) === draggedId)) {
             siblings = nodes;
             return true;
           }
@@ -363,20 +361,25 @@ const initSortable = () => {
         if (!tbody) return;
 
         const domIds = Array.from(tbody.querySelectorAll('tr[data-id]'))
-          .map(tr => tr.getAttribute('data-id'))
+          .map((tr) => tr.dataset.id)
           .filter(Boolean) as string[];
 
         const validSiblings = siblings as SysMenuAdminItem[];
-        const siblingIdsInNewOrder = domIds.filter(id => validSiblings.some(s => String(s.id) === id));
+        const siblingIdsInNewOrder = domIds.filter((id) =>
+          validSiblings.some((s) => String(s.id) === id),
+        );
 
-        const existingSorts = validSiblings.map(s => s.sort ?? 0).sort((a, b) => a - b);
+        const existingSorts = validSiblings
+          .map((s) => s.sort ?? 0)
+          .sort((a, b) => a - b);
 
         const updates: Promise<any>[] = [];
         let changed = false;
 
         siblingIdsInNewOrder.forEach((id, index) => {
-          const node = validSiblings.find(s => String(s.id) === id);
-          const newSort = existingSorts[index] !== undefined ? existingSorts[index] : index;
+          const node = validSiblings.find((s) => String(s.id) === id);
+          const newSort =
+            existingSorts[index] === undefined ? index : existingSorts[index];
           if (node && node.sort !== newSort) {
             changed = true;
             updates.push(updateMenuSortApi(id, newSort));
@@ -387,7 +390,6 @@ const initSortable = () => {
           try {
             loading.value = true;
             await Promise.all(updates);
-            message.success('排序更新成功');
             await load();
             await refreshAccessibleMenus();
           } catch (error: any) {
@@ -404,7 +406,7 @@ const initSortable = () => {
         if (isDragSortEnabled.value) {
           nextTick(() => setTimeout(initSortable, 100));
         }
-      }
+      },
     });
     initializeSortable();
   }
@@ -449,20 +451,25 @@ onMounted(() => {
 
     <Spin :spinning="loading">
       <Table
+        size="small"
         :data-source="list"
         :columns="columns"
         :pagination="false"
         row-key="id"
-        v-model:expandedRowKeys="expandedRowKeys"
-        @expand="(expanded: boolean, record: any) => {
-          if (expanded) {
-            expandedRowKeys.push(String(record.id));
-          } else {
-            expandedRowKeys = expandedRowKeys.filter(k => k !== String(record.id));
-            isAllExpanded = false;
+        v-model:expanded-row-keys="expandedRowKeys"
+        @expand="
+          (expanded: boolean, record: any) => {
+            if (expanded) {
+              expandedRowKeys.push(String(record.id));
+            } else {
+              expandedRowKeys = expandedRowKeys.filter(
+                (k) => k !== String(record.id),
+              );
+              isAllExpanded = false;
+            }
           }
-        }"
-        :custom-row="(record: any) => ({ 'data-id': String(record.id) } as any)"
+        "
+        :custom-row="(record: any) => ({ 'data-id': String(record.id) }) as any"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'title'">
@@ -476,7 +483,6 @@ onMounted(() => {
                 <div class="font-medium">
                   {{ record.meta?.title ?? record.name }}
                 </div>
-                <div class="text-xs text-stone-400">{{ record.name }}</div>
               </div>
             </div>
           </template>
