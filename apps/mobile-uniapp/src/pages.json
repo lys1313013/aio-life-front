@@ -1,0 +1,188 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/login/index",
+      "style": { "navigationBarTitleText": "登录" }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": { "navigationBarTitleText": "首页" }
+    },
+    {
+      "path": "pages/task-center/todo/index",
+      "style": { "navigationBarTitleText": "待办" }
+    },
+    {
+      "path": "pages/message/index",
+      "style": { "navigationBarTitleText": "消息" }
+    },
+    {
+      "path": "pages/_core/profile/index",
+      "style": { "navigationBarTitleText": "我的" }
+    },
+    {
+      "path": "pages/task-center/goal/index",
+      "style": { "navigationBarTitleText": "目标" }
+    },
+    {
+      "path": "pages/time/time-tracker/index",
+      "style": { "navigationBarTitleText": "时迹", "enablePullDownRefresh": true }
+    },
+    {
+      "path": "pages/time/time-tracker/edit",
+      "style": { "navigationBarTitleText": "记录时迹" }
+    },
+    {
+      "path": "pages/time/my-categories/index",
+      "style": { "navigationBarTitleText": "我的分类" }
+    },
+    {
+      "path": "pages/time/category-admin/index",
+      "style": { "navigationBarTitleText": "分类管理" }
+    },
+    {
+      "path": "pages/record/exercise/index",
+      "style": { "navigationBarTitleText": "运动" }
+    },
+    {
+      "path": "pages/record/password/index",
+      "style": { "navigationBarTitleText": "密码管理" }
+    },
+    {
+      "path": "pages/record/videoWatch/index",
+      "style": { "navigationBarTitleText": "视频观看" }
+    },
+    {
+      "path": "pages/record/think/index",
+      "style": { "navigationBarTitleText": "闪念" }
+    },
+    {
+      "path": "pages/record/memo/index",
+      "style": { "navigationBarTitleText": "笔记" }
+    },
+    {
+      "path": "pages/record/performance/index",
+      "style": { "navigationBarTitleText": "活动" }
+    },
+    {
+      "path": "pages/record/milestone/index",
+      "style": { "navigationBarTitleText": "里程碑" }
+    },
+    {
+      "path": "pages/record/anniversary/index",
+      "style": { "navigationBarTitleText": "纪念日" }
+    },
+    {
+      "path": "pages/record/movie/index",
+      "style": { "navigationBarTitleText": "观影" }
+    },
+    {
+      "path": "pages/record/read/index",
+      "style": { "navigationBarTitleText": "阅读" }
+    },
+    {
+      "path": "pages/relationship/graph/index",
+      "style": { "navigationBarTitleText": "关系图谱" }
+    },
+    {
+      "path": "pages/finance/dashboard/index",
+      "style": { "navigationBarTitleText": "财务概览" }
+    },
+    {
+      "path": "pages/finance/income/index",
+      "style": { "navigationBarTitleText": "收入" }
+    },
+    {
+      "path": "pages/finance/expense/index",
+      "style": { "navigationBarTitleText": "支出" }
+    },
+    {
+      "path": "pages/finance/import/index",
+      "style": { "navigationBarTitleText": "账单导入" }
+    },
+    {
+      "path": "pages/goods/device/index",
+      "style": { "navigationBarTitleText": "设备墙" }
+    },
+    {
+      "path": "pages/goods/wardrobe/index",
+      "style": { "navigationBarTitleText": "衣柜" }
+    },
+    {
+      "path": "pages/coding/github/index",
+      "style": { "navigationBarTitleText": "Github" }
+    },
+    {
+      "path": "pages/coding/leetcode/index",
+      "style": { "navigationBarTitleText": "LeetCode" }
+    },
+    {
+      "path": "pages/coding/csdn/index",
+      "style": { "navigationBarTitleText": "CSDN" }
+    },
+    {
+      "path": "pages/config-management/sysDictType/index",
+      "style": { "navigationBarTitleText": "字典类型" }
+    },
+    {
+      "path": "pages/config-management/sysDictData/index",
+      "style": { "navigationBarTitleText": "字典数据" }
+    },
+    {
+      "path": "pages/config-management/exerciseCategoryConfig/index",
+      "style": { "navigationBarTitleText": "分类配置" }
+    },
+    {
+      "path": "pages/system/user/index",
+      "style": { "navigationBarTitleText": "用户中心" }
+    },
+    {
+      "path": "pages/system/menu/index",
+      "style": { "navigationBarTitleText": "菜单管理" }
+    },
+    {
+      "path": "pages/system/user-dict/index",
+      "style": { "navigationBarTitleText": "用户字典" }
+    },
+    {
+      "path": "pages/mcp/tools/index",
+      "style": { "navigationBarTitleText": "MCP 工具列表" }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "AIO-Life",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#007AFF",
+    "borderStyle": "black",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/task-center/todo/index",
+        "text": "任务"
+      },
+      {
+        "pagePath": "pages/message/index",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/_core/profile/index",
+        "text": "我的"
+      }
+    ]
+  }
+}

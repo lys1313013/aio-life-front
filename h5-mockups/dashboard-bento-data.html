@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AIO-Life 首页 (数据版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            background-color: #F8F8F8;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="pb-24">
+    <!-- 顶部极简状态栏 -->
+    <header class="px-5 pt-12 pb-4">
+        <h1 class="text-xl font-bold text-gray-900">仪表盘</h1>
+        <p class="text-xs text-gray-500 mt-1">你的生活数据中心</p>
+    </header>
+
+    <!-- 紧凑型 Bento Grid 主体 -->
+    <main class="px-5 grid grid-cols-2 gap-3">
+        
+        <!-- 今日时迹数据看板 (2x1) -->
+        <div class="col-span-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-5 shadow-md text-white">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-medium opacity-90 flex items-center gap-1">
+                    <i class="ph-fill ph-clock"></i> 今日专注
+                </h2>
+                <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm">进行中</span>
+            </div>
+            <div class="flex items-end gap-2">
+                <span class="text-4xl font-bold tracking-tight">4</span>
+                <span class="text-lg opacity-80 mb-1">h</span>
+                <span class="text-4xl font-bold tracking-tight ml-1">20</span>
+                <span class="text-lg opacity-80 mb-1">m</span>
+            </div>
+            <div class="mt-4 bg-white/20 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-white w-2/3 h-full rounded-full"></div>
+            </div>
+            <p class="text-[10px] mt-2 opacity-80 text-right">目标 6 小时</p>
+        </div>
+
+        <!-- 任务状态 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col justify-between aspect-square">
+            <div class="flex justify-between items-start">
+                <div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                    <i class="ph-fill ph-check-circle text-lg"></i>
+                </div>
+                <i class="ph ph-arrow-up-right text-gray-300"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold text-gray-800">5<span class="text-xs text-gray-400 font-normal ml-1">/ 12</span></p>
+                <h3 class="text-xs font-medium text-gray-500 mt-1">今日任务完成</h3>
+            </div>
+        </div>
+
+        <!-- 人际关系预警 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col justify-between aspect-square">
+            <div class="flex justify-between items-start">
+                <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                    <i class="ph-fill ph-gift text-lg"></i>
+                </div>
+                <span class="w-2 h-2 bg-red-500 rounded-full mt-1"></span>
+            </div>
+            <div>
+                <p class="text-sm font-semibold text-gray-800">妈妈生日</p>
+                <h3 class="text-xs font-medium text-red-500 mt-1">还有 3 天</h3>
+            </div>
+        </div>
+
+        <!-- 密码与安全 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col justify-between aspect-[2/1.2]">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="ph-fill ph-shield-check text-orange-500 text-lg"></i>
+                <h3 class="text-xs font-medium text-gray-600">密码库</h3>
+            </div>
+            <div class="flex items-center justify-between">
+                <p class="text-lg font-bold text-gray-800">128</p>
+                <span class="text-[10px] text-green-500 bg-green-50 px-2 py-1 rounded">安全</span>
+            </div>
+        </div>
+
+        <!-- 衣橱统计 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col justify-between aspect-[2/1.2]">
+            <div class="flex items-center gap-2 mb-2">
+                <i class="ph-fill ph-t-shirt text-pink-500 text-lg"></i>
+                <h3 class="text-xs font-medium text-gray-600">衣橱单品</h3>
+            </div>
+            <div class="flex items-center justify-between">
+                <p class="text-lg font-bold text-gray-800">45</p>
+                <span class="text-[10px] text-gray-400">夏季</span>
+            </div>
+        </div>
+
+        <!-- 快速记事 (2x1) -->
+        <div class="col-span-2 bg-gray-900 rounded-3xl p-4 shadow-sm flex items-center justify-between active:scale-[0.98] transition-transform">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white">
+                    <i class="ph ph-plus text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-white">快速记录</h3>
+                    <p class="text-xs text-gray-400">随时随地记录灵感...</p>
+                </div>
+            </div>
+            <i class="ph ph-microphone text-gray-400 text-xl"></i>
+        </div>
+
+    </main>
+
+    <!-- 底部 Tab Bar 占位 -->
+    <nav class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 pb-safe z-50">
+        <div class="flex justify-around items-center h-16 px-4">
+            <div class="flex flex-col items-center justify-center w-16 text-blue-600">
+                <i class="ph-fill ph-squares-four text-2xl"></i>
+                <span class="text-[10px] mt-1 font-medium">仪表盘</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-check-square text-2xl"></i>
+                <span class="text-[10px] mt-1">任务</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-chat-circle text-2xl"></i>
+                <span class="text-[10px] mt-1">消息</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-user text-2xl"></i>
+                <span class="text-[10px] mt-1">我的</span>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>

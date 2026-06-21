@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AIO-Life 首页 (视觉版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Phosphor Icons 作为演示图标 -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        body {
+            background-color: #F8F8F8;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 隐藏滚动条但保留滚动功能 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="pb-20">
+    <!-- 顶部问候与日期 -->
+    <header class="px-5 pt-12 pb-6 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">早上好，User</h1>
+            <p class="text-sm text-gray-500 mt-1">6月21日 星期五</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+            <i class="ph-fill ph-user text-xl"></i>
+        </div>
+    </header>
+
+    <!-- Bento Grid 主体 -->
+    <main class="px-5 grid grid-cols-2 gap-4">
+        
+        <!-- 今日时迹 (2x2) -->
+        <div class="col-span-2 bg-white rounded-3xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden">
+            <!-- 装饰背景 -->
+            <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-50 rounded-full opacity-50"></div>
+            
+            <div class="flex justify-between items-start z-10">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="ph-fill ph-clock text-blue-500"></i> 今日时迹
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-1">已记录 2h 15m</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-center z-10">
+                <button class="w-20 h-20 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-200 flex items-center justify-center active:scale-95 transition-transform">
+                    <i class="ph-fill ph-play text-3xl ml-1"></i>
+                </button>
+            </div>
+            <div class="mt-4 text-center z-10">
+                <p class="text-sm font-medium text-gray-600">开始专注</p>
+            </div>
+        </div>
+
+        <!-- 近期任务 (2x1) -->
+        <div class="col-span-2 bg-white rounded-3xl p-5 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-base font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="ph-fill ph-check-circle text-green-500"></i> 近期任务
+                </h2>
+                <span class="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">3 待办</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded border-2 border-gray-300"></div>
+                    <p class="text-sm text-gray-700">完成 AIO-Life 首页设计</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded border-2 border-gray-300"></div>
+                    <p class="text-sm text-gray-700">阅读技术文档 30 分钟</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 密码管理 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col items-center justify-center aspect-square active:bg-gray-50 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-2">
+                <i class="ph-fill ph-lock-key text-2xl"></i>
+            </div>
+            <h3 class="text-sm font-medium text-gray-800">密码</h3>
+        </div>
+
+        <!-- 衣橱 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col items-center justify-center aspect-square active:bg-gray-50 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center mb-2">
+                <i class="ph-fill ph-t-shirt text-2xl"></i>
+            </div>
+            <h3 class="text-sm font-medium text-gray-800">衣橱</h3>
+        </div>
+
+        <!-- 人际关系 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col items-center justify-center aspect-square active:bg-gray-50 transition-colors">
+            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-2">
+                <i class="ph-fill ph-users-three text-2xl"></i>
+            </div>
+            <h3 class="text-sm font-medium text-gray-800">人际关系</h3>
+        </div>
+
+        <!-- 消息 (1x1) -->
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex flex-col items-center justify-center aspect-square active:bg-gray-50 transition-colors relative">
+            <div class="absolute top-4 right-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></div>
+            <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-500 flex items-center justify-center mb-2">
+                <i class="ph-fill ph-chat-circle-dots text-2xl"></i>
+            </div>
+            <h3 class="text-sm font-medium text-gray-800">消息</h3>
+        </div>
+
+    </main>
+
+    <!-- 底部 Tab Bar 占位 -->
+    <nav class="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-md border-t border-gray-100 pb-safe">
+        <div class="flex justify-around items-center h-16 px-4">
+            <div class="flex flex-col items-center justify-center w-16 text-blue-500">
+                <i class="ph-fill ph-house text-2xl"></i>
+                <span class="text-[10px] mt-1">首页</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-check-square text-2xl"></i>
+                <span class="text-[10px] mt-1">任务</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-chat-circle text-2xl"></i>
+                <span class="text-[10px] mt-1">消息</span>
+            </div>
+            <div class="flex flex-col items-center justify-center w-16 text-gray-400">
+                <i class="ph ph-user text-2xl"></i>
+                <span class="text-[10px] mt-1">我的</span>
+            </div>
+        </div>
+    </nav>
+</body>
+</html>
