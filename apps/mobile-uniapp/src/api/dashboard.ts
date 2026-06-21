@@ -33,9 +33,11 @@ export interface DashboardTaskItem {
 
 export interface QuickNavItem {
   id?: string;
+  menuId?: string;
   icon: string;
   title: string;
-  url: string;
+  path: string;
+  url?: string;
   bgColor?: string;
   color?: string;
   sort?: number;

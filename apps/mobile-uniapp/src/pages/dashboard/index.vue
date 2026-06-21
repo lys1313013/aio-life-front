@@ -109,7 +109,7 @@
         <text class="panel-title">快捷导航</text>
       </view>
       <view class="panel-body quick-nav-grid">
-        <view class="nav-item" v-for="nav in quickNavs" :key="nav.id" @click="navigateTo(nav.url)">
+        <view class="nav-item" v-for="nav in quickNavs" :key="nav.id || nav.menuId" @click="navigateTo(nav.path || nav.url)">
           <view class="nav-icon-wrap" :style="{ color: nav.color || '#007aff' }">
             <view class="iconify-icon" :style="getIconifyStyle(nav.icon)"></view>
           </view>
@@ -144,7 +144,7 @@
           class="task-item" 
           v-for="task in watchedTasks" 
           :key="task.id" 
-          @click="navigateTo('/pages/task/index')"
+          @click="navigateTo('/pages/task-center/todo/index')"
         >
           <view class="checkbox" :class="{ 'is-checked': task.isCompleted }">
             <uni-icons v-if="task.isCompleted" type="checkmarkempty" size="14" color="#fff"></uni-icons>
@@ -286,7 +286,6 @@ const navigateTo = (url?: string) => {
 
   // Define tab bar pages
   const tabs = [
-    '/pages/task/index',
     '/pages/task-center/todo/index',
     '/pages/dashboard/index',
     '/pages/message/index',
@@ -297,10 +296,16 @@ const navigateTo = (url?: string) => {
   
   // Transform web route to mobile route if it doesn't start with /pages/
   if (!targetUrl.startsWith('/pages/')) {
-    if (targetUrl === '/analytics') {
+    if (!targetUrl.startsWith('/')) {
+      targetUrl = '/' + targetUrl;
+    }
+    
+    if (targetUrl === '/analytics' || targetUrl === '/dashboard') {
       targetUrl = '/pages/dashboard/index'; // Already at home basically
     } else if (targetUrl === '/profile') {
       targetUrl = '/pages/_core/profile/index';
+    } else if (targetUrl.startsWith('/my-hub/')) {
+      targetUrl = `/pages/goods/${targetUrl.replace('/my-hub/', '')}/index`;
     } else {
       // General mapping rule: /foo/bar -> /pages/foo/bar/index
       targetUrl = `/pages${targetUrl}/index`;
@@ -316,8 +321,8 @@ const navigateTo = (url?: string) => {
     uni.navigateTo({ 
       url: targetUrl,
       fail: (err) => {
-        console.error('Navigate failed:', err);
-        uni.showToast({ title: '页面开发中', icon: 'none' });
+        console.error('Navigate failed:', err, 'Target URL:', targetUrl);
+        uni.showToast({ title: '尚未开发: ' + targetUrl.replace('/pages/', '').replace('/index', ''), icon: 'none' });
       }
     });
   }
