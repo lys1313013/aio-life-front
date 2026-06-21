@@ -125,7 +125,31 @@ const loadData = async () => {
       })
       .filter((item) => item.value > 0);
 
+    const totalDuration = Object.values(categoryDurations).reduce(
+      (sum, val) => sum + val,
+      0,
+    );
+    const totalHours = Math.floor(totalDuration / 60);
+    const totalMins = totalDuration % 60;
+    let totalStr = '';
+    if (totalHours > 0 && totalMins > 0) {
+      totalStr = `${totalHours}h${totalMins}m`;
+    } else if (totalHours > 0) {
+      totalStr = `${totalHours}h`;
+    } else {
+      totalStr = `${totalMins}m`;
+    }
+
     renderEcharts({
+      title: {
+        text: totalDuration > 0 ? totalStr : '',
+        left: 'center',
+        top: 'center',
+        textStyle: {
+          fontSize: 14,
+          fontWeight: 'bold',
+        },
+      },
       tooltip: {
         trigger: 'item',
         formatter: (params: any) => {
@@ -155,7 +179,6 @@ const loadData = async () => {
           animationEasing: 'exponentialInOut',
           animationType: 'scale',
           avoidLabelOverlap: true,
-          padAngle: 2,
           data:
             pieData.length > 0
               ? pieData
@@ -176,7 +199,8 @@ const loadData = async () => {
             },
           },
           itemStyle: {
-            borderRadius: 8,
+            borderWidth: 0,
+            borderColor: 'transparent',
           },
           label: {
             show: true,
@@ -202,9 +226,8 @@ const loadData = async () => {
             length2: 8,
           },
           name: '时间分类',
-          radius: ['35%', '60%'],
-          // center: 水平 55% 偏右，使得与右侧列表的距离更紧凑
-          center: ['55%', '50%'],
+          radius: ['45%', '70%'],
+          center: ['50%', '50%'],
           type: 'pie',
         },
       ],

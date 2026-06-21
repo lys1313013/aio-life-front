@@ -33,10 +33,18 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
+import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '../../store/user';
 import { post } from '../../utils/request';
 
 const userStore = useUserStore();
+
+onShow(() => {
+  // 防止已经登录的情况下，不小心通过返回键回到登录页
+  if (userStore.token) {
+    uni.switchTab({ url: '/pages/dashboard/index' });
+  }
+});
 
 const formData = reactive({
   username: '',

@@ -1,5 +1,10 @@
 import { get, post } from "../utils/request";
 
+export interface ExerciseDetail {
+  exerciseTypeId: string;
+  exerciseCount?: number;
+}
+
 export interface TimeRecordEntity {
   id?: string;
   userId?: number;
@@ -11,6 +16,9 @@ export interface TimeRecordEntity {
   description?: string;
   duration: number;
   isManual?: number;
+  exercises?: ExerciseDetail[];
+  relateId?: string;
+  relateType?: number;
 }
 
 export async function queryTimeTrackerByDate(date: string) {
@@ -27,4 +35,8 @@ export async function updateTimeRecord(data: Partial<TimeRecordEntity>) {
 
 export async function deleteTimeRecord(id: string) {
   return await post<void>("/timeRecord/delete", { id });
+}
+
+export async function getRelateTypes() {
+  return await get<Array<{ label: string; value: number }>>('/timeRecord/relateTypes');
 }

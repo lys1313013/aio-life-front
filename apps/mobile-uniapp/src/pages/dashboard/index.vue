@@ -284,35 +284,42 @@ const navigateTo = (url?: string) => {
     return;
   }
 
-  // 映射 Web 端的路由到移动端路由
-  if (url === '/analytics') {
-    // 已经在首页
-    return;
-  } else if (url === '/task-center/todo') {
-    uni.switchTab({ url: '/pages/task-center/todo/index' });
-  } else if (url === '/message') {
-    uni.switchTab({ url: '/pages/message/index' });
-  } else if (url === '/profile') {
-    uni.switchTab({ url: '/pages/_core/profile/index' });
-  } else if (url === '/time/time-tracker') {
-    uni.navigateTo({ url: '/pages/time/time-tracker/index' });
-  } else if (url === '/record/password') {
-    uni.navigateTo({ url: '/pages/record/password/index' });
-  } else if (url.startsWith('/pages/')) {
-    if (['/pages/task/index', '/pages/task-center/todo/index', '/pages/dashboard/index', '/pages/message/index', '/pages/_core/profile/index'].includes(url)) {
-      uni.switchTab({ url });
+  // Define tab bar pages
+  const tabs = [
+    '/pages/task/index',
+    '/pages/task-center/todo/index',
+    '/pages/dashboard/index',
+    '/pages/message/index',
+    '/pages/_core/profile/index'
+  ];
+
+  let targetUrl = url;
+  
+  // Transform web route to mobile route if it doesn't start with /pages/
+  if (!targetUrl.startsWith('/pages/')) {
+    if (targetUrl === '/analytics') {
+      targetUrl = '/pages/dashboard/index'; // Already at home basically
+    } else if (targetUrl === '/profile') {
+      targetUrl = '/pages/_core/profile/index';
     } else {
-      uni.navigateTo({ 
-        url,
-        fail: (err) => {
-          console.error('Navigate failed:', err);
-          uni.showToast({ title: '页面开发中', icon: 'none' });
-        }
-      });
+      // General mapping rule: /foo/bar -> /pages/foo/bar/index
+      targetUrl = `/pages${targetUrl}/index`;
     }
+  }
+
+  // Prevent navigating to the exact current page again if it's the dashboard itself
+  if (targetUrl === '/pages/dashboard/index') return;
+
+  if (tabs.includes(targetUrl)) {
+    uni.switchTab({ url: targetUrl });
   } else {
-    // 其他路由暂时跳转开发中页面
-    uni.showToast({ title: '开发中...', icon: 'none' });
+    uni.navigateTo({ 
+      url: targetUrl,
+      fail: (err) => {
+        console.error('Navigate failed:', err);
+        uni.showToast({ title: '页面开发中', icon: 'none' });
+      }
+    });
   }
 };
 
@@ -601,6 +608,10 @@ const onRefresh = () => {
 };
 
 onShow(() => {
+  if (!userStore.token) {
+    uni.reLaunch({ url: '/pages/login/index' });
+    return;
+  }
   fetchData();
 });
 

@@ -1,4 +1,4 @@
-import { post, request } from "../utils/request";
+import { get, post, request } from "../utils/request";
 
 export interface ReadRecordVO {
   id: string;
@@ -31,4 +31,8 @@ export function updateReadApi(data: any) {
 
 export function removeReadApi(id: string) {
   return request<any>({ url: `/read-record/${id}`, method: 'DELETE' });
+}
+
+export function listActiveRead() {
+  return get<ReadRecordVO[]>('/read-record/active');
 }

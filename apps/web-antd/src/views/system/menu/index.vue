@@ -361,7 +361,7 @@ const initSortable = () => {
         if (!tbody) return;
 
         const domIds = Array.from(tbody.querySelectorAll('tr[data-id]'))
-          .map((tr) => tr.dataset.id)
+          .map((tr) => (tr as HTMLElement).dataset.id)
           .filter(Boolean) as string[];
 
         const validSiblings = siblings as SysMenuAdminItem[];

@@ -44,16 +44,16 @@ import { onShow } from '@dcloudio/uni-app';
 import { queryTimeTrackerByDate } from '@/api/time-tracker';
 import type { TimeRecordEntity } from '@/api/time-tracker';
 
-const currentDate = ref('');
-const records = ref<TimeRecordEntity[]>([]);
-
-onMounted(() => {
+const getTodayString = () => {
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  currentDate.value = `${yyyy}-${mm}-${dd}`;
-});
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const currentDate = ref(getTodayString());
+const records = ref<TimeRecordEntity[]>([]);
 
 onShow(() => {
   if (currentDate.value) {
