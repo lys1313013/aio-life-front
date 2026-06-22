@@ -15,6 +15,13 @@ export async function insertOrUpdate(data: any) {
 }
 
 /**
+ * 上传设备图片
+ */
+export async function uploadImage(file: File) {
+  return await requestClient.upload<string>('/device/upload-image', { file });
+}
+
+/**
  * 删除
  */
 export async function deleteData(id: number | string) {

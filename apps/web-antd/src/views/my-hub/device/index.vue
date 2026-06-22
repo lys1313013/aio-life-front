@@ -2,6 +2,7 @@
 // 添加moment导入
 import {
   DeleteOutlined,
+  UploadOutlined,
   VerticalAlignTopOutlined,
 } from '@ant-design/icons-vue';
 import {
@@ -18,11 +19,12 @@ import {
   Popconfirm,
   Row,
   Select,
+  Upload,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/common';
-import { deleteData, insertOrUpdate, query } from '#/api/core/device';
+import { deleteData, insertOrUpdate, query, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -42,7 +44,9 @@ export default {
     ARow: Row,
     ACol: Col,
     AFloatButtonBackTop: FloatButton.BackTop,
+    AUpload: Upload,
     DeleteOutlined,
+    UploadOutlined,
     VerticalAlignTopOutlined,
     GlobalFloatBtn,
   },
@@ -68,6 +72,8 @@ export default {
       electronics: [],
       tabList: [], // 页签列表
       tabKey: '', // 当前选中的页签
+      previewVisible: false, // 图片预览弹窗
+      previewImage: '', // 预览图片地址
     };
   },
   async mounted() {
@@ -244,6 +250,51 @@ export default {
         this.statusOptions = res.dictDetailList;
       }
     },
+    handleUploadChange(info) {
+      if (info.file.status === 'done') {
+        this.newDevice.image = info.file.response?.url || info.file.response;
+        message.success('上传成功');
+      }
+      if (info.file.status === 'error') {
+        message.error('上传失败');
+      }
+    },
+
+    handlePreview(file) {
+      this.previewImage = file.url || file.response?.url || '';
+      this.previewVisible = true;
+    },
+
+    async customUploadRequest(options) {
+      const { file, onSuccess, onError, onProgress } = options;
+      try {
+        onProgress({ percent: 50 });
+        const url = await uploadImage(file);
+        onProgress({ percent: 100 });
+        onSuccess({ url });
+        message.success('上传成功');
+      } catch (error) {
+        onError(error);
+        message.error('上传失败');
+      }
+    },
+
+    async handlePaste(event) {
+      const items = event.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          event.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+          const url = await uploadImage(file);
+          this.newDevice.image = url;
+          message.success('上传成功');
+          return;
+        }
+      }
+    },
+
     async handleDelete(item) {
       try {
         await deleteData(item.id);
@@ -370,8 +421,33 @@ export default {
               </AFormItem>
             </ACol>
           </ARow>
-          <AFormItem label="图片链接">
-            <AInput v-model:value="newDevice.image" />
+          <AFormItem label="设备图片">
+            <div @paste="handlePaste">
+              <div v-if="newDevice.image" class="image-preview-box">
+                <img :src="newDevice.image" @click="handlePreview({ url: newDevice.image })" />
+                <AButton
+                  type="text"
+                  danger
+                  size="small"
+                  class="image-remove-btn"
+                  @click="newDevice.image = ''"
+                >
+                  <template #icon><DeleteOutlined /></template>
+                </AButton>
+              </div>
+              <div v-else class="image-upload-box">
+                <AUpload
+                  :max-count="1"
+                  accept="image/*"
+                  :show-upload-list="false"
+                  :custom-request="customUploadRequest"
+                  @change="handleUploadChange"
+                >
+                  <AButton><UploadOutlined /> 上传图片</AButton>
+                </AUpload>
+                <span class="image-upload-hint">支持 Ctrl+V 粘贴</span>
+              </div>
+            </div>
           </AFormItem>
           <AFormItem label="备注">
             <AInput
@@ -382,6 +458,16 @@ export default {
             />
           </AFormItem>
         </AForm>
+      </AModal>
+
+      <AModal
+        v-model:open="previewVisible"
+        :footer="null"
+        :width="520"
+        centered
+        @cancel="previewVisible = false"
+      >
+        <img :src="previewImage" style="width: 100%; display: block" />
       </AModal>
 
       <div class="total-static">
@@ -630,6 +716,50 @@ export default {
 .total-static .ant-card span:first-child {
   font-size: 18px;
   font-weight: bold;
+}
+
+.image-preview-box {
+  position: relative;
+  display: inline-block;
+  max-width: 200px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.image-preview-box img {
+  display: block;
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  cursor: zoom-in;
+  background: #f5f5f5;
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: rgb(255 255 255 / 85%);
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 15%);
+}
+
+.image-upload-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.image-upload-hint {
+  color: #999;
+  font-size: 12px;
 }
 
 .device-form :deep(.ant-form-item) {
