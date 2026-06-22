@@ -723,7 +723,8 @@ export default {
 .image-preview-box {
   position: relative;
   display: inline-block;
-  max-width: 200px;
+  width: 104px;
+  height: 104px;
   border: 1px solid #d9d9d9;
   border-radius: 4px;
   overflow: hidden;
@@ -732,7 +733,7 @@ export default {
 .image-preview-box img {
   display: block;
   width: 100%;
-  max-height: 160px;
+  height: 100%;
   object-fit: contain;
   cursor: zoom-in;
   background: #f5f5f5;
