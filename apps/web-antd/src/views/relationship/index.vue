@@ -93,17 +93,73 @@ const fetchGraphData = async () => {
   try {
     const data = await getGraphData();
     const nodes = data.nodes || [];
-    // 预计算圆形初始位置，并固定 (fx/fy) 以避免力模拟把节点弹飞
-    const radius = 180;
-    graphData.value = {
-      nodes: nodes.map((n, i) => {
+    const edges = data.edges || [];
+
+    // 计算每个节点的关系数量（对边去重，避免双向关系算两次）
+    const relCountMap = new Map<string, number>();
+    for (const node of nodes) {
+      relCountMap.set(node.id, 0);
+    }
+    const seenEdges = new Set<string>();
+    for (const edge of edges) {
+      const key = [edge.source, edge.target].sort().join('|');
+      if (seenEdges.has(key)) continue;
+      seenEdges.add(key);
+      relCountMap.set(edge.source, (relCountMap.get(edge.source) || 0) + 1);
+      relCountMap.set(edge.target, (relCountMap.get(edge.target) || 0) + 1);
+    }
+
+    // 按关系数量排序，关系最多的排第一
+    const sortedNodes = [...nodes].sort(
+      (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
+    );
+    const maxRelCount = relCountMap.get(sortedNodes[0]?.id) || 1;
+
+    // 径向布局：关系最多的在中心 (0,0)，其他按同心圆分布
+    const layoutNodes = sortedNodes.map((n, i) => {
+      const count = relCountMap.get(n.id) || 0;
+      const ratio = count / maxRelCount;
+      let x = 0;
+      let y = 0;
+
+      if (i === 0) {
+        // 关系最多的节点放中心
+        x = 0;
+        y = 0;
+      } else {
+        // 其余节点按同心圆分布
+        // 第1层最多6个，第2层最多12个，第3层最多18个...
+        let layer = 1;
+        let cumulativeCount = 0;
+        while (cumulativeCount + Math.floor(6 * layer) < i && layer < 5) {
+          cumulativeCount += Math.floor(6 * layer);
+          layer++;
+        }
+        const indexInLayer = i - 1 - cumulativeCount;
+        const nodesInThisLayer = Math.min(Math.floor(6 * layer), sortedNodes.length - i + indexInLayer);
         const angle =
-          (2 * Math.PI * i) / Math.max(nodes.length, 1) - Math.PI / 2;
-        const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);
-        return { id: n.id, name: n.name, x, y, fx: x, fy: y };
-      }),
-      links: (data.edges || []).map((e) => ({
+          (2 * Math.PI * indexInLayer) / Math.max(nodesInThisLayer, 1) - Math.PI / 2;
+        const layerRadius = layer * 120;
+        x = layerRadius * Math.cos(angle);
+        y = layerRadius * Math.sin(angle);
+      }
+
+      return {
+        id: n.id,
+        name: n.name,
+        x,
+        y,
+        fx: x, // 固定位置，不让力模拟移动
+        fy: y,
+        relationshipCount: count,
+        // 节点大小统一
+        val: 20,
+      };
+    });
+
+    graphData.value = {
+      nodes: layoutNodes,
+      links: edges.map((e) => ({
         source: e.source,
         target: e.target,
         relationType: e.relationType,
@@ -289,7 +345,6 @@ onMounted(() => {
           v-if="graphData.nodes?.length"
           :graph-data="graphData"
           node-label="name"
-          :node-val="40"
           background-color="#fff"
           :link-directional-arrow-length="6"
           :link-directional-arrow-rel-pos="1"
