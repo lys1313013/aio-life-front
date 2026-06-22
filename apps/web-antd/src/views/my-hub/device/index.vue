@@ -736,31 +736,31 @@ export default {
 .stat-card {
   flex: 1;
   min-width: 0;
-  background: #fff;
-  border: 1px solid #e8e8e8;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   padding: 16px 20px;
   transition: box-shadow 0.3s;
 }
 
 .stat-card:hover {
-  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
+  box-shadow: 0 2px 12px hsl(var(--foreground) / 5%);
 }
 
 .stat-card .stat-label {
   font-size: 13px;
-  color: #999;
+  color: hsl(var(--muted-foreground));
   margin-bottom: 6px;
 }
 
 .stat-card .stat-value {
   font-size: 22px;
   font-weight: 600;
-  color: #333;
+  color: hsl(var(--foreground));
 }
 
 .stat-card .stat-value.accent {
-  color: #1677ff;
+  color: hsl(var(--primary));
 }
 
 .stat-card.status-card {
@@ -787,10 +787,22 @@ export default {
   border: 1px solid #b7eb8f;
 }
 
+.dark .status-tag.using {
+  color: #95de64;
+  background: rgb(56 158 13 / 12%);
+  border-color: rgb(56 158 13 / 30%);
+}
+
 .status-tag.idle {
   color: #8c8c8c;
   background: #fafafa;
   border: 1px solid #d9d9d9;
+}
+
+.dark .status-tag.idle {
+  color: #bfbfbf;
+  background: rgb(140 140 140 / 10%);
+  border-color: rgb(140 140 140 / 25%);
 }
 
 .status-tag.damaged {
@@ -799,10 +811,22 @@ export default {
   border: 1px solid #ffa39e;
 }
 
+.dark .status-tag.damaged {
+  color: #ff7875;
+  background: rgb(207 19 34 / 12%);
+  border-color: rgb(207 19 34 / 30%);
+}
+
 .status-tag.given {
   color: #d46b08;
   background: #fffbe6;
   border: 1px solid #ffe58f;
+}
+
+.dark .status-tag.given {
+  color: #ffc53d;
+  background: rgb(212 107 8 / 12%);
+  border-color: rgb(212 107 8 / 30%);
 }
 
 .image-preview-box {
