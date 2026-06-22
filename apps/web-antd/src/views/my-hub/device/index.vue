@@ -55,6 +55,7 @@ export default {
       totalAmt: 0,
       totalCount: 0,
       totalDailyCost: 0,
+      statusCount: { using: 0, damaged: 0, given: 0, idle: 0 },
       visible: false,
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
@@ -108,6 +109,11 @@ export default {
         .reduce((sum, item) => sum + item.purchasePrice, 0)
         .toFixed(2);
       this.totalCount = res.items.length;
+      this.statusCount = { using: 0, damaged: 0, given: 0, idle: 0 };
+      res.items.forEach((i) => {
+        const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[i.status];
+        if (key) this.statusCount[key]++;
+      });
     },
 
     showModal() {
@@ -472,12 +478,28 @@ export default {
         </div>
       </AModal>
 
-      <div class="total-static">
-        <ACard>
-          <span>总资产: {{ totalAmt }} 元</span>
-          <span>资产数量： {{ totalCount }} 个</span>
-          <span>每日成本： {{ totalDailyCost }}</span>
-        </ACard>
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">总资产</div>
+          <div class="stat-value accent">¥ {{ totalAmt }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">资产数量</div>
+          <div class="stat-value">{{ totalCount }} 个</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">每日成本</div>
+          <div class="stat-value">¥ {{ totalDailyCost }}</div>
+        </div>
+        <div class="stat-card status-card">
+          <div class="stat-label">设备状态</div>
+          <div class="status-tags">
+            <span class="status-tag using">使用中 {{ statusCount.using }}</span>
+            <span class="status-tag idle">吃灰中 {{ statusCount.idle }}</span>
+            <span class="status-tag damaged">已损坏 {{ statusCount.damaged }}</span>
+            <span class="status-tag given">已送人 {{ statusCount.given }}</span>
+          </div>
+        </div>
       </div>
       <!-- 设备列表 -->
       <div class="electronics-grid">
@@ -705,19 +727,82 @@ export default {
   background-color: #d9d9d9;
 }
 
-.total-static {
+.stats-row {
+  display: flex;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
-.total-static .ant-card span {
-  display: block;
-  font-size: 16px;
-  line-height: 2;
+.stat-card {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  padding: 16px 20px;
+  transition: box-shadow 0.3s;
 }
 
-.total-static .ant-card span:first-child {
-  font-size: 18px;
-  font-weight: bold;
+.stat-card:hover {
+  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-card .stat-value.accent {
+  color: #1677ff;
+}
+
+.stat-card.status-card {
+  flex: 1.3;
+}
+
+.status-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.status-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.status-tag.using {
+  color: #389e0d;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.status-tag.idle {
+  color: #8c8c8c;
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+}
+
+.status-tag.damaged {
+  color: #cf1322;
+  background: #fff2f0;
+  border: 1px solid #ffa39e;
+}
+
+.status-tag.given {
+  color: #d46b08;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
 }
 
 .image-preview-box {
@@ -812,8 +897,28 @@ export default {
     padding: 0;
   }
 
-  .total-static {
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 12px;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-card.status-card {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .status-tag {
+    font-size: 11px;
   }
 
   .card-content {
