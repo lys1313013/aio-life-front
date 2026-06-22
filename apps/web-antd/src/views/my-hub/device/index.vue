@@ -467,7 +467,9 @@ export default {
         centered
         @cancel="previewVisible = false"
       >
-        <img :src="previewImage" style="width: 100%; display: block" />
+        <div class="preview-image-wrap">
+          <img :src="previewImage" />
+        </div>
       </AModal>
 
       <div class="total-static">
@@ -760,6 +762,24 @@ export default {
 .image-upload-hint {
   color: #999;
   font-size: 12px;
+}
+
+.preview-image-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  overflow: hidden;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.preview-image-wrap img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .device-form :deep(.ant-form-item) {
