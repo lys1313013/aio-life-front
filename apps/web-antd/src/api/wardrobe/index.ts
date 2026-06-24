@@ -1,4 +1,5 @@
 import { requestClient } from '#/api/request';
+import type { FileVO } from '../core/common';
 
 /**
  * 衣物请求 DTO
@@ -12,7 +13,7 @@ export interface WardrobeItemReq {
   season?: string[];
   purchaseDate?: string;
   price?: number;
-  photoUrls?: string[];
+  fileIds?: string[];
   size?: string;
   memo?: string;
 }
@@ -30,7 +31,7 @@ export interface WardrobeItemVO {
   season?: string;
   purchaseDate?: string;
   price?: number;
-  photoUrls?: string[];
+  files?: FileVO[];
   size?: string;
   memo?: string;
   createTime?: string;
@@ -123,7 +124,7 @@ export async function getWardrobeStats() {
  * 上传衣物照片
  */
 export async function uploadWardrobePhoto(file: File) {
-  return requestClient.upload<string>('/wardrobe/upload-photo', { file });
+  return requestClient.upload<FileVO>('/wardrobe/upload-photo', { file });
 }
 
 // ==================== 分类接口 ====================

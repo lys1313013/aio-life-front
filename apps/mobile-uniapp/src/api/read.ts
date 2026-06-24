@@ -6,7 +6,8 @@ export interface ReadRecordVO {
   type: number;
   author: string;
   url: string;
-  coverImg: string;
+  fileId: string;
+  coverImgUrl: string;
   status: number;
   totalProgress: number;
   currentProgress: number;
@@ -15,6 +16,21 @@ export interface ReadRecordVO {
   remark: string;
   createTime: string;
   updateTime: string;
+}
+
+export interface ReadRecordReq {
+  id?: string;
+  title: string;
+  type: number;
+  author?: string;
+  url?: string;
+  fileId?: string;
+  status?: number;
+  totalProgress?: number;
+  currentProgress?: number;
+  startTime?: string;
+  finishTime?: string;
+  remark?: string;
 }
 
 export function getReadListApi(data: any) {

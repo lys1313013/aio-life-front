@@ -27,3 +27,19 @@ export async function getByDictType(dictType: string): Promise<ResponseData> {
     params: { dictType },
   });
 }
+
+/**
+ * 文件VO
+ */
+export interface FileVO {
+  id: number;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  fileType: string;
+  hashValue: string;
+  bizType: string;
+  bizId: number;
+  isPublic: number;
+  createTime: string;
+}

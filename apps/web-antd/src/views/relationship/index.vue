@@ -112,13 +112,13 @@ const fetchGraphData = async () => {
     // 按关系数量排序，关系最多的排第一
     const sortedNodes = [...nodes].sort(
       (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
-    );
-    const maxRelCount = relCountMap.get(sortedNodes[0]?.id) || 1;
+    );// 计算最大连接数（用于大小映射）
+    // const maxRelCount = relCountMap.get(sortedNodes[0]?.id || '') || 1;
 
     // 径向布局：关系最多的在中心 (0,0)，其他按同心圆分布
     const layoutNodes = sortedNodes.map((n, i) => {
       const count = relCountMap.get(n.id) || 0;
-      const ratio = count / maxRelCount;
+      // const ratio = count / maxRelCount;
       let x = 0;
       let y = 0;
 

@@ -2,7 +2,7 @@
   <view class="container">
     <view class="book-list" v-if="readList.length > 0">
       <view class="book-card" v-for="item in readList" :key="item.id" @click="onClickBook(item)">
-        <image class="cover" :src="item.coverImg || '/static/logo.png'" mode="aspectFill" />
+        <image class="cover" :src="item.fileId ? getFilePreviewUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
           <text class="author">{{ item.author || '未知作者' }}</text>
@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getReadListApi, type ReadRecordVO } from '../../../api/read';
+import { getFilePreviewUrl } from '@/utils/file';
 
 const readList = ref<ReadRecordVO[]>([]);
 

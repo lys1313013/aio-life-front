@@ -7,6 +7,7 @@ import { Button, Input, message, Popconfirm, Upload } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { ReadRecordApi } from '#/api/readRecord';
+import { getFilePreviewUrl } from '#/utils/file';
 
 const props = defineProps<{
   values?: any;
@@ -100,11 +101,20 @@ const [Form, formApi] = useVbenForm({
     },
     {
       component: 'Input',
-      fieldName: 'coverImg',
+      fieldName: 'coverImgUrl',
       label: '封面图片链接',
       dependencies: {
         show: () => false,
-        triggerFields: ['coverImg'],
+        triggerFields: ['coverImgUrl'],
+      },
+    },
+    {
+      component: 'InputNumber',
+      fieldName: 'fileId',
+      label: '封面图片文件ID',
+      dependencies: {
+        show: () => false,
+        triggerFields: ['fileId'],
       },
     },
     {
@@ -143,7 +153,7 @@ watch(
   (newVal) => {
     if (newVal) {
       formApi.setValues(newVal);
-      previewImg.value = newVal.coverImg || '';
+      previewImg.value = newVal.fileId ? getFilePreviewUrl(newVal.fileId) : newVal.coverImgUrl || '';
       doubanUrl.value = newVal.url || '';
     } else {
       formApi.resetForm();
@@ -171,9 +181,9 @@ const handleParseDouban = async () => {
       const parsedValues: Record<string, any> = {};
       if (res.title) parsedValues.title = res.title;
       if (res.author) parsedValues.author = res.author;
-      if (res.coverImg) {
-        parsedValues.coverImg = res.coverImg;
-        previewImg.value = res.coverImg;
+      if (res.coverImgUrl) {
+        parsedValues.coverImgUrl = res.coverImgUrl;
+        previewImg.value = res.coverImgUrl;
       }
       if (res.totalProgress) parsedValues.totalProgress = res.totalProgress;
 
@@ -200,8 +210,8 @@ const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
     uploadLoading.value = true;
     const res = await ReadRecordApi.uploadCover(file as File);
     if (res) {
-      formApi.setValues({ coverImg: res });
-      previewImg.value = res;
+      formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
+      previewImg.value = getFilePreviewUrl(res.id);
       message.success('上传封面成功');
       onSuccess?.(res, file);
     }
@@ -295,7 +305,7 @@ const handleDelete = async () => {
       <div
         class="group relative h-32 w-24 overflow-hidden rounded border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-700"
       >
-        <img :src="previewImg" class="h-full w-full object-cover" />
+        <img :src="previewImg" class="h-full w-full object-cover" referrerpolicy="no-referrer" />
 
         <!-- 悬浮提示更换封面 -->
         <div

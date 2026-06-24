@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 
-import { Button, Card, Empty, Image, Modal, Spin, Tag } from 'ant-design-vue';
+import { CloseOutlined } from '@ant-design/icons-vue';
+import { Button, Card, Empty, Image, Modal, Spin, Tag, theme } from 'ant-design-vue';
 
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
@@ -21,6 +22,8 @@ const visible = ref(false);
 const loading = ref(false);
 const recordList = ref<any[]>([]);
 const selectedItem = ref<any>(null);
+
+const { token } = theme.useToken();
 
 const isMobile = computed(() => window.innerWidth < 1024);
 
@@ -133,7 +136,9 @@ watch(
           </div>
         </div>
         <div class="actions" @click.stop>
-          <Button type="link" danger @click="handleClear">清除</Button>
+          <Button type="link" danger @click="handleClear">
+            <template #icon><CloseOutlined /></template>
+          </Button>
         </div>
       </div>
     </div>
@@ -188,16 +193,16 @@ watch(
 }
 
 .selected-card {
-  border: 1px solid #d9d9d9;
+  border: 1px solid v-bind('token.colorBorderSecondary');
   border-radius: 6px;
   padding: 8px;
-  background-color: #fafafa;
+  background-color: v-bind('token.colorFillQuaternary');
   transition: all 0.3s;
 }
 
 .selected-card:hover {
-  border-color: #1890ff;
-  background-color: #f0f7ff;
+  border-color: v-bind('token.colorPrimary');
+  background-color: v-bind('token.colorPrimaryBg');
 }
 
 .card-content {
@@ -225,7 +230,7 @@ watch(
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #666;
+  color: v-bind('token.colorTextSecondary');
 }
 
 .actions {
@@ -271,8 +276,8 @@ watch(
 }
 
 .record-card.is-selected {
-  border-color: #d9d9d9;
-  box-shadow: 0 0 0 2px rgb(0, 0, 0, 0.1);
+  border-color: v-bind('token.colorBorderSecondary');
+  box-shadow: 0 0 0 2px v-bind('token.colorBorderSecondary');
   transform: scale(0.98);
 }
 

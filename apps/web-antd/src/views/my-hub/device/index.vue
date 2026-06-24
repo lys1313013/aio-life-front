@@ -27,6 +27,7 @@ import { getByDictType } from '#/api/core/common';
 import { deleteData, insertOrUpdate, query, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import { getFilePreviewUrl } from '#/utils/file';
 
 export default {
   components: {
@@ -64,7 +65,7 @@ export default {
         spec: '',
         purchasePrice: 0,
         purchaseDate: '',
-        image: '',
+        fileId: null,
         status: '1',
         purchasePlace: '',
         endDate: '',
@@ -84,6 +85,7 @@ export default {
     await this.getDeviceStatusOptions();
   },
   methods: {
+    getFilePreviewUrl,
     async query() {
       const res = await query({
         page: 1,
@@ -123,7 +125,7 @@ export default {
         purchasePrice: null,
         purchaseDate: dayjs(),
         status: '1',
-        image: '',
+        fileId: null,
         purchasePlace: '',
         endDate: '',
         remark: '',
@@ -178,7 +180,7 @@ export default {
         spec: '',
         purchasePrice: 0,
         purchaseDate: '',
-        image: '',
+        fileId: null,
         purchasePlace: '',
         endDate: '',
         remark: '',
@@ -258,7 +260,8 @@ export default {
     },
     handleUploadChange(info) {
       if (info.file.status === 'done') {
-        this.newDevice.image = info.file.response?.url || info.file.response;
+        const res = info.file.response;
+        this.newDevice.fileId = res.id;
         message.success('上传成功');
       }
       if (info.file.status === 'error') {
@@ -267,7 +270,7 @@ export default {
     },
 
     handlePreview(file) {
-      this.previewImage = file.url || file.response?.url || '';
+      this.previewImage = file.url || file.response?.fileUrl || file.imageUrl || '';
       this.previewVisible = true;
     },
 
@@ -275,9 +278,9 @@ export default {
       const { file, onSuccess, onError, onProgress } = options;
       try {
         onProgress({ percent: 50 });
-        const url = await uploadImage(file);
+        const res = await uploadImage(file);
         onProgress({ percent: 100 });
-        onSuccess({ url });
+        onSuccess(res);
         message.success('上传成功');
       } catch (error) {
         onError(error);
@@ -293,8 +296,8 @@ export default {
           event.preventDefault();
           const file = item.getAsFile();
           if (!file) continue;
-          const url = await uploadImage(file);
-          this.newDevice.image = url;
+          const res = await uploadImage(file);
+          this.newDevice.fileId = res.id;
           message.success('上传成功');
           return;
         }
@@ -429,14 +432,14 @@ export default {
           </ARow>
           <AFormItem label="设备图片">
             <div @paste="handlePaste">
-              <div v-if="newDevice.image" class="image-preview-box">
-                <img :src="newDevice.image" @click="handlePreview({ url: newDevice.image })" />
+              <div v-if="newDevice.fileId" class="image-preview-box">
+                <img :src="getFilePreviewUrl(newDevice.fileId)" @click="handlePreview({ url: getFilePreviewUrl(newDevice.fileId) })" />
                 <AButton
                   type="text"
                   danger
                   size="small"
                   class="image-remove-btn"
-                  @click="newDevice.image = ''"
+                  @click="newDevice.fileId = null"
                 >
                   <template #icon><DeleteOutlined /></template>
                 </AButton>
@@ -466,6 +469,7 @@ export default {
         </AForm>
       </AModal>
 
+      <!-- 图片预览弹窗 -->
       <AModal
         v-model:open="previewVisible"
         :footer="null"
@@ -474,7 +478,7 @@ export default {
         @cancel="previewVisible = false"
       >
         <div class="preview-image-wrap">
-          <img :src="previewImage" />
+          <img :src="previewImage" alt="preview" />
         </div>
       </AModal>
 
@@ -513,7 +517,7 @@ export default {
             <div class="status-badge" :class="getStatusClass(item.status)">
               {{ getStatusText(item.status) }}
             </div>
-            <img v-if="item.image" :src="item.image" :alt="item.name" />
+            <img v-if="item.fileId" :src="getFilePreviewUrl(item.fileId)" :alt="item.name" />
             <div v-else class="default-icon">
               <svg
                 viewBox="0 0 24 24"

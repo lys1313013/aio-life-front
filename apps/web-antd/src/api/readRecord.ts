@@ -1,5 +1,7 @@
 import { requestClient } from '#/api/request';
 
+import type { FileVO } from './core/common';
+
 /**
  * 阅读记录接口
  */
@@ -18,7 +20,8 @@ export namespace ReadRecordApi {
     type: number;
     author: string;
     url: string;
-    coverImg: string;
+    fileId: string;
+    coverImgUrl: string;
     status: number;
     totalProgress: number;
     currentProgress: number;
@@ -35,7 +38,8 @@ export namespace ReadRecordApi {
     type: number;
     author?: string;
     url?: string;
-    coverImg?: string;
+    fileId?: string;
+    coverImgUrl?: string;
     status?: number;
     totalProgress?: number;
     currentProgress?: number;
@@ -89,6 +93,6 @@ export namespace ReadRecordApi {
   }
 
   export const uploadCover = (file: File) => {
-    return requestClient.upload<string>('/read-record/upload-cover', { file });
+    return requestClient.upload<FileVO>('/read-record/upload-cover', { file });
   };
 }

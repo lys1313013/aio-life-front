@@ -16,8 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const coverImage = computed(() => {
-  if (props.item.photoUrls && props.item.photoUrls.length > 0) {
-    return props.item.photoUrls[0];
+  if (props.item?.files && props.item.files.length > 0) {
+    return props.item.files[0]?.fileUrl;
   }
   return null;
 });

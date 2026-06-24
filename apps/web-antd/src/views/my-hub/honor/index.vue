@@ -5,7 +5,7 @@ import type { HonorCategoryEntity, HonorRecordEntity } from '#/api/core/honor';
 
 import { computed, onMounted, ref } from 'vue';
 
-import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import { CalendarOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
   DatePicker as ADatePicker,
@@ -20,6 +20,7 @@ import {
   Switch as ASwitch,
   Tag as ATag,
   Textarea as ATextarea,
+  Upload as AUpload,
   message,
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
@@ -30,6 +31,7 @@ import {
   queryHonorCategories,
   queryHonorRecords,
   updateHonorRecord,
+  uploadHonorAttachment,
 } from '#/api/core/honor';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -46,6 +48,7 @@ interface Honor {
   customCategory?: string;
   tags: string[];
   attachments: string[];
+  fileIds: number[];
   isTop: boolean;
   isPublic: boolean;
 }
@@ -60,7 +63,7 @@ interface FormState {
   categoryId?: number;
   customCategory: string;
   tags: string;
-  attachments: string;
+  fileIds: number[];
   isPublic: boolean;
 }
 
@@ -68,6 +71,7 @@ interface FormState {
 const honors = ref<Honor[]>([]);
 const categories = ref<HonorCategoryEntity[]>([]);
 const loading = ref(false);
+const fileList = ref<any[]>([]);
 
 // Filters
 const filters = ref({
@@ -91,7 +95,7 @@ const formState = ref<FormState>({
   categoryId: undefined,
   customCategory: '',
   tags: '',
-  attachments: '',
+  fileIds: [],
   isPublic: true,
 });
 
@@ -147,6 +151,7 @@ const loadData = async () => {
     honors.value = honorsRes.map((item) => {
       let tags: string[] = [];
       let attachments: string[] = [];
+      let fileIds: number[] = [];
 
       try {
         if (item.tags) {
@@ -156,12 +161,9 @@ const loadData = async () => {
         tags = item.tags ? [item.tags] : [];
       }
 
-      try {
-        if (item.attachments) {
-          attachments = JSON.parse(item.attachments);
-        }
-      } catch {
-        attachments = [];
+      if (item.files) {
+        attachments = item.files.map((f: any) => f.fileUrl);
+        fileIds = item.files.map((f: any) => f.id);
       }
 
       // 获取分类名称
@@ -185,6 +187,7 @@ const loadData = async () => {
         customCategory: item.customCategory,
         tags,
         attachments,
+        fileIds,
         isTop: item.isTop === 1,
         isPublic: item.isPublic === 1,
       };
@@ -206,15 +209,16 @@ const handleAdd = () => {
   formState.value = {
     title: '',
     description: '',
-    honorDate: dayjs(),
+    honorDate: undefined,
     issuer: '',
     level: undefined,
     categoryId: undefined,
     customCategory: '',
     tags: '',
-    attachments: '',
+    fileIds: [],
     isPublic: true,
   };
+  fileList.value = [];
   modalVisible.value = true;
 };
 
@@ -224,15 +228,24 @@ const handleEdit = (item: Honor) => {
     id: item.id,
     title: item.title,
     description: item.description,
-    honorDate: dayjs(item.honorDate),
+    honorDate: item.honorDate ? dayjs(item.honorDate) : undefined,
     issuer: item.issuer,
     level: item.level || undefined,
     categoryId: item.categoryId,
     customCategory: item.customCategory || '',
     tags: item.tags.join(', '),
-    attachments: item.attachments.join(', '),
+    fileIds: item.fileIds || [],
     isPublic: item.isPublic,
   };
+  
+  fileList.value = item.attachments.map((url, i) => ({
+    uid: item.fileIds[i]?.toString() || `uid-${i}`,
+    name: `attachment-${i}.png`,
+    status: 'done',
+    url,
+    response: { id: item.fileIds[i], fileUrl: url },
+  }));
+  
   modalVisible.value = true;
 };
 
@@ -244,6 +257,29 @@ const handleDelete = async (id: number) => {
   } catch (error) {
     console.error('Failed to delete honor:', error);
     message.error('删除失败');
+  }
+};
+
+const handleUploadChange = (info: { file: any; fileList: any[] }) => {
+  fileList.value = info.fileList;
+  if (info.file.status === 'done' || info.file.status === 'removed') {
+    const ids = info.fileList
+      .filter((f) => f.status === 'done')
+      .map((f) => f.response?.id)
+      .filter(Boolean);
+    formState.value.fileIds = ids.map(id => parseInt(id));
+  }
+};
+
+const customUploadRequest = async (options: any) => {
+  const { file, onSuccess, onError, onProgress } = options;
+  try {
+    onProgress({ percent: 50 });
+    const res = await uploadHonorAttachment(file);
+    onProgress({ percent: 100 });
+    onSuccess(res);
+  } catch (error) {
+    onError(error);
   }
 };
 
@@ -267,12 +303,7 @@ const handleSave = async () => {
           .map((t) => t.trim())
           .filter(Boolean),
       ),
-      attachments: JSON.stringify(
-        formState.value.attachments
-          .split(/[,，]/)
-          .map((t) => t.trim())
-          .filter(Boolean),
-      ),
+      fileIds: formState.value.fileIds,
       isPublic: formState.value.isPublic ? 1 : 0,
     };
 
@@ -604,6 +635,21 @@ const getLevelLabel = (level: string) => {
             placeholder="详细描述..."
             allow-clear
           />
+        </AFormItem>
+
+        <AFormItem label="附件" name="fileIds">
+          <AUpload
+            v-model:file-list="fileList"
+            list-type="picture-card"
+            :max-count="5"
+            :custom-request="customUploadRequest"
+            @change="handleUploadChange"
+          >
+            <div>
+              <UploadOutlined />
+              <div style="margin-top: 8px">上传附件</div>
+            </div>
+          </AUpload>
         </AFormItem>
 
         <AFormItem label="公开" name="isPublic">

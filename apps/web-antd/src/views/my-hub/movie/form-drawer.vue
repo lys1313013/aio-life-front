@@ -7,6 +7,7 @@ import { Button, Input, message, Popconfirm, Upload } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { MovieApi } from '#/api/movie';
+import { getFilePreviewUrl } from '#/utils/file';
 
 const props = defineProps<{
   values?: any;
@@ -99,11 +100,20 @@ const [Form, formApi] = useVbenForm({
     },
     {
       component: 'Input',
-      fieldName: 'coverImg',
+      fieldName: 'coverImgUrl',
       label: '封面图片链接',
       dependencies: {
         show: () => false,
-        triggerFields: ['coverImg'],
+        triggerFields: ['coverImgUrl'],
+      },
+    },
+    {
+      component: 'InputNumber',
+      fieldName: 'fileId',
+      label: '封面图片文件ID',
+      dependencies: {
+        show: () => false,
+        triggerFields: ['fileId'],
       },
     },
     {
@@ -141,10 +151,10 @@ watch(
   () => props.values,
   (newVal) => {
     if (newVal) {
-      formApi.setValues(newVal);
-      previewImg.value = newVal.coverImg || '';
-      doubanUrl.value = newVal.url || '';
-    } else {
+        formApi.setValues(newVal);
+        previewImg.value = newVal.fileId ? getFilePreviewUrl(newVal.fileId) : newVal.coverImgUrl || '';
+        doubanUrl.value = newVal.url || '';
+      } else {
       formApi.resetForm();
       previewImg.value = '';
       doubanUrl.value = '';
@@ -171,9 +181,9 @@ const handleParseDouban = async () => {
       if (res.title) parsedValues.title = res.title;
       if (res.director) parsedValues.director = res.director;
       if (res.type) parsedValues.type = res.type;
-      if (res.coverImg) {
-        parsedValues.coverImg = res.coverImg;
-        previewImg.value = res.coverImg;
+      if (res.coverImgUrl) {
+        parsedValues.coverImgUrl = res.coverImgUrl;
+        previewImg.value = res.coverImgUrl;
       }
       if (res.totalProgress) parsedValues.totalProgress = res.totalProgress;
 
@@ -199,10 +209,10 @@ const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
   try {
     uploadLoading.value = true;
     const res = await MovieApi.uploadCover(file as File);
-    if (res) {
-      formApi.setValues({ coverImg: res });
-      previewImg.value = res;
-      message.success('上传封面成功');
+   if (res) {
+        formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
+        previewImg.value = getFilePreviewUrl(res.id);
+        message.success('上传海报成功');
       onSuccess?.(res, file);
     }
   } catch (error) {

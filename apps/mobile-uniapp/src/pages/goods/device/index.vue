@@ -8,15 +8,15 @@
     <view class="grid-container">
       <view class="grid-item" v-for="item in deviceList" :key="item.id">
         <view class="image-wrap">
-          <image v-if="item.cover" class="device-img" :src="item.cover" mode="aspectFill" />
+          <image v-if="item.fileId" class="device-img" :src="getFilePreviewUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
             <text>📱</text>
           </view>
         </view>
         <view class="info">
-          <text class="name">{{ item.deviceName || '未知设备' }}</text>
+          <text class="name">{{ item.name || '未知设备' }}</text>
           <text class="brand">{{ item.brand || '未知品牌' }}</text>
-          <text class="price" v-if="item.price">¥{{ item.price }}</text>
+          <text class="price" v-if="item.purchasePrice">¥{{ item.purchasePrice }}</text>
         </view>
       </view>
     </view>
@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { query } from '@/api/device';
+import { getFilePreviewUrl } from '@/utils/file';
 
 const deviceList = ref<any[]>([]);
 

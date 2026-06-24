@@ -8,7 +8,7 @@
     <view class="grid-container">
       <view class="grid-item" v-for="item in wardrobeList" :key="item.id">
         <view class="image-wrap">
-          <image v-if="item.photoUrls && item.photoUrls.length > 0" class="wardrobe-img" :src="item.photoUrls[0]" mode="aspectFill" />
+          <image v-if="item.files && item.files.length > 0" class="wardrobe-img" :src="item.files[0].fileUrl" mode="aspectFill" />
           <view v-else class="placeholder-icon">
             <text>👕</text>
           </view>

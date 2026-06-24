@@ -1,4 +1,5 @@
 import { requestClient } from '#/api/request';
+import type { FileVO } from './common';
 
 /**
  * 荣誉记录实体
@@ -14,7 +15,8 @@ export interface HonorRecordEntity {
   categoryId?: number;
   customCategory?: string;
   tags?: string;
-  attachments?: string;
+  fileIds?: string[];
+  files?: FileVO[];
   isTop?: number;
   isPublic?: number;
   sortOrder?: number;
@@ -89,4 +91,11 @@ export async function toggleHonorTop(id: number) {
  */
 export async function queryHonorCategories() {
   return await requestClient.get<HonorCategoryEntity[]>('/honorCategories');
+}
+
+/**
+ * 上传附件
+ */
+export async function uploadHonorAttachment(file: File) {
+  return await requestClient.upload<FileVO>('/honorRecords/upload-attachment', { file });
 }

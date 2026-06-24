@@ -15,7 +15,8 @@ export namespace MovieApi {
     type: number;
     director: string;
     url: string;
-    coverImg: string;
+    fileId: string;
+    coverImgUrl: string;
     status: number;
     totalProgress: number;
     currentProgress: number;
@@ -32,7 +33,7 @@ export namespace MovieApi {
     type: number;
     director?: string;
     url?: string;
-    coverImg?: string;
+    fileId?: string;
     status?: number;
     totalProgress?: number;
     currentProgress?: number;

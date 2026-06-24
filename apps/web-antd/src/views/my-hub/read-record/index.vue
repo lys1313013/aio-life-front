@@ -1,5 +1,8 @@
 <script lang="ts" setup>
+defineOptions({ name: 'ReadRecord' });
+
 import { onMounted, ref } from 'vue';
+import { getFilePreviewUrl } from '#/utils/file';
 
 import { usePreferences } from '@vben/preferences';
 
@@ -191,8 +194,8 @@ const tableReload = () => {
                 class="relative aspect-[3/4] w-full overflow-hidden rounded border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-800"
               >
                 <img
-                  v-if="item.coverImg"
-                  :src="item.coverImg"
+                  v-if="item.fileId"
+                  :src="getFilePreviewUrl(item.fileId)"
                   class="h-full w-full object-cover"
                 />
                 <div

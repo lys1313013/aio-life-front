@@ -845,7 +845,7 @@ onUnmounted(() => {
 
       <Form.Item>
         <div style="display: flex; gap: 8px; align-items: center">
-          <span style="flex-shrink: 0; color: rgb(0 0 0 / 88%)">时长</span>
+          <span style="flex-shrink: 0; color: v-bind('token.colorText')">时长</span>
           <div style="display: flex; flex: 1; gap: 8px">
             <div style="display: flex; flex: 1; gap: 4px; align-items: center">
               <InputNumber
@@ -956,14 +956,14 @@ onUnmounted(() => {
 
           <div
             v-if="formState.exercises.length === 0"
-            style="
-              padding: 8px;
-              color: #999;
-              text-align: center;
-              cursor: pointer;
-              border: 1px dashed #d9d9d9;
-              border-radius: 4px;
-            "
+            :style="{
+              padding: '8px',
+              color: token.colorTextQuaternary,
+              textAlign: 'center',
+              cursor: 'pointer',
+              border: `1px dashed ${token.colorBorderSecondary}`,
+              borderRadius: '4px',
+            }"
             @click="addExercise"
           >
             点击添加运动明细
@@ -1167,8 +1167,8 @@ onUnmounted(() => {
 .duration-display {
   padding: 8px 12px;
   font-weight: 500;
-  color: #262626;
-  background: #f5f5f5;
+  color: v-bind('token.colorText');
+  background: v-bind('token.colorFillQuaternary');
   border-radius: 4px;
 }
 

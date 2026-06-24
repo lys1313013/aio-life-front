@@ -2,7 +2,7 @@
   <view class="container">
     <view class="movie-list" v-if="movieList.length > 0">
       <view class="movie-card" v-for="item in movieList" :key="item.id" @click="onClickMovie(item)">
-        <image class="cover" :src="item.coverImg || '/static/logo.png'" mode="aspectFill" />
+        <image class="cover" :src="item.fileId ? getFilePreviewUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
           <text class="director">{{ item.director || '未知导演' }}</text>
@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { getFilePreviewUrl } from '@/utils/file';
 import { MovieApi } from '../../../api/movie';
 
 const movieList = ref<MovieApi.MovieVO[]>([]);

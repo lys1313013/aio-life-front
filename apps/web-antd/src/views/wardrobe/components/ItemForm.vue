@@ -47,7 +47,7 @@ const formData = ref<WardrobeItemReq>({
   season: [],
   purchaseDate: undefined,
   price: undefined,
-  photoUrls: [],
+  fileIds: [],
   size: '',
   memo: '',
 });
@@ -100,7 +100,7 @@ watch(
           season: props.item.season?.split(',').filter(Boolean) || [],
           purchaseDate: props.item.purchaseDate,
           price: props.item.price,
-          photoUrls: props.item.photoUrls || [],
+          fileIds: props.item.files?.map((f: any) => f.id) || [],
           size: props.item.size,
           memo: props.item.memo,
         };
@@ -113,7 +113,7 @@ watch(
           season: [],
           purchaseDate: undefined,
           price: undefined,
-          photoUrls: [],
+          fileIds: [],
           size: '',
           memo: '',
         };
@@ -121,11 +121,12 @@ watch(
 
       // 初始化上传列表
       fileList.value =
-        formData.value.photoUrls?.map((url, i) => ({
-          uid: `uid-${Date.now()}-${i}`,
-          name: `photo-${i}.png`,
+        props.item?.files?.map((f: any) => ({
+          uid: f.id.toString(),
+          name: f.fileName || `photo-${f.id}.png`,
           status: 'done',
-          url,
+          url: f.fileUrl,
+          response: f,
         })) || [];
     }
   },
@@ -150,11 +151,11 @@ const handleSubmit = async () => {
 const handleUploadChange = (info: { file: any; fileList: any[] }) => {
   fileList.value = info.fileList;
   if (info.file.status === 'done' || info.file.status === 'removed') {
-    const urls = info.fileList
+    const ids = info.fileList
       .filter((f) => f.status === 'done')
-      .map((f) => f.response?.url || f.url)
+      .map((f) => f.response?.id)
       .filter(Boolean);
-    formData.value.photoUrls = urls;
+    formData.value.fileIds = ids.map(id => parseInt(id));
   }
 };
 
@@ -162,9 +163,9 @@ const customRequest = async (options: any) => {
   const { file, onSuccess, onError, onProgress } = options;
   try {
     onProgress({ percent: 50 });
-    const url = await uploadWardrobePhoto(file);
+    const res = await uploadWardrobePhoto(file);
     onProgress({ percent: 100 });
-    onSuccess({ url });
+    onSuccess(res);
   } catch (error) {
     onError(error);
   }
@@ -247,7 +248,7 @@ const seasons = ['春', '夏', '秋', '冬'];
         />
       </FormItem>
 
-      <FormItem label="照片" name="photoUrls">
+      <FormItem label="照片" name="fileIds">
         <Upload
           v-model:file-list="fileList"
           list-type="picture-card"
