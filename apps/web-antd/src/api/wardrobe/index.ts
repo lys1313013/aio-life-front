@@ -13,7 +13,7 @@ export interface WardrobeItemReq {
   season?: string[];
   purchaseDate?: string;
   price?: number;
-  fileIds?: string[];
+  fileId?: string;
   size?: string;
   memo?: string;
 }
@@ -31,7 +31,7 @@ export interface WardrobeItemVO {
   season?: string;
   purchaseDate?: string;
   price?: number;
-  files?: FileVO[];
+  fileId?: string;
   size?: string;
   memo?: string;
   createTime?: string;

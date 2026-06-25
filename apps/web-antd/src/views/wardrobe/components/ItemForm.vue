@@ -24,6 +24,7 @@ import {
 import dayjs from 'dayjs';
 
 import { uploadWardrobePhoto } from '#/api/wardrobe';
+import { getFilePreviewUrl } from '#/utils/file';
 
 const props = defineProps<{
   categories: CategoryVO[];
@@ -47,7 +48,7 @@ const formData = ref<WardrobeItemReq>({
   season: [],
   purchaseDate: undefined,
   price: undefined,
-  fileIds: [],
+  fileId: undefined,
   size: '',
   memo: '',
 });
@@ -100,10 +101,23 @@ watch(
           season: props.item.season?.split(',').filter(Boolean) || [],
           purchaseDate: props.item.purchaseDate,
           price: props.item.price,
-          fileIds: props.item.files?.map((f: any) => f.id) || [],
+          fileId: props.item.fileId,
           size: props.item.size,
           memo: props.item.memo,
         };
+
+        // 初始化上传列表（单张图片）
+        if (props.item.fileId) {
+          fileList.value = [{
+            uid: props.item.fileId,
+            name: `photo-${props.item.fileId}.png`,
+            status: 'done',
+            url: getFilePreviewUrl(props.item.fileId),
+            response: { id: props.item.fileId },
+          }];
+        } else {
+          fileList.value = [];
+        }
       } else {
         formData.value = {
           name: '',
@@ -113,21 +127,12 @@ watch(
           season: [],
           purchaseDate: undefined,
           price: undefined,
-          fileIds: [],
+          fileId: undefined,
           size: '',
           memo: '',
         };
+        fileList.value = [];
       }
-
-      // 初始化上传列表
-      fileList.value =
-        props.item?.files?.map((f: any) => ({
-          uid: f.id.toString(),
-          name: f.fileName || `photo-${f.id}.png`,
-          status: 'done',
-          url: f.fileUrl,
-          response: f,
-        })) || [];
     }
   },
 );
@@ -150,12 +155,12 @@ const handleSubmit = async () => {
 
 const handleUploadChange = (info: { file: any; fileList: any[] }) => {
   fileList.value = info.fileList;
-  if (info.file.status === 'done' || info.file.status === 'removed') {
-    const ids = info.fileList
-      .filter((f) => f.status === 'done')
-      .map((f) => f.response?.id)
-      .filter(Boolean);
-    formData.value.fileIds = ids.map(id => parseInt(id));
+  if (info.file.status === 'done') {
+    // 单张图片上传完成
+    formData.value.fileId = info.file.response?.id;
+  } else if (info.file.status === 'removed') {
+    // 删除图片
+    formData.value.fileId = undefined;
   }
 };
 
@@ -248,15 +253,15 @@ const seasons = ['春', '夏', '秋', '冬'];
         />
       </FormItem>
 
-      <FormItem label="照片" name="fileIds">
+      <FormItem label="照片（单张）" name="fileId">
         <Upload
           v-model:file-list="fileList"
           list-type="picture-card"
-          :max-count="5"
+          :max-count="1"
           :custom-request="customRequest"
           @change="handleUploadChange"
         >
-          <div>
+          <div v-if="fileList.length < 1">
             <UploadOutlined />
             <div>上传</div>
           </div>

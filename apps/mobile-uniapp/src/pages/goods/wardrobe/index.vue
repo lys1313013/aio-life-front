@@ -8,7 +8,7 @@
     <view class="grid-container">
       <view class="grid-item" v-for="item in wardrobeList" :key="item.id">
         <view class="image-wrap">
-          <image v-if="item.files && item.files.length > 0" class="wardrobe-img" :src="item.files[0].fileUrl" mode="aspectFill" />
+          <image v-if="item.fileId" class="wardrobe-img" :src="getFilePreviewUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
             <text>👕</text>
           </view>
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getWardrobeItems, type WardrobeItemVO } from '@/api/wardrobe';
+import { getFilePreviewUrl } from '@/utils/file';
 
 const wardrobeList = ref<WardrobeItemVO[]>([]);
 

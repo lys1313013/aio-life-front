@@ -1,18 +1,5 @@
 import { get, post, request } from '../utils/request';
 
-export interface FileVO {
-  id: number;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  fileType: string;
-  hashValue: string;
-  bizType: string;
-  bizId: number;
-  isPublic: number;
-  createTime: string;
-}
-
 export interface WardrobeItemReq {
   id?: number;
   name: string;
@@ -22,7 +9,7 @@ export interface WardrobeItemReq {
   season?: string[];
   purchaseDate?: string;
   price?: number;
-  fileIds?: string[];
+  fileId?: string;
   size?: string;
   memo?: string;
 }
@@ -37,7 +24,7 @@ export interface WardrobeItemVO {
   season?: string;
   purchaseDate?: string;
   price?: number;
-  files?: FileVO[];
+  fileId?: string;
   size?: string;
   memo?: string;
   createTime?: string;

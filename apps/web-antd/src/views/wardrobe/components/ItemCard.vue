@@ -6,6 +6,8 @@ import { computed } from 'vue';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Card, CardMeta, Image, Popconfirm, Tooltip } from 'ant-design-vue';
 
+import { getFilePreviewUrl } from '#/utils/file';
+
 const props = defineProps<{
   item: WardrobeItemVO;
 }>();
@@ -16,8 +18,8 @@ const emit = defineEmits<{
 }>();
 
 const coverImage = computed(() => {
-  if (props.item?.files && props.item.files.length > 0) {
-    return props.item.files[0]?.fileUrl;
+  if (props.item?.fileId) {
+    return getFilePreviewUrl(props.item.fileId);
   }
   return null;
 });
