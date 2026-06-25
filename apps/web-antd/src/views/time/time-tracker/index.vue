@@ -1954,13 +1954,13 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 .left-panel {
-  flex: 3;
+  flex: 2;
   min-width: 500px;
 }
 
 .right-panel {
   display: flex;
-  flex: 2;
+  flex: 3;
   flex-direction: column;
   gap: 16px;
   min-width: 300px;
@@ -2094,7 +2094,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
   position: relative;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px); /* 恢复自适应高度，替代固定的 800px */
+  height: calc(100vh - 160px);
   overflow: hidden;
   background: v-bind('token.colorBgContainer');
   border: 1px solid v-bind('token.colorBorder');
@@ -2134,14 +2134,14 @@ const getDaySlots = (date: string): TimeSlot[] => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 160px);
 }
 
 .month-timeline-container {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 160px);
 
   /* 声明默认值以消除 IDE/Linter 警告 */
   --month-day-count: 30;

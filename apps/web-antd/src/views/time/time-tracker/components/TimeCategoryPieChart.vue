@@ -95,13 +95,13 @@ const renderPieChart = () => {
       {
         name: '时间分类',
         type: 'pie' as const,
-        radius: ['50%', '85%'],
-        center: ['42%', '45%'],
+        radius: ['35%', '60%'],
+        center: ['38%', '43%'],
         avoidLabelOverlap: true,
         itemStyle: {
-          borderRadius: 8,
-          borderColor: '#fff',
-          borderWidth: 2,
+          borderRadius: 0,
+          borderColor: 'transparent',
+          borderWidth: 0,
         },
         label: {
           show: true,
@@ -168,11 +168,12 @@ onMounted(() => {
   flex: 2;
   width: 100%;
   min-width: 300px;
+  max-width: 500px;
 }
 
 .pie-chart-container {
   width: 100%;
-  height: 280px;
+  height: 300px;
 }
 
 .shadow-sm {

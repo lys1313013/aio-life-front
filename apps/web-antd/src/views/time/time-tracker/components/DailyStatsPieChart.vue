@@ -114,13 +114,13 @@ const renderPieChart = () => {
       {
         name: '每日时长',
         type: 'pie',
-        radius: ['30%', '80%'],
-        center: ['40%', '50%'], // 向左偏移一点给图例留空间
+        radius: ['25%', '55%'],
+        center: ['38%', '45%'],
         avoidLabelOverlap: true,
         itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2,
+          borderRadius: 0,
+          borderColor: 'transparent',
+          borderWidth: 0,
         },
         label: {
           show: true,
@@ -166,8 +166,14 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.pie-chart-card {
+  flex: 2;
+  min-width: 300px;
+  max-width: 500px;
+}
+
 .pie-chart-container {
   width: 100%;
-  height: 300px;
+  height: 280px;
 }
 </style>
