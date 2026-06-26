@@ -359,38 +359,10 @@ const updateCharts = () => {
       type: 'scroll',
       orient: 'horizontal',
     },
-    // 添加数据缩放功能
-    dataZoom:
-      monthKeys.length > 6
-        ? [
-            {
-              type: 'slider',
-              show: true,
-              start: 0,
-              end: 100,
-              height: 20,
-              bottom: 10,
-              borderColor: 'transparent',
-              backgroundColor: '#f5f5f5',
-              fillerColor: 'rgba(78, 205, 196, 0.2)',
-              handleStyle: {
-                color: '#4ecdc4',
-              },
-              textStyle: {
-                color: '#666',
-              },
-            },
-            {
-              type: 'inside',
-              start: 0,
-              end: 100,
-            },
-          ]
-        : undefined,
     grid: {
       left: '3%',
       right: '4%',
-      bottom: monthKeys.length > 6 ? 40 : 10,
+      bottom: 10,
       top: 60,
       containLabel: true,
     },
