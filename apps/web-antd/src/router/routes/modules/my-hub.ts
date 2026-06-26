@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
           backTop: false,
         },
         name: 'exercise',
-        path: '/my-hub/exercise',
+        path: '/record/exercise',
         component: () => import('#/views/my-hub/exercise/index.vue'),
       },
       {
@@ -49,7 +49,7 @@ const routes: RouteRecordRaw[] = [
           backTop: false,
         },
         name: 'think',
-        path: '/my-hub/think',
+        path: '/record/think',
         component: () => import('#/views/my-hub/think/index.vue'),
       },
       {

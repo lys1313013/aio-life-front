@@ -27,6 +27,7 @@ import {
 import { useQuickNavStore } from '#/store/quick-nav';
 
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
+import ThinkModal from '../../my-hub/think/ThinkModal.vue';
 import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModal.vue';
 import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
@@ -57,6 +58,8 @@ const watchedTasks = ref<WatchedTaskDetail[]>([]);
 const watchedLoading = ref(true);
 const pinnedThoughts = ref<any[]>([]);
 const thoughtsLoading = ref(true);
+const thinkModalVisible = ref(false);
+const editingThoughtId = ref<null | number | string>(null);
 const timeTrackerModalRef = ref();
 const exerciseModalRef = ref();
 const exerciseSummaryCardRef = ref();
@@ -177,6 +180,19 @@ async function loadPinnedThoughts() {
   } finally {
     thoughtsLoading.value = false;
   }
+}
+
+function openThinkModal(thought: any) {
+  editingThoughtId.value = thought.id;
+  thinkModalVisible.value = true;
+}
+
+function onThoughtSaved() {
+  loadPinnedThoughts();
+}
+
+function onThoughtDeleted() {
+  loadPinnedThoughts();
 }
 
 async function handleCompleteTask(detail: WatchedTaskDetail) {
@@ -633,7 +649,7 @@ function navTo(nav: { url?: string }) {
             <span
               class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
               title="进入闪念"
-              @click="navTo({ url: '/my-hub/think' })"
+              @click="navTo({ url: '/record/think' })"
               >闪念</span
             >
           </div>
@@ -685,11 +701,7 @@ function navTo(nav: { url?: string }) {
             :key="thought.id"
             class="group relative flex cursor-pointer items-start gap-2 rounded-xl p-2 transition-all hover:bg-accent hover:text-accent-foreground"
             :style="{ animationDelay: `${index * 50}ms` }"
-            @click="
-              navTo({
-                url: '/my-hub/think',
-              })
-            "
+            @click="openThinkModal(thought)"
           >
             <div class="mt-1 flex-shrink-0">
               <svg
@@ -747,7 +759,7 @@ function navTo(nav: { url?: string }) {
             <span
               class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
               title="进入运动记录"
-              @click="navTo({ url: '/my-hub/exercise' })"
+              @click="navTo({ url: '/record/exercise' })"
             >
               运动
             </span>
@@ -814,6 +826,12 @@ function navTo(nav: { url?: string }) {
       @success="handleTimeTrackerSuccess"
     />
     <ExerciseAddModal ref="exerciseModalRef" @success="handleExerciseSuccess" />
+    <ThinkModal
+      v-model:visible="thinkModalVisible"
+      :thought-id="editingThoughtId"
+      @saved="onThoughtSaved"
+      @deleted="onThoughtDeleted"
+    />
     <WatchedTaskEditModal
       v-model:visible="editTaskModalVisible"
       :task="editingWatchedTask"

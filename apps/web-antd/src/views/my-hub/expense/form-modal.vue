@@ -211,6 +211,8 @@ const [Modal, modalApi] = useVbenModal({
   },
   title: '',
   bordered: false,
+  centered: true, // 手机端居中显示，避免全屏
+  header: false, // 隐藏标题区域
   headerClass: 'border-none',
   footerClass: 'border-none',
   contentClass: 'p-6',

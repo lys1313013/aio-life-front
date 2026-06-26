@@ -5,6 +5,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import { onMounted, ref } from 'vue';
 
 import { useVbenModal } from '@vben/common-ui';
+import { usePreferences } from '@vben/preferences';
 
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
@@ -26,6 +27,7 @@ interface RowType {
 }
 
 const dictOptions = ref<Array<any>>([]);
+const { isMobile } = usePreferences();
 
 // 跟踪选中的年份
 const selectedYear = ref<'all' | number>('all');
@@ -62,8 +64,8 @@ const [FormModal, formModalApi] = useVbenModal({
 });
 
 const formOptions: VbenFormProps = {
-  // 默认展开
-  collapsed: false,
+  // 手机端默认折叠搜索表单
+  collapsed: isMobile.value,
   schema: [
     // 搜索
     {
@@ -98,7 +100,7 @@ const gridOptions: VxeGridProps<RowType> = {
   },
   border: true, // 表格是否显示边框
   stripe: true, // 是否显示斑马纹
-  maxHeight: 1000, // 直接在根级别配置表格最大高度，解决vxe-table缺少高度参数的警告
+  maxHeight: isMobile.value ? 600 : 1000, // 手机端减小表格高度
   columns: [
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
@@ -106,31 +108,37 @@ const gridOptions: VxeGridProps<RowType> = {
       field: 'amt',
       cellType: 'number',
       title: '金额',
-      minWidth: 100,
+      width: 100,
       sortable: true,
       align: 'right',
       formatter: ({ cellValue }) => {
         return cellValue.toFixed(2);
       },
     },
-    { field: 'remark', title: '备注', sortable: true, minWidth: 150 },
+    { field: 'remark', title: '备注', sortable: true, width: 120 },
     {
       field: 'incTypeId',
       title: '收入类型',
-      minWidth: 100,
+      width: 100,
       sortable: true,
       formatter: ({ cellValue }) => {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'incDate', title: '时间', sortable: true, minWidth: 120 },
-    { field: 'updateTime', title: '修改时间', sortable: true, minWidth: 160 },
+    { field: 'incDate', title: '时间', sortable: true, width: 120 },
+    {
+      field: 'updateTime',
+      title: '修改时间',
+      sortable: true,
+      width: 160,
+      visible: !isMobile.value, // 手机端隐藏修改时间列
+    },
     {
       field: 'action',
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 120,
+      width: 100,
     },
   ],
   showFooter: true, // 显示底部合计行

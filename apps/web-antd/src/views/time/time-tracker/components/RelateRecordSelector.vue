@@ -6,6 +6,7 @@ import { Button, Card, Empty, Image, Modal, Spin, Tag, theme } from 'ant-design-
 
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
+import { getFilePreviewUrl } from '#/utils/file';
 
 const props = defineProps<{
   relateId?: string;
@@ -121,7 +122,8 @@ watch(
     >
       <div class="card-content">
         <Image
-          :src="selectedItem.coverImg"
+          v-if="selectedItem.fileId"
+          :src="getFilePreviewUrl(selectedItem.fileId)"
           :width="60"
           :height="80"
           style="object-fit: cover; border-radius: 4px"
@@ -168,7 +170,8 @@ watch(
           >
             <div class="card-inner aspect-[3/4]">
               <Image
-                :src="item.coverImg"
+                v-if="item.fileId"
+                :src="getFilePreviewUrl(item.fileId)"
                 style="
                   width: 100%;
                   height: 100%;
