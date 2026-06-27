@@ -477,7 +477,7 @@ function navTo(nav: { url?: string }) {
       <!-- 今日时迹统计：无今日数据时不展示 -->
       <div
         v-if="timeTrackerHasData"
-        class="flex max-h-[220px] min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
+        class="dashboard-section flex min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -498,12 +498,12 @@ function navTo(nav: { url?: string }) {
       </div>
 
       <!-- 快捷导航 -->
-      <QuickNavSection class="lg:max-h-[260px] lg:min-h-[260px]" />
+      <QuickNavSection class="dashboard-section lg:min-h-[260px]" />
 
       <!-- 待办。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="watchedLoading || watchedTasks.length > 0"
-        class="flex max-h-[220px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[240px] sm:min-h-[240px] lg:max-h-[260px] lg:min-h-[260px]"
+        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -640,7 +640,7 @@ function navTo(nav: { url?: string }) {
       <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="thoughtsLoading || pinnedThoughts.length > 0"
-        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[260px] lg:max-h-[300px] lg:min-h-[300px]"
+        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -735,7 +735,7 @@ function navTo(nav: { url?: string }) {
       <!-- 运动：按天 × 运动类型向下滚动加载。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="exerciseLoading || !exerciseEmpty"
-        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
+        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[280px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -775,7 +775,7 @@ function navTo(nav: { url?: string }) {
       <!-- GitHub 最近提交：未绑定时不渲染。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="githubBound"
-        class="flex max-h-[260px] min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:max-h-[280px] sm:min-h-[280px] lg:max-h-[300px] lg:min-h-[300px]"
+        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[280px] lg:min-h-[300px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -839,3 +839,19 @@ function navTo(nav: { url?: string }) {
     />
   </div>
 </template>
+
+<style scoped>
+.dashboard-section {
+  max-height: 240px;
+}
+@media (min-width: 640px) {
+  .dashboard-section {
+    max-height: 250px;
+  }
+}
+@media (min-width: 1024px) {
+  .dashboard-section {
+    max-height: 280px;
+  }
+}
+</style>
