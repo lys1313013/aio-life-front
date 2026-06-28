@@ -13,6 +13,7 @@ const { blobUrl, loading } = useAuthImageUrl(() => props.fileId);
     v-if="blobUrl"
     :src="blobUrl"
     v-bind="$attrs"
+    class="auth-image-img"
   />
   <div
     v-else
@@ -33,8 +34,17 @@ const { blobUrl, loading } = useAuthImageUrl(() => props.fileId);
   animation: auth-image-pulse 1.5s ease-in-out infinite;
 }
 
+.auth-image-img {
+  animation: auth-image-fade-in 0.3s ease both;
+}
+
 @keyframes auth-image-pulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
+}
+
+@keyframes auth-image-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

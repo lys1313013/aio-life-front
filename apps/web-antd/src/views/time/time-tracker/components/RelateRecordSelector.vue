@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 
 import { CloseOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Empty, Image, Modal, Spin, Tag, theme } from 'ant-design-vue';
+import { Button, Card, Empty, Modal, Spin, Tag, theme } from 'ant-design-vue';
 
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
@@ -145,14 +145,21 @@ watch(
           :height="80"
           style="object-fit: cover; border-radius: 4px"
         />
-        <img
+        <span
           v-else-if="selectedItem.coverImgUrl"
-          :src="selectedItem.coverImgUrl"
-          :width="60"
-          :height="80"
-          style="object-fit: cover; border-radius: 4px"
-          referrerpolicy="no-referrer"
-        />
+          class="cover-img-cell"
+          style="width: 60px; height: 80px; border-radius: 4px"
+        >
+          <span class="cover-img-placeholder" />
+          <img
+            :src="selectedItem.coverImgUrl"
+            :width="60"
+            :height="80"
+            class="cover-img-fade"
+            referrerpolicy="no-referrer"
+            @load="(e) => (e.target as HTMLImageElement).classList.add('loaded')"
+          />
+        </span>
         <div class="info">
           <div class="title">{{ selectedItem.title }}</div>
           <div class="progress">
@@ -165,6 +172,17 @@ watch(
           <Button type="link" danger @click="handleClear">
             <template #icon><CloseOutlined /></template>
           </Button>
+        </div>
+      </div>
+    </div>
+    <div v-else-if="loading" class="selected-card selected-card-skeleton">
+      <div class="card-content">
+        <span class="cover-img-cell" style="width: 60px; height: 80px; border-radius: 4px">
+          <span class="cover-img-placeholder" />
+        </span>
+        <div class="info">
+          <div class="skeleton-line skeleton-line-short" />
+          <div class="skeleton-line skeleton-line-tag" />
         </div>
       </div>
     </div>
@@ -204,18 +222,26 @@ watch(
                   border-radius: 4px;
                 "
               />
-              <img
+              <span
                 v-else-if="item.coverImgUrl"
-                :src="item.coverImgUrl"
-                style="
-                  width: 100%;
-                  height: 100%;
-                  object-fit: cover;
-                  display: block;
-                  border-radius: 4px;
-                "
-                referrerpolicy="no-referrer"
-              />
+                class="cover-img-cell"
+                style="width: 100%; height: 100%; border-radius: 4px"
+              >
+                <span class="cover-img-placeholder" />
+                <img
+                  :src="item.coverImgUrl"
+                  class="cover-img-fade"
+                  style="
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                    border-radius: 4px;
+                  "
+                  referrerpolicy="no-referrer"
+                  @load="(e) => (e.target as HTMLImageElement).classList.add('loaded')"
+                />
+              </span>
             </div>
           </Card>
         </div>
@@ -324,5 +350,58 @@ watch(
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
+}
+
+.cover-img-cell {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.cover-img-placeholder {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--color-fill-tertiary, #f5f5f5);
+  animation: cover-pulse 1.5s ease-in-out infinite;
+}
+
+.cover-img-fade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cover-img-fade.loaded {
+  opacity: 1;
+}
+
+.selected-card-skeleton {
+  cursor: default;
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 4px;
+  background: v-bind('token.colorFillSecondary');
+  animation: cover-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-line-short {
+  width: 60%;
+  margin-bottom: 8px;
+}
+
+.skeleton-line-tag {
+  width: 40%;
+  height: 20px;
+}
+
+@keyframes cover-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 </style>
