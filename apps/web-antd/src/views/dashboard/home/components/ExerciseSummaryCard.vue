@@ -4,7 +4,7 @@ import type {
   ExerciseDashboardItemVO,
 } from '#/api/core/exerciseRecord';
 
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
 
@@ -209,8 +209,11 @@ function deltaBg(item: ExerciseDashboardItemVO, base: string): string {
   return `${base}1A`;
 }
 
-function reload() {
-  init();
+async function reload() {
+  observer?.disconnect();
+  await init();
+  await nextTick();
+  setupObserver();
 }
 
 onMounted(async () => {
