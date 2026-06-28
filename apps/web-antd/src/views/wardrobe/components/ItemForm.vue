@@ -24,7 +24,7 @@ import {
 import dayjs from 'dayjs';
 
 import { uploadWardrobePhoto } from '#/api/wardrobe';
-import { getFilePreviewUrl } from '#/utils/file';
+import { fetchAuthImageUrl } from '#/utils/file';
 
 const props = defineProps<{
   categories: CategoryVO[];
@@ -89,7 +89,7 @@ const fileList = ref<any[]>([]);
 
 watch(
   () => props.visible,
-  (val) => {
+  async (val) => {
     if (val) {
       if (props.item) {
         formData.value = {
@@ -106,13 +106,13 @@ watch(
           memo: props.item.memo,
         };
 
-        // 初始化上传列表（单张图片）
         if (props.item.fileId) {
+          const authUrl = await fetchAuthImageUrl(props.item.fileId);
           fileList.value = [{
             uid: props.item.fileId,
             name: `photo-${props.item.fileId}.png`,
             status: 'done',
-            url: getFilePreviewUrl(props.item.fileId),
+            url: authUrl,
             response: { id: props.item.fileId },
           }];
         } else {

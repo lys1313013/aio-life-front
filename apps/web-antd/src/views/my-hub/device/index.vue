@@ -27,7 +27,7 @@ import { getByDictType } from '#/api/core/common';
 import { deleteData, insertOrUpdate, query, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
-import { getFilePreviewUrl } from '#/utils/file';
+import { fetchAuthImageUrl, getFilePreviewUrl } from '#/utils/file';
 
 export default {
   components: {
@@ -76,6 +76,7 @@ export default {
       tabKey: '', // 当前选中的页签
       previewVisible: false, // 图片预览弹窗
       previewImage: '', // 预览图片地址
+      authImageUrls: {}, // 认证后的图片 blob URL 缓存
     };
   },
   async mounted() {
@@ -85,7 +86,16 @@ export default {
     await this.getDeviceStatusOptions();
   },
   methods: {
-    getFilePreviewUrl,
+    getAuthSrc(fileId) {
+      if (!fileId) return '';
+      // 已有缓存则直接返回
+      if (this.authImageUrls[fileId]) return this.authImageUrls[fileId];
+      // 异步获取认证图片
+      fetchAuthImageUrl(fileId).then((url) => {
+        this.authImageUrls[fileId] = url;
+      });
+      return '';
+    },
     async query() {
       const res = await query({
         page: 1,
@@ -433,7 +443,7 @@ export default {
           <AFormItem label="设备图片">
             <div @paste="handlePaste">
               <div v-if="newDevice.fileId" class="image-preview-box">
-                <img :src="getFilePreviewUrl(newDevice.fileId)" @click="handlePreview({ url: getFilePreviewUrl(newDevice.fileId) })" />
+                <img :src="getAuthSrc(newDevice.fileId)" @click="handlePreview({ url: getAuthSrc(newDevice.fileId) })" />
                 <AButton
                   type="text"
                   danger
@@ -517,7 +527,7 @@ export default {
             <div class="status-badge" :class="getStatusClass(item.status)">
               {{ getStatusText(item.status) }}
             </div>
-            <img v-if="item.fileId" :src="getFilePreviewUrl(item.fileId)" :alt="item.name" />
+            <img v-if="item.fileId" :src="getAuthSrc(item.fileId)" :alt="item.name" />
             <div v-else class="default-icon">
               <svg
                 viewBox="0 0 24 24"

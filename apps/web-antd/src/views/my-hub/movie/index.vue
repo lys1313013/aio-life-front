@@ -4,7 +4,7 @@ defineOptions({ name: 'Movie' });
 import { onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
-import { getFilePreviewUrl } from '#/utils/file';
+import AuthImage from '#/components/AuthImage.vue';
 
 import { SearchOutlined } from '@ant-design/icons-vue';
 import {
@@ -195,9 +195,9 @@ const tableReload = () => {
               <div
                 class="relative aspect-[3/4] w-full overflow-hidden rounded border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-800"
               >
-                  <img
+                  <AuthImage
                     v-if="item.fileId"
-                    :src="getFilePreviewUrl(item.fileId)"
+                    :file-id="item.fileId"
                     class="h-full w-full object-cover"
                   />
                 <div

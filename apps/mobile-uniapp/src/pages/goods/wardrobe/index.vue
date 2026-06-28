@@ -8,7 +8,7 @@
     <view class="grid-container">
       <view class="grid-item" v-for="item in wardrobeList" :key="item.id">
         <view class="image-wrap">
-          <image v-if="item.fileId" class="wardrobe-img" :src="getFilePreviewUrl(item.fileId)" mode="aspectFill" />
+          <image v-if="item.fileId" class="wardrobe-img" :src="getAuthImageUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
             <text>👕</text>
           </view>
@@ -37,9 +37,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getWardrobeItems, type WardrobeItemVO } from '@/api/wardrobe';
-import { getFilePreviewUrl } from '@/utils/file';
+import { fetchAuthImageUrl } from '@/utils/file';
 
 const wardrobeList = ref<WardrobeItemVO[]>([]);
+const authImageUrls = ref<Record<string, string>>({});
 
 const fabPattern = {
   color: '#7A7E83',
@@ -58,12 +59,26 @@ const fabContent = [
   }
 ];
 
+const getAuthImageUrl = (fileId?: number | string | null) => {
+  if (!fileId) return '';
+  const key = String(fileId);
+  if (authImageUrls.value[key]) return authImageUrls.value[key];
+  fetchAuthImageUrl(fileId).then((url) => {
+    authImageUrls.value[key] = url;
+  });
+  return '';
+};
+
 const loadData = async () => {
   try {
     const res: any = await getWardrobeItems({});
     const list = res?.list || res?.records || res?.items || (Array.isArray(res) ? res : []);
     if (list.length > 0) {
       wardrobeList.value = list;
+      // 预加载图片
+      list.forEach((item: WardrobeItemVO) => {
+        if (item.fileId) fetchAuthImageUrl(item.fileId);
+      });
     } else {
       wardrobeList.value = [];
     }

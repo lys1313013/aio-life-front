@@ -7,7 +7,7 @@ import { Button, Input, message, Popconfirm, Upload } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { ReadRecordApi } from '#/api/readRecord';
-import { getFilePreviewUrl } from '#/utils/file';
+import { fetchAuthImageUrl } from '#/utils/file';
 
 const props = defineProps<{
   values?: any;
@@ -153,7 +153,14 @@ watch(
   (newVal) => {
     if (newVal) {
       formApi.setValues(newVal);
-      previewImg.value = newVal.fileId ? getFilePreviewUrl(newVal.fileId) : newVal.coverImgUrl || '';
+      previewImg.value = '';
+      if (newVal.fileId) {
+        fetchAuthImageUrl(newVal.fileId).then((url) => {
+          previewImg.value = url;
+        });
+      } else {
+        previewImg.value = newVal.coverImgUrl || '';
+      }
       doubanUrl.value = newVal.url || '';
     } else {
       formApi.resetForm();
@@ -211,7 +218,7 @@ const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
     const res = await ReadRecordApi.uploadCover(file as File);
     if (res) {
       formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
-      previewImg.value = getFilePreviewUrl(res.id);
+      previewImg.value = await fetchAuthImageUrl(res.id);
       message.success('上传封面成功');
       onSuccess?.(res, file);
     }

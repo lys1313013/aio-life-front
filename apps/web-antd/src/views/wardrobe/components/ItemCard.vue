@@ -6,7 +6,7 @@ import { computed } from 'vue';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Card, CardMeta, Image, Popconfirm, Tooltip } from 'ant-design-vue';
 
-import { getFilePreviewUrl } from '#/utils/file';
+import { useAuthImageUrl } from '#/composables/useAuthImageUrl';
 
 const props = defineProps<{
   item: WardrobeItemVO;
@@ -17,12 +17,7 @@ const emit = defineEmits<{
   edit: [item: WardrobeItemVO];
 }>();
 
-const coverImage = computed(() => {
-  if (props.item?.fileId) {
-    return getFilePreviewUrl(props.item.fileId);
-  }
-  return null;
-});
+const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
 </script>
 
 <template>

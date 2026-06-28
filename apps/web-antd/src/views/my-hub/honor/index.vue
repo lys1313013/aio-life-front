@@ -25,6 +25,7 @@ import {
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 
+import { fetchAuthImageUrl } from '#/utils/file';
 import {
   createHonorRecord,
   deleteHonorRecords,
@@ -148,7 +149,24 @@ const loadData = async () => {
     categories.value = categoriesRes;
 
     // Transform backend entity to frontend interface
-    honors.value = honorsRes.map((item) => {
+    // 预加载所有认证图片 URL
+    const authUrlPromises: Promise<string>[] = [];
+    const allFileIds: number[][] = [];
+
+    honorsRes.forEach((item) => {
+      if (item.files) {
+        const ids = item.files.map((f: any) => f.id);
+        allFileIds.push(ids);
+        ids.forEach((id) => authUrlPromises.push(fetchAuthImageUrl(id)));
+      } else {
+        allFileIds.push([]);
+      }
+    });
+
+    const authUrls = await Promise.all(authUrlPromises);
+    let urlIdx = 0;
+
+    honors.value = honorsRes.map((item, i) => {
       let tags: string[] = [];
       let attachments: string[] = [];
       let fileIds: number[] = [];
@@ -162,8 +180,8 @@ const loadData = async () => {
       }
 
       if (item.files) {
-        attachments = item.files.map((f: any) => f.fileUrl);
         fileIds = item.files.map((f: any) => f.id);
+        attachments = allFileIds[i].map(() => authUrls[urlIdx++]);
       }
 
       // 获取分类名称

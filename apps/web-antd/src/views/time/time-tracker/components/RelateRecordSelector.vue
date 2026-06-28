@@ -6,7 +6,7 @@ import { Button, Card, Empty, Image, Modal, Spin, Tag, theme } from 'ant-design-
 
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
-import { getFilePreviewUrl } from '#/utils/file';
+import AuthImage from '#/components/AuthImage.vue';
 
 const props = defineProps<{
   relateId?: string;
@@ -121,13 +121,12 @@ watch(
       style="cursor: pointer"
     >
       <div class="card-content">
-        <Image
+        <AuthImage
           v-if="selectedItem.fileId"
-          :src="getFilePreviewUrl(selectedItem.fileId)"
+          :file-id="selectedItem.fileId"
           :width="60"
           :height="80"
           style="object-fit: cover; border-radius: 4px"
-          :preview="false"
         />
         <div class="info">
           <div class="title">{{ selectedItem.title }}</div>
@@ -169,9 +168,9 @@ watch(
             @click="handleSelect(item)"
           >
             <div class="card-inner aspect-[3/4]">
-              <Image
+              <AuthImage
                 v-if="item.fileId"
-                :src="getFilePreviewUrl(item.fileId)"
+                :file-id="item.fileId"
                 style="
                   width: 100%;
                   height: 100%;
@@ -179,7 +178,6 @@ watch(
                   display: block;
                   border-radius: 4px;
                 "
-                :preview="false"
               />
             </div>
           </Card>

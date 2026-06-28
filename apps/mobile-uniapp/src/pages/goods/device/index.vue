@@ -8,7 +8,7 @@
     <view class="grid-container">
       <view class="grid-item" v-for="item in deviceList" :key="item.id">
         <view class="image-wrap">
-          <image v-if="item.fileId" class="device-img" :src="getFilePreviewUrl(item.fileId)" mode="aspectFill" />
+          <image v-if="item.fileId" class="device-img" :src="getAuthImageUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
             <text>📱</text>
           </view>
@@ -38,9 +38,20 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { query } from '@/api/device';
-import { getFilePreviewUrl } from '@/utils/file';
+import { fetchAuthImageUrl } from '@/utils/file';
 
 const deviceList = ref<any[]>([]);
+const authImageUrls = ref<Record<string, string>>({});
+
+const getAuthImageUrl = (fileId?: number | string | null) => {
+  if (!fileId) return '';
+  const key = String(fileId);
+  if (authImageUrls.value[key]) return authImageUrls.value[key];
+  fetchAuthImageUrl(fileId).then((url) => {
+    authImageUrls.value[key] = url;
+  });
+  return '';
+};
 
 const fabPattern = {
   color: '#7A7E83',
@@ -65,6 +76,9 @@ const loadData = async () => {
     const list = res?.list || res?.records || res?.items || (Array.isArray(res) ? res : []);
     if (list.length > 0) {
       deviceList.value = list;
+      list.forEach((item: any) => {
+        if (item.fileId) fetchAuthImageUrl(item.fileId);
+      });
     } else {
       deviceList.value = [];
     }

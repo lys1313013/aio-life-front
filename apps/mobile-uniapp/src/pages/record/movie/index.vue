@@ -2,7 +2,7 @@
   <view class="container">
     <view class="movie-list" v-if="movieList.length > 0">
       <view class="movie-card" v-for="item in movieList" :key="item.id" @click="onClickMovie(item)">
-        <image class="cover" :src="item.fileId ? getFilePreviewUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
+        <image class="cover" :src="item.fileId ? getAuthImageUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
           <text class="director">{{ item.director || '未知导演' }}</text>
@@ -40,15 +40,30 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getFilePreviewUrl } from '@/utils/file';
+import { fetchAuthImageUrl } from '@/utils/file';
 import { MovieApi } from '../../../api/movie';
 
 const movieList = ref<MovieApi.MovieVO[]>([]);
+const authImageUrls = ref<Record<string, string>>({});
+
+const getAuthImageUrl = (fileId?: number | string | null) => {
+  if (!fileId) return '';
+  const key = String(fileId);
+  if (authImageUrls.value[key]) return authImageUrls.value[key];
+  fetchAuthImageUrl(fileId).then((url) => {
+    authImageUrls.value[key] = url;
+  });
+  return '';
+};
 
 const loadMovieList = async () => {
   try {
     const res = await MovieApi.pageList({ current: 1, size: 50 });
-    movieList.value = res.records || res.items || res.records || res.list || (Array.isArray(res) ? res : []);
+    const list = res.records || res.items || res.list || (Array.isArray(res) ? res : []);
+    movieList.value = list;
+    list.forEach((item: any) => {
+      if (item.fileId) fetchAuthImageUrl(item.fileId);
+    });
   } catch (e) {
     console.error('加载观影记录失败', e);
   }

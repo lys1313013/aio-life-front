@@ -2,7 +2,7 @@
   <view class="container">
     <view class="book-list" v-if="readList.length > 0">
       <view class="book-card" v-for="item in readList" :key="item.id" @click="onClickBook(item)">
-        <image class="cover" :src="item.fileId ? getFilePreviewUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
+        <image class="cover" :src="item.fileId ? getAuthImageUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
           <text class="author">{{ item.author || '未知作者' }}</text>
@@ -38,14 +38,29 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getReadListApi, type ReadRecordVO } from '../../../api/read';
-import { getFilePreviewUrl } from '@/utils/file';
+import { fetchAuthImageUrl } from '@/utils/file';
 
 const readList = ref<ReadRecordVO[]>([]);
+const authImageUrls = ref<Record<string, string>>({});
+
+const getAuthImageUrl = (fileId?: number | string | null) => {
+  if (!fileId) return '';
+  const key = String(fileId);
+  if (authImageUrls.value[key]) return authImageUrls.value[key];
+  fetchAuthImageUrl(fileId).then((url) => {
+    authImageUrls.value[key] = url;
+  });
+  return '';
+};
 
 const loadReadList = async () => {
   try {
     const res = await getReadListApi({ current: 1, size: 50 });
-    readList.value = res.records || res.items || res.records || res.list || (Array.isArray(res) ? res : []);
+    const list = res.records || res.items || res.list || (Array.isArray(res) ? res : []);
+    readList.value = list;
+    list.forEach((item: any) => {
+      if (item.fileId) fetchAuthImageUrl(item.fileId);
+    });
   } catch (e) {
     console.error('加载阅读记录失败', e);
   }
