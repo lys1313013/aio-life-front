@@ -375,6 +375,13 @@ watch(
         if (newSlot.endTime !== oldSlot.endTime) {
           formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
         }
+        // 同步更新关联记录
+        if (newSlot.relateId !== oldSlot.relateId) {
+          formState.value.relateId = newSlot.relateId || undefined;
+        }
+        if (newSlot.relateType !== oldSlot.relateType) {
+          formState.value.relateType = newSlot.relateType || undefined;
+        }
         // 同步更新运动明细
         if (
           JSON.stringify(newSlot.exercises) !==

@@ -42,7 +42,20 @@ const loadData = async () => {
 
     // 如果已经有关联ID，找到它并回显
     if (props.relateId) {
-      const item = data.find((d) => d.id === props.relateId);
+      const targetId = String(props.relateId);
+      let item = data.find((d) => String(d.id) === targetId);
+      if (!item) {
+        // active列表里没有（可能已看完/已读完），单独查
+        try {
+          if (props.relateType === 1) {
+            item = await ReadRecordApi.getById(props.relateId);
+          } else if (props.relateType === 2) {
+            item = await MovieApi.getById(props.relateId);
+          }
+        } catch {
+          // 忽略单独查询失败
+        }
+      }
       if (item) {
         selectedItem.value = item;
       }
@@ -73,14 +86,18 @@ const handleClear = () => {
 };
 
 const getStatusText = (status: number) => {
-  if (status === 0) return '未开始';
-  if (status === 1) return '进行中';
+  if (status === 0) return props.relateType === 2 ? '想看' : '未开始';
+  if (status === 1) return props.relateType === 2 ? '在看' : '阅读中';
+  if (status === 2) return props.relateType === 2 ? '看过' : '已完成';
+  if (status === 3) return '搁置';
   return '未知';
 };
 
 const getStatusColor = (status: number) => {
   if (status === 0) return 'default';
   if (status === 1) return 'processing';
+  if (status === 2) return 'success';
+  if (status === 3) return 'warning';
   return 'default';
 };
 
@@ -127,6 +144,14 @@ watch(
           :width="60"
           :height="80"
           style="object-fit: cover; border-radius: 4px"
+        />
+        <img
+          v-else-if="selectedItem.coverImgUrl"
+          :src="selectedItem.coverImgUrl"
+          :width="60"
+          :height="80"
+          style="object-fit: cover; border-radius: 4px"
+          referrerpolicy="no-referrer"
         />
         <div class="info">
           <div class="title">{{ selectedItem.title }}</div>
@@ -178,6 +203,18 @@ watch(
                   display: block;
                   border-radius: 4px;
                 "
+              />
+              <img
+                v-else-if="item.coverImgUrl"
+                :src="item.coverImgUrl"
+                style="
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                  display: block;
+                  border-radius: 4px;
+                "
+                referrerpolicy="no-referrer"
               />
             </div>
           </Card>

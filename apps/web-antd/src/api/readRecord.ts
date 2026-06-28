@@ -92,6 +92,13 @@ export namespace ReadRecordApi {
     return requestClient.get<ReadRecordVO[]>('/read-record/active');
   }
 
+  /**
+   * 根据ID获取详情
+   */
+  export function getById(id: number | string) {
+    return requestClient.get<ReadRecordVO>(`/read-record/${id}`);
+  }
+
   export const uploadCover = (file: File) => {
     return requestClient.upload<FileVO>('/read-record/upload-cover', { file });
   };

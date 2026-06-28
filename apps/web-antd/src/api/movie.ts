@@ -92,6 +92,13 @@ export namespace MovieApi {
     return requestClient.get<MovieVO[]>('/movie/active');
   }
 
+  /**
+   * 根据ID获取详情
+   */
+  export function getById(id: number | string) {
+    return requestClient.get<MovieVO>(`/movie/${id}`);
+  }
+
   export const uploadCover = (file: File) => {
     return requestClient.upload<FileVO>('/movie/upload-cover', { file });
   };
