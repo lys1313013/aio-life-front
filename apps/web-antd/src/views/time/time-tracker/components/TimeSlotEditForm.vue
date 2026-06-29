@@ -9,7 +9,7 @@ import type {
   TimeSlotFormData,
 } from '../types';
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 
@@ -203,12 +203,33 @@ onMounted(() => {
   window.addEventListener('resize', updateIsMobile);
 });
 
-// 连续调整相关变量
-const continuousAdjustInterval = ref<NodeJS.Timeout | null>(null);
-const continuousAdjustDirection = ref<number>(0);
-const continuousAdjustType = ref<'end' | 'start'>('start');
-const initialDelay = 500; // 初始延迟500ms
-const repeatInterval = 100; // 重复间隔100ms
+// 长按连续调整
+const longPressTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+const repeatTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const longPressDirection = ref(0);
+const longPressType = ref<'start' | 'end'>('start');
+const longPressTriggered = ref(false);
+const LONG_PRESS_DELAY = 400;
+const REPEAT_INTERVAL = 100;
+
+const clearAllTimers = () => {
+  if (longPressTimer.value !== null) {
+    clearTimeout(longPressTimer.value);
+    longPressTimer.value = null;
+  }
+  if (repeatTimer.value !== null) {
+    clearInterval(repeatTimer.value);
+    repeatTimer.value = null;
+  }
+};
+
+const doAdjust = (direction: number, type: 'start' | 'end') => {
+  if (type === 'start') {
+    adjustStartTime(direction);
+  } else {
+    adjustEndTime(direction);
+  }
+};
 
 // 计算时长
 const duration = computed(() => {
@@ -605,55 +626,61 @@ const handleDelete = () => {
   }
 };
 
-// 开始连续调整
-const startContinuousAdjust = (direction: number, type: 'end' | 'start') => {
-  // 设置连续调整参数
-  continuousAdjustDirection.value = direction;
-  continuousAdjustType.value = type;
-
-  // 清除现有的定时器
-  if (continuousAdjustInterval.value) {
-    clearTimeout(continuousAdjustInterval.value);
-    continuousAdjustInterval.value = null;
-  }
-
-  // 设置初始延迟后的连续调整（先不立即执行，等待延迟后再开始）
-  continuousAdjustInterval.value = setTimeout(() => {
-    // 延迟结束后先执行一次调整
-    if (continuousAdjustType.value === 'start') {
-      adjustStartTime(continuousAdjustDirection.value);
-    } else {
-      adjustEndTime(continuousAdjustDirection.value);
-    }
-
-    // 然后开始连续调整
-    continuousAdjustInterval.value = setInterval(() => {
-      if (continuousAdjustType.value === 'start') {
-        adjustStartTime(continuousAdjustDirection.value);
-      } else {
-        adjustEndTime(continuousAdjustDirection.value);
-      }
-    }, repeatInterval);
-  }, initialDelay);
+// mousedown / touchstart：启动长按检测
+const startLongPress = (direction: number, type: 'start' | 'end') => {
+  clearAllTimers();
+  longPressDirection.value = direction;
+  longPressType.value = type;
+  longPressTriggered.value = false;
+  longPressTimer.value = setTimeout(() => {
+    longPressTriggered.value = true;
+    doAdjust(direction, type);
+    repeatTimer.value = setInterval(() => {
+      doAdjust(longPressDirection.value, longPressType.value);
+    }, REPEAT_INTERVAL);
+  }, LONG_PRESS_DELAY);
 };
 
-// 停止连续调整
-const stopContinuousAdjust = () => {
-  if (continuousAdjustInterval.value) {
-    if (typeof continuousAdjustInterval.value === 'number') {
-      clearTimeout(continuousAdjustInterval.value);
-    } else {
-      clearTimeout(continuousAdjustInterval.value);
-      clearInterval(continuousAdjustInterval.value);
-    }
-    continuousAdjustInterval.value = null;
+// mouseup / mouseleave / touchend / touchcancel：停止
+const stopLongPress = () => {
+  clearAllTimers();
+};
+
+// @click：仅在非长按时执行单次调整
+const handleClick = (direction: number, type: 'start' | 'end') => {
+  if (longPressTriggered.value) {
+    longPressTriggered.value = false;
+    return;
   }
-  continuousAdjustDirection.value = 0;
+  doAdjust(direction, type);
+};
+
+// TimePicker 展开时将选中项滚动到列中央
+// Ant Design 内部也会在 popup 渲染后执行 scrollIntoView，因此延迟后再覆盖一次
+const scrollTimePanelToCenter = () => {
+  document
+    .querySelectorAll('.ant-picker-time-panel-cell-selected')
+    .forEach((cell) => {
+      const column = cell.closest<HTMLElement>('.ant-picker-time-panel-column');
+      if (!column) return;
+      const cellTop =
+        cell.getBoundingClientRect().top -
+        column.getBoundingClientRect().top +
+        column.scrollTop;
+      column.scrollTop = cellTop - column.clientHeight / 2;
+    });
+};
+
+const handleTimePickerOpenChange = (open: boolean) => {
+  if (!open) return;
+  // 覆盖 Ant Design 内部的 scrollIntoView，确保选中项居中
+  setTimeout(() => requestAnimationFrame(scrollTimePanelToCenter), 30);
+  setTimeout(() => requestAnimationFrame(scrollTimePanelToCenter), 180);
 };
 
 // 组件卸载时清理定时器
 onUnmounted(() => {
-  stopContinuousAdjust();
+  clearAllTimers();
   window.removeEventListener('resize', updateIsMobile);
 });
 </script>
@@ -724,56 +751,57 @@ onUnmounted(() => {
                 format="HH:mm"
                 style="width: 100%"
                 placeholder="选择开始时间"
+                @openChange="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
                 <Button
                   size="small"
-                  @click="adjustStartTime(-1)"
-                  @mousedown="startContinuousAdjust(-1, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-1, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(-1, 'start')"
+                  @mousedown="startLongPress(-1, 'start')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(-1, 'start')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.startTime"
                 >
                   -1
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustStartTime(1)"
-                  @mousedown="startContinuousAdjust(1, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(1, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(1, 'start')"
+                  @mousedown="startLongPress(1, 'start')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(1, 'start')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.startTime"
                 >
                   +1
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustStartTime(-30)"
-                  @mousedown="startContinuousAdjust(-30, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-30, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(-30, 'start')"
+                  @mousedown="startLongPress(-30, 'start')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(-30, 'start')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.startTime"
                 >
                   -30
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustStartTime(30)"
-                  @mousedown="startContinuousAdjust(30, 'start')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(30, 'start')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(30, 'start')"
+                  @mousedown="startLongPress(30, 'start')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(30, 'start')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.startTime"
                 >
                   +30
@@ -790,56 +818,57 @@ onUnmounted(() => {
                 format="HH:mm"
                 style="width: 100%"
                 placeholder="选择结束时间"
+                @openChange="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
                 <Button
                   size="small"
-                  @click="adjustEndTime(-1)"
-                  @mousedown="startContinuousAdjust(-1, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-1, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(-1, 'end')"
+                  @mousedown="startLongPress(-1, 'end')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(-1, 'end')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.endTime"
                 >
                   -1
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustEndTime(1)"
-                  @mousedown="startContinuousAdjust(1, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(1, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(1, 'end')"
+                  @mousedown="startLongPress(1, 'end')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(1, 'end')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.endTime"
                 >
                   +1
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustEndTime(-30)"
-                  @mousedown="startContinuousAdjust(-30, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(-30, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(-30, 'end')"
+                  @mousedown="startLongPress(-30, 'end')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(-30, 'end')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.endTime"
                 >
                   -30
                 </Button>
                 <Button
                   size="small"
-                  @click="adjustEndTime(30)"
-                  @mousedown="startContinuousAdjust(30, 'end')"
-                  @mouseup="stopContinuousAdjust"
-                  @mouseleave="stopContinuousAdjust"
-                  @touchstart="startContinuousAdjust(30, 'end')"
-                  @touchend="stopContinuousAdjust"
-                  @touchcancel="stopContinuousAdjust"
+                  @click="handleClick(30, 'end')"
+                  @mousedown="startLongPress(30, 'end')"
+                  @mouseup="stopLongPress"
+                  @mouseleave="stopLongPress"
+                  @touchstart="startLongPress(30, 'end')"
+                  @touchend="stopLongPress"
+                  @touchcancel="stopLongPress"
                   :disabled="!formState.endTime"
                 >
                   +30
@@ -1047,6 +1076,7 @@ onUnmounted(() => {
 .time-slot-edit-form {
   padding: 0;
   margin-bottom: -16px;
+  user-select: none;
 }
 
 .category-inline-trigger {
@@ -1216,4 +1246,5 @@ onUnmounted(() => {
 :deep(.input-align-right input) {
   text-align: right;
 }
+
 </style>

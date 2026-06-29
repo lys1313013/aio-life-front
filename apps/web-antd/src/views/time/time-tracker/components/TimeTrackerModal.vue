@@ -263,3 +263,9 @@ defineExpose({ open });
     </Spin>
   </Modal>
 </template>
+
+<style scoped>
+:deep(.ant-modal-content) {
+  user-select: none;
+}
+</style>
