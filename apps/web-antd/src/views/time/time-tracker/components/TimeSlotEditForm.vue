@@ -896,7 +896,7 @@ onUnmounted(() => {
           @change="
             (item) => {
               formState.relateType = currentRelateType;
-              if (item && !formState.title) {
+              if (item) {
                 formState.title = item.title;
               }
             }
