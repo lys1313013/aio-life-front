@@ -642,11 +642,16 @@ const startLongPress = (direction: number, type: 'start' | 'end') => {
 };
 
 // mouseup / mouseleave / touchend / touchcancel：停止
+// 若定时器未触发（短按），执行一次调整并阻止后续 click
 const stopLongPress = () => {
+  if (!longPressTriggered.value && longPressTimer.value !== null) {
+    longPressTriggered.value = true;
+    doAdjust(longPressDirection.value, longPressType.value);
+  }
   clearAllTimers();
 };
 
-// @click：仅在非长按时执行单次调整
+// @click：键盘 / 无障碍后备（mousedown 已处理的会被 longPressTriggered 屏蔽）
 const handleClick = (direction: number, type: 'start' | 'end') => {
   if (longPressTriggered.value) {
     longPressTriggered.value = false;
@@ -751,61 +756,70 @@ onUnmounted(() => {
                 format="HH:mm"
                 style="width: 100%"
                 placeholder="选择开始时间"
+                :input-read-only="isMobile"
                 @openChange="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
-                <Button
-                  size="small"
-                  @click="handleClick(-1, 'start')"
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(-1, 'start')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(-1, 'start')"
+                  @touchstart.prevent="startLongPress(-1, 'start')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.startTime"
                 >
-                  -1
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(1, 'start')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.startTime"
+                    @click="handleClick(-1, 'start')"
+                  >-1</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(1, 'start')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(1, 'start')"
+                  @touchstart.prevent="startLongPress(1, 'start')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.startTime"
                 >
-                  +1
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(-30, 'start')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.startTime"
+                    @click="handleClick(1, 'start')"
+                  >+1</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(-30, 'start')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(-30, 'start')"
+                  @touchstart.prevent="startLongPress(-30, 'start')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.startTime"
                 >
-                  -30
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(30, 'start')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.startTime"
+                    @click="handleClick(-30, 'start')"
+                  >-30</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(30, 'start')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(30, 'start')"
+                  @touchstart.prevent="startLongPress(30, 'start')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.startTime"
                 >
-                  +30
-                </Button>
+                  <Button
+                    size="small"
+                    :disabled="!formState.startTime"
+                    @click="handleClick(30, 'start')"
+                  >+30</Button>
+                </span>
               </div>
             </div>
           </Form.Item>
@@ -818,61 +832,70 @@ onUnmounted(() => {
                 format="HH:mm"
                 style="width: 100%"
                 placeholder="选择结束时间"
+                :input-read-only="isMobile"
                 @openChange="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
-                <Button
-                  size="small"
-                  @click="handleClick(-1, 'end')"
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(-1, 'end')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(-1, 'end')"
+                  @touchstart.prevent="startLongPress(-1, 'end')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.endTime"
                 >
-                  -1
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(1, 'end')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.endTime"
+                    @click="handleClick(-1, 'end')"
+                  >-1</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(1, 'end')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(1, 'end')"
+                  @touchstart.prevent="startLongPress(1, 'end')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.endTime"
                 >
-                  +1
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(-30, 'end')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.endTime"
+                    @click="handleClick(1, 'end')"
+                  >+1</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(-30, 'end')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(-30, 'end')"
+                  @touchstart.prevent="startLongPress(-30, 'end')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.endTime"
                 >
-                  -30
-                </Button>
-                <Button
-                  size="small"
-                  @click="handleClick(30, 'end')"
+                  <Button
+                    size="small"
+                    :disabled="!formState.endTime"
+                    @click="handleClick(-30, 'end')"
+                  >-30</Button>
+                </span>
+                <span
+                  class="adjust-btn-wrap"
                   @mousedown="startLongPress(30, 'end')"
                   @mouseup="stopLongPress"
                   @mouseleave="stopLongPress"
-                  @touchstart="startLongPress(30, 'end')"
+                  @touchstart.prevent="startLongPress(30, 'end')"
                   @touchend="stopLongPress"
                   @touchcancel="stopLongPress"
-                  :disabled="!formState.endTime"
                 >
-                  +30
-                </Button>
+                  <Button
+                    size="small"
+                    :disabled="!formState.endTime"
+                    @click="handleClick(30, 'end')"
+                  >+30</Button>
+                </span>
               </div>
             </div>
           </Form.Item>
@@ -1219,6 +1242,13 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.adjust-btn-wrap {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  touch-action: manipulation;
 }
 
 .time-adjust-buttons .ant-btn {
