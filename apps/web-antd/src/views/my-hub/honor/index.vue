@@ -49,7 +49,7 @@ interface Honor {
   customCategory?: string;
   tags: string[];
   attachments: string[];
-  fileIds: number[];
+  fileIds: string[];
   isTop: boolean;
   isPublic: boolean;
 }
@@ -64,7 +64,7 @@ interface FormState {
   categoryId?: number;
   customCategory: string;
   tags: string;
-  fileIds: number[];
+  fileIds: string[];
   isPublic: boolean;
 }
 
@@ -285,7 +285,7 @@ const handleUploadChange = (info: { file: any; fileList: any[] }) => {
       .filter((f) => f.status === 'done')
       .map((f) => f.response?.id)
       .filter(Boolean);
-    formState.value.fileIds = ids.map(id => parseInt(id));
+    formState.value.fileIds = ids;
   }
 };
 
