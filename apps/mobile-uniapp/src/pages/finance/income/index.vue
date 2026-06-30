@@ -10,7 +10,7 @@
         <text>暂无收入记录</text>
       </view>
       <view v-else class="income-list">
-        <view class="income-item" v-for="item in incomeList" :key="item.id">
+        <view class="income-item" v-for="item in incomeList" :key="item.id" @click="handleEdit(item)" @longpress="handleDelete(item)">
           <view class="item-left">
             <view class="category-icon">
               <text class="icon-text">{{ (item.remark || item.category || '收').substring(0,1) }}</text>
@@ -43,7 +43,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { query } from '@/api/income';
+import { query, deleteData } from '@/api/income';
 
 const incomeList = ref<any[]>([]);
 const totalAmount = ref(0);
@@ -84,11 +84,32 @@ const loadData = async () => {
 };
 
 const triggerFab = (e: any) => {
-  uni.showToast({ title: '添加收入', icon: 'none' });
+  uni.navigateTo({ url: '/pages/finance/income/edit' });
 };
 
 const fabClick = () => {
-  uni.showToast({ title: '添加收入', icon: 'none' });
+  uni.navigateTo({ url: '/pages/finance/income/edit' });
+};
+
+const handleEdit = (item: any) => {
+  uni.$emit('editIncome', item);
+  uni.navigateTo({ url: '/pages/finance/income/edit' });
+};
+
+const handleDelete = (item: any) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除这笔收入吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteData({ id: item.id });
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadData();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

@@ -33,6 +33,10 @@
             <text class="relation-target">{{ rel.target.name }}</text>
           </view>
         </view>
+        <view class="detail-actions">
+          <button class="edit-btn" @click="onEditPerson(selectedPerson)">编辑</button>
+          <button class="delete-btn" @click="onDeletePerson(selectedPerson)">删除</button>
+        </view>
         <button class="close-btn" @click="selectedPerson = null">关闭</button>
       </view>
     </view>
@@ -49,7 +53,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue';
-import { getGraphData, getPerson, type GraphData, type GraphNode, type PersonDetailVO } from '../../../api/relationship';
+import { getGraphData, getPerson, deletePerson, type GraphData, type GraphNode, type PersonDetailVO } from '../../../api/relationship';
 
 interface LayoutNode extends GraphNode {
   x: number;
@@ -380,7 +384,30 @@ const onTouchEnd = (event: any) => {
 };
 
 const onAddPerson = () => {
-  uni.showToast({ title: '添加人物', icon: 'none' });
+  uni.navigateTo({ url: '/pages/relationship/edit' });
+};
+
+const onEditPerson = (person: LayoutNode) => {
+  selectedPerson.value = null;
+  uni.$emit('editPerson', person);
+  uni.navigateTo({ url: '/pages/relationship/edit' });
+};
+
+const onDeletePerson = (person: LayoutNode) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${person.name}」及其所有关系吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deletePerson(person.id);
+          selectedPerson.value = null;
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadGraphData();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 // 获取系统信息设置画布大小
@@ -508,6 +535,27 @@ onMounted(() => {
 .relation-target {
   font-size: 26rpx;
   color: #666;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 24rpx;
+  .edit-btn, .delete-btn {
+    flex: 1;
+    border: none;
+    border-radius: 12rpx;
+    padding: 16rpx;
+    font-size: 28rpx;
+  }
+  .edit-btn {
+    background-color: #e8eaf6;
+    color: #3f51b5;
+  }
+  .delete-btn {
+    background-color: #fef0f0;
+    color: #f56c6c;
+  }
 }
 
 .close-btn {

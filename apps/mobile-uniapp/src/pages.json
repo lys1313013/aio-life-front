@@ -6,154 +6,56 @@
     }
   },
   "pages": [
-    {
-      "path": "pages/dashboard/index",
-      "style": { "navigationBarTitleText": "首页" }
-    },
-    {
-      "path": "pages/login/index",
-      "style": { "navigationBarTitleText": "登录" }
-    },
-    {
-      "path": "pages/task-center/todo/index",
-      "style": { "navigationBarTitleText": "待办" }
-    },
-    {
-      "path": "pages/message/index",
-      "style": { "navigationBarTitleText": "消息" }
-    },
-    {
-      "path": "pages/_core/profile/index",
-      "style": { "navigationBarTitleText": "我的" }
-    },
-    {
-      "path": "pages/task-center/goal/index",
-      "style": { "navigationBarTitleText": "目标" }
-    },
-    {
-      "path": "pages/time/time-tracker/index",
-      "style": { "navigationBarTitleText": "时迹", "enablePullDownRefresh": true }
-    },
-    {
-      "path": "pages/time/time-tracker/edit",
-      "style": { "navigationBarTitleText": "记录时迹" }
-    },
-    {
-      "path": "pages/time/my-categories/index",
-      "style": { "navigationBarTitleText": "我的分类" }
-    },
-    {
-      "path": "pages/time/category-admin/index",
-      "style": { "navigationBarTitleText": "分类管理" }
-    },
-    {
-      "path": "pages/record/exercise/index",
-      "style": { "navigationBarTitleText": "运动" }
-    },
-    {
-      "path": "pages/record/password/index",
-      "style": { "navigationBarTitleText": "密码管理" }
-    },
-    {
-      "path": "pages/record/videoWatch/index",
-      "style": { "navigationBarTitleText": "视频观看" }
-    },
-    {
-      "path": "pages/record/think/index",
-      "style": { "navigationBarTitleText": "闪念" }
-    },
-    {
-      "path": "pages/record/memo/index",
-      "style": { "navigationBarTitleText": "笔记" }
-    },
-    {
-      "path": "pages/record/performance/index",
-      "style": { "navigationBarTitleText": "活动" }
-    },
-    {
-      "path": "pages/record/milestone/index",
-      "style": { "navigationBarTitleText": "里程碑" }
-    },
-    {
-      "path": "pages/record/anniversary/index",
-      "style": { "navigationBarTitleText": "纪念日" }
-    },
-    {
-      "path": "pages/record/movie/index",
-      "style": { "navigationBarTitleText": "观影" }
-    },
-    {
-      "path": "pages/record/read/index",
-      "style": { "navigationBarTitleText": "阅读" }
-    },
-    {
-      "path": "pages/relationship/graph/index",
-      "style": { "navigationBarTitleText": "关系图谱" }
-    },
-    {
-      "path": "pages/finance/dashboard/index",
-      "style": { "navigationBarTitleText": "财务概览" }
-    },
-    {
-      "path": "pages/finance/income/index",
-      "style": { "navigationBarTitleText": "收入" }
-    },
-    {
-      "path": "pages/finance/expense/index",
-      "style": { "navigationBarTitleText": "支出" }
-    },
-    {
-      "path": "pages/finance/import/index",
-      "style": { "navigationBarTitleText": "账单导入" }
-    },
-    {
-      "path": "pages/goods/device/index",
-      "style": { "navigationBarTitleText": "设备墙" }
-    },
-    {
-      "path": "pages/goods/wardrobe/index",
-      "style": { "navigationBarTitleText": "衣柜" }
-    },
-    {
-      "path": "pages/coding/github/index",
-      "style": { "navigationBarTitleText": "Github" }
-    },
-    {
-      "path": "pages/coding/leetcode/index",
-      "style": { "navigationBarTitleText": "LeetCode" }
-    },
-    {
-      "path": "pages/coding/csdn/index",
-      "style": { "navigationBarTitleText": "CSDN" }
-    },
-    {
-      "path": "pages/config-management/sysDictType/index",
-      "style": { "navigationBarTitleText": "字典类型" }
-    },
-    {
-      "path": "pages/config-management/sysDictData/index",
-      "style": { "navigationBarTitleText": "字典数据" }
-    },
-    {
-      "path": "pages/config-management/exerciseCategoryConfig/index",
-      "style": { "navigationBarTitleText": "分类配置" }
-    },
-    {
-      "path": "pages/system/user/index",
-      "style": { "navigationBarTitleText": "用户中心" }
-    },
-    {
-      "path": "pages/system/menu/index",
-      "style": { "navigationBarTitleText": "菜单管理" }
-    },
-    {
-      "path": "pages/system/user-dict/index",
-      "style": { "navigationBarTitleText": "用户字典" }
-    },
-    {
-      "path": "pages/mcp/tools/index",
-      "style": { "navigationBarTitleText": "MCP 工具列表" }
-    }
+    { "path": "pages/dashboard/index", "style": { "navigationBarTitleText": "首页" } },
+    { "path": "pages/login/index", "style": { "navigationBarTitleText": "登录" } },
+    { "path": "pages/task-center/todo/index", "style": { "navigationBarTitleText": "待办" } },
+    { "path": "pages/message/index", "style": { "navigationBarTitleText": "消息" } },
+    { "path": "pages/_core/profile/index", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/task-center/goal/index", "style": { "navigationBarTitleText": "目标" } },
+    { "path": "pages/task-center/goal/edit", "style": { "navigationBarTitleText": "编辑目标" } },
+    { "path": "pages/time/time-tracker/index", "style": { "navigationBarTitleText": "时迹", "enablePullDownRefresh": true } },
+    { "path": "pages/time/time-tracker/edit", "style": { "navigationBarTitleText": "记录时迹" } },
+    { "path": "pages/time/my-categories/index", "style": { "navigationBarTitleText": "我的分类" } },
+    { "path": "pages/time/category-admin/index", "style": { "navigationBarTitleText": "分类管理" } },
+    { "path": "pages/record/exercise/index", "style": { "navigationBarTitleText": "运动" } },
+    { "path": "pages/record/exercise/edit", "style": { "navigationBarTitleText": "编辑运动" } },
+    { "path": "pages/record/password/index", "style": { "navigationBarTitleText": "密码管理" } },
+    { "path": "pages/record/password/edit", "style": { "navigationBarTitleText": "编辑密码" } },
+    { "path": "pages/record/videoWatch/index", "style": { "navigationBarTitleText": "视频观看" } },
+    { "path": "pages/record/videoWatch/edit", "style": { "navigationBarTitleText": "编辑视频" } },
+    { "path": "pages/record/think/index", "style": { "navigationBarTitleText": "闪念" } },
+    { "path": "pages/record/memo/index", "style": { "navigationBarTitleText": "笔记" } },
+    { "path": "pages/record/performance/index", "style": { "navigationBarTitleText": "活动" } },
+    { "path": "pages/record/milestone/index", "style": { "navigationBarTitleText": "里程碑" } },
+    { "path": "pages/record/milestone/edit", "style": { "navigationBarTitleText": "编辑里程碑" } },
+    { "path": "pages/record/anniversary/index", "style": { "navigationBarTitleText": "纪念日" } },
+    { "path": "pages/record/anniversary/edit", "style": { "navigationBarTitleText": "编辑纪念日" } },
+    { "path": "pages/record/movie/index", "style": { "navigationBarTitleText": "观影" } },
+    { "path": "pages/record/movie/edit", "style": { "navigationBarTitleText": "编辑观影" } },
+    { "path": "pages/record/read/index", "style": { "navigationBarTitleText": "阅读" } },
+    { "path": "pages/record/read/edit", "style": { "navigationBarTitleText": "编辑阅读" } },
+    { "path": "pages/relationship/graph/index", "style": { "navigationBarTitleText": "关系图谱" } },
+    { "path": "pages/relationship/edit", "style": { "navigationBarTitleText": "编辑人物" } },
+    { "path": "pages/finance/dashboard/index", "style": { "navigationBarTitleText": "财务概览" } },
+    { "path": "pages/finance/income/index", "style": { "navigationBarTitleText": "收入" } },
+    { "path": "pages/finance/income/edit", "style": { "navigationBarTitleText": "编辑收入" } },
+    { "path": "pages/finance/expense/index", "style": { "navigationBarTitleText": "支出" } },
+    { "path": "pages/finance/expense/edit", "style": { "navigationBarTitleText": "编辑支出" } },
+    { "path": "pages/finance/import/index", "style": { "navigationBarTitleText": "账单导入" } },
+    { "path": "pages/goods/device/index", "style": { "navigationBarTitleText": "设备墙" } },
+    { "path": "pages/goods/device/edit", "style": { "navigationBarTitleText": "编辑设备" } },
+    { "path": "pages/goods/wardrobe/index", "style": { "navigationBarTitleText": "衣柜" } },
+    { "path": "pages/goods/wardrobe/edit", "style": { "navigationBarTitleText": "编辑衣物" } },
+    { "path": "pages/coding/github/index", "style": { "navigationBarTitleText": "Github" } },
+    { "path": "pages/coding/leetcode/index", "style": { "navigationBarTitleText": "LeetCode" } },
+    { "path": "pages/coding/csdn/index", "style": { "navigationBarTitleText": "CSDN" } },
+    { "path": "pages/config-management/sysDictType/index", "style": { "navigationBarTitleText": "字典类型" } },
+    { "path": "pages/config-management/sysDictData/index", "style": { "navigationBarTitleText": "字典数据" } },
+    { "path": "pages/config-management/exerciseCategoryConfig/index", "style": { "navigationBarTitleText": "分类配置" } },
+    { "path": "pages/system/user/index", "style": { "navigationBarTitleText": "用户中心" } },
+    { "path": "pages/system/menu/index", "style": { "navigationBarTitleText": "菜单管理" } },
+    { "path": "pages/system/user-dict/index", "style": { "navigationBarTitleText": "用户字典" } },
+    { "path": "pages/mcp/tools/index", "style": { "navigationBarTitleText": "MCP 工具列表" } }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
@@ -167,22 +69,10 @@
     "borderStyle": "black",
     "backgroundColor": "#FFFFFF",
     "list": [
-      {
-        "pagePath": "pages/dashboard/index",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/task-center/todo/index",
-        "text": "任务"
-      },
-      {
-        "pagePath": "pages/message/index",
-        "text": "消息"
-      },
-      {
-        "pagePath": "pages/_core/profile/index",
-        "text": "我的"
-      }
+      { "pagePath": "pages/dashboard/index", "text": "首页" },
+      { "pagePath": "pages/task-center/todo/index", "text": "任务" },
+      { "pagePath": "pages/message/index", "text": "消息" },
+      { "pagePath": "pages/_core/profile/index", "text": "我的" }
     ]
   }
 }

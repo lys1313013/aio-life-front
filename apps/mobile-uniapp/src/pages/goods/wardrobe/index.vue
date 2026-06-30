@@ -6,7 +6,7 @@
     </view>
 
     <view class="grid-container">
-      <view class="grid-item" v-for="item in wardrobeList" :key="item.id">
+      <view class="grid-item" v-for="item in wardrobeList" :key="item.id" @click="handleEdit(item)" @longpress="handleDelete(item)">
         <view class="image-wrap">
           <image v-if="item.fileId" class="wardrobe-img" :src="getAuthImageUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getWardrobeItems, type WardrobeItemVO } from '@/api/wardrobe';
+import { getWardrobeItems, deleteWardrobeItem, type WardrobeItemVO } from '@/api/wardrobe';
 import { fetchAuthImageUrl } from '@/utils/file';
 
 const wardrobeList = ref<WardrobeItemVO[]>([]);
@@ -89,11 +89,32 @@ const loadData = async () => {
 };
 
 const triggerFab = (e: any) => {
-  uni.showToast({ title: '添加衣物', icon: 'none' });
+  uni.navigateTo({ url: '/pages/goods/wardrobe/edit' });
 };
 
 const fabClick = () => {
-  uni.showToast({ title: '添加衣物', icon: 'none' });
+  uni.navigateTo({ url: '/pages/goods/wardrobe/edit' });
+};
+
+const handleEdit = (item: WardrobeItemVO) => {
+  uni.$emit('editWardrobe', item);
+  uni.navigateTo({ url: '/pages/goods/wardrobe/edit' });
+};
+
+const handleDelete = (item: WardrobeItemVO) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.name}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteWardrobeItem(item.id);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadData();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

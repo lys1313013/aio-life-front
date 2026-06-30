@@ -5,7 +5,7 @@
         <view class="timeline-line" v-if="index !== milestoneList.length - 1"></view>
         <view class="timeline-dot"></view>
         
-        <view class="timeline-content" @click="onClickMilestone(item)">
+        <view class="timeline-content" @click="onClickMilestone(item)" @longpress="onDeleteMilestone(item)">
           <view class="date">{{ item.date }}</view>
           <view class="card">
             <text class="title">{{ item.title }}</text>
@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { queryMilestone, type MilestoneEntity } from '../../../api/milestone';
+import { queryMilestone, deleteMilestone, type MilestoneEntity } from '../../../api/milestone';
 
 const milestoneList = ref<MilestoneEntity[]>([]);
 
@@ -60,11 +60,28 @@ const parseTags = (tagsStr: string) => {
 };
 
 const onClickMilestone = (item: MilestoneEntity) => {
-  uni.showToast({ title: `查看: ${item.title}`, icon: 'none' });
+  uni.$emit('editMilestone', item);
+  uni.navigateTo({ url: '/pages/record/milestone/edit' });
 };
 
 const onAddMilestone = () => {
-  uni.showToast({ title: '添加里程碑', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/milestone/edit' });
+};
+
+const onDeleteMilestone = (item: MilestoneEntity) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteMilestone([item.id!]);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadMilestoneList();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

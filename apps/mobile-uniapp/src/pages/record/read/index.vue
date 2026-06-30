@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="book-list" v-if="readList.length > 0">
-      <view class="book-card" v-for="item in readList" :key="item.id" @click="onClickBook(item)">
+      <view class="book-card" v-for="item in readList" :key="item.id" @click="onClickBook(item)" @longpress="onDeleteBook(item)">
         <image class="cover" :src="item.fileId ? getAuthImageUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getReadListApi, type ReadRecordVO } from '../../../api/read';
+import { getReadListApi, removeReadApi, type ReadRecordVO } from '../../../api/read';
 import { fetchAuthImageUrl } from '@/utils/file';
 
 const readList = ref<ReadRecordVO[]>([]);
@@ -83,11 +83,30 @@ const getStatusText = (status: number) => {
 };
 
 const onClickBook = (item: ReadRecordVO) => {
-  uni.showToast({ title: `查看: ${item.title}`, icon: 'none' });
+  uni.$emit('editRead', item);
+  uni.navigateTo({ url: '/pages/record/read/edit' });
 };
 
 const onAddRead = () => {
-  uni.showToast({ title: '添加阅读记录', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/read/edit' });
+};
+
+const onDeleteBook = (item: ReadRecordVO) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await removeReadApi(item.id);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadReadList();
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
+    }
+  });
 };
 
 onMounted(() => {

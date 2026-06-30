@@ -1,11 +1,12 @@
 <template>
   <view class="container">
     <view class="anniversary-list" v-if="anniversaryList.length > 0">
-      <view 
-        class="anniversary-card" 
-        v-for="item in anniversaryList" 
-        :key="item.id" 
+      <view
+        class="anniversary-card"
+        v-for="item in anniversaryList"
+        :key="item.id"
         @click="onClickAnniversary(item)"
+        @longpress="onDeleteAnniversary(item)"
         :style="{ background: item.color || 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)' }"
       >
         <view class="icon-wrap">
@@ -38,7 +39,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getAnniversaryRecords, type AnniversaryRecord } from '../../../api/anniversary';
+import { getAnniversaryRecords, deleteAnniversaryRecords, type AnniversaryRecord } from '../../../api/anniversary';
 
 const anniversaryList = ref<AnniversaryRecord[]>([]);
 
@@ -60,11 +61,28 @@ const calculateDays = (targetDate: string) => {
 };
 
 const onClickAnniversary = (item: AnniversaryRecord) => {
-  uni.showToast({ title: `查看: ${item.title}`, icon: 'none' });
+  uni.$emit('editAnniversary', item);
+  uni.navigateTo({ url: '/pages/record/anniversary/edit' });
 };
 
 const onAddAnniversary = () => {
-  uni.showToast({ title: '添加纪念日', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/anniversary/edit' });
+};
+
+const onDeleteAnniversary = (item: AnniversaryRecord) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteAnniversaryRecords([item.id!]);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadAnniversaryList();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

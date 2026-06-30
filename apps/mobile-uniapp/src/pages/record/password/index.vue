@@ -17,7 +17,7 @@
         <text class="empty-text">暂无密码记录</text>
       </view>
 
-      <view v-for="item in passwords" :key="item.id" class="password-card">
+      <view v-for="item in passwords" :key="item.id" class="password-card" @click="handleEdit(item)" @longpress="handleDelete(item)">
         <view class="card-header">
           <view class="title-wrap">
             <uni-icons type="star-filled" size="18" :color="item.favorite ? '#f5a623' : '#e0e0e0'" />
@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { queryPasswordVault, type PasswordVaultEntity } from '@/api/password';
+import { queryPasswordVault, deletePasswordVault, type PasswordVaultEntity } from '@/api/password';
 
 const passwords = ref<PasswordVaultEntity[]>([]);
 const isRefreshing = ref(false);
@@ -104,7 +104,28 @@ const handleCopy = (text: string) => {
 };
 
 const handleAdd = () => {
-  uni.showToast({ title: '添加功能开发中', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/password/edit' });
+};
+
+const handleEdit = (item: PasswordVaultEntity) => {
+  uni.$emit('editPassword', item);
+  uni.navigateTo({ url: '/pages/record/password/edit' });
+};
+
+const handleDelete = (item: PasswordVaultEntity) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deletePasswordVault(item.id!);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadData();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

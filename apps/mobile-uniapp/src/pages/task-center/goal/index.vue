@@ -5,6 +5,8 @@
         v-for="goal in goals"
         :key="goal.id"
         class="goal-card"
+        @click="onEditGoal(goal)"
+        @longpress="onDeleteGoal(goal)"
       >
         <view class="goal-header">
           <text class="goal-title">{{ goal.title }}</text>
@@ -39,12 +41,16 @@
         <text class="empty-text">暂无目标</text>
       </view>
     </scroll-view>
+
+    <view class="fab" @click="onAddGoal">
+      <uni-icons type="plusempty" size="24" color="#fff" />
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getGoalList } from '@/api/goal';
+import { getGoalList, deleteGoals } from '@/api/goal';
 import type { GoalEntity } from '@/api/goal';
 
 const goals = ref<GoalEntity[]>([]);
@@ -64,6 +70,33 @@ async function fetchData() {
     console.error('Failed to fetch goal data', error);
   }
 }
+
+const onAddGoal = () => {
+  uni.navigateTo({ url: '/pages/task-center/goal/edit' });
+};
+
+const onEditGoal = (goal: GoalEntity) => {
+  uni.$emit('editGoal', goal);
+  uni.navigateTo({ url: '/pages/task-center/goal/edit' });
+};
+
+const onDeleteGoal = (goal: GoalEntity) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${goal.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteGoals([Number(goal.id)]);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          fetchData();
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
+    }
+  });
+};
 
 function getTypeText(type: number) {
   const map: Record<number, string> = {
@@ -198,5 +231,15 @@ function getProgressColor(progress: number) {
     color: #999;
     font-size: 28rpx;
   }
+}
+
+.fab {
+  position: fixed; right: 48rpx; bottom: 48rpx;
+  width: 96rpx; height: 96rpx;
+  background: linear-gradient(135deg, #ff5a5f, #ff7e82);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(255, 90, 95, 0.4);
+  &:active { opacity: 0.8; transform: scale(0.95); }
 }
 </style>

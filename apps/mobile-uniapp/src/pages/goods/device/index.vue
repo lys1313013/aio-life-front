@@ -6,7 +6,7 @@
     </view>
 
     <view class="grid-container">
-      <view class="grid-item" v-for="item in deviceList" :key="item.id">
+      <view class="grid-item" v-for="item in deviceList" :key="item.id" @click="handleEdit(item)" @longpress="handleDelete(item)">
         <view class="image-wrap">
           <image v-if="item.fileId" class="device-img" :src="getAuthImageUrl(item.fileId)" mode="aspectFill" />
           <view v-else class="placeholder-icon">
@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { query } from '@/api/device';
+import { query, deleteData } from '@/api/device';
 import { fetchAuthImageUrl } from '@/utils/file';
 
 const deviceList = ref<any[]>([]);
@@ -89,11 +89,32 @@ const loadData = async () => {
 };
 
 const triggerFab = (e: any) => {
-  uni.showToast({ title: '添加设备', icon: 'none' });
+  uni.navigateTo({ url: '/pages/goods/device/edit' });
 };
 
 const fabClick = () => {
-  uni.showToast({ title: '添加设备', icon: 'none' });
+  uni.navigateTo({ url: '/pages/goods/device/edit' });
+};
+
+const handleEdit = (item: any) => {
+  uni.$emit('editDevice', item);
+  uni.navigateTo({ url: '/pages/goods/device/edit' });
+};
+
+const handleDelete = (item: any) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.name}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteData(item.id);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadData();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {

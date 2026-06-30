@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="movie-list" v-if="movieList.length > 0">
-      <view class="movie-card" v-for="item in movieList" :key="item.id" @click="onClickMovie(item)">
+      <view class="movie-card" v-for="item in movieList" :key="item.id" @click="onClickMovie(item)" @longpress="onDeleteMovie(item)">
         <image class="cover" :src="item.fileId ? getAuthImageUrl(item.fileId) : '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
@@ -90,11 +90,30 @@ const formatDate = (dateStr: string) => {
 };
 
 const onClickMovie = (item: MovieApi.MovieVO) => {
-  uni.showToast({ title: `查看: ${item.title}`, icon: 'none' });
+  uni.$emit('editMovie', item);
+  uni.navigateTo({ url: '/pages/record/movie/edit' });
 };
 
 const onAddMovie = () => {
-  uni.showToast({ title: '添加观影记录', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/movie/edit' });
+};
+
+const onDeleteMovie = (item: MovieApi.MovieVO) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await MovieApi.remove(item.id);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadMovieList();
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
+    }
+  });
 };
 
 onMounted(() => {

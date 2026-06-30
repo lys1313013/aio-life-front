@@ -18,7 +18,7 @@
         <text class="empty-text">暂无运动记录</text>
       </view>
 
-      <view v-for="item in records" :key="item.id" class="record-card">
+      <view v-for="item in records" :key="item.id" class="record-card" @click="handleEdit(item)" @longpress="handleDelete(item)">
         <view class="card-header">
           <view class="type-badge">
             <uni-icons type="star-filled" size="16" color="#fff" />
@@ -55,7 +55,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { query } from '@/api/exercise';
+import { query, deleteData } from '@/api/exercise';
 import { getByDictType } from '@/api/userDictType';
 
 interface ExerciseRecord {
@@ -145,7 +145,30 @@ const loadMore = () => {
 };
 
 const handleAdd = () => {
-  uni.showToast({ title: '添加功能开发中', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/exercise/edit' });
+};
+
+const handleEdit = (item: ExerciseRecord) => {
+  uni.$emit('editExercise', item);
+  uni.navigateTo({ url: '/pages/record/exercise/edit' });
+};
+
+const handleDelete = (item: ExerciseRecord) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '确定要删除这条运动记录吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteData({ id: item.id });
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadData();
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' });
+        }
+      }
+    }
+  });
 };
 
 const formatDate = (dateStr?: string) => {

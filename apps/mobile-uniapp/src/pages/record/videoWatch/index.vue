@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="video-list" v-if="videoList.length > 0">
-      <view class="video-card" v-for="item in videoList" :key="item.id" @click="onClickVideo(item)">
+      <view class="video-card" v-for="item in videoList" :key="item.id" @click="onClickVideo(item)" @longpress="onDeleteVideo(item)">
         <image class="cover" :src="item.cover || '/static/logo.png'" mode="aspectFill" />
         <view class="info">
           <text class="title">{{ item.title }}</text>
@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { query, type BilibiliVideo } from '../../../api/bilibili-video';
+import { query, deleteBilibiliVideo, type BilibiliVideo } from '../../../api/bilibili-video';
 
 const videoList = ref<BilibiliVideo[]>([]);
 
@@ -68,11 +68,28 @@ const formatDate = (dateStr: string) => {
 };
 
 const onClickVideo = (item: BilibiliVideo) => {
-  uni.showToast({ title: `查看: ${item.title}`, icon: 'none' });
+  uni.$emit('editVideo', item);
+  uni.navigateTo({ url: '/pages/record/videoWatch/edit' });
 };
 
 const onAddVideo = () => {
-  uni.showToast({ title: '添加视频记录', icon: 'none' });
+  uni.navigateTo({ url: '/pages/record/videoWatch/edit' });
+};
+
+const onDeleteVideo = (item: BilibiliVideo) => {
+  uni.showModal({
+    title: '确认删除',
+    content: `确定要删除「${item.title}」吗？`,
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await deleteBilibiliVideo(item.id!);
+          uni.showToast({ title: '已删除', icon: 'success' });
+          loadVideoList();
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }); }
+      }
+    }
+  });
 };
 
 onMounted(() => {
