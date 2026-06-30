@@ -102,7 +102,7 @@ export async function getPinnedThoughts() {
 }
 
 /**
- * 获取今日时迹
+ * 获取时迹
  */
 export async function queryTimeTracker(date: string) {
   return await post<any>("/timeRecord/query", { condition: { date } });

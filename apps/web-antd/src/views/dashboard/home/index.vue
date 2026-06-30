@@ -84,7 +84,7 @@ async function checkTimeTrackerHasData(): Promise<boolean> {
     const records = res?.items || [];
     return records.length > 0;
   } catch (error) {
-    console.error('查询今日时迹失败:', error);
+    console.error('查询时迹失败:', error);
     return false;
   }
 }
@@ -300,7 +300,7 @@ onUnmounted(() => {
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   quickNavStore.load();
-  // 单独判断今日时迹：先查接口再决定是否渲染
+  // 单独判断时迹：先查接口再决定是否渲染
   timeTrackerHasData.value = await checkTimeTrackerHasData();
   // 判断 GitHub 绑定状态：未绑定则不展示最近提交卡片
   githubBound.value = await checkGithubBound();
@@ -474,7 +474,7 @@ function navTo(nav: { url?: string }) {
     <div
       class="mt-2 grid items-start gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3 lg:items-stretch"
     >
-      <!-- 今日时迹统计：无今日数据时不展示 -->
+      <!-- 时迹统计：无今日数据时不展示 -->
       <div
         v-if="timeTrackerHasData"
         class="dashboard-section flex min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
@@ -487,7 +487,7 @@ function navTo(nav: { url?: string }) {
               class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
               title="进入时迹"
               @click="navTo({ url: '/time/time-tracker' })"
-              >今日时迹</span
+              >时迹</span
             >
           </div>
           <RefreshButton @click="refreshTimeTracker" />

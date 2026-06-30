@@ -1,16 +1,16 @@
 <template>
-  <scroll-view 
-    scroll-y 
-    class="container scroll-area" 
+  <scroll-view
+    scroll-y
+    class="container scroll-area"
     refresher-enabled
     @refresherrefresh="onRefresh"
     :refresher-triggered="isRefreshing"
   >
     <!-- 顶部数据大盘 (5个卡片) -->
     <view class="overview-grid" v-if="cardDetails.length > 0">
-      <view 
-        class="overview-card" 
-        v-for="(card, index) in cardDetails" 
+      <view
+        class="overview-card"
+        v-for="(card, index) in cardDetails"
         :key="index"
         @click="handleCardClick(card.titleClickUrl)"
       >
@@ -44,10 +44,10 @@
       </view>
     </view>
 
-    <!-- 今日时迹 (复刻 Web 端 CSS 时间轴与环形图) -->
+    <!-- 时迹 (复刻 Web 端 CSS 时间轴与环形图) -->
     <view class="panel" v-if="timeRecords.length > 0">
       <view class="panel-header" @click="navigateTo('/pages/time/time-tracker/index')">
-        <text class="panel-title">今日时迹</text>
+        <text class="panel-title">时迹</text>
         <view class="header-actions">
           <uni-icons type="loop" size="18" color="#999" @click.stop="refreshTimeTracker"></uni-icons>
           <uni-icons type="right" size="16" color="#999"></uni-icons>
@@ -58,8 +58,8 @@
         <view class="timeline-24h">
           <text class="time-label">0</text>
           <view class="timeline-track">
-            <view 
-              v-for="block in timelineBlocks" 
+            <view
+              v-for="block in timelineBlocks"
               :key="block.id"
               class="timeline-block"
               :style="{ top: block.top, height: block.height, backgroundColor: block.color }"
@@ -67,7 +67,7 @@
           </view>
           <text class="time-label">24</text>
         </view>
-        
+
         <!-- 中间 CSS 环形图 -->
         <view class="pie-chart-wrap">
           <view class="pie-chart-container">
@@ -81,9 +81,9 @@
 
         <!-- 右侧最近记录 -->
         <view class="recent-records">
-          <view 
-            class="recent-item" 
-            v-for="record in recentTimeRecords" 
+          <view
+            class="recent-item"
+            v-for="record in recentTimeRecords"
             :key="record.id"
             :style="{ color: getCategoryColor(record.categoryId) }"
           >
@@ -93,7 +93,7 @@
         </view>
       </view>
     </view>
-    
+
     <view class="panel" v-else-if="loading">
       <view class="panel-header">
         <view class="skeleton-text" style="width: 160rpx; height: 30rpx;"></view>
@@ -140,10 +140,10 @@
         </view>
       </view>
       <view class="panel-body">
-        <view 
-          class="task-item" 
-          v-for="task in watchedTasks" 
-          :key="task.id" 
+        <view
+          class="task-item"
+          v-for="task in watchedTasks"
+          :key="task.id"
           @click="navigateTo('/pages/task-center/todo/index')"
         >
           <view class="checkbox" :class="{ 'is-checked': task.isCompleted }">
@@ -240,9 +240,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { 
-  getDashboardTasks, 
-  getDashboardCardDetail, 
+import {
+  getDashboardTasks,
+  getDashboardCardDetail,
   getWatchedTaskDetails,
   getMyQuickNavApi,
   getPinnedThoughts,
@@ -251,8 +251,8 @@ import {
   getDashboardSummaryApi
 } from '../../api/dashboard';
 import { listCategories } from '../../api/time-tracker-category';
-import type { 
-  DashboardCard, 
+import type {
+  DashboardCard,
   WatchedTaskDetail,
   QuickNavItem,
   ThoughtItem,
@@ -277,7 +277,7 @@ const isRefreshing = ref(false);
 
 const navigateTo = (url?: string) => {
   if (!url) return;
-  
+
   const token = userStore.token;
   if (!token && url !== '/pages/login/index') {
     uni.navigateTo({ url: '/pages/login/index' });
@@ -293,13 +293,13 @@ const navigateTo = (url?: string) => {
   ];
 
   let targetUrl = url;
-  
+
   // Transform web route to mobile route if it doesn't start with /pages/
   if (!targetUrl.startsWith('/pages/')) {
     if (!targetUrl.startsWith('/')) {
       targetUrl = '/' + targetUrl;
     }
-    
+
     if (targetUrl === '/analytics' || targetUrl === '/dashboard') {
       targetUrl = '/pages/dashboard/index'; // Already at home basically
     } else if (targetUrl === '/profile') {
@@ -318,7 +318,7 @@ const navigateTo = (url?: string) => {
   if (tabs.includes(targetUrl)) {
     uni.switchTab({ url: targetUrl });
   } else {
-    uni.navigateTo({ 
+    uni.navigateTo({
       url: targetUrl,
       fail: (err) => {
         console.error('Navigate failed:', err, 'Target URL:', targetUrl);
@@ -349,14 +349,14 @@ const timelineBlocks = computed(() => {
   return timeRecords.value.map(record => {
     const startMin = Number(record.startTime) || 0;
     const endMin = Number(record.endTime) || 0;
-    
+
     let durationMin = record.duration;
     if (durationMin == null || durationMin === 0) {
       durationMin = endMin - startMin;
     }
     durationMin = Number(durationMin) || 0;
     if (durationMin < 0) durationMin = 0;
-    
+
     const startPercent = (startMin / totalMinutes) * 100;
     let heightPercent = (durationMin / totalMinutes) * 100;
     if (heightPercent < 1 && durationMin > 0) heightPercent = 1; // 最小高度 1%
@@ -394,7 +394,7 @@ const recentTimeRecords = computed(() => {
 
 const pieConicGradient = computed(() => {
   if (timeRecords.value.length === 0) return 'conic-gradient(#ccc 0% 100%)';
-  
+
   const categoryDurations: Record<string, number> = {};
   timeRecords.value.forEach(record => {
     let d = record.duration;
@@ -412,7 +412,7 @@ const pieConicGradient = computed(() => {
 
   let currentPercent = 0;
   const gradientParts: string[] = [];
-  
+
   Object.entries(categoryDurations).forEach(([catId, duration]) => {
     if (duration <= 0) return;
     const cat = categories.value.find(c => c.id === catId);
@@ -465,14 +465,14 @@ const formatRecordTimeStr = (record: any) => {
   }
   d = Number(d) || 0;
   if (d < 0) d = 0;
-  
+
   const h = Math.floor(d / 60);
   const mins = d % 60;
   let durStr = '';
   if (h > 0 && mins > 0) durStr = `${h}h${mins}m`;
   else if (h > 0) durStr = `${h}h`;
   else durStr = `${mins}m`;
-  
+
   return `${formatTime(Number(record.startTime) || 0)} ${durStr}`;
 };
 
@@ -505,7 +505,7 @@ const getIconifyStyle = (iconStr: string, keepColor = false) => {
   const [collection, name] = iconStr.split(':');
   if (!collection || !name) return '';
   const url = `url("https://api.iconify.design/${collection}/${name}.svg")`;
-  
+
   if (keepColor) {
     return {
       background: `${url} no-repeat center / contain`
@@ -568,7 +568,7 @@ const refreshExercise = async () => {
 const fetchData = () => {
   if (!userStore.token) return;
   loading.value = true;
-  
+
   const d = new Date();
   const today = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
@@ -673,7 +673,7 @@ onPullDownRefresh(() => {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 16rpx;
-  
+
   .header-right {
     padding: 8rpx;
     display: flex;
@@ -687,7 +687,7 @@ onPullDownRefresh(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   margin-bottom: 20rpx;
-  
+
   .overview-card {
     width: 48%;
     background-color: #fff;
@@ -701,34 +701,34 @@ onPullDownRefresh(() => {
     flex-direction: column;
     justify-content: space-between;
     border: 1rpx solid #f0f0f0;
-    
+
     .card-top {
       margin-bottom: 8rpx;
-      
+
       .card-title {
         font-size: 24rpx;
         color: #333;
         font-weight: 500;
       }
     }
-    
+
     .card-middle {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12rpx;
-      
+
       .card-value {
         font-size: 32rpx;
         font-weight: bold;
       }
-      
+
       .card-icon {
         width: 40rpx;
         height: 40rpx;
       }
     }
-    
+
     .card-bottom {
       display: flex;
       justify-content: space-between;
@@ -752,27 +752,27 @@ onPullDownRefresh(() => {
   margin-bottom: 24rpx;
   box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.03);
   overflow: hidden;
-  
+
   .panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 24rpx 32rpx;
     border-bottom: 1rpx solid #f9f9f9;
-    
+
     .panel-title {
       font-size: 30rpx;
       font-weight: 600;
       color: #333;
     }
-    
+
     .header-actions {
       display: flex;
       align-items: center;
       gap: 16rpx;
     }
   }
-  
+
   .panel-body {
     padding: 24rpx 32rpx;
   }
@@ -785,7 +785,7 @@ onPullDownRefresh(() => {
   justify-content: space-between;
   height: 280rpx;
   padding: 16rpx 0;
-  
+
   .timeline-24h {
     width: 40rpx;
     height: 100%;
@@ -793,13 +793,13 @@ onPullDownRefresh(() => {
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    
+
     .time-label {
       font-size: 20rpx;
       color: #aaa;
       line-height: 1;
     }
-    
+
     .timeline-track {
       flex: 1;
       width: 8rpx;
@@ -809,7 +809,7 @@ onPullDownRefresh(() => {
       position: relative;
       overflow: hidden;
       height: 100%;
-      
+
       .timeline-block {
         position: absolute;
         left: 0;
@@ -826,7 +826,7 @@ onPullDownRefresh(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     .pie-chart-container {
       width: 100%;
       display: flex;
@@ -851,7 +851,7 @@ onPullDownRefresh(() => {
         align-items: center;
         justify-content: center;
         box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.02);
-        
+
         .ring-total-time {
           font-size: 26rpx;
           color: #333;
@@ -861,7 +861,7 @@ onPullDownRefresh(() => {
       }
     }
   }
-  
+
   .recent-records {
     width: 240rpx;
     height: 100%;
@@ -870,7 +870,7 @@ onPullDownRefresh(() => {
     justify-content: center;
     align-items: flex-end;
     gap: 24rpx;
-    
+
     .recent-item {
       display: flex;
       align-items: center;
@@ -880,11 +880,11 @@ onPullDownRefresh(() => {
       font-size: 22rpx;
       opacity: 0.85;
       line-height: 1;
-      
+
       .record-time-str {
         flex-shrink: 0;
       }
-      
+
       .record-cat {
         white-space: nowrap;
         overflow: hidden;
@@ -900,13 +900,13 @@ onPullDownRefresh(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 32rpx 0;
-  
+
   .nav-item {
     width: 25%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    
+
     .nav-icon-wrap {
       width: 80rpx;
       height: 80rpx;
@@ -922,7 +922,7 @@ onPullDownRefresh(() => {
         height: 44rpx;
       }
     }
-    
+
     .nav-text {
       font-size: 24rpx;
       color: #333;
@@ -935,11 +935,11 @@ onPullDownRefresh(() => {
   display: flex;
   align-items: flex-start;
   margin-bottom: 24rpx;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
-  
+
   .checkbox {
     width: 32rpx;
     height: 32rpx;
@@ -951,23 +951,23 @@ onPullDownRefresh(() => {
     margin-right: 20rpx;
     margin-top: 4rpx;
     transition: all 0.2s;
-    
+
     &.is-checked {
       background-color: #4cd964;
       border-color: #4cd964;
     }
   }
-  
+
   .task-content {
     flex: 1;
     min-width: 0;
-    
+
     .task-title-wrap {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       margin-bottom: 8rpx;
-      
+
       .task-priority {
         font-size: 20rpx;
         color: #fff;
@@ -978,24 +978,24 @@ onPullDownRefresh(() => {
         &.p-10 { background-color: #ff9500; }
         &.p-99 { background-color: #8e8e93; }
       }
-      
+
       .task-title {
         font-size: 28rpx;
         color: #333;
         line-height: 1.4;
-        
+
         &.completed {
           text-decoration: line-through;
           color: #999;
         }
       }
     }
-    
+
     .task-meta {
       display: flex;
       align-items: center;
       gap: 16rpx;
-      
+
       .task-tag {
         font-size: 20rpx;
         background-color: #f0f0f0;
@@ -1003,7 +1003,7 @@ onPullDownRefresh(() => {
         padding: 4rpx 12rpx;
         border-radius: 6rpx;
       }
-      
+
       .task-time {
         font-size: 22rpx;
         color: #999;
@@ -1020,19 +1020,19 @@ onPullDownRefresh(() => {
   background-color: #fafafa;
   padding: 20rpx;
   border-radius: 16rpx;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
-  
+
   .thought-icon {
     margin-right: 16rpx;
     margin-top: 4rpx;
   }
-  
+
   .thought-content {
     flex: 1;
-    
+
     .thought-text {
       font-size: 26rpx;
       color: #333;
@@ -1040,7 +1040,7 @@ onPullDownRefresh(() => {
       display: block;
       margin-bottom: 12rpx;
     }
-    
+
     .thought-time {
       font-size: 22rpx;
       color: #999;
@@ -1053,13 +1053,13 @@ onPullDownRefresh(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   .ex-stat {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    
+
     .ex-value {
       font-size: 48rpx;
       font-weight: bold;
@@ -1071,7 +1071,7 @@ onPullDownRefresh(() => {
       color: #999;
     }
   }
-  
+
   .ex-divider {
     width: 2rpx;
     height: 60rpx;
@@ -1083,7 +1083,7 @@ onPullDownRefresh(() => {
 .commit-item {
   padding: 20rpx 0;
   border-bottom: 1rpx solid #f5f5f5;
-  
+
   &:last-child {
     border-bottom: none;
     padding-bottom: 0;
@@ -1091,7 +1091,7 @@ onPullDownRefresh(() => {
   &:first-child {
     padding-top: 0;
   }
-  
+
   .commit-msg {
     font-size: 28rpx;
     color: #333;
@@ -1099,7 +1099,7 @@ onPullDownRefresh(() => {
     margin-bottom: 8rpx;
     font-family: monospace;
   }
-  
+
   .commit-meta {
     font-size: 22rpx;
     color: #999;
