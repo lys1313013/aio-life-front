@@ -87,6 +87,7 @@ const selectedWeekDayIndex = ref(0);
 const selectedMonthDayIndex = ref(0);
 const isMobile = ref(false);
 const currentQuote = ref('');
+const trendRefreshKey = ref(0);
 
 // 视图模式：timeline 时间轴 / card 时间卡片
 const VIEW_MODE_STORAGE_KEY = 'time-tracker-view-mode';
@@ -526,6 +527,7 @@ const loadData = async () => {
     previousPeriodTimeSlots.value = [];
   } finally {
     loading.value = false; // 结束加载
+    trendRefreshKey.value++;
   }
 };
 
@@ -1869,6 +1871,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
               :selected-date="selectedDate"
               :stat-mode="statMode"
               :selected-filter-category-ids="selectedFilterCategoryIds"
+              :refresh-key="trendRefreshKey"
             />
           </div>
         </div>

@@ -23,6 +23,7 @@ interface Props {
   selectedDate: dayjs.Dayjs;
   statMode: 'day' | 'month' | 'week';
   selectedFilterCategoryIds?: null | string[];
+  refreshKey?: number;
 }
 
 const props = defineProps<Props>();
@@ -270,6 +271,7 @@ watch(
     () => props.statMode,
     () => props.selectedDate,
     () => props.selectedFilterCategoryIds,
+    () => props.refreshKey,
   ],
   () => {
     fetchTrendData();
