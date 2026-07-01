@@ -38,6 +38,7 @@ import { listCategories } from '#/api/core/time-tracker-category';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import CategoryFilter from './components/CategoryFilter.vue';
+import CategoryTrendLineChart from './components/CategoryTrendLineChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
 import DailyStatsPieChart from './components/DailyStatsPieChart.vue';
 import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
@@ -1858,6 +1859,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
                 selectedFilterCategoryIds.length === 0
               "
               :time-slots="timeSlots"
+              :categories="config.categories"
+              :selected-date="selectedDate"
+              :stat-mode="statMode"
+              :selected-filter-category-ids="selectedFilterCategoryIds"
+            />
+            <CategoryTrendLineChart
               :categories="config.categories"
               :selected-date="selectedDate"
               :stat-mode="statMode"
