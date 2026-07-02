@@ -1804,13 +1804,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
               </div>
             </div>
 
-            <!-- 时间类型分布饼图 -->
-            <TimeTypePieChart
-              v-if="selectedFilterCategoryIds.length === 0"
-              :time-slots="timeSlots"
+            <CategoryTrendLineChart
               :categories="config.categories"
               :selected-date="selectedDate"
+              :stat-mode="statMode"
               :selected-filter-category-ids="selectedFilterCategoryIds"
+              :refresh-key="trendRefreshKey"
             />
 
             <!-- 在周/月视图且有分类筛选时显示每日分类柱状图 -->
@@ -1866,12 +1865,13 @@ const getDaySlots = (date: string): TimeSlot[] => {
               :stat-mode="statMode"
               :selected-filter-category-ids="selectedFilterCategoryIds"
             />
-            <CategoryTrendLineChart
+            <!-- 时间类型分布饼图 -->
+            <TimeTypePieChart
+              v-if="selectedFilterCategoryIds.length === 0"
+              :time-slots="timeSlots"
               :categories="config.categories"
               :selected-date="selectedDate"
-              :stat-mode="statMode"
               :selected-filter-category-ids="selectedFilterCategoryIds"
-              :refresh-key="trendRefreshKey"
             />
           </div>
         </div>

@@ -253,7 +253,7 @@ const renderChart = async () => {
         return result;
       },
     },
-    legend: { type: 'scroll', top: 0 },
+    legend: { show: false },
     grid: { left: '20px', right: '20px', top: '40px', bottom: '10px' },
     xAxis: { type: 'category', boundaryGap: false, data: xAxisData },
     yAxis: {

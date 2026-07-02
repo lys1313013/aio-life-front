@@ -98,19 +98,14 @@ const renderPieChart = () => {
       },
     },
     legend: {
-      orient: 'horizontal' as const,
-      bottom: 5,
-      left: 'center',
-      textStyle: {
-        fontSize: 12,
-      },
+      show: false,
     },
     series: [
       {
         name: '时间类型',
         type: 'pie' as const,
         radius: ['35%', '60%'],
-        center: ['50%', '43%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 0,

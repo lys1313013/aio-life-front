@@ -102,20 +102,14 @@ const renderPieChart = () => {
       },
     },
     legend: {
-      type: 'scroll' as const,
-      orient: 'vertical' as const,
-      right: 10,
-      top: 'center',
-      textStyle: {
-        fontSize: 12,
-      },
+      show: false,
     },
     series: [
       {
         name: '每日时长',
         type: 'pie',
         radius: ['25%', '55%'],
-        center: ['38%', '45%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 0,
