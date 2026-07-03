@@ -103,10 +103,10 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-white">
+  <div class="flex h-full flex-col bg-card">
     <!-- Header -->
     <div
-      class="flex items-center justify-between border-b border-gray-100 px-6 py-4"
+      class="flex items-center justify-between border-b border-border px-6 py-4"
     >
       <div class="flex items-center gap-3">
         <Button
@@ -117,23 +117,23 @@ watch(
         >
           <ArrowLeftOutlined class="text-lg" />
         </Button>
-        <span class="text-lg font-medium">{{
+        <span class="text-lg font-medium text-foreground">{{
           targetName || `User ${targetId}`
         }}</span>
       </div>
-      <div class="text-sm text-gray-400">
+      <div class="text-sm text-muted-foreground">
         {{ formatDateTime(new Date()) }}
       </div>
     </div>
 
     <!-- Messages -->
-    <div ref="listRef" class="flex-1 overflow-y-auto bg-gray-50/50 p-6">
+    <div ref="listRef" class="flex-1 overflow-y-auto bg-muted p-6">
       <div v-if="loading" class="flex justify-center py-4">
-        <span class="text-gray-400">Loading...</span>
+        <span class="text-muted-foreground">Loading...</span>
       </div>
       <div
         v-else-if="messages.length === 0"
-        class="flex h-full flex-col items-center justify-center gap-2 text-gray-400"
+        class="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground"
       >
         <span>暂无消息</span>
       </div>
@@ -173,14 +173,14 @@ watch(
               :class="
                 String(msg.senderId) === String(myId)
                   ? 'border border-[#7CD958] bg-[#95EC69] text-black'
-                  : 'border border-gray-100 bg-white text-gray-800'
+                  : 'border border-border bg-card text-foreground'
               "
               @contextmenu="handleContextMenu($event, msg)"
             >
               {{ msg.content }}
             </div>
             <!-- Time -->
-            <span class="mt-1.5 px-1 text-xs text-gray-400">
+            <span class="mt-1.5 px-1 text-xs text-muted-foreground">
               {{ formatDate(msg.createTime, 'MM-DD HH:mm') }}
             </span>
           </div>
@@ -200,7 +200,7 @@ watch(
 
     <!-- Input Area -->
     <div
-      class="border-t border-gray-100 bg-white"
+      class="border-t border-border bg-card"
       :class="isMobile ? 'p-2' : 'p-4'"
     >
       <div class="relative">
@@ -209,11 +209,11 @@ watch(
           :rows="4"
           placeholder="请输入消息内容..."
           :bordered="false"
-          class="resize-none rounded-xl !bg-gray-50 !p-3 transition-all focus:!bg-white focus:!shadow-none"
+          class="resize-none rounded-xl !bg-muted !p-3 text-foreground transition-all focus:!bg-card focus:!shadow-none"
           @press-enter.prevent="handleSend"
         />
         <div class="absolute bottom-3 right-3 flex items-center gap-2">
-          <span class="text-xs text-gray-400"
+          <span class="text-xs text-muted-foreground"
             >{{ inputContent.length }}/500</span
           >
           <Button
@@ -232,7 +232,7 @@ watch(
     <Teleport to="body">
       <div
         v-if="contextMenuVisible"
-        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg"
         :style="{
           left: `${contextMenuPosition.x}px`,
           top: `${contextMenuPosition.y}px`,
@@ -240,7 +240,7 @@ watch(
         @click.stop
       >
         <div
-          class="cursor-pointer px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+          class="cursor-pointer px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
           @click="openDeleteConfirm"
         >
           删除

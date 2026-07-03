@@ -406,7 +406,7 @@ onUnmounted(() => {
         class="w-full sm:max-w-xs"
         allow-clear
       >
-        <template #prefix><SearchOutlined class="text-slate-400" /></template>
+        <template #prefix><SearchOutlined class="text-muted-foreground" /></template>
       </Input>
       <Select
         v-model:value="selectedCategory"
@@ -429,7 +429,7 @@ onUnmounted(() => {
           >
             <template #icon>
               <UnlockOutlined v-if="store.isUnlocked" />
-              <LockOutlined v-else class="text-slate-400" />
+              <LockOutlined v-else class="text-muted-foreground" />
             </template>
             <span class="hidden sm:inline">{{
               store.isUnlocked ? '锁定' : '解锁'
@@ -449,14 +449,14 @@ onUnmounted(() => {
           <div
             v-for="item in filteredPasswords"
             :key="item.id"
-            class="group relative flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300 dark:border-slate-700/60 dark:bg-slate-800 dark:hover:border-slate-600"
+            class="group relative flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
           >
             <!-- Top part: Title and Category -->
             <div class="mb-3 flex flex-col">
               <div class="flex items-center justify-between gap-3">
                 <div class="flex min-w-0 flex-1 items-center gap-2">
                   <h3
-                    class="truncate text-base font-semibold text-slate-800 dark:text-slate-100"
+                    class="truncate text-base font-semibold text-card-foreground"
                     :title="item.title"
                   >
                     {{ item.title }}
@@ -490,7 +490,7 @@ onUnmounted(() => {
                   >
                     <template #icon>
                       <StarOutlined
-                        class="text-slate-400 hover:text-yellow-500"
+                        class="text-muted-foreground hover:text-yellow-500"
                       />
                     </template>
                   </Button>
@@ -504,7 +504,7 @@ onUnmounted(() => {
                     : `https://${item.website}`
                 "
                 target="_blank"
-                class="mt-1 truncate text-xs text-slate-400 transition-colors hover:text-blue-500"
+                class="mt-1 truncate text-xs text-muted-foreground transition-colors hover:text-primary"
                 :title="item.website"
               >
                 {{ item.website }}
@@ -518,19 +518,19 @@ onUnmounted(() => {
                 v-if="item.username"
                 class="flex items-center justify-between gap-2"
               >
-                <span class="shrink-0 text-xs text-slate-400">账号</span>
+                <span class="shrink-0 text-xs text-muted-foreground">账号</span>
                 <div
                   class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2"
                 >
                   <span
-                    class="truncate font-mono text-sm text-slate-700 dark:text-slate-300"
+                    class="truncate font-mono text-sm text-foreground"
                     :title="item.decryptedUsername || '******'"
                   >
                     {{ item.decryptedUsername || '******' }}
                   </span>
                   <Tooltip title="复制账号">
                     <CopyOutlined
-                      class="shrink-0 cursor-pointer text-slate-300 opacity-0 transition-all hover:text-blue-500 group-hover/copy:opacity-100 dark:text-slate-500"
+                      class="shrink-0 cursor-pointer text-muted-foreground opacity-0 transition-all hover:text-primary group-hover/copy:opacity-100"
                       @click="handleCopy(item, 'username')"
                     />
                   </Tooltip>
@@ -539,12 +539,12 @@ onUnmounted(() => {
 
               <!-- Password -->
               <div class="flex items-center justify-between gap-2">
-                <span class="shrink-0 text-xs text-slate-400">密码</span>
+                <span class="shrink-0 text-xs text-muted-foreground">密码</span>
                 <div
                   class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2"
                 >
                   <span
-                    class="truncate font-mono text-sm text-slate-700 dark:text-slate-300"
+                    class="truncate font-mono text-sm text-foreground"
                   >
                     {{
                       item.showPassword
@@ -560,18 +560,18 @@ onUnmounted(() => {
                     >
                       <EyeOutlined
                         v-if="!item.showPassword"
-                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
+                        class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
                         @click="handleTogglePassword(item)"
                       />
                       <EyeInvisibleOutlined
                         v-else
-                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
+                        class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
                         @click="handleTogglePassword(item)"
                       />
                     </Tooltip>
                     <Tooltip title="复制密码">
                       <CopyOutlined
-                        class="cursor-pointer text-slate-300 transition-colors hover:text-blue-500 dark:text-slate-500"
+                        class="cursor-pointer text-muted-foreground transition-colors hover:text-primary"
                         @click="handleCopy(item, 'password')"
                       />
                     </Tooltip>
@@ -583,7 +583,7 @@ onUnmounted(() => {
             <!-- Remark -->
             <p
               v-if="item.decryptedRemark && item.showPassword"
-              class="mt-2 line-clamp-1 text-xs text-slate-500 dark:text-slate-400"
+              class="mt-2 line-clamp-1 text-xs text-muted-foreground"
               :title="item.decryptedRemark"
             >
               {{ item.decryptedRemark }}
@@ -591,7 +591,7 @@ onUnmounted(() => {
 
             <!-- Bottom Actions & Time -->
             <div class="mt-3 flex items-center justify-between">
-              <span class="text-[11px] text-slate-400">{{
+              <span class="text-[11px] text-muted-foreground">{{
                 formatTime(item.updateTime)
               }}</span>
               <div
@@ -601,7 +601,7 @@ onUnmounted(() => {
                   <Button
                     type="text"
                     size="small"
-                    class="!text-slate-400 hover:!text-blue-500"
+                    class="!text-muted-foreground hover:!text-primary"
                     @click="handleEdit(item.id)"
                   >
                     <template #icon><EditOutlined /></template>
@@ -618,7 +618,7 @@ onUnmounted(() => {
                     <Button
                       type="text"
                       size="small"
-                      class="!text-slate-400 hover:!text-red-500"
+                      class="!text-muted-foreground hover:!text-destructive"
                     >
                       <template #icon><DeleteOutlined /></template>
                     </Button>

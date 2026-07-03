@@ -95,9 +95,9 @@ const saveEdit = (conversationId: string) => {
 <template>
   <div class="flex h-full flex-col">
     <div
-      class="flex items-center justify-between border-b border-gray-100/60 p-4"
+      class="flex items-center justify-between border-b border-border/60 p-4"
     >
-      <span class="text-lg font-medium text-gray-800">AI 会话</span>
+      <span class="text-lg font-medium text-foreground">AI 会话</span>
       <Button type="primary" size="small" @click="emit('create')">
         <template #icon>
           <span class="i-ant-design:plus-outlined"></span>
@@ -114,7 +114,7 @@ const saveEdit = (conversationId: string) => {
         <template #renderItem="{ item }">
           <ListItem
             :id="`session-${item.id}`"
-            class="group cursor-pointer !py-3 px-4 transition-all hover:bg-gray-50/80"
+            class="group cursor-pointer !py-3 px-4 transition-all hover:bg-accent/50"
             :class="{ 'bg-blue-50-active': selectedConversationId === item.id }"
             @click="handleSelect(item.id)"
             @contextmenu="handleContextMenu($event, item)"
@@ -137,11 +137,11 @@ const saveEdit = (conversationId: string) => {
                   </div>
                   <span
                     v-else
-                    class="mr-2 flex-1 truncate font-medium text-gray-700"
+                    class="mr-2 flex-1 truncate font-medium text-foreground"
                     >{{ item.title || '新对话' }}</span
                   >
                   <span
-                    class="whitespace-nowrap text-[10px] text-gray-400 opacity-80"
+                    class="whitespace-nowrap text-[10px] text-muted-foreground opacity-80"
                     >{{ formatDate(item.updateTime, 'MM-DD HH:mm') }}</span
                   >
                 </div>
@@ -150,7 +150,7 @@ const saveEdit = (conversationId: string) => {
                 <div class="mt-0.5 flex min-h-[16px] items-center justify-end">
                   <div class="hidden gap-3 group-hover:flex" @click.stop>
                     <span
-                      class="i-ant-design:edit-outlined cursor-pointer text-sm text-gray-400 transition-colors hover:text-blue-500"
+                      class="i-ant-design:edit-outlined cursor-pointer text-sm text-muted-foreground transition-colors hover:text-primary"
                       @click="startEdit(item)"
                     ></span>
                     <Popconfirm
@@ -158,7 +158,7 @@ const saveEdit = (conversationId: string) => {
                       @confirm="emit('delete', item.id)"
                     >
                       <span
-                        class="i-ant-design:delete-outlined cursor-pointer text-sm text-gray-400 transition-colors hover:text-red-500"
+                        class="i-ant-design:delete-outlined cursor-pointer text-sm text-muted-foreground transition-colors hover:text-destructive"
                       ></span>
                     </Popconfirm>
                   </div>
@@ -170,7 +170,7 @@ const saveEdit = (conversationId: string) => {
       </List>
       <div
         v-if="sessions.length === 0"
-        class="flex flex-col items-center justify-center py-10 text-gray-400/80"
+        class="flex flex-col items-center justify-center py-10 text-muted-foreground/80"
       >
         <p class="text-xs">暂无会话历史</p>
       </div>
@@ -180,7 +180,7 @@ const saveEdit = (conversationId: string) => {
     <Teleport to="body">
       <div
         v-if="contextMenuVisible"
-        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg"
         :style="{
           left: `${contextMenuPosition.x}px`,
           top: `${contextMenuPosition.y}px`,
@@ -188,14 +188,14 @@ const saveEdit = (conversationId: string) => {
         @click.stop
       >
         <div
-          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent"
           @click="handleRename"
         >
           <span class="i-ant-design:edit-outlined"></span>
           重命名
         </div>
         <div
-          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
           @click="openDeleteConfirm"
         >
           <span class="i-ant-design:delete-outlined"></span>
@@ -226,22 +226,15 @@ const saveEdit = (conversationId: string) => {
 
 /* 减轻列表项边框颜色 */
 :deep(.ant-list-split .ant-list-item) {
-  border-block-end: 1px solid rgb(0 0 0 / 3%) !important;
+  border-block-end: 1px solid hsl(var(--border)) !important;
   transition: all 0.2s ease;
-}
-
-:deep(.dark .ant-list-split .ant-list-item) {
-  border-block-end: 1px solid rgb(255 255 255 / 5%) !important;
 }
 
 /* 选中项的边框优化 */
 :deep(.ant-list-item.bg-blue-50-active) {
   padding-left: 14px !important;
-  border-left: 2px solid #3b82f6;
-}
-
-:deep(.dark .ant-list-item.bg-blue-50-active) {
-  background-color: rgb(59 130 246 / 10%) !important;
+  border-left: 2px solid hsl(var(--primary));
+  background-color: hsl(var(--accent));
 }
 
 /* 隐藏最后一个元素的边框 */
@@ -259,19 +252,11 @@ const saveEdit = (conversationId: string) => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(0 0 0 / 5%);
+  background: hsl(var(--border));
   border-radius: 10px;
 }
 
-:deep(.dark) .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 10%);
-}
-
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgb(0 0 0 / 10%);
-}
-
-:deep(.dark) .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgb(255 255 255 / 20%);
+  background: hsl(var(--muted-foreground) / 0.3);
 }
 </style>

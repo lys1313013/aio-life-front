@@ -91,14 +91,14 @@ watch(
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="border-b border-gray-100 p-4 text-lg font-medium">我的消息</div>
+    <div class="border-b border-border p-4 text-lg font-medium text-foreground">我的消息</div>
     <div class="flex-1 overflow-y-auto">
       <List item-layout="horizontal" :data-source="conversations">
         <template #renderItem="{ item }">
           <ListItem
             :id="`conversation-${item.userId}`"
-            class="cursor-pointer !py-3 px-4 transition-colors hover:bg-gray-50"
-            :class="{ 'bg-blue-50': selectedUserId === item.userId }"
+            class="cursor-pointer !py-3 px-4 transition-colors hover:bg-accent"
+            :class="{ 'bg-accent': selectedUserId === item.userId }"
             @click="handleSelect(item.userId)"
             @contextmenu="handleContextMenu($event, item.userId)"
           >
@@ -110,8 +110,8 @@ watch(
               </template>
               <template #title>
                 <div class="flex items-center justify-between">
-                  <span class="truncate font-medium">{{ item.username }}</span>
-                  <span class="text-xs text-gray-400">{{
+                  <span class="truncate font-medium text-foreground">{{ item.username }}</span>
+                  <span class="text-xs text-muted-foreground">{{
                     formatDate(item.time, 'MM-DD HH:mm')
                   }}</span>
                 </div>
@@ -141,7 +141,7 @@ watch(
     <Teleport to="body">
       <div
         v-if="contextMenuVisible"
-        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg"
         :style="{
           left: `${contextMenuPosition.x}px`,
           top: `${contextMenuPosition.y}px`,
@@ -149,7 +149,7 @@ watch(
         @click.stop
       >
         <div
-          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
           @click="openDeleteConfirm"
         >
           <span class="i-ant-design:delete-outlined"></span>

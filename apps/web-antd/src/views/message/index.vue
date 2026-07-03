@@ -647,15 +647,15 @@ onUnmounted(() => {
     ]"
   >
     <div
-      class="flex h-full overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
+      class="flex h-full overflow-hidden rounded-xl border border-border bg-card shadow-sm"
       :class="{ 'rounded-none border-0': isMobile }"
     >
       <div
         v-if="!isMobile"
-        class="flex w-48 flex-col border-r border-gray-100 bg-gray-50/50 py-2"
+        class="flex w-48 flex-col border-r border-border bg-muted py-2"
       >
         <div
-          class="flex items-center gap-2 px-4 py-3 text-lg font-bold text-gray-800"
+          class="flex items-center gap-2 px-4 py-3 text-lg font-bold text-foreground"
         >
           <span class="i-ant-design:message-filled text-blue-500"></span>
           消息中心
@@ -667,8 +667,8 @@ onUnmounted(() => {
             class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
             :class="
               activeMenu === item.key
-                ? 'bg-blue-50 text-blue-600'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-accent text-accent-foreground font-semibold'
+                : 'text-muted-foreground hover:bg-accent'
             "
             @click="handleMenuClick(item.key)"
           >
@@ -680,13 +680,13 @@ onUnmounted(() => {
 
       <div
         v-if="!isMobile || (!selectedUserId && !selectedConversationId)"
-        class="flex flex-col border-r border-gray-100 bg-white"
+        class="flex flex-col border-r border-border bg-card"
         :class="isMobile ? 'w-full flex-1' : 'w-72'"
       >
         <!-- Mobile Switcher -->
         <div
           v-if="isMobile"
-          class="flex border-b border-gray-100 bg-gray-50/30"
+          class="flex border-b border-border bg-muted"
         >
           <div
             v-for="item in menuItems"
@@ -694,8 +694,8 @@ onUnmounted(() => {
             class="flex flex-1 cursor-pointer items-center justify-center gap-2 py-3.5 text-center font-medium transition-all"
             :class="
               activeMenu === item.key
-                ? 'border-b-2 border-blue-600 bg-white text-blue-600'
-                : 'text-gray-500 hover:bg-gray-50'
+                ? 'border-b-2 border-primary bg-card text-accent-foreground font-semibold'
+                : 'text-muted-foreground hover:bg-accent'
             "
             @click="handleMenuClick(item.key)"
           >
@@ -725,19 +725,19 @@ onUnmounted(() => {
         v-if="
           !isMobile || selectedUserId || (isAIChat && selectedConversationId)
         "
-        class="flex min-h-0 flex-1 flex-col bg-white"
+        class="flex min-h-0 flex-1 flex-col bg-card"
       >
         <div
           v-if="isAIChat && selectedConversationId"
           class="flex min-h-0 flex-1 flex-col"
         >
           <div
-            class="flex items-center justify-between border-b border-gray-100 px-4 py-3"
+            class="flex items-center justify-between border-b border-border px-4 py-3"
           >
             <div class="flex items-center gap-3">
               <button
                 v-if="isMobile"
-                class="-ml-1 p-1 text-gray-400 hover:text-gray-600"
+                class="-ml-1 p-1 text-muted-foreground hover:text-foreground"
                 @click="handleBack"
               >
                 <span class="i-ant-design:left-outlined text-lg"></span>
@@ -750,13 +750,13 @@ onUnmounted(() => {
                 ></span>
               </div>
               <div>
-                <h3 class="font-medium text-gray-800">
+                <h3 class="font-medium text-foreground">
                   {{
                     aiSessions.find((s) => s.id === selectedConversationId)
                       ?.title || 'AI 助手'
                   }}
                 </h3>
-                <p class="text-xs text-gray-500">智能对话助手</p>
+                <p class="text-xs text-muted-foreground">智能对话助手</p>
               </div>
             </div>
           </div>
@@ -777,8 +777,8 @@ onUnmounted(() => {
                 class="max-w-[70%] rounded-lg p-3"
                 :class="
                   msg.role === 'user'
-                    ? 'bg-blue-100 text-gray-800'
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'bg-accent text-foreground'
+                    : 'bg-muted text-foreground'
                 "
               >
                 <div
@@ -801,14 +801,14 @@ onUnmounted(() => {
                   ></div>
                 </div>
                 <p v-else>{{ msg.content }}</p>
-                <p class="mt-1 text-xs text-gray-500">
+                <p class="mt-1 text-xs text-muted-foreground">
                   {{ new Date(msg.createTime).toLocaleTimeString() }}
                 </p>
               </div>
             </div>
             <div
               v-if="aiChatMessages.length === 0"
-              class="flex h-full flex-col items-center justify-center text-gray-400"
+              class="flex h-full flex-col items-center justify-center text-muted-foreground"
             >
               <div
                 class="i-ant-design:robot-outlined mb-4 text-6xl opacity-20"
@@ -818,18 +818,18 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="border-t border-gray-100 p-4">
+          <div class="border-t border-border p-4">
             <div class="flex gap-2">
               <input
                 v-model="aiChatInput"
                 type="text"
-                class="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="flex-1 rounded-lg border border-border bg-input-background px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="输入消息..."
                 @keyup.enter="handleAISendMessage"
                 :disabled="isStreaming"
               />
               <button
-                class="rounded-lg bg-blue-500 px-4 py-2 text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+                class="rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                 @click="handleAISendMessage"
                 :disabled="aiChatLoading || !aiChatInput.trim() || isStreaming"
               >
@@ -861,7 +861,7 @@ onUnmounted(() => {
         />
         <div
           v-else
-          class="flex h-full flex-col items-center justify-center bg-gray-50/30 text-gray-400"
+          class="flex h-full flex-col items-center justify-center bg-muted text-muted-foreground"
         >
           <div
             class="i-ant-design:message-outlined mb-4 text-6xl opacity-20"
@@ -875,7 +875,7 @@ onUnmounted(() => {
     <Teleport to="body">
       <div
         v-if="aiMessageContextMenuVisible"
-        class="fixed z-50 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+        class="fixed z-50 min-w-[120px] rounded-lg border border-border bg-popover py-1 shadow-lg"
         :style="{
           left: `${aiMessageContextMenuPosition.x}px`,
           top: `${aiMessageContextMenuPosition.y}px`,
@@ -883,7 +883,7 @@ onUnmounted(() => {
         @click.stop
       >
         <div
-          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-red-50"
+          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
           @click="handleDeleteAiMessage"
         >
           <span class="i-ant-design:delete-outlined"></span>
@@ -931,7 +931,7 @@ onUnmounted(() => {
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
   font-size: 0.875rem;
-  background-color: #f3f4f6;
+  background-color: hsl(var(--muted));
   border-radius: 0.375rem;
 }
 
@@ -967,8 +967,8 @@ onUnmounted(() => {
   padding-left: 1rem;
   margin: 0.75rem 0;
   font-style: italic;
-  color: #4b5563;
-  border-left: 4px solid #3b82f6;
+  color: hsl(var(--muted-foreground));
+  border-left: 4px solid hsl(var(--primary));
 }
 
 .prose :deep(a) {
@@ -989,11 +989,11 @@ onUnmounted(() => {
 .prose :deep(th),
 .prose :deep(td) {
   padding: 0.5rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid hsl(var(--border));
 }
 
 .prose :deep(th) {
   font-weight: 600;
-  background-color: #f3f4f6;
+  background-color: hsl(var(--muted));
 }
 </style>
