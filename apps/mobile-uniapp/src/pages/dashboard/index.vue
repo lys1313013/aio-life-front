@@ -45,61 +45,63 @@
     </view>
 
     <!-- 时迹 (复刻 Web 端 CSS 时间轴与环形图) -->
-    <view class="panel" v-if="timeRecords.length > 0">
-      <view class="panel-header" @click="navigateTo('/pages/time/time-tracker/index')">
-        <text class="panel-title">时迹</text>
-        <view class="header-actions">
-          <uni-icons type="loop" size="18" color="#999" @click.stop="refreshTimeTracker"></uni-icons>
-          <uni-icons type="right" size="16" color="#999"></uni-icons>
-        </view>
-      </view>
-      <view class="panel-body time-tracker-body">
-        <!-- 左侧 24 小时时间轴 -->
-        <view class="timeline-24h">
-          <text class="time-label">0</text>
-          <view class="timeline-track">
-            <view
-              v-for="block in timelineBlocks"
-              :key="block.id"
-              class="timeline-block"
-              :style="{ top: block.top, height: block.height, backgroundColor: block.color }"
-            ></view>
-          </view>
-          <text class="time-label">24</text>
-        </view>
-
-        <!-- 中间 CSS 环形图 -->
-        <view class="pie-chart-wrap">
-          <view class="pie-chart-container">
-            <view class="css-ring-chart" :style="{ background: pieConicGradient }">
-              <view class="inner-circle">
-                <text class="ring-total-time">{{ totalTimeTrackerStr }}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-
-        <!-- 右侧最近记录 -->
-        <view class="recent-records">
-          <view
-            class="recent-item"
-            v-for="record in recentTimeRecords"
-            :key="record.id"
-            :style="{ color: getCategoryColor(record.categoryId) }"
-          >
-            <text class="record-time-str">{{ formatRecordTimeStr(record) }}</text>
-            <text class="record-cat">{{ getCategoryName(record.categoryId) }}</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <view class="panel" v-else-if="loading">
+    <view class="panel" v-if="loading">
       <view class="panel-header">
         <view class="skeleton-text" style="width: 160rpx; height: 30rpx;"></view>
       </view>
       <view class="panel-body">
         <view class="skeleton-block" style="height: 280rpx;"></view>
+      </view>
+    </view>
+
+    <view class="panel" v-else>
+      <view class="panel-header" @click="refreshTimeTracker">
+        <text class="panel-title" @click.stop="navigateTo('/pages/time/time-tracker/index')">时迹</text>
+        <view class="header-add-btn" @click.stop="navigateTo('/pages/subPages/timeTracker/index')">+</view>
+      </view>
+      <view class="panel-body time-tracker-body">
+        <template v-if="timeRecords.length > 0">
+          <!-- 左侧 24 小时时间轴 -->
+          <view class="timeline-24h">
+            <text class="time-label">0</text>
+            <view class="timeline-track">
+              <view
+                v-for="block in timelineBlocks"
+                :key="block.id"
+                class="timeline-block"
+                :style="{ top: block.top, height: block.height, backgroundColor: block.color }"
+              ></view>
+            </view>
+            <text class="time-label">24</text>
+          </view>
+
+          <!-- 中间 CSS 环形图 -->
+          <view class="pie-chart-wrap">
+            <view class="pie-chart-container">
+              <view class="css-ring-chart" :style="{ background: pieConicGradient }">
+                <view class="inner-circle">
+                  <text class="ring-total-time">{{ totalTimeTrackerStr }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 右侧最近记录 -->
+          <view class="recent-records">
+            <view
+              class="recent-item"
+              v-for="record in recentTimeRecords"
+              :key="record.id"
+              :style="{ color: getCategoryColor(record.categoryId) }"
+            >
+              <text class="record-time-str">{{ formatRecordTimeStr(record) }}</text>
+              <text class="record-cat">{{ getCategoryName(record.categoryId) }}</text>
+            </view>
+          </view>
+        </template>
+        <view v-else class="empty-time-tracker">
+          <text>今日暂无记录</text>
+        </view>
       </view>
     </view>
 
@@ -766,10 +768,17 @@ onPullDownRefresh(() => {
       color: #333;
     }
 
-    .header-actions {
+    .header-add-btn {
+      width: 48rpx;
+      height: 48rpx;
+      border-radius: 50%;
+      border: 2rpx dashed #bbb;
       display: flex;
       align-items: center;
-      gap: 16rpx;
+      justify-content: center;
+      font-size: 36rpx;
+      color: #aaa;
+      line-height: 1;
     }
   }
 
@@ -893,6 +902,15 @@ onPullDownRefresh(() => {
       }
     }
   }
+}
+
+.empty-time-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 26rpx;
 }
 
 /* 快捷导航 */

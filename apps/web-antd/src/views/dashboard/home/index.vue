@@ -9,7 +9,6 @@ import { useRouter } from 'vue-router';
 import { openWindow } from '@vben/utils';
 
 import { Skeleton } from 'ant-design-vue';
-import dayjs from 'dayjs';
 
 import {
   getDashboardCardDetail,
@@ -17,7 +16,7 @@ import {
   getWatchedTaskDetails,
 } from '#/api/core/dashboard';
 import { getPinnedThoughts } from '#/api/core/think';
-import { query as queryTimeRecord } from '#/api/core/time-tracker';
+
 import { updateTaskDetail } from '#/api/core/todo';
 import { getUserBindListApi } from '#/api/core/user-bind';
 import {
@@ -73,28 +72,11 @@ function handleExerciseLoaded(isEmpty: boolean) {
 
 const timeTrackerCardRef = ref();
 const githubRecentCommitsRef = ref();
-const timeTrackerHasData = ref(false);
 const githubBound = ref(false);
 const githubUsername = ref('');
 
-async function checkTimeTrackerHasData(): Promise<boolean> {
-  try {
-    const today = dayjs().format('YYYY-MM-DD');
-    const res = await queryTimeRecord({ condition: { date: today } });
-    const records = res?.items || [];
-    return records.length > 0;
-  } catch (error) {
-    console.error('查询时迹失败:', error);
-    return false;
-  }
-}
-
 async function refreshTimeTracker() {
-  // 先判断有无数据，决定是否重新挂载组件
-  timeTrackerHasData.value = await checkTimeTrackerHasData();
-  if (timeTrackerHasData.value && timeTrackerCardRef.value?.loadData) {
-    await timeTrackerCardRef.value.loadData();
-  }
+  await timeTrackerCardRef.value?.loadData();
 }
 
 async function checkGithubBound(): Promise<boolean> {
@@ -300,8 +282,6 @@ onUnmounted(() => {
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   quickNavStore.load();
-  // 单独判断时迹：先查接口再决定是否渲染
-  timeTrackerHasData.value = await checkTimeTrackerHasData();
   // 判断 GitHub 绑定状态：未绑定则不展示最近提交卡片
   githubBound.value = await checkGithubBound();
   try {
@@ -474,23 +454,25 @@ function navTo(nav: { url?: string }) {
     <div
       class="mt-2 grid items-start gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3 lg:items-stretch"
     >
-      <!-- 时迹统计：无今日数据时不展示 -->
+      <!-- 时迹统计 -->
       <div
-        v-if="timeTrackerHasData"
         class="dashboard-section flex min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
       >
         <div
-          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+          class="flex cursor-pointer items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+          @click="refreshTimeTracker"
         >
-          <div class="flex items-center gap-2">
-            <span
-              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
-              title="进入时迹"
-              @click="navTo({ url: '/time/time-tracker' })"
-              >时迹</span
-            >
-          </div>
-          <RefreshButton @click="refreshTimeTracker" />
+          <span
+            class="select-none text-base font-semibold transition-colors hover:text-primary"
+            title="进入时迹"
+            @click.stop="navTo({ url: '/time/time-tracker' })"
+            >时迹</span
+          >
+          <span
+            class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+            title="记录时迹"
+            @click.stop="timeTrackerModalRef?.open()"
+          >+</span>
         </div>
         <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
           <AnalyticsTimeTracker ref="timeTrackerCardRef" />
