@@ -108,10 +108,8 @@ const handleSave = async (data: WardrobeItemReq) => {
   try {
     if (data.id) {
       await updateWardrobeItem(data.id, data);
-      message.success('更新成功');
     } else {
       await saveWardrobeItem(data);
-      message.success('添加成功');
     }
     formVisible.value = false;
     await fetchData();

@@ -7,7 +7,6 @@ import type {
 
 import { computed, ref, watch } from 'vue';
 
-import { UploadOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   DatePicker,
@@ -19,12 +18,11 @@ import {
   Select,
   SelectOption,
   Space,
-  Upload,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { uploadWardrobePhoto } from '#/api/wardrobe';
-import { fetchAuthImageUrl } from '#/utils/file';
+import ImageUpload from '#/components/ImageUpload.vue';
 
 const props = defineProps<{
   categories: CategoryVO[];
@@ -85,11 +83,11 @@ const purchaseDateModel = computed({
   },
 });
 
-const fileList = ref<any[]>([]);
+const seasons = ['春', '夏', '秋', '冬'];
 
 watch(
   () => props.visible,
-  async (val) => {
+  (val) => {
     if (val) {
       if (props.item) {
         formData.value = {
@@ -105,19 +103,6 @@ watch(
           size: props.item.size,
           memo: props.item.memo,
         };
-
-        if (props.item.fileId) {
-          const authUrl = await fetchAuthImageUrl(props.item.fileId);
-          fileList.value = [{
-            uid: props.item.fileId,
-            name: `photo-${props.item.fileId}.png`,
-            status: 'done',
-            url: authUrl,
-            response: { id: props.item.fileId },
-          }];
-        } else {
-          fileList.value = [];
-        }
       } else {
         formData.value = {
           name: '',
@@ -131,7 +116,6 @@ watch(
           size: '',
           memo: '',
         };
-        fileList.value = [];
       }
     }
   },
@@ -153,30 +137,6 @@ const handleSubmit = async () => {
   }
 };
 
-const handleUploadChange = (info: { file: any; fileList: any[] }) => {
-  fileList.value = info.fileList;
-  if (info.file.status === 'done') {
-    // 单张图片上传完成
-    formData.value.fileId = info.file.response?.id;
-  } else if (info.file.status === 'removed') {
-    // 删除图片
-    formData.value.fileId = undefined;
-  }
-};
-
-const customRequest = async (options: any) => {
-  const { file, onSuccess, onError, onProgress } = options;
-  try {
-    onProgress({ percent: 50 });
-    const res = await uploadWardrobePhoto(file);
-    onProgress({ percent: 100 });
-    onSuccess(res);
-  } catch (error) {
-    onError(error);
-  }
-};
-
-const seasons = ['春', '夏', '秋', '冬'];
 </script>
 
 <template>
@@ -253,19 +213,11 @@ const seasons = ['春', '夏', '秋', '冬'];
         />
       </FormItem>
 
-      <FormItem label="照片（单张）" name="fileId">
-        <Upload
-          v-model:file-list="fileList"
-          list-type="picture-card"
-          :max-count="1"
-          :custom-request="customRequest"
-          @change="handleUploadChange"
-        >
-          <div v-if="fileList.length < 1">
-            <UploadOutlined />
-            <div>上传</div>
-          </div>
-        </Upload>
+      <FormItem label="照片" name="fileId">
+        <ImageUpload
+          v-model:file-id="formData.fileId"
+          :upload-fn="uploadWardrobePhoto"
+        />
       </FormItem>
 
       <FormItem label="备注" name="memo">

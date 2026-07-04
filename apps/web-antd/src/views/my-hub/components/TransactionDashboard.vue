@@ -233,21 +233,27 @@ const getPieChartData = () => {
   };
 };
 
-// 获取按年份汇总的饼图数据
-const getYearPieChartData = () => {
-  const yearTotals: Record<string, number> = {};
+// 获取时间维度饼图数据（年份或月份）
+const getTimePieData = (useMonthly: boolean) => {
+  const dataSource = useMonthly
+    ? filteredMonthlyData.value
+    : filteredData.value;
+  const keySuffix = useMonthly ? '月' : '年';
+  const keyField = useMonthly ? 'month' : 'year';
 
-  filteredData.value.forEach((item) => {
-    const yearTotal = item.detail.reduce(
-      (sum, current) => sum + current.amt,
+  const totals: Record<string, number> = {};
+  dataSource.forEach((item: any) => {
+    const key = `${item[keyField]}${keySuffix}`;
+    const itemTotal = item.detail.reduce(
+      (sum: number, cur: any) => sum + cur.amt,
       0,
     );
-    yearTotals[item.year] = (yearTotals[item.year] || 0) + yearTotal;
+    totals[key] = (totals[key] || 0) + itemTotal;
   });
 
-  const data = Object.entries(yearTotals)
-    .map(([year, value]) => ({
-      name: `${year}年`,
+  const data = Object.entries(totals)
+    .map(([name, value]) => ({
+      name,
       value: Number(value.toFixed(2)),
     }))
     .sort((a, b) => Number.parseInt(a.name) - Number.parseInt(b.name));
@@ -260,99 +266,43 @@ const getYearPieChartData = () => {
   };
 };
 
-const getSeriesData = () => {
+const getBarSeriesData = (useMonthly: boolean) => {
   const types = getTypes();
-  const years = getYears().map((year) => year);
-  const yearlyTotals = getTotalAmountByYear();
+  const dataSource = useMonthly
+    ? filteredMonthlyData.value
+    : filteredData.value;
+  const totalLabel = useMonthly ? '月度合计' : '年度合计';
+  const totals = useMonthly ? getMonthlyTotalAmount() : getTotalAmountByYear();
 
-  const series: any[] = [];
+  const getValue = (item: any, type: string) => {
+    const detail = item.detail.find((d: any) => d.typeName == type);
+    return detail ? detail.amt : 0;
+  };
 
-  // 添加类型系列（堆叠）
-  types.forEach((type) => {
-    const data = years.map((year) => {
-      const yearData = filteredData.value.find((item) => item.year === year);
-      if (yearData) {
-        const detail = yearData.detail.find((d) => d.typeName == type);
-        return detail ? detail.amt : null;
-      }
-      return 0;
-    });
-
-    series.push({
-      name: type,
-      type: 'bar',
-      stack: 'amount',
-      barMaxWidth: 50,
-      barGap: '20%',
-      emphasis: { focus: 'series' },
-      label: { show: false },
-      data,
-    });
-  });
-
-  // 添加一个独立系列显示总数（不堆叠）
-  series.push({
-    name: '年度合计',
+  const series: any[] = types.map((type) => ({
+    name: type,
     type: 'bar',
-    stack: '', // 不堆叠
-    data: yearlyTotals,
+    stack: 'amount',
     barMaxWidth: 50,
-    barGap: '-100%', // 与堆叠柱子重合
-    z: 10,
-    label: {
-      show: true,
-      position: 'top',
-      formatter: (params: any) => {
-        return params.value > 0 ? formatCurrency(params.value) : '';
-      },
-      fontSize: 12,
-      color: '#333',
-      fontWeight: 'bold',
-    },
-    itemStyle: { color: 'rgba(0,0,0,0)' }, // 完全透明
-    emphasis: { disabled: true },
-  });
+    barGap: '20%',
+    emphasis: { focus: 'series' },
+    label: { show: false },
+    data: dataSource.map((item: any) => getValue(item, type)),
+  }));
 
-  return series;
-};
-
-// 获取月度柱状图系列数据（选中单年时使用）
-const getMonthlyBarSeriesData = () => {
-  const types = getTypes();
-
-  const series: any[] = types.map((type) => {
-    const data = filteredMonthlyData.value.map((item) => {
-      const detail = item.detail.find((d) => d.typeName == type);
-      return detail ? detail.amt : 0;
-    });
-
-    return {
-      name: type,
-      type: 'bar',
-      stack: 'amount',
-      barMaxWidth: 50,
-      barGap: '20%',
-      emphasis: { focus: 'series' },
-      label: { show: false },
-      data,
-    };
-  });
-
-  const monthlyTotals = getMonthlyTotalAmount();
   series.push({
-    name: '月度合计',
+    name: totalLabel,
     type: 'bar',
     stack: '',
-    data: monthlyTotals,
+    data: totals,
     barMaxWidth: 50,
     barGap: '-100%',
     z: 10,
     label: {
       show: true,
       position: 'top',
-      formatter: (params: any) => {
-        return params.value > 0 ? formatCurrency(params.value) : '';
-      },
+      formatter: (params: any) =>
+        params.value > 0 ? formatCurrency(params.value) : '',
       fontSize: 12,
       color: '#333',
       fontWeight: 'bold',
@@ -364,38 +314,27 @@ const getMonthlyBarSeriesData = () => {
   return series;
 };
 
-// 获取月度分布饼图数据（选中单年时使用）
-const getMonthPieChartData = () => {
-  const monthTotals: Record<string, number> = {};
-
-  filteredMonthlyData.value.forEach((item) => {
-    const monthKey = `${item.month}月`;
-    const total = item.detail.reduce((sum, current) => sum + current.amt, 0);
-    monthTotals[monthKey] = total;
-  });
-
-  const data = Object.entries(monthTotals)
-    .map(([month, value]) => ({
-      name: month,
-      value: Number(value.toFixed(2)),
-    }))
-    .sort((a, b) => Number.parseInt(a.name) - Number.parseInt(b.name));
-
-  const total = data.reduce((sum, item) => sum + item.value, 0);
-
-  return {
-    data,
-    total: Number(total.toFixed(2)),
-  };
-};
-
 // 是否为单年模式
 const isSingleYear = computed(() => selectedYear.value !== 'all');
+
+// 环形图圆心标题配置
+const getPieTitleConfig = (total: number) => ({
+  text: `{val|${formatCurrency(total)}}`,
+  top: 'middle' as const,
+  left: 'center' as const,
+  textStyle: {
+    rich: {
+      val: {
+        fontSize: isMobile.value ? 16 : 20,
+        fontWeight: 'bold' as const,
+      },
+    },
+  },
+});
 
 // 更新图表
 const updateCharts = () => {
   const pieData = getPieChartData();
-  const yearPieData = getYearPieChartData();
   totalAmount.value = pieData.total;
 
   // 计算当年总金额
@@ -456,24 +395,12 @@ const updateCharts = () => {
       },
     ],
     yAxis: [{ type: 'value' }],
-    series: isYearlyBar ? getSeriesData() : getMonthlyBarSeriesData(),
+    series: getBarSeriesData(!isYearlyBar),
   });
 
   // 渲染类型分布环形图
   renderPieEcharts({
-    title: {
-      text: `{val|${formatCurrency(pieData.total)}}`,
-      top: 'middle',
-      left: 'center',
-      textStyle: {
-        rich: {
-          val: {
-            fontSize: isMobile.value ? 16 : 20,
-            fontWeight: 'bold',
-          },
-        },
-      },
-    },
+    title: getPieTitleConfig(pieData.total),
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
     legend: {
       type: 'scroll',
@@ -510,26 +437,12 @@ const updateCharts = () => {
   });
 
   // 渲染时间分布饼图（全部年份 → 年份分布，单年 → 月份分布）
-  const timePieData = isSingleYear.value
-    ? getMonthPieChartData()
-    : getYearPieChartData();
+  const timePieData = getTimePieData(isSingleYear.value);
   const timePieTitle = isSingleYear.value
     ? `月份${labelName.value}分布`
     : `年份${labelName.value}分布`;
   renderYearPieEcharts({
-    title: {
-      text: `{val|${formatCurrency(timePieData.total)}}`,
-      top: 'middle',
-      left: 'center',
-      textStyle: {
-        rich: {
-          val: {
-            fontSize: isMobile.value ? 16 : 20,
-            fontWeight: 'bold',
-          },
-        },
-      },
-    },
+    title: getPieTitleConfig(timePieData.total),
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
     legend: {
       type: 'scroll',

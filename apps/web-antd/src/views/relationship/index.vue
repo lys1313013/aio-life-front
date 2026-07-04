@@ -241,7 +241,6 @@ const handlePersonSubmit = async () => {
   try {
     if (editingPersonId.value) {
       await updatePerson(editingPersonId.value, personForm.value);
-      message.success('更新成功');
     } else {
       await createPerson(personForm.value);
       message.success('添加成功');

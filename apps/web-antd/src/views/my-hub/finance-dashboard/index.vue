@@ -48,9 +48,9 @@ const selectedYear = ref<string>('all');
 const yearOptions = ref([{ value: 'all', label: '全部' }]);
 
 // 关键指标
-const totalIncome = ref(0);
-const totalExpense = ref(0);
-const totalBalance = ref(0);
+const totalIncome = computed(() => calculateTotal(filteredData.value.income));
+const totalExpense = computed(() => calculateTotal(filteredData.value.expense));
+const totalBalance = computed(() => totalIncome.value - totalExpense.value);
 const monthlyBalances = ref<
   { balance: number; expense: number; income: number; month: string }[]
 >([]);
@@ -120,11 +120,6 @@ const loadData = async () => {
 
 // 处理数据
 const processData = () => {
-  // 计算总收入、总支出、总结余
-  totalIncome.value = calculateTotal(incomeData.value);
-  totalExpense.value = calculateTotal(expenseData.value);
-  totalBalance.value = totalIncome.value - totalExpense.value;
-
   // 计算月度结余
   calculateMonthlyBalances();
 
@@ -407,8 +402,7 @@ const updateExpenseCategoryChart = () => {
 
 // 更新年度/月度对比图
 const updateYearChart = () => {
-  const useMonthly = isSingleYear.value;
-  const data = useMonthly
+  const data = isSingleYear.value
     ? filteredData.value.monthly
     : filteredData.value.yearly;
 
@@ -424,10 +418,10 @@ const updateYearChart = () => {
     },
     xAxis: {
       type: 'category',
-      data: useMonthly
+      data: isSingleYear.value
         ? chartData.map((item: any) => item.month)
         : chartData.map((item: any) => `${item.year}年`),
-      axisLabel: useMonthly ? { rotate: 45 } : {},
+      axisLabel: isSingleYear.value ? { rotate: 45 } : {},
     },
     series: [
       {
@@ -470,8 +464,7 @@ const updateYearChart = () => {
 
 // 更新结余占比饼状图（全部年份 → 每年，单年 → 每月）
 const updateYearlyBalancePieChart = () => {
-  const useMonthly = isSingleYear.value;
-  const data = useMonthly
+  const data = isSingleYear.value
     ? filteredData.value.monthly
     : filteredData.value.yearly;
 
@@ -480,7 +473,7 @@ const updateYearlyBalancePieChart = () => {
   // 计算结余占比数据
   const pieData = data
     .map((item: any) => ({
-      name: useMonthly ? item.month : `${item.year}年`,
+      name: isSingleYear.value ? item.month : `${item.year}年`,
       value: Math.abs(item.balance),
       balance: item.balance,
     }))
@@ -488,7 +481,7 @@ const updateYearlyBalancePieChart = () => {
 
   if (pieData.length === 0) return;
 
-  const seriesName = useMonthly ? '每月结余占比' : '每年结余占比';
+  const seriesName = isSingleYear.value ? '每月结余占比' : '每年结余占比';
 
   renderYearlyBalancePieChart({
     tooltip: {
@@ -552,7 +545,6 @@ const updateYearlyBalancePieChart = () => {
 
 // 监听年份选择变化
 watch(selectedYear, () => {
-  processData();
   updateCharts();
 });
 

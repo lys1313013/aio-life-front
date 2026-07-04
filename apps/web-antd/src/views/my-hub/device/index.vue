@@ -2,7 +2,6 @@
 // 添加moment导入
 import {
   DeleteOutlined,
-  UploadOutlined,
   VerticalAlignTopOutlined,
 } from '@ant-design/icons-vue';
 import {
@@ -19,7 +18,6 @@ import {
   Popconfirm,
   Row,
   Select,
-  Upload,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -27,6 +25,7 @@ import { getByDictType } from '#/api/core/common';
 import { deleteData, insertOrUpdate, query, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl, getFilePreviewUrl } from '#/utils/file';
 
 export default {
@@ -45,14 +44,14 @@ export default {
     ARow: Row,
     ACol: Col,
     AFloatButtonBackTop: FloatButton.BackTop,
-    AUpload: Upload,
     DeleteOutlined,
-    UploadOutlined,
     VerticalAlignTopOutlined,
     GlobalFloatBtn,
+    ImageUpload,
   },
   data() {
     return {
+      uploadImage,
       totalAmt: 0,
       totalCount: 0,
       totalDailyCost: 0,
@@ -268,50 +267,9 @@ export default {
         this.statusOptions = res.dictDetailList;
       }
     },
-    handleUploadChange(info) {
-      if (info.file.status === 'done') {
-        const res = info.file.response;
-        this.newDevice.fileId = res.id;
-        message.success('上传成功');
-      }
-      if (info.file.status === 'error') {
-        message.error('上传失败');
-      }
-    },
-
     handlePreview(file) {
       this.previewImage = file.url || file.response?.fileUrl || file.imageUrl || '';
       this.previewVisible = true;
-    },
-
-    async customUploadRequest(options) {
-      const { file, onSuccess, onError, onProgress } = options;
-      try {
-        onProgress({ percent: 50 });
-        const res = await uploadImage(file);
-        onProgress({ percent: 100 });
-        onSuccess(res);
-        message.success('上传成功');
-      } catch (error) {
-        onError(error);
-        message.error('上传失败');
-      }
-    },
-
-    async handlePaste(event) {
-      const items = event.clipboardData?.items;
-      if (!items) return;
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          event.preventDefault();
-          const file = item.getAsFile();
-          if (!file) continue;
-          const res = await uploadImage(file);
-          this.newDevice.fileId = res.id;
-          message.success('上传成功');
-          return;
-        }
-      }
     },
 
     async handleDelete(item) {
@@ -441,32 +399,10 @@ export default {
             </ACol>
           </ARow>
           <AFormItem label="设备图片">
-            <div @paste="handlePaste">
-              <div v-if="newDevice.fileId" class="image-preview-box">
-                <img :src="getAuthSrc(newDevice.fileId)" @click="handlePreview({ url: getAuthSrc(newDevice.fileId) })" />
-                <AButton
-                  type="text"
-                  danger
-                  size="small"
-                  class="image-remove-btn"
-                  @click="newDevice.fileId = null"
-                >
-                  <template #icon><DeleteOutlined /></template>
-                </AButton>
-              </div>
-              <div v-else class="image-upload-box">
-                <AUpload
-                  :max-count="1"
-                  accept="image/*"
-                  :show-upload-list="false"
-                  :custom-request="customUploadRequest"
-                  @change="handleUploadChange"
-                >
-                  <AButton><UploadOutlined /> 上传图片</AButton>
-                </AUpload>
-                <span class="image-upload-hint">支持 Ctrl+V 粘贴</span>
-              </div>
-            </div>
+            <ImageUpload
+              v-model:file-id="newDevice.fileId"
+              :upload-fn="uploadImage"
+            />
           </AFormItem>
           <AFormItem label="备注">
             <AInput

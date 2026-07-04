@@ -18,6 +18,33 @@ import { useAuthStore } from '#/store/auth';
 const authStore = useAuthStore();
 const profileBaseSettingRef = ref();
 
+const handlePaste = async (e: ClipboardEvent) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const url = await uploadAvatarApi(formData);
+        message.success('头像上传成功');
+        const data = await authStore.fetchUserInfo();
+        const fileList = [{ name: 'avatar.png', status: 'done', uid: '-1', url }];
+        profileBaseSettingRef.value
+          .getFormApi()
+          .setValues({ ...data, avatar: fileList });
+      } catch {
+        message.error('头像上传失败');
+      }
+      return;
+    }
+  }
+};
+
 const formSchema = computed((): VbenFormSchema[] => {
   return [
     {
@@ -100,12 +127,14 @@ onMounted(async () => {
 });
 </script>
 <template>
-  <ProfileBaseSetting
-    ref="profileBaseSettingRef"
-    class="max-w-lg"
-    :form-schema="formSchema"
-    @submit="handleSubmit"
-  />
+  <div @paste="handlePaste">
+    <ProfileBaseSetting
+      ref="profileBaseSettingRef"
+      class="max-w-lg"
+      :form-schema="formSchema"
+      @submit="handleSubmit"
+    />
+  </div>
 </template>
 
 <style scoped>

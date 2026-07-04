@@ -44,7 +44,7 @@ const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
               <EditOutlined class="action-icon" @click="emit('edit', item)" />
             </Tooltip>
             <Popconfirm
-              title="确定删除这件衣物吗?"
+              title="确定删除?"
               @confirm="emit('delete', item.id!)"
             >
               <Tooltip title="删除">
@@ -113,6 +113,12 @@ const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
 .card-actions {
   display: flex;
   gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.wardrobe-item-card:hover .card-actions {
+  opacity: 1;
 }
 
 .action-icon {

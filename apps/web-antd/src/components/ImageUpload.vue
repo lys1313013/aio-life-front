@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { Upload, message } from 'ant-design-vue';
-import { UploadOutlined } from '@ant-design/icons-vue';
+import { LoadingOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 interface UploadResult {
@@ -19,7 +19,7 @@ const props = withDefaults(
   }>(),
   {
     maxCount: 1,
-    hint: '支持 Ctrl+V 粘贴图片',
+    hint: 'ctrl + v 上传图片',
     fileId: undefined,
     fileIds: undefined,
   },
@@ -31,6 +31,7 @@ const emit = defineEmits<{
 }>();
 
 const fileList = ref<any[]>([]);
+const uploading = ref(false);
 const isMulti = props.maxCount > 1;
 
 const buildFileItem = async (id: string | number) => {
@@ -88,16 +89,23 @@ const handleChange = (info: { file: any; fileList: any[] }) => {
 const customRequest = async (options: any) => {
   const { file, onSuccess, onError, onProgress } = options;
   try {
+    uploading.value = true;
     onProgress({ percent: 50 });
     const res = await props.uploadFn(file);
     onProgress({ percent: 100 });
     onSuccess(res);
   } catch (error) {
     onError(error);
+  } finally {
+    uploading.value = false;
   }
 };
 
+const rootRef = ref<HTMLElement>();
+
 const handlePaste = async (e: ClipboardEvent) => {
+  if (!rootRef.value || rootRef.value.offsetParent === null) return;
+
   const items = e.clipboardData?.items;
   if (!items) return;
 
@@ -107,6 +115,7 @@ const handlePaste = async (e: ClipboardEvent) => {
       const file = item.getAsFile();
       if (!file) continue;
       try {
+        uploading.value = true;
         const res = await props.uploadFn(file);
         const newItem = await buildFileItem(res.id);
         if (isMulti) {
@@ -119,15 +128,20 @@ const handlePaste = async (e: ClipboardEvent) => {
         message.success('上传成功');
       } catch {
         message.error('上传失败');
+      } finally {
+        uploading.value = false;
       }
       return;
     }
   }
 };
+
+onMounted(() => document.addEventListener('paste', handlePaste));
+onUnmounted(() => document.removeEventListener('paste', handlePaste));
 </script>
 
 <template>
-  <div @paste="handlePaste">
+  <div ref="rootRef">
     <Upload
       v-model:file-list="fileList"
       list-type="picture-card"
@@ -136,11 +150,18 @@ const handlePaste = async (e: ClipboardEvent) => {
       :custom-request="customRequest"
       @change="handleChange"
     >
-      <div v-if="fileList.length < maxCount">
-        <UploadOutlined />
-        <div style="margin-top: 8px">上传</div>
+      <div v-if="fileList.length < maxCount" class="flex h-full flex-col items-center">
+        <div class="flex flex-1 items-center justify-center">
+          <LoadingOutlined v-if="uploading" spin class="text-lg" />
+          <UploadOutlined v-else class="text-lg" />
+        </div>
+        <div
+          v-if="fileList.length === 0 && hint"
+          class="pb-0.5 text-[10px] text-gray-400"
+        >
+          {{ hint }}
+        </div>
       </div>
     </Upload>
-    <div v-if="hint" class="mt-1 text-xs text-gray-400">{{ hint }}</div>
   </div>
 </template>

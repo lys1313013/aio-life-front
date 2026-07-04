@@ -74,7 +74,6 @@ const handlePersonSubmit = async () => {
   try {
     if (props.editingPersonId) {
       await updatePerson(props.editingPersonId, personForm.value);
-      message.success('更新成功');
     } else {
       await createPerson(personForm.value);
       message.success('添加成功');

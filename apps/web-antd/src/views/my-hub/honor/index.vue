@@ -5,7 +5,7 @@ import type { HonorCategoryEntity, HonorRecordEntity } from '#/api/core/honor';
 
 import { computed, onMounted, ref } from 'vue';
 
-import { CalendarOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
   DatePicker as ADatePicker,
@@ -20,7 +20,6 @@ import {
   Switch as ASwitch,
   Tag as ATag,
   Textarea as ATextarea,
-  Upload as AUpload,
   message,
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
@@ -35,6 +34,7 @@ import {
   uploadHonorAttachment,
 } from '#/api/core/honor';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import ImageUpload from '#/components/ImageUpload.vue';
 
 // Types
 interface Honor {
@@ -72,7 +72,6 @@ interface FormState {
 const honors = ref<Honor[]>([]);
 const categories = ref<HonorCategoryEntity[]>([]);
 const loading = ref(false);
-const fileList = ref<any[]>([]);
 
 // Filters
 const filters = ref({
@@ -236,7 +235,6 @@ const handleAdd = () => {
     fileIds: [],
     isPublic: true,
   };
-  fileList.value = [];
   modalVisible.value = true;
 };
 
@@ -255,15 +253,6 @@ const handleEdit = (item: Honor) => {
     fileIds: item.fileIds || [],
     isPublic: item.isPublic,
   };
-  
-  fileList.value = item.attachments.map((url, i) => ({
-    uid: item.fileIds[i]?.toString() || `uid-${i}`,
-    name: `attachment-${i}.png`,
-    status: 'done',
-    url,
-    response: { id: item.fileIds[i], fileUrl: url },
-  }));
-  
   modalVisible.value = true;
 };
 
@@ -275,29 +264,6 @@ const handleDelete = async (id: number) => {
   } catch (error) {
     console.error('Failed to delete honor:', error);
     message.error('删除失败');
-  }
-};
-
-const handleUploadChange = (info: { file: any; fileList: any[] }) => {
-  fileList.value = info.fileList;
-  if (info.file.status === 'done' || info.file.status === 'removed') {
-    const ids = info.fileList
-      .filter((f) => f.status === 'done')
-      .map((f) => f.response?.id)
-      .filter(Boolean);
-    formState.value.fileIds = ids;
-  }
-};
-
-const customUploadRequest = async (options: any) => {
-  const { file, onSuccess, onError, onProgress } = options;
-  try {
-    onProgress({ percent: 50 });
-    const res = await uploadHonorAttachment(file);
-    onProgress({ percent: 100 });
-    onSuccess(res);
-  } catch (error) {
-    onError(error);
   }
 };
 
@@ -656,18 +622,11 @@ const getLevelLabel = (level: string) => {
         </AFormItem>
 
         <AFormItem label="附件" name="fileIds">
-          <AUpload
-            v-model:file-list="fileList"
-            list-type="picture-card"
+          <ImageUpload
+            v-model:file-ids="formState.fileIds"
+            :upload-fn="uploadHonorAttachment"
             :max-count="5"
-            :custom-request="customUploadRequest"
-            @change="handleUploadChange"
-          >
-            <div>
-              <UploadOutlined />
-              <div style="margin-top: 8px">上传附件</div>
-            </div>
-          </AUpload>
+          />
         </AFormItem>
 
         <AFormItem label="公开" name="isPublic">

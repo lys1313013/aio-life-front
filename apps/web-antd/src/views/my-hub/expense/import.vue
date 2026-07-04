@@ -311,7 +311,7 @@ const parseCSV = (csvText: string): ParseResult => {
     // 跳过空行和汇总行
     if (
       !line ||
-      line.includes('共') ||
+      line.startsWith('共') ||
       line.includes('导出时间') ||
       line.includes('----')
     ) {
@@ -614,7 +614,7 @@ const parseMobileCSV = (csvText: string): ParseResult => {
     // 跳过空行和汇总行
     if (
       !line ||
-      line.includes('共') ||
+      line.startsWith('共') ||
       line.includes('导出时间') ||
       line.includes('----') ||
       line.includes('支付宝支付科技有限公司') ||
@@ -693,8 +693,11 @@ const parseMobileCSV = (csvText: string): ParseResult => {
         payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
-      // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
-      if (transaction.flow === '支出') {
+      // 只保留"支出"且交易成功的数据，排除"交易关闭"等无效记录
+      if (
+        transaction.flow === '支出' &&
+        transaction.transactionStatus !== '交易关闭'
+      ) {
         transactions.push(transaction);
       }
     }
