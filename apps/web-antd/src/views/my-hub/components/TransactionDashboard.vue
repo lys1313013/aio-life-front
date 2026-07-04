@@ -282,8 +282,7 @@ const getSeriesData = () => {
       name: type,
       type: 'bar',
       stack: 'amount',
-      barWidth: 40,
-      barMaxWidth: 60,
+      barMaxWidth: 50,
       barGap: '20%',
       emphasis: { focus: 'series' },
       label: { show: false },
@@ -297,8 +296,7 @@ const getSeriesData = () => {
     type: 'bar',
     stack: '', // 不堆叠
     data: yearlyTotals,
-    barWidth: 40,
-    barMaxWidth: 60,
+    barMaxWidth: 50,
     barGap: '-100%', // 与堆叠柱子重合
     z: 10,
     label: {
@@ -318,6 +316,82 @@ const getSeriesData = () => {
   return series;
 };
 
+// 获取月度柱状图系列数据（选中单年时使用）
+const getMonthlyBarSeriesData = () => {
+  const types = getTypes();
+
+  const series: any[] = types.map((type) => {
+    const data = filteredMonthlyData.value.map((item) => {
+      const detail = item.detail.find((d) => d.typeName == type);
+      return detail ? detail.amt : 0;
+    });
+
+    return {
+      name: type,
+      type: 'bar',
+      stack: 'amount',
+      barMaxWidth: 50,
+      barGap: '20%',
+      emphasis: { focus: 'series' },
+      label: { show: false },
+      data,
+    };
+  });
+
+  const monthlyTotals = getMonthlyTotalAmount();
+  series.push({
+    name: '月度合计',
+    type: 'bar',
+    stack: '',
+    data: monthlyTotals,
+    barMaxWidth: 50,
+    barGap: '-100%',
+    z: 10,
+    label: {
+      show: true,
+      position: 'top',
+      formatter: (params: any) => {
+        return params.value > 0 ? formatCurrency(params.value) : '';
+      },
+      fontSize: 12,
+      color: '#333',
+      fontWeight: 'bold',
+    },
+    itemStyle: { color: 'rgba(0,0,0,0)' },
+    emphasis: { disabled: true },
+  });
+
+  return series;
+};
+
+// 获取月度分布饼图数据（选中单年时使用）
+const getMonthPieChartData = () => {
+  const monthTotals: Record<string, number> = {};
+
+  filteredMonthlyData.value.forEach((item) => {
+    const monthKey = `${item.month}月`;
+    const total = item.detail.reduce((sum, current) => sum + current.amt, 0);
+    monthTotals[monthKey] = total;
+  });
+
+  const data = Object.entries(monthTotals)
+    .map(([month, value]) => ({
+      name: month,
+      value: Number(value.toFixed(2)),
+    }))
+    .sort((a, b) => Number.parseInt(a.name) - Number.parseInt(b.name));
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  return {
+    data,
+    total: Number(total.toFixed(2)),
+  };
+};
+
+// 是否为单年模式
+const isSingleYear = computed(() => selectedYear.value !== 'all');
+
 // 更新图表
 const updateCharts = () => {
   const pieData = getPieChartData();
@@ -333,7 +407,8 @@ const updateCharts = () => {
     ? currentYearData.detail.reduce((sum, item) => sum + item.amt, 0)
     : 0;
 
-  // 渲染年度柱状图
+  // 渲染柱状图（全部年份 → 年度趋势，单年 → 月度趋势）
+  const isYearlyBar = !isSingleYear.value;
   renderEcharts({
     grid: {
       left: '3%',
@@ -347,18 +422,19 @@ const updateCharts = () => {
       formatter: (params: any) => {
         let tooltip = `${params[0].name}<br/>`;
         let total = 0;
+        const totalLabel = isYearlyBar ? '年度合计' : '月度合计';
         params.forEach((item: any) => {
-          if (item.seriesName !== '年度合计') total += item.value || 0;
+          if (item.seriesName !== totalLabel) total += item.value || 0;
         });
         params.forEach((item: any) => {
-          if (item.seriesName !== '年度合计' && item.value > 0) {
+          if (item.seriesName !== totalLabel && item.value > 0) {
             const percentage =
               total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
             tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
           }
         });
         tooltip += `<div style="border-top:1px solid #eee;margin-top:5px;padding-top:5px;font-weight:bold;">
-          年度合计: ${formatCurrency(total)}
+          ${totalLabel}: ${formatCurrency(total)}
         </div>`;
         return tooltip;
       },
@@ -369,21 +445,35 @@ const updateCharts = () => {
       left: 'center',
       padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
       itemGap: isMobile.value ? 8 : 10,
-      formatter: (name: string) => (name === '年度合计' ? '' : name),
+      formatter: (name: string) =>
+        name === '年度合计' || name === '月度合计' ? '' : name,
     },
     xAxis: [
       {
         type: 'category',
-        data: getYears(),
+        data: isYearlyBar ? getYears() : getMonths(),
         axisTick: { alignWithLabel: true },
       },
     ],
     yAxis: [{ type: 'value' }],
-    series: getSeriesData(),
+    series: isYearlyBar ? getSeriesData() : getMonthlyBarSeriesData(),
   });
 
   // 渲染类型分布环形图
   renderPieEcharts({
+    title: {
+      text: `{val|${formatCurrency(pieData.total)}}`,
+      top: 'middle',
+      left: 'center',
+      textStyle: {
+        rich: {
+          val: {
+            fontSize: isMobile.value ? 16 : 20,
+            fontWeight: 'bold',
+          },
+        },
+      },
+    },
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
     legend: {
       type: 'scroll',
@@ -397,10 +487,10 @@ const updateCharts = () => {
       {
         name: `${labelName.value}类型分布`,
         type: 'pie',
-        radius: isMobile.value ? ['0%', '45%'] : ['0%', '60%'],
-        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
+        radius: isMobile.value ? ['35%', '55%'] : ['40%', '65%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 10, borderWidth: 2 },
+        itemStyle: { borderWidth: 2 },
         label: {
           show: true,
           position: 'outside',
@@ -419,8 +509,27 @@ const updateCharts = () => {
     ],
   });
 
-  // 渲染按时间分布饼图
+  // 渲染时间分布饼图（全部年份 → 年份分布，单年 → 月份分布）
+  const timePieData = isSingleYear.value
+    ? getMonthPieChartData()
+    : getYearPieChartData();
+  const timePieTitle = isSingleYear.value
+    ? `月份${labelName.value}分布`
+    : `年份${labelName.value}分布`;
   renderYearPieEcharts({
+    title: {
+      text: `{val|${formatCurrency(timePieData.total)}}`,
+      top: 'middle',
+      left: 'center',
+      textStyle: {
+        rich: {
+          val: {
+            fontSize: isMobile.value ? 16 : 20,
+            fontWeight: 'bold',
+          },
+        },
+      },
+    },
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
     legend: {
       type: 'scroll',
@@ -432,12 +541,12 @@ const updateCharts = () => {
     },
     series: [
       {
-        name: `年份${labelName.value}分布`,
+        name: timePieTitle,
         type: 'pie',
-        radius: isMobile.value ? '45%' : '60%',
-        center: isMobile.value ? ['50%', '40%'] : ['50%', '45%'],
+        radius: isMobile.value ? ['35%', '55%'] : ['40%', '65%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 10, borderWidth: 2 },
+        itemStyle: { borderWidth: 2 },
         label: {
           show: true,
           formatter: (params: any) =>
@@ -446,7 +555,7 @@ const updateCharts = () => {
         },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         labelLine: { show: true, length: isMobile.value ? 5 : 10 },
-        data: yearPieData.data,
+        data: timePieData.data,
       },
     ],
   });
@@ -622,7 +731,7 @@ defineExpose({
 
     <div class="chart-container">
       <Card class="chart-item">
-        <h3>年度{{ labelName }}趋势</h3>
+        <h3>{{ isSingleYear ? '月度' : '年度' }}{{ labelName }}趋势</h3>
         <EchartsUI ref="chartRef" />
       </Card>
       <Card class="chart-item">
@@ -630,7 +739,7 @@ defineExpose({
         <EchartsUI ref="pieChartRef" />
       </Card>
       <Card class="chart-item">
-        <h3>年份{{ labelName }}分布</h3>
+        <h3>{{ isSingleYear ? '月份' : '年份' }}{{ labelName }}分布</h3>
         <EchartsUI ref="yearPieChartRef" />
       </Card>
       <Card class="chart-item full-width area-chart-item">

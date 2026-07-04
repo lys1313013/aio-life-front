@@ -253,6 +253,9 @@ const filteredData = computed(() => {
   };
 });
 
+// 是否为单年模式
+const isSingleYear = computed(() => selectedYear.value !== 'all');
+
 // 更新图表
 const updateCharts = () => {
   updateBalanceChart();
@@ -402,9 +405,12 @@ const updateExpenseCategoryChart = () => {
   );
 };
 
-// 更新年度对比图
+// 更新年度/月度对比图
 const updateYearChart = () => {
-  const data = filteredData.value.yearly;
+  const useMonthly = isSingleYear.value;
+  const data = useMonthly
+    ? filteredData.value.monthly
+    : filteredData.value.yearly;
 
   if (!data || data.length === 0) return;
 
@@ -418,13 +424,16 @@ const updateYearChart = () => {
     },
     xAxis: {
       type: 'category',
-      data: chartData.map((item) => `${item.year}年`),
+      data: useMonthly
+        ? chartData.map((item: any) => item.month)
+        : chartData.map((item: any) => `${item.year}年`),
+      axisLabel: useMonthly ? { rotate: 45 } : {},
     },
     series: [
       {
         name: '收入',
         type: 'bar',
-        data: chartData.map((item) => item.income),
+        data: chartData.map((item: any) => item.income),
         itemStyle: { color: '#52c41a' },
         label: {
           show: true,
@@ -435,7 +444,7 @@ const updateYearChart = () => {
       {
         name: '支出',
         type: 'bar',
-        data: chartData.map((item) => item.expense),
+        data: chartData.map((item: any) => item.expense),
         itemStyle: { color: '#ff4d4f' },
         label: {
           show: true,
@@ -446,7 +455,7 @@ const updateYearChart = () => {
       {
         name: '结余',
         type: 'line',
-        data: chartData.map((item) => item.balance),
+        data: chartData.map((item: any) => item.balance),
         itemStyle: { color: '#1890ff' },
         lineStyle: { width: 3 },
         label: {
@@ -459,22 +468,27 @@ const updateYearChart = () => {
   });
 };
 
-// 更新每年结余占比饼状图
+// 更新结余占比饼状图（全部年份 → 每年，单年 → 每月）
 const updateYearlyBalancePieChart = () => {
-  const data = filteredData.value.yearly;
+  const useMonthly = isSingleYear.value;
+  const data = useMonthly
+    ? filteredData.value.monthly
+    : filteredData.value.yearly;
 
   if (!data || data.length === 0) return;
 
-  // 计算每年结余占比数据
+  // 计算结余占比数据
   const pieData = data
-    .map((item) => ({
-      name: `${item.year}年`,
+    .map((item: any) => ({
+      name: useMonthly ? item.month : `${item.year}年`,
       value: Math.abs(item.balance),
       balance: item.balance,
     }))
     .filter((item) => item.value > 0);
 
   if (pieData.length === 0) return;
+
+  const seriesName = useMonthly ? '每月结余占比' : '每年结余占比';
 
   renderYearlyBalancePieChart({
     tooltip: {
@@ -493,7 +507,7 @@ const updateYearlyBalancePieChart = () => {
     },
     series: [
       {
-        name: '每年结余占比',
+        name: seriesName,
         type: 'pie',
         radius: ['40%', '70%'],
         center: ['40%', '50%'],
@@ -611,12 +625,18 @@ onMounted(() => {
     <div class="dashboard-content">
       <Row :gutter="[12, 12]">
         <Col :xs="24" :sm="24" :md="12" :lg="12">
-          <Card class="chart-card" title="年度收支结余对比">
+          <Card
+            class="chart-card"
+            :title="isSingleYear ? '月度收支结余对比' : '年度收支结余对比'"
+          >
             <EchartsUI ref="yearChartRef" style="height: 300px" />
           </Card>
         </Col>
         <Col :xs="24" :sm="24" :md="12" :lg="12">
-          <Card class="chart-card" title="每年结余占比">
+          <Card
+            class="chart-card"
+            :title="isSingleYear ? '每月结余占比' : '每年结余占比'"
+          >
             <EchartsUI ref="yearlyBalancePieChartRef" style="height: 300px" />
           </Card>
         </Col>
