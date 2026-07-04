@@ -164,6 +164,11 @@ async function loadPinnedThoughts() {
   }
 }
 
+function openNewThought() {
+  editingThoughtId.value = null;
+  thinkModalVisible.value = true;
+}
+
 function openThinkModal(thought: any) {
   editingThoughtId.value = thought.id;
   thinkModalVisible.value = true;
@@ -621,21 +626,23 @@ function navTo(nav: { url?: string }) {
 
       <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
-        v-if="thoughtsLoading || pinnedThoughts.length > 0"
         class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
       >
         <div
-          class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+          class="flex cursor-pointer items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+          @click="loadPinnedThoughts"
         >
-          <div class="flex items-center gap-2">
-            <span
-              class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
-              title="进入闪念"
-              @click="navTo({ url: '/record/think' })"
-              >闪念</span
-            >
-          </div>
-          <RefreshButton @click="loadPinnedThoughts" />
+          <span
+            class="select-none text-base font-semibold transition-colors hover:text-primary"
+            title="进入闪念"
+            @click.stop="navTo({ url: '/record/think' })"
+            >闪念</span
+          >
+          <span
+            class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+            title="记录闪念"
+            @click.stop="openNewThought"
+          >+</span>
         </div>
 
         <div

@@ -185,17 +185,23 @@
     </view>
 
     <!-- 固定闪念 -->
-    <view class="panel" v-if="pinnedThoughts.length > 0">
-      <view class="panel-header">
-        <text class="panel-title">固定闪念</text>
+    <view class="panel">
+      <view class="panel-header" @click="refreshPinnedThoughts">
+        <text class="panel-title" @click.stop="navigateTo('/pages/record/think/index')">固定闪念</text>
+        <view class="header-add-btn" @click.stop="navigateTo('/pages/record/think/index')">+</view>
       </view>
       <view class="panel-body">
-        <view class="thought-item" v-for="thought in pinnedThoughts" :key="thought.id">
-          <uni-icons type="star-filled" size="18" color="#f5a623" class="thought-icon"></uni-icons>
-          <view class="thought-content">
-            <text class="thought-text">{{ thought.content }}</text>
-            <text class="thought-time">{{ formatThoughtTime(thought.createTime) }}</text>
+        <view v-if="pinnedThoughts.length > 0">
+          <view class="thought-item" v-for="thought in pinnedThoughts" :key="thought.id">
+            <uni-icons type="star-filled" size="18" color="#f5a623" class="thought-icon"></uni-icons>
+            <view class="thought-content">
+              <text class="thought-text">{{ thought.content }}</text>
+              <text class="thought-time">{{ formatThoughtTime(thought.createTime) }}</text>
+            </view>
           </view>
+        </view>
+        <view v-else class="empty-time-tracker">
+          <text>暂无固定闪念</text>
         </view>
       </view>
     </view>
@@ -561,6 +567,18 @@ const refreshExercise = async () => {
     exerciseSummary.value = res || { totalTimes: 0, totalDuration: 0, recentRecords: [] };
   } catch (err) {
     console.error('refreshExercise error:', err);
+  } finally {
+    uni.hideLoading();
+  }
+};
+
+const refreshPinnedThoughts = async () => {
+  uni.showLoading({ title: '刷新中...', mask: true });
+  try {
+    const res = await getPinnedThoughts();
+    pinnedThoughts.value = res || [];
+  } catch (err) {
+    console.error('refreshPinnedThoughts error:', err);
   } finally {
     uni.hideLoading();
   }
