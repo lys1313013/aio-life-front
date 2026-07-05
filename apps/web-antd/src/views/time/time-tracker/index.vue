@@ -85,7 +85,7 @@ const loading = ref(false);
 const statMode = ref<'day' | 'month' | 'week'>('day');
 const selectedWeekDayIndex = ref(0);
 const selectedMonthDayIndex = ref(0);
-const isMobile = ref(false);
+const isMobile = ref(window.innerWidth < 1024);
 const currentQuote = ref('');
 const trendRefreshKey = ref(0);
 
