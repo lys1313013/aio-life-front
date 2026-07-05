@@ -155,10 +155,11 @@ const renderChart = () => {
       top: 0,
     },
     grid: {
-      left: 40,
-      right: 20,
-      top: 40,
-      bottom: props.statMode === 'month' ? 80 : 40,
+      left: 35,
+      right: 15,
+      top: 30,
+      bottom: props.statMode === 'month' ? 70 : 25,
+      containLabel: true,
     },
     xAxis: {
       type: 'category',
@@ -213,7 +214,7 @@ onMounted(() => {
 
 .daily-bar-chart-container {
   width: 100%;
-  height: 280px;
+  height: 300px;
 }
 
 .chart-header {

@@ -95,7 +95,7 @@ const renderBarChart = () => {
         return `${p.name}<br/>${avgHours}小时${avgMinutes}分钟\n总时长: ${total}分钟`;
       },
     },
-    grid: { left: 40, right: 20, top: 20, bottom: 40 },
+    grid: { left: 35, right: 15, top: 30, bottom: 25, containLabel: true },
     xAxis: {
       type: 'category',
       data: names,
@@ -119,7 +119,7 @@ const renderBarChart = () => {
             const minutes = duration % 60;
             const text =
               duration >= 60 ? `${hours}h${minutes}m` : `${minutes}m`;
-            return activeDaysCount.value > 1 ? `日 ${text}` : text;
+            return text;
           },
           fontSize: 10,
         },
@@ -149,10 +149,10 @@ onMounted(() => {
 <template>
   <Card
     class="bar-chart-card overflow-hidden shadow-sm"
-    :body-style="{ padding: '12px' }"
+    :body-style="{ padding: '0 10px' }"
   >
     <div class="bar-chart-container">
-      <EchartsUI ref="chartRef" />
+      <EchartsUI ref="chartRef" height="320px" />
     </div>
   </Card>
 </template>
@@ -164,9 +164,13 @@ onMounted(() => {
   min-width: 300px;
 }
 
+.bar-chart-card :deep(.ant-card-body) {
+  padding: 0 10px !important;
+}
+
 .bar-chart-container {
   width: 100%;
-  height: 280px;
+  height: 320px;
 }
 
 .shadow-sm {
