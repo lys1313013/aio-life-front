@@ -173,7 +173,7 @@ const renderChart = () => {
           color: getCategoryColor(category.id, props.categories),
         },
         showSymbol: false,
-        smooth: false,
+        smooth: 0.25,
       };
     })
     .filter((s) => {
@@ -210,9 +210,9 @@ const renderChart = () => {
       top: 0,
     },
     grid: {
-      left: '20px',
-      right: '20px',
-      top: '40px',
+      left: '5px',
+      right: '5px',
+      top: '30px',
       bottom: '10px',
       containLabel: true,
     },
@@ -226,7 +226,14 @@ const renderChart = () => {
     yAxis: [
       {
         type: 'value',
-        name: '时长(分)',
+        axisLabel: {
+          formatter: (v: number) => {
+            const h = Math.floor(v / 60);
+            const m = v % 60;
+            return m === 0 ? `${h}h` : `${h}h${m}m`;
+          },
+          fontSize: 10,
+        },
         // 如果没有选择特定分类，且不是日模式，固定为 1440 分钟（24小时）以展示全天占比
         // 如果选择了特定分类，则让 ECharts 自动计算最大值，以便更清晰地观察趋势
         max:
