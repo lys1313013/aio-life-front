@@ -95,7 +95,7 @@ const renderBarChart = () => {
         return `${p.name}<br/>${avgHours}小时${avgMinutes}分钟\n总时长: ${total}分钟`;
       },
     },
-    grid: { left: 35, right: 15, top: 30, bottom: 25, containLabel: true },
+    grid: { left: 12, right: 12, top: 30, bottom: 15, containLabel: true },
     xAxis: {
       type: 'category',
       data: names,
