@@ -258,7 +258,7 @@ const renderChart = async () => {
     xAxis: { type: 'category', boundaryGap: false, data: xAxisData },
     yAxis: {
       type: 'value',
-      name: props.statMode === 'day' ? '时长(分)' : '日均(分)',
+      axisLabel: { show: false },
     },
     series: displaySeries,
   };

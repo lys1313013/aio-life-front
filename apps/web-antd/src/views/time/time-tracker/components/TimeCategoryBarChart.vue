@@ -103,7 +103,7 @@ const renderBarChart = () => {
     },
     yAxis: {
       type: 'value',
-      name: '',
+      axisLabel: { show: false },
       splitLine: { show: true },
     },
     series: [
