@@ -178,13 +178,10 @@ function deltaInfo(item: ExerciseDashboardItemVO): DeltaInfo | undefined {
     return { text: '新增', tone: 'new' };
   }
   const delta = item.deltaCount ?? 0;
-  const percent = item.deltaPercent;
   const sign = delta > 0 ? '+' : '';
   const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '=';
-  const pct =
-    percent === undefined || percent === null ? '' : `${sign}${percent}%`;
   const abs = `${sign}${delta}`;
-  const text = delta === 0 ? `${arrow} ${abs}` : `${arrow} ${abs} ${pct}`;
+  const text = `${arrow} ${abs}`;
   let tone: DeltaInfo['tone'] = 'neutral';
   if (delta > 0) tone = 'up';
   else if (delta < 0) tone = 'down';
