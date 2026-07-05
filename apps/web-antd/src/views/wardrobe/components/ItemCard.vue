@@ -81,12 +81,17 @@ const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
   height: 180px;
   overflow: hidden;
   background: #f5f5f5;
+  border-radius: 6px 6px 0 0;
 }
 
 .item-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.item-image :deep(.ant-image-img) {
+  border-radius: 0;
 }
 
 .no-image {
