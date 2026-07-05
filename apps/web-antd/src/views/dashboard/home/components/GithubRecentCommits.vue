@@ -42,12 +42,13 @@ defineExpose({ load });
   <div class="flex min-h-0 flex-1 flex-col">
     <div
       v-if="loading"
-      class="flex-1 space-y-2 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+      class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 max-h-[220px] sm:p-3 sm:pt-1.5"
     >
       <Skeleton
         v-for="i in 4"
         :key="i"
-        :paragraph="{ rows: 1 }"
+        :title="{ width: '30%' }"
+        :paragraph="{ rows: 1, width: '60%' }"
         active
         class="!w-full"
       />
