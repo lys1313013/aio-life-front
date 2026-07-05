@@ -440,13 +440,18 @@ onMounted(async () => {
   updateIsMobile();
   window.addEventListener('resize', updateIsMobile);
   window.addEventListener('resize', updateMobileTimelineHeight);
-  nextTick(() => updateMobileTimelineHeight());
+  window.addEventListener('resize', syncTimelineHeight);
+  nextTick(() => {
+    updateMobileTimelineHeight();
+    syncTimelineHeight();
+  });
 });
 
 onUnmounted(() => {
   stopCurrentTimeUpdater();
   window.removeEventListener('resize', updateIsMobile);
   window.removeEventListener('resize', updateMobileTimelineHeight);
+  window.removeEventListener('resize', syncTimelineHeight);
 });
 
 // 数据管理
@@ -528,6 +533,7 @@ const loadData = async () => {
   } finally {
     loading.value = false; // 结束加载
     trendRefreshKey.value++;
+    nextTick(() => syncTimelineHeight());
   }
 };
 
@@ -716,19 +722,28 @@ const shouldShowSlotIcon = (slot: TimeSlot) => {
   return !slotClass; // 只有当 slotClass 为空（即高度 >= 40）时才显示图标
 };
 
-// 获取时间轴高度
-const getTimelineHeight = () => {
+// 响应式时间轴高度，窗口大小变化时更新，触发 slot 位置重新计算
+const timelineHeight = ref(800);
+
+const syncTimelineHeight = () => {
   const weekContainer = document.querySelector(
     '.week-days-container',
   ) as HTMLElement | null;
   const monthContainer = document.querySelector(
     '.month-days-container',
   ) as HTMLElement | null;
-  return statMode.value === 'week'
-    ? weekContainer?.offsetHeight || 740
-    : statMode.value === 'month'
-      ? monthContainer?.offsetHeight || 740
-      : timelineRef.value?.offsetHeight || 800;
+  const h =
+    statMode.value === 'week'
+      ? weekContainer?.offsetHeight
+      : statMode.value === 'month'
+        ? monthContainer?.offsetHeight
+        : timelineRef.value?.offsetHeight;
+  if (h) timelineHeight.value = h;
+};
+
+// 获取时间轴高度
+const getTimelineHeight = () => {
+  return timelineHeight.value;
 };
 
 // 获取时间段样式类
@@ -1144,6 +1159,8 @@ const handleTrackPointerLeave = () => {
   // }
 };
 
+const RESIZE_EDGE = 8; // 边缘检测像素阈值
+
 const handleSlotPointerDown = (
   event: MouseEvent | TouchEvent,
   slot: TimeSlot,
@@ -1156,50 +1173,40 @@ const handleSlotPointerDown = (
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
 
-  dragOperation.value = {
-    type: 'move',
-    slotId: slot.id,
-    startY: y,
-    startTime: slot.startTime,
-    currentTime: slot.startTime,
-    originalStart: slot.startTime,
-    originalEnd: slot.endTime,
-    changed: false,
-  };
+  // 通过 slot 的绝对定位计算点击在 slot 内的相对位置
+  const timelineHeight = getTimelineHeight();
+  const { top: slotTop, height: slotHeight } = getSlotPosition(slot, timelineHeight);
+  const relativeY = y - slotTop;
 
-  // 添加全局事件监听
-  window.addEventListener('mousemove', handleTrackPointerMove);
-  window.addEventListener('mouseup', handleTrackPointerUp);
-  window.addEventListener('touchmove', handleTrackPointerMove, {
-    passive: false,
-  });
-  window.addEventListener('touchend', handleTrackPointerUp);
-};
+  // 检测是否在边缘区域
+  const isTopEdge = relativeY <= RESIZE_EDGE;
+  const isBottomEdge = relativeY >= slotHeight - RESIZE_EDGE;
 
-const handleResizeStartPointer = (
-  event: MouseEvent | TouchEvent,
-  slot: TimeSlot,
-  direction: 'bottom' | 'top',
-) => {
-  event.stopPropagation();
-  if (isMobile.value) return;
-
-  if (!timelineRef.value) return;
-
-  const rect = timelineRef.value.getBoundingClientRect();
-  const y = getClientY(event) - rect.top;
-
-  dragOperation.value = {
-    type: 'resize',
-    slotId: slot.id,
-    startY: y,
-    startTime: direction === 'top' ? slot.startTime : slot.endTime,
-    currentTime: direction === 'top' ? slot.startTime : slot.endTime,
-    direction,
-    originalStart: slot.startTime,
-    originalEnd: slot.endTime,
-    changed: false,
-  };
+  if (isTopEdge || isBottomEdge) {
+    const direction = isTopEdge ? 'top' : 'bottom';
+    dragOperation.value = {
+      type: 'resize',
+      slotId: slot.id,
+      startY: y,
+      startTime: direction === 'top' ? slot.startTime : slot.endTime,
+      currentTime: direction === 'top' ? slot.startTime : slot.endTime,
+      direction,
+      originalStart: slot.startTime,
+      originalEnd: slot.endTime,
+      changed: false,
+    };
+  } else {
+    dragOperation.value = {
+      type: 'move',
+      slotId: slot.id,
+      startY: y,
+      startTime: slot.startTime,
+      currentTime: slot.startTime,
+      originalStart: slot.startTime,
+      originalEnd: slot.endTime,
+      changed: false,
+    };
+  }
 
   // 添加全局事件监听
   window.addEventListener('mousemove', handleTrackPointerMove);
@@ -1716,18 +1723,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
                           </span>
                         </div>
                       </div>
-                      <div
-                        class="resize-handle top"
-                        @mousedown="
-                          handleResizeStartPointer($event, slot, 'top')
-                        "
-                      ></div>
-                      <div
-                        class="resize-handle bottom"
-                        @mousedown="
-                          handleResizeStartPointer($event, slot, 'bottom')
-                        "
-                      ></div>
                     </div>
                     <div
                       v-if="dragOperation"
@@ -2434,27 +2429,27 @@ const getDaySlots = (date: string): TimeSlot[] => {
   height: 14px;
 }
 
-.resize-handle {
-  position: absolute;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  cursor: row-resize;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+/* 上下边缘光标指示，仅支持 hover 的设备生效 */
+@media (hover: hover) {
+  .time-slot::before,
+  .time-slot::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 8px;
+    z-index: 1;
+  }
 
-.resize-handle.top {
-  top: 0;
-}
+  .time-slot::before {
+    top: 0;
+    cursor: row-resize;
+  }
 
-.resize-handle.bottom {
-  bottom: 0;
-}
-
-.time-slot:hover .resize-handle {
-  background: rgb(255 255 255 / 50%);
-  opacity: 1;
+  .time-slot::after {
+    bottom: 0;
+    cursor: row-resize;
+  }
 }
 
 .drag-preview {
