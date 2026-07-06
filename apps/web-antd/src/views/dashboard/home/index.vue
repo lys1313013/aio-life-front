@@ -16,7 +16,6 @@ import {
   getWatchedTaskDetails,
 } from '#/api/core/dashboard';
 import { getPinnedThoughts } from '#/api/core/think';
-
 import { updateTaskDetail } from '#/api/core/todo';
 import { getUserBindListApi } from '#/api/core/user-bind';
 import {
@@ -108,6 +107,17 @@ function openEditTaskModal(task: WatchedTaskDetail) {
 
 // 定时器管理
 const refreshTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+// 各区块自动刷新间隔（秒）
+const SECTION_REFRESH = {
+  timeTracker: 300, // 时迹：5分钟
+  thoughts: 3600, // 闪念：60分钟
+  exercise: 600, // 运动：10分钟
+  github: 3600, // GitHub：60分钟
+  watchedTasks: 1800, // 待办：30分钟
+};
+
+const sectionTimers = new Map<string, ReturnType<typeof setInterval>>();
 
 function startLongPress(item: OverviewItem) {
   const isTimeTracker = item.title === '时迹' || item.type === 'TIME_TRACKER';
@@ -261,6 +271,50 @@ function setupCardRefresh(item: OverviewItem) {
   refreshTimers.set(type, timer);
 }
 
+function clearSectionTimer(key: string) {
+  if (sectionTimers.has(key)) {
+    clearInterval(sectionTimers.get(key));
+    sectionTimers.delete(key);
+  }
+}
+
+function setupSectionTimer(
+  key: string,
+  intervalSeconds: number,
+  refreshFn: () => void,
+) {
+  clearSectionTimer(key);
+  if (document.visibilityState === 'hidden') return;
+  sectionTimers.set(key, setInterval(refreshFn, intervalSeconds * 1000));
+}
+
+function startAllSectionTimers() {
+  setupSectionTimer(
+    'timeTracker',
+    SECTION_REFRESH.timeTracker,
+    refreshTimeTracker,
+  );
+  setupSectionTimer('thoughts', SECTION_REFRESH.thoughts, loadPinnedThoughts);
+  setupSectionTimer('exercise', SECTION_REFRESH.exercise, () =>
+    exerciseSummaryCardRef.value?.reload?.(),
+  );
+  if (githubBound.value) {
+    setupSectionTimer('github', SECTION_REFRESH.github, () =>
+      githubRecentCommitsRef.value?.load?.(),
+    );
+  }
+  setupSectionTimer(
+    'watchedTasks',
+    SECTION_REFRESH.watchedTasks,
+    loadWatchedTasks,
+  );
+}
+
+function clearAllSectionTimers() {
+  sectionTimers.forEach((timer) => clearInterval(timer));
+  sectionTimers.clear();
+}
+
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') {
     // 切换回前台时，刷新所有有刷新间隔的卡片
@@ -269,10 +323,20 @@ function handleVisibilityChange() {
         refreshCard(item);
       }
     });
+    // 刷新各区块并重建定时器
+    refreshTimeTracker();
+    loadPinnedThoughts();
+    exerciseSummaryCardRef.value?.reload?.();
+    if (githubBound.value) {
+      githubRecentCommitsRef.value?.load?.();
+    }
+    loadWatchedTasks();
+    startAllSectionTimers();
   } else {
     // 切换到后台时，清除所有定时器
     refreshTimers.forEach((timer) => clearInterval(timer));
     refreshTimers.clear();
+    clearAllSectionTimers();
   }
 }
 
@@ -281,6 +345,7 @@ onUnmounted(() => {
   // 清理所有定时器
   refreshTimers.forEach((timer) => clearInterval(timer));
   refreshTimers.clear();
+  clearAllSectionTimers();
 });
 
 // 获取数据并设置 overviewItems
@@ -338,6 +403,7 @@ onMounted(async () => {
     console.error('获取仪表盘数据失败:', error);
     loading.value = false;
   }
+  startAllSectionTimers();
 });
 
 async function refreshCard(item: OverviewItem) {
@@ -477,7 +543,8 @@ function navTo(nav: { url?: string }) {
             class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
             title="记录时迹"
             @click.stop="timeTrackerModalRef?.open()"
-          >+</span>
+            >+</span
+          >
         </div>
         <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
           <AnalyticsTimeTracker ref="timeTrackerCardRef" />
@@ -508,7 +575,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-if="watchedLoading"
-          class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 max-h-[220px] sm:p-3 sm:pt-1.5"
+          class="max-h-[220px] flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <Skeleton
             v-for="i in 4"
@@ -643,12 +710,13 @@ function navTo(nav: { url?: string }) {
             class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
             title="记录闪念"
             @click.stop="openNewThought"
-          >+</span>
+            >+</span
+          >
         </div>
 
         <div
           v-if="thoughtsLoading"
-          class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 max-h-[220px] sm:p-3 sm:pt-1.5"
+          class="max-h-[220px] flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <Skeleton
             v-for="i in 4"
