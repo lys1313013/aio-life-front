@@ -141,6 +141,16 @@ const formState = ref<LocalFormState>({
 const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
 const relateTypeList = ref<Array<{ label: string; value: number }>>([]);
 
+// 为阅读、观影标题自动添加《》
+const wrapTitleWithBrackets = (title: string) => {
+  if (!title) return title;
+  const trimmed = title.trim();
+  if (trimmed.startsWith('《') && trimmed.endsWith('》')) return trimmed;
+  if (trimmed.startsWith('《')) return `${trimmed}》`;
+  if (trimmed.endsWith('》')) return `《${trimmed}`;
+  return `《${trimmed}》`;
+};
+
 // 加载关联类型枚举
 const loadRelateTypes = async () => {
   try {
@@ -429,6 +439,13 @@ watch(
 );
 
 // 处理分类变化
+// 标题失焦时，若为阅读/观影分类，自动添加《》
+const handleTitleBlur = () => {
+  if (currentRelateType.value && formState.value.title) {
+    formState.value.title = wrapTitleWithBrackets(formState.value.title);
+  }
+};
+
 const handleCategoryChange = () => {
   // 不再自动填充标题，展示逻辑会处理 fallback
   if (isExerciseCategory.value && formState.value.exercises.length === 0) {
@@ -700,7 +717,11 @@ onUnmounted(() => {
       @finish="handleSave"
     >
       <Form.Item label="标题" name="title">
-        <Input v-model:value="formState.title" placeholder="标题" />
+        <Input
+          v-model:value="formState.title"
+          placeholder="标题"
+          @blur="handleTitleBlur"
+        />
       </Form.Item>
 
       <Form.Item name="categoryId">
@@ -949,7 +970,7 @@ onUnmounted(() => {
             (item) => {
               formState.relateType = currentRelateType;
               if (item) {
-                formState.title = item.title;
+                formState.title = wrapTitleWithBrackets(item.title);
               }
             }
           "
