@@ -408,6 +408,18 @@ const updateCharts = () => {
   });
 
   // 渲染类型分布环形图
+  const modifiedPieData = pieData.data.map((item) => {
+    const percent = pieData.total > 0 ? (item.value / pieData.total) * 100 : 0;
+    if (percent < 1) {
+      return {
+        ...item,
+        label: { show: false },
+        labelLine: { show: false },
+      };
+    }
+    return item;
+  });
+
   renderPieEcharts({
     title: getPieTitleConfig(pieData.total),
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
@@ -440,7 +452,7 @@ const updateCharts = () => {
           length: isMobile.value ? 5 : 10,
           length2: isMobile.value ? 5 : 10,
         },
-        data: pieData.data,
+        data: modifiedPieData,
       },
     ],
   });
@@ -450,6 +462,20 @@ const updateCharts = () => {
   const timePieTitle = isSingleYear.value
     ? `月份${labelName.value}分布`
     : `年份${labelName.value}分布`;
+
+  const modifiedTimePieData = timePieData.data.map((item) => {
+    const percent =
+      timePieData.total > 0 ? (item.value / timePieData.total) * 100 : 0;
+    if (percent < 1) {
+      return {
+        ...item,
+        label: { show: false },
+        labelLine: { show: false },
+      };
+    }
+    return item;
+  });
+
   renderYearPieEcharts({
     title: getPieTitleConfig(timePieData.total),
     tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
@@ -477,7 +503,7 @@ const updateCharts = () => {
         },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         labelLine: { show: true, length: isMobile.value ? 5 : 10 },
-        data: timePieData.data,
+        data: modifiedTimePieData,
       },
     ],
   });

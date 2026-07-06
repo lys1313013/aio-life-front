@@ -9,7 +9,7 @@ import type {
   TimeSlotFormData,
 } from '../types';
 
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 

@@ -168,7 +168,7 @@ const loadData = async () => {
     honors.value = honorsRes.map((item, i) => {
       let tags: string[] = [];
       let attachments: string[] = [];
-      let fileIds: number[] = [];
+      let fileIds: string[] = [];
 
       try {
         if (item.tags) {
@@ -179,8 +179,8 @@ const loadData = async () => {
       }
 
       if (item.files) {
-        fileIds = item.files.map((f: any) => f.id);
-        attachments = allFileIds[i].map(() => authUrls[urlIdx++]);
+        fileIds = item.files.map((f: any) => String(f.id));
+        attachments = allFileIds[i]?.map(() => authUrls[urlIdx++] as string) || [];
       }
 
       // 获取分类名称

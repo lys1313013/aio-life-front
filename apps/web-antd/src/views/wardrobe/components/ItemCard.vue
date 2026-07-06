@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { WardrobeItemVO } from '#/api/wardrobe';
 
-import { computed } from 'vue';
-
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Card, CardMeta, Image, Popconfirm, Tooltip } from 'ant-design-vue';
 
