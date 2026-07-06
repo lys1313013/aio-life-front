@@ -30,7 +30,7 @@ const dictOptions = ref<Array<any>>([]);
 const { isMobile } = usePreferences();
 
 // 跟踪选中的年份
-const selectedYear = ref<'all' | number>('all');
+const selectedYear = ref<'all' | number>(new Date().getFullYear());
 
 const loadIncomeTypes = async () => {
   try {

@@ -78,7 +78,7 @@ const totalAmount = ref(0);
 const currentYearAmount = ref(0);
 
 // 选中的年份
-const selectedYear = ref<'all' | number>('all');
+const selectedYear = ref<'all' | number>(new Date().getFullYear());
 
 // 年份选项
 const yearOptions = ref<{ label: number | string; value: number | string }[]>([
@@ -334,17 +334,26 @@ const getPieTitleConfig = (total: number) => ({
 
 // 更新图表
 const updateCharts = () => {
-  const pieData = getPieChartData();
-  totalAmount.value = pieData.total;
+  // 总金额始终基于全部数据，不受年份筛选影响
+  const allYearsTotal = yearDataList.value.reduce((sum, year) => {
+    return sum + year.detail.reduce((s, d) => s + d.amt, 0);
+  }, 0);
+  totalAmount.value = Number(allYearsTotal.toFixed(2));
 
-  // 计算当年总金额
-  const currentYear = new Date().getFullYear();
-  const currentYearData = yearDataList.value.find(
-    (item) => item.year === currentYear,
+  // 选中年份金额（全部时显示当前年度）
+  const targetYear =
+    selectedYear.value === 'all'
+      ? new Date().getFullYear()
+      : selectedYear.value;
+  const targetYearData = yearDataList.value.find(
+    (item) => item.year === targetYear,
   );
-  currentYearAmount.value = currentYearData
-    ? currentYearData.detail.reduce((sum, item) => sum + item.amt, 0)
+  currentYearAmount.value = targetYearData
+    ? targetYearData.detail.reduce((sum, item) => sum + item.amt, 0)
     : 0;
+
+  // 类型分布饼图仍然基于筛选后的数据
+  const pieData = getPieChartData();
 
   // 渲染柱状图（全部年份 → 年度趋势，单年 → 月度趋势）
   const isYearlyBar = !isSingleYear.value;
@@ -585,7 +594,7 @@ const refreshData = async () => {
     const yearExists = yearOptions.value.some(
       (option) => option.value === currentYear,
     );
-    selectedYear.value = yearExists ? currentYear : 'all';
+    selectedYear.value = yearExists ? currentYear : new Date().getFullYear();
 
     updateCharts();
   } catch (error) {
@@ -622,7 +631,7 @@ defineExpose({
           <div class="stat-divider"></div>
           <div class="stat-item">
             <div class="stat-label">
-              {{ new Date().getFullYear() }}年总{{ labelName }}
+              {{ selectedYear === 'all' ? new Date().getFullYear() : selectedYear }}年总{{ labelName }}
             </div>
             <div class="stat-value">
               {{ formatCurrency(currentYearAmount) }}
