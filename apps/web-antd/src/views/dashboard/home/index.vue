@@ -3,7 +3,7 @@ import type { Component } from 'vue';
 
 import type { WatchedTaskDetail } from '#/api/core/dashboard';
 
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { openWindow } from '@vben/utils';
@@ -59,6 +59,24 @@ const thoughtsLoading = ref(true);
 const thinkModalVisible = ref(false);
 const editingThoughtId = ref<null | number | string>(null);
 const timeTrackerModalRef = ref();
+// 上次时迹记录的结束时间（分钟数，0 表示今日无记录）
+const timeTrackerLastEnd = ref(0);
+// 当前时间（分钟数），每分钟更新，用于计算"距离上次记录已过去多久"
+const nowMinutes = ref(
+  new Date().getHours() * 60 + new Date().getMinutes(),
+);
+const timeTrackerNowTimer = ref<ReturnType<typeof setInterval>>();
+// 距离上次记录已过去的时长（格式化）
+const timeTrackerElapsedText = computed(() => {
+  if (timeTrackerLastEnd.value <= 0) return '';
+  const elapsed = nowMinutes.value - timeTrackerLastEnd.value;
+  if (elapsed <= 0) return '0m';
+  const h = Math.floor(elapsed / 60);
+  const m = elapsed % 60;
+  if (h > 0 && m > 0) return `${h}h${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+});
 const exerciseModalRef = ref();
 const exerciseSummaryCardRef = ref();
 const exerciseLoading = ref(true);
@@ -342,10 +360,19 @@ function handleVisibilityChange() {
 
 onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibilityChange);
+  if (timeTrackerNowTimer.value) clearInterval(timeTrackerNowTimer.value);
   // 清理所有定时器
   refreshTimers.forEach((timer) => clearInterval(timer));
   refreshTimers.clear();
   clearAllSectionTimers();
+});
+
+// 每分钟更新 nowMinutes，驱动"距离上次记录已过去多久"的实时计算
+onMounted(() => {
+  timeTrackerNowTimer.value = setInterval(() => {
+    const now = new Date();
+    nowMinutes.value = now.getHours() * 60 + now.getMinutes();
+  }, 60_000);
 });
 
 // 获取数据并设置 overviewItems
@@ -540,14 +567,24 @@ function navTo(nav: { url?: string }) {
             >时迹</span
           >
           <span
-            class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
+            class="flex cursor-pointer items-center gap-1 rounded-full bg-secondary/60 px-2 py-1 transition-colors hover:bg-secondary"
             title="记录时迹"
             @click.stop="timeTrackerModalRef?.open()"
-            >+</span
           >
+            <span
+              v-if="timeTrackerElapsedText"
+              class="font-mono text-xs leading-none tabular-nums text-foreground"
+            >
+              {{ timeTrackerElapsedText }}
+            </span>
+            <span class="text-sm leading-none text-muted-foreground">+</span>
+          </span>
         </div>
         <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
-          <AnalyticsTimeTracker ref="timeTrackerCardRef" />
+          <AnalyticsTimeTracker
+            ref="timeTrackerCardRef"
+            @update:last-end="(v) => (timeTrackerLastEnd = v)"
+          />
         </div>
       </div>
 

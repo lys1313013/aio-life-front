@@ -13,6 +13,10 @@ import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
 
+const emit = defineEmits<{
+  'update:last-end': [value: number];
+}>();
+
 const chartRef = ref<EchartsUIType>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
@@ -86,6 +90,10 @@ const loadData = async () => {
       };
     });
 
+    // 发送最后一条记录的结束时间（用于父组件计算"距离上次记录已过去多久"）
+    const lastEndTime = sortedRecords.length > 0 ? sortedRecords[0]!.endTime : 0;
+    emit('update:last-end', lastEndTime);
+
     // 处理时间轴区块 (改为竖向，自上而下 00:00 - 24:00)
     const totalMinutes = 24 * 60; // 一天总分钟数
     timelineBlocks.value = records.map((record) => {
@@ -139,6 +147,8 @@ const loadData = async () => {
     } else {
       totalStr = `${totalMins}m`;
     }
+
+    emit('update:last-end', lastEndTime);
 
     renderEcharts({
       title: {
@@ -234,6 +244,7 @@ const loadData = async () => {
     });
   } catch (error) {
     console.error('Failed to load time tracker data:', error);
+    emit('update:last-end', 0);
   } finally {
     loading.value = false;
   }
