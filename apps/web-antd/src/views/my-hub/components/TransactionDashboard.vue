@@ -47,7 +47,7 @@ const {
   getChartInstance: getMonthChartInstance,
 } = useEcharts(monthChartRef);
 
-const { isMobile } = usePreferences();
+const { isDark, isMobile } = usePreferences();
 
 const isIncome = computed(() => props.type === 'income');
 const labelName = computed(() => (isIncome.value ? '收入' : '支出'));
@@ -304,8 +304,8 @@ const getBarSeriesData = (useMonthly: boolean) => {
       formatter: (params: any) =>
         params.value > 0 ? formatCurrency(params.value) : '',
       fontSize: 12,
-      color: '#333',
-      fontWeight: 'bold',
+      // 跟随主题切换，避免暗色模式下看不清
+      color: isDark.value ? 'rgba(255, 255, 255, 0.85)' : '#333',
     },
     itemStyle: { color: 'rgba(0,0,0,0)' },
     emphasis: { disabled: true },
@@ -357,11 +357,22 @@ const updateCharts = () => {
 
   // 渲染柱状图（全部年份 → 年度趋势，单年 → 月度趋势）
   const isYearlyBar = !isSingleYear.value;
+  const xAxisData = isYearlyBar ? getYears() : getMonths();
+  // X 轴标签较多时旋转，避免与底部图例重叠
+  const xAxisLabelRotate =
+    xAxisData.length > 8 ? 30 : xAxisData.length > 6 ? 15 : 0;
   renderEcharts({
     grid: {
       left: '3%',
       right: '4%',
-      bottom: isMobile.value ? '15%' : '3%',
+      // 为底部图例 + X 轴标签预留足够空间，避免重叠
+      bottom: isMobile.value
+        ? xAxisData.length > 6
+          ? '28%'
+          : '22%'
+        : xAxisData.length > 8
+          ? '22%'
+          : '16%',
       containLabel: true,
     },
     tooltip: {
@@ -399,8 +410,14 @@ const updateCharts = () => {
     xAxis: [
       {
         type: 'category',
-        data: isYearlyBar ? getYears() : getMonths(),
+        data: xAxisData,
         axisTick: { alignWithLabel: true },
+        axisLabel: {
+          rotate: xAxisLabelRotate,
+          fontSize: isMobile.value ? 10 : 12,
+          // 标签过长时自动省略中间字符，防止互相挤压
+          hideOverlap: true,
+        },
       },
     ],
     yAxis: [{ type: 'value' }],
@@ -515,7 +532,8 @@ const updateCharts = () => {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: isMobile.value ? '20%' : '3%',
+      // 面积图 X 轴标签固定旋转 45°，需要更多底部空间避让图例
+      bottom: isMobile.value ? '26%' : '18%',
       containLabel: true,
     },
     tooltip: {
@@ -635,6 +653,10 @@ onMounted(async () => {
 watch([selectedYear, isMobile], (newVal) => {
   updateCharts();
   emit('yearChange', newVal[0]);
+});
+// 主题切换时重绘，更新柱顶合计等文字颜色
+watch(isDark, () => {
+  updateCharts();
 });
 
 defineExpose({
