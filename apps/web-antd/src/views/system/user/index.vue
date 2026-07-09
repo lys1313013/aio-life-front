@@ -5,6 +5,7 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 import { useVbenModal } from '@vben/common-ui';
 
 import {
+  ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -98,7 +99,7 @@ const gridOptions: VxeGridProps<RowType> = {
     },
   },
   toolbarConfig: {
-    custom: true,
+    custom: false,
     slots: {
       tools: 'toolbar-tools',
     },
@@ -109,6 +110,10 @@ const [Grid, gridApi] = useVbenVxeGrid({
   formOptions,
   gridOptions,
 } as any);
+
+const openColumnConfig = () => {
+  gridApi.grid?.openCustom();
+};
 
 function openFormModal(row?: RowType) {
   formModalApi.setData({ values: row || {} }).open();
@@ -137,6 +142,9 @@ function handleReload() {
         <Button type="primary" @click="openFormModal()">
           <PlusOutlined />
           新增用户
+        </Button>
+        <Button class="ml-auto" type="text" @click="openColumnConfig">
+          <ColumnWidthOutlined />
         </Button>
       </template>
       <template #isOnline="{ row }">

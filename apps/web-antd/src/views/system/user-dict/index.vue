@@ -6,7 +6,7 @@ import { onMounted, ref } from 'vue';
 
 import { IconPicker, Page } from '@vben/common-ui';
 
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -116,7 +116,7 @@ const formOptions: VbenFormProps = {
 
 const gridOptions: VxeGridProps<any> = {
   toolbarConfig: {
-    custom: true,
+    custom: false,
     refresh: true,
     zoom: true,
     // @ts-ignore 正式环境时有完整的类型声明
@@ -196,6 +196,10 @@ const gridOptions: VxeGridProps<any> = {
 };
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
+
+const openColumnConfig = () => {
+  gridApi.grid?.openCustom();
+};
 
 const handleDelete = async (row: any) => {
   try {
@@ -281,6 +285,9 @@ const handleSave = async () => {
           <!-- 表格顶部操作按钮 -->
           <template #toolbar-actions>
             <Button type="primary" @click="handleAdd"> 添加基础值 </Button>
+            <Button class="ml-auto" type="text" @click="openColumnConfig">
+              <ColumnWidthOutlined />
+            </Button>
           </template>
 
           <!-- 字典名称 插槽 -->

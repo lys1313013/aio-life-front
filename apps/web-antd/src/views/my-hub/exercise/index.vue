@@ -11,7 +11,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -791,8 +791,8 @@ const gridOptions: VxeGridProps<RowType> = {
     // 是否显示搜索表单控制按钮
     // @ts-ignore 正式环境时有完整的类型声明
     search: true,
-    // 启用列配置
-    custom: true,
+    // 隐藏默认列配置按钮，使用自定义按钮
+    custom: false,
   },
 };
 
@@ -828,6 +828,10 @@ const [Grid, gridApi] = useVbenVxeGrid({
     // 但 vxe-grid 组件支持 v-on 绑定所有 vxe-table 事件
   },
 } as any);
+
+const openColumnConfig = () => {
+  gridApi.grid?.openCustom();
+};
 
 const updateColumnsVisibility = () => {
   if (!gridApi?.grid) return;
@@ -1017,6 +1021,9 @@ const tableReload = () => {
           >
             <Button class="mr-2" type="primary" danger> 删除 </Button>
           </Popconfirm>
+          <Button class="ml-auto" type="text" @click="openColumnConfig">
+            <ColumnWidthOutlined />
+          </Button>
         </template>
         <template #action="{ row }">
           <Button type="link" size="small" @click="openFormModal(row)">

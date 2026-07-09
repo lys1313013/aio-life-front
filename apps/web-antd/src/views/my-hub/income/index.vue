@@ -7,7 +7,7 @@ import { onMounted, ref } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -103,7 +103,6 @@ const gridOptions: VxeGridProps<RowType> = {
   maxHeight: isMobile.value ? 600 : 1000, // 手机端减小表格高度
   columns: [
     { title: '序号', type: 'seq', width: 60 },
-    { field: 'incomeId', visible: false },
     {
       field: 'amt',
       cellType: 'number',
@@ -187,8 +186,8 @@ const gridOptions: VxeGridProps<RowType> = {
     // 是否显示搜索表单控制按钮
     // @ts-ignore 正式环境时有完整的类型声明
     search: true,
-    // 启用列配置
-    custom: true,
+    // 隐藏默认列配置按钮，使用自定义按钮
+    custom: false,
   },
 };
 
@@ -213,6 +212,10 @@ function openAddFormModal() {
 const dashboardRef = ref<InstanceType<typeof TransactionDashboard>>();
 
 const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
+
+const openColumnConfig = () => {
+  gridApi.grid?.openCustom();
+};
 
 const deleteRow = async (row: RowType) => {
   try {
@@ -259,6 +262,9 @@ const tableReload = async () => {
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
+        </Button>
+        <Button class="ml-auto" type="text" @click="openColumnConfig">
+          <ColumnWidthOutlined />
         </Button>
       </template>
       <template #action="{ row }">

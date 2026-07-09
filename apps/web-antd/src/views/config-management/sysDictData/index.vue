@@ -8,6 +8,7 @@ import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
 import {
+  ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -209,8 +210,8 @@ const gridOptions: VxeGridProps<RowType> = {
     // 是否显示搜索表单控制按钮
     // @ts-ignore 正式环境时有完整的类型声明
     search: true,
-    // 启用列配置
-    custom: true,
+    // 隐藏默认列配置按钮，使用自定义按钮
+    custom: false,
   },
 };
 
@@ -250,6 +251,10 @@ const [Grid, gridApi] = useVbenVxeGrid<RowType>({
   formOptions: formOptions as any,
   gridOptions: gridOptions as any,
 });
+
+const openColumnConfig = () => {
+  gridApi.grid?.openCustom();
+};
 
 const deleteRow = async (row: RowType) => {
   try {
@@ -320,6 +325,9 @@ function handleDelete(item: RowType) {
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
+        </Button>
+        <Button class="ml-auto" type="text" @click="openColumnConfig">
+          <ColumnWidthOutlined />
         </Button>
       </template>
       <template #action="{ row }">
