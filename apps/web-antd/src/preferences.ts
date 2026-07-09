@@ -9,6 +9,7 @@ export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
     name: import.meta.env.VITE_APP_TITLE,
+    preferencesButtonPosition: 'header',
   },
   copyright: {
     companyName: 'lys1313013',

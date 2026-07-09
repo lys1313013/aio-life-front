@@ -102,43 +102,43 @@ const gridOptions: VxeGridProps<RowType> = {
   stripe: true, // 是否显示斑马纹
   maxHeight: isMobile.value ? 600 : 1000, // 手机端减小表格高度
   columns: [
-    { title: '序号', type: 'seq', width: 50 },
-    { title: '主键', visible: false },
+    { title: '序号', type: 'seq', width: 60 },
+    { field: 'incomeId', visible: false },
     {
       field: 'amt',
       cellType: 'number',
       title: '金额',
-      width: 100,
+      width: 120,
       sortable: true,
       align: 'right',
       formatter: ({ cellValue }) => {
         return cellValue.toFixed(2);
       },
     },
-    { field: 'remark', title: '备注', sortable: true, width: 120 },
+    { field: 'remark', title: '备注', sortable: true, minWidth: 150 },
     {
       field: 'incTypeId',
       title: '收入类型',
-      width: 100,
+      width: 120,
       sortable: true,
       formatter: ({ cellValue }) => {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'incDate', title: '时间', sortable: true, width: 120 },
+    { field: 'incDate', title: '时间', sortable: true, width: 140 },
     {
       field: 'updateTime',
       title: '修改时间',
       sortable: true,
-      width: 160,
-      visible: !isMobile.value, // 手机端隐藏修改时间列
+      width: 180,
+      visible: false,
     },
     {
       field: 'action',
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 100,
+      width: 120,
     },
   ],
   showFooter: true, // 显示底部合计行
@@ -187,6 +187,8 @@ const gridOptions: VxeGridProps<RowType> = {
     // 是否显示搜索表单控制按钮
     // @ts-ignore 正式环境时有完整的类型声明
     search: true,
+    // 启用列配置
+    custom: true,
   },
 };
 

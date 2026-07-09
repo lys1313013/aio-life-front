@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { NotificationItem } from '@vben/layouts';
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
@@ -35,6 +35,8 @@ const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
 const unreadCount = ref(0);
+let pollTimer: null | ReturnType<typeof setInterval> = null;
+let lastFetchedCount = -1;
 const showDot = computed(() => unreadCount.value > 0);
 
 const menus = computed(() => [
@@ -132,6 +134,7 @@ async function fetchNotifications() {
 
     notifications.value = notificationsWithAvatar;
     unreadCount.value = notificationsWithAvatar.length;
+    lastFetchedCount = notificationsWithAvatar.length;
   } catch (error) {
     console.error('Failed to fetch notifications:', error);
   }
@@ -141,13 +144,15 @@ async function fetchUnreadCount() {
   try {
     const res = await getUnreadCountApi();
     const newCount = res?.count || 0;
+    unreadCount.value = newCount;
 
-    if (newCount > 0 && newCount !== notifications.value.length) {
+    if (newCount > 0 && newCount !== lastFetchedCount) {
       await fetchNotifications();
+      lastFetchedCount = newCount;
     } else if (newCount === 0) {
       notifications.value = [];
+      lastFetchedCount = 0;
     }
-    unreadCount.value = newCount;
   } catch (error) {
     console.error('Failed to fetch unread count:', error);
   }
@@ -157,7 +162,14 @@ async function fetchUnreadCount() {
 onMounted(() => {
   fetchUnreadCount();
   // Poll every 30 seconds
-  setInterval(fetchUnreadCount, 30_000);
+  pollTimer = setInterval(fetchUnreadCount, 30_000);
+});
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 });
 
 async function handleNoticeClear() {

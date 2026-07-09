@@ -13,8 +13,8 @@ export interface Message {
   avatar?: string;
 }
 
-export async function getMessageListApi() {
-  return requestClient.get<Message[]>('/message/list');
+export async function getMessageListApi(params?: { isRead?: boolean }) {
+  return requestClient.get<Message[]>('/message/list', { params });
 }
 
 export async function getUnreadCountApi() {
