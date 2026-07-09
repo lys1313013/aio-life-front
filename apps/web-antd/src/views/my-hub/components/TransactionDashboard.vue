@@ -118,6 +118,18 @@ const filteredMonthlyData = computed(() => {
   });
 });
 
+// 平均金额（根据选中年份动态计算）
+// 单年：月均（总额 / 有数据的月份数）
+// 全部：年均（总额 / 年数）
+const averageAmount = computed(() => {
+  if (selectedYear.value === 'all') {
+    const years = filteredData.value.length || 1;
+    return Number((totalAmount.value / years).toFixed(2));
+  }
+  const months = filteredMonthlyData.value.length || 1;
+  return Number((currentYearAmount.value / months).toFixed(2));
+});
+
 // 获取月份数据的月份列表
 const getMonths = () => {
   return filteredMonthlyData.value.map((item) => {
@@ -159,6 +171,7 @@ const getMonthlySeriesData = () => {
       type: 'line',
       stack: 'amount',
       areaStyle: {},
+      smooth: 0.3,
       emphasis: { focus: 'series' },
       symbol: 'emptyCircle',
       symbolSize: 4,
@@ -685,6 +698,15 @@ defineExpose({
               {{ formatCurrency(currentYearAmount) }}
             </div>
           </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-label">
+              {{ selectedYear === 'all' ? '年' : '月' }}均{{ labelName }}
+            </div>
+            <div class="stat-value">
+              {{ formatCurrency(averageAmount) }}
+            </div>
+          </div>
         </div>
 
         <div class="year-selector-wrapper">
@@ -887,15 +909,19 @@ defineExpose({
   }
 
   .total-stats {
-    flex-direction: row;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
     padding: 12px;
   }
 
+  .stat-item {
+    flex: 1 1 calc(50% - 8px);
+    min-width: calc(50% - 8px);
+  }
+
+  /* 移动端隐藏分隔线，改为换行布局 */
   .stat-divider {
-    width: 1px;
-    height: 40px;
-    background: rgb(255 255 255 / 20%);
+    display: none;
   }
 
   .year-selector-wrapper {
@@ -919,11 +945,11 @@ defineExpose({
   }
 
   .stat-value {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .stat-label {
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 </style>
