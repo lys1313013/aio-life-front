@@ -72,57 +72,16 @@ async function bootstrap(namespace: string) {
 
   app.mount('#app');
 
-  if (import.meta.env.PROD) {
-    await registerServiceWorker();
+  if (import.meta.env.PROD && import.meta.env.VITE_PWA === 'true') {
+    const { registerSW } = await import('virtual:pwa-register');
+    registerSW({
+      immediate: true,
+      onRegistered(r) {
+        // 每小时检查一次更新
+        r && setInterval(() => r.update(), 60 * 60 * 1000);
+      },
+    });
   }
-}
-
-async function registerServiceWorker() {
-  if (import.meta.env.VITE_PWA !== 'true') return;
-
-  const [{ registerSW }, { Button, notification }, { h }] = await Promise.all([
-    import('virtual:pwa-register'),
-    import('ant-design-vue'),
-    import('vue'),
-  ]);
-
-  const updateSW = registerSW({
-    onNeedRefresh() {
-      const key = 'pwa-update';
-      notification.info({
-        key,
-        message: '发现新版本',
-        description: '点击刷新以使用最新版本',
-        duration: 0,
-        btn: () =>
-          h(
-            Button,
-            {
-              type: 'primary',
-              size: 'small',
-              onClick: () => {
-                notification.close(key);
-                updateSW(true);
-              },
-            },
-            { default: () => '立即刷新' },
-          ),
-      });
-    },
-    onOfflineReady() {
-      // 离线就绪，不需要弹窗提醒
-    },
-    onRegistered(r) {
-      // 每小时检查一次更新
-      r &&
-        setInterval(
-          () => {
-            r.update();
-          },
-          60 * 60 * 1000,
-        );
-    },
-  });
 }
 
 export { bootstrap };

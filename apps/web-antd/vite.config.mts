@@ -5,13 +5,15 @@ export default defineConfig(async () => {
     application: {
       compress: true,
       pwaOptions: {
-        registerType: 'prompt',
+        registerType: 'autoUpdate',
         injectRegister: false,
         devOptions: { enabled: true },
         includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
           cleanupOutdatedCaches: true,
+          skipWaiting: true,
+          clientsClaim: true,
         },
         manifest: {
           name: 'AIO-LIFE',
