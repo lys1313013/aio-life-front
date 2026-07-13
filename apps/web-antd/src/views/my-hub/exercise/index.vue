@@ -390,16 +390,45 @@ const updateCharts = () => {
   });
 
   // 渲染饼图
+  const totalTimes = typeData.reduce((sum, item) => sum + item.value, 0);
+  const modifiedTypeData = typeData.map((item) => {
+    const percent = totalTimes > 0 ? (item.value / totalTimes) * 100 : 0;
+    if (percent < 1) {
+      return { ...item, label: { show: false }, labelLine: { show: false } };
+    }
+    return item;
+  });
+
   renderPieChart({
+    title: {
+      text: `{val|${totalTimes}}`,
+      subtext: '总次数',
+      top: 'middle' as const,
+      left: 'center' as const,
+      textStyle: {
+        rich: {
+          val: {
+            fontSize: isMobile.value ? 16 : 20,
+            fontWeight: 'bold' as const,
+          },
+        },
+      },
+      subtextStyle: {
+        fontSize: 12,
+      },
+    },
     tooltip: {
       trigger: 'item',
       formatter: '{a} <br/>{b}: {c} ({d}%)',
     },
     legend: isMobile.value
       ? {
+          type: 'scroll',
           orient: 'horizontal',
-          bottom: '0',
+          bottom: 0,
           left: 'center',
+          padding: [0, 0, 0, 0],
+          itemGap: 8,
         }
       : {
           orient: 'vertical',
@@ -410,11 +439,10 @@ const updateCharts = () => {
       {
         name: '运动类型分布',
         type: 'pie',
-        radius: isMobile.value ? ['0%', '55%'] : ['0%', '80%'],
-        center: isMobile.value ? ['50%', '45%'] : ['50%', '50%'],
+        radius: isMobile.value ? ['35%', '55%'] : ['40%', '65%'],
+        center: ['50%', '50%'],
         avoidLabelOverlap: true,
         itemStyle: {
-          borderRadius: 10,
           borderWidth: 2,
         },
         label: {
@@ -423,7 +451,7 @@ const updateCharts = () => {
           formatter: (params: any) => {
             return `${params.name}\n${params.value}次 (${params.percent}%)`;
           },
-          fontSize: 12,
+          fontSize: isMobile.value ? 10 : 12,
         },
         emphasis: {
           label: {
@@ -434,10 +462,10 @@ const updateCharts = () => {
         },
         labelLine: {
           show: true,
-          length: 10,
-          length2: 10,
+          length: isMobile.value ? 5 : 10,
+          length2: isMobile.value ? 5 : 10,
         },
-        data: typeData,
+        data: modifiedTypeData,
       },
     ],
   });
