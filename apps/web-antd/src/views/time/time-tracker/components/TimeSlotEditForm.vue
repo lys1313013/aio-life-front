@@ -28,7 +28,6 @@ import {
   Modal,
   Popconfirm,
   Row,
-  Select,
   Textarea,
   theme,
   TimePicker,
@@ -138,7 +137,16 @@ const formState = ref<LocalFormState>({
   relateType: undefined,
 });
 
-const exerciseTypeOptions = ref<Array<{ label: string; value: string }>>([]);
+interface ExerciseTypeOption {
+  label: string;
+  value: string;
+  icon?: string;
+  color?: string;
+}
+
+const exerciseTypeOptions = ref<ExerciseTypeOption[]>([]);
+const exerciseTypeModalVisible = ref(false);
+const currentEditingExerciseIndex = ref(-1);
 const relateTypeList = ref<Array<{ label: string; value: number }>>([]);
 
 // 为阅读、观影标题自动添加《》
@@ -200,6 +208,8 @@ const loadExerciseTypes = async () => {
       exerciseTypeOptions.value = res.dictDetailList.map((item: any) => ({
         label: item.dictLabel || item.label,
         value: String(item.id),
+        icon: item.icon || 'lucide:dumbbell',
+        color: item.color || '#1890ff',
       }));
     }
   } catch (error) {
@@ -214,10 +224,10 @@ onMounted(() => {
 });
 
 // 长按连续调整
-const longPressTimer = ref<ReturnType<typeof setTimeout> | null>(null);
-const repeatTimer = ref<ReturnType<typeof setInterval> | null>(null);
+const longPressTimer = ref<null | ReturnType<typeof setTimeout>>(null);
+const repeatTimer = ref<null | ReturnType<typeof setInterval>>(null);
 const longPressDirection = ref(0);
-const longPressType = ref<'start' | 'end'>('start');
+const longPressType = ref<'end' | 'start'>('start');
 const longPressTriggered = ref(false);
 const LONG_PRESS_DELAY = 400;
 const REPEAT_INTERVAL = 100;
@@ -233,7 +243,7 @@ const clearAllTimers = () => {
   }
 };
 
-const doAdjust = (direction: number, type: 'start' | 'end') => {
+const doAdjust = (direction: number, type: 'end' | 'start') => {
   if (type === 'start') {
     adjustStartTime(direction);
   } else {
@@ -615,6 +625,43 @@ const addExercise = () => {
   });
 };
 
+// 打开运动类型选择弹窗
+const openExerciseTypeModal = (index: number) => {
+  currentEditingExerciseIndex.value = index;
+  exerciseTypeModalVisible.value = true;
+};
+
+// 选择运动类型
+const handleExerciseTypeSelect = (option: ExerciseTypeOption) => {
+  const index = currentEditingExerciseIndex.value;
+  const exercise =
+    index >= 0 ? formState.value.exercises[index] : undefined;
+  if (exercise) {
+    exercise.exerciseTypeId = option.value;
+    handleExerciseTypeChange(option.value, index);
+  }
+  exerciseTypeModalVisible.value = false;
+  currentEditingExerciseIndex.value = -1;
+};
+
+// 根据 exerciseTypeId 获取运动类型选项
+const getExerciseTypeOption = (
+  typeId: string,
+): ExerciseTypeOption | undefined => {
+  return exerciseTypeOptions.value.find((opt) => opt.value === typeId);
+};
+
+// 渲染运动类型图标
+const renderExerciseTypeIcon = (option: ExerciseTypeOption | undefined) => {
+  if (!option?.icon) return null;
+  try {
+    return createIconifyIcon(option.icon);
+  } catch (error) {
+    console.warn(`Failed to create icon: ${option.icon}`, error);
+    return null;
+  }
+};
+
 const handleExerciseTypeChange = (value: any, index: number) => {
   if (index === 0 && value && typeof value === 'string') {
     const option = exerciseTypeOptions.value.find((opt) => opt.value === value);
@@ -644,7 +691,7 @@ const handleDelete = () => {
 };
 
 // mousedown / touchstart：启动长按检测
-const startLongPress = (direction: number, type: 'start' | 'end') => {
+const startLongPress = (direction: number, type: 'end' | 'start') => {
   clearAllTimers();
   longPressDirection.value = direction;
   longPressType.value = type;
@@ -669,7 +716,7 @@ const stopLongPress = () => {
 };
 
 // @click：键盘 / 无障碍后备（mousedown 已处理的会被 longPressTriggered 屏蔽）
-const handleClick = (direction: number, type: 'start' | 'end') => {
+const handleClick = (direction: number, type: 'end' | 'start') => {
   if (longPressTriggered.value) {
     longPressTriggered.value = false;
     return;
@@ -778,7 +825,7 @@ onUnmounted(() => {
                 style="width: 100%"
                 placeholder="选择开始时间"
                 :input-read-only="isMobile"
-                @openChange="handleTimePickerOpenChange"
+                @open-change="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
                 <span
@@ -794,7 +841,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.startTime"
                     @click="handleClick(-1, 'start')"
-                  >-1</Button>
+                    >-1</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -809,7 +857,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.startTime"
                     @click="handleClick(1, 'start')"
-                  >+1</Button>
+                    >+1</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -824,7 +873,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.startTime"
                     @click="handleClick(-30, 'start')"
-                  >-30</Button>
+                    >-30</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -839,7 +889,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.startTime"
                     @click="handleClick(30, 'start')"
-                  >+30</Button>
+                    >+30</Button
+                  >
                 </span>
               </div>
             </div>
@@ -854,7 +905,7 @@ onUnmounted(() => {
                 style="width: 100%"
                 placeholder="选择结束时间"
                 :input-read-only="isMobile"
-                @openChange="handleTimePickerOpenChange"
+                @open-change="handleTimePickerOpenChange"
               />
               <div class="time-adjust-buttons">
                 <span
@@ -870,7 +921,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.endTime"
                     @click="handleClick(-1, 'end')"
-                  >-1</Button>
+                    >-1</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -885,7 +937,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.endTime"
                     @click="handleClick(1, 'end')"
-                  >+1</Button>
+                    >+1</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -900,7 +953,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.endTime"
                     @click="handleClick(-30, 'end')"
-                  >-30</Button>
+                    >-30</Button
+                  >
                 </span>
                 <span
                   class="adjust-btn-wrap"
@@ -915,7 +969,8 @@ onUnmounted(() => {
                     size="small"
                     :disabled="!formState.endTime"
                     @click="handleClick(30, 'end')"
-                  >+30</Button>
+                    >+30</Button
+                  >
                 </span>
               </div>
             </div>
@@ -925,7 +980,9 @@ onUnmounted(() => {
 
       <Form.Item>
         <div style="display: flex; gap: 8px; align-items: center">
-          <span style="flex-shrink: 0; color: v-bind('token.colorText')">时长</span>
+          <span style="flex-shrink: 0; color: v-bind('token.colorText')"
+            >时长</span
+          >
           <div style="display: flex; flex: 1; gap: 8px">
             <div style="display: flex; flex: 1; gap: 4px; align-items: center">
               <InputNumber
@@ -1006,14 +1063,44 @@ onUnmounted(() => {
             "
           >
             <div style="flex: 2">
-              <Select
-                v-model:value="exercise.exerciseTypeId"
-                placeholder="运动类型"
-                :options="exerciseTypeOptions"
-                allow-clear
-                style="width: 100%"
-                @change="handleExerciseTypeChange($event, index)"
-              />
+              <div
+                class="exercise-type-trigger"
+                @click="openExerciseTypeModal(index)"
+              >
+                <template
+                  v-if="
+                    exercise.exerciseTypeId &&
+                    getExerciseTypeOption(exercise.exerciseTypeId)
+                  "
+                >
+                  <div class="exercise-icon-wrapper">
+                    <component
+                      v-if="
+                        renderExerciseTypeIcon(
+                          getExerciseTypeOption(exercise.exerciseTypeId),
+                        )
+                      "
+                      :is="
+                        renderExerciseTypeIcon(
+                          getExerciseTypeOption(exercise.exerciseTypeId),
+                        )!
+                      "
+                      class="exercise-type-icon"
+                      :style="{
+                        color: getExerciseTypeOption(exercise.exerciseTypeId)
+                          ?.color,
+                      }"
+                    />
+                  </div>
+                  <span class="exercise-type-name">{{
+                    getExerciseTypeOption(exercise.exerciseTypeId)?.label
+                  }}</span>
+                </template>
+                <template v-else>
+                  <span class="placeholder-text">选择运动类型</span>
+                </template>
+                <RightOutlined class="trigger-arrow" />
+              </div>
             </div>
             <div style="flex: 1">
               <InputNumber
@@ -1110,6 +1197,51 @@ onUnmounted(() => {
           <span class="category-name-large">{{
             getDisplayName(category)
           }}</span>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model:open="exerciseTypeModalVisible"
+      :closable="false"
+      :centered="true"
+      :footer="null"
+      :width="isMobile ? '95vw' : 500"
+      :destroy-on-close="true"
+    >
+      <div class="category-grid">
+        <div
+          v-for="option in exerciseTypeOptions"
+          :key="option.value"
+          class="category-grid-item"
+          :class="{
+            active:
+              currentEditingExerciseIndex >= 0 &&
+              formState.exercises[currentEditingExerciseIndex]
+                ?.exerciseTypeId === option.value,
+          }"
+          @click="handleExerciseTypeSelect(option)"
+        >
+          <div class="category-icon-wrapper">
+            <component
+              v-if="renderExerciseTypeIcon(option)"
+              :is="renderExerciseTypeIcon(option)!"
+              class="category-icon-large"
+              :style="{ color: option.color }"
+            />
+            <div
+              v-else
+              class="category-color-dot-large"
+              :style="{ backgroundColor: option.color }"
+            ></div>
+          </div>
+          <span class="category-name-large">{{ option.label }}</span>
+        </div>
+        <div
+          v-if="exerciseTypeOptions.length === 0"
+          class="exercise-type-empty"
+        >
+          暂无运动类型
         </div>
       </div>
     </Modal>
@@ -1298,4 +1430,47 @@ onUnmounted(() => {
   text-align: right;
 }
 
+.exercise-type-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  min-height: 32px;
+  cursor: pointer;
+  background-color: v-bind('token.colorBgContainer');
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.exercise-type-trigger:hover {
+  border-color: v-bind('token.colorPrimary');
+}
+
+.exercise-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+
+.exercise-type-icon {
+  font-size: 16px;
+}
+
+.exercise-type-name {
+  flex: 1;
+  overflow: hidden;
+  font-size: 14px;
+  color: v-bind('token.colorText');
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exercise-type-empty {
+  padding: 24px;
+  color: v-bind('token.colorTextQuaternary');
+  text-align: center;
+  grid-column: 1 / -1;
+}
 </style>
