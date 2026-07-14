@@ -85,15 +85,10 @@ export default {
     await this.getDeviceStatusOptions();
   },
   methods: {
-    getAuthSrc(fileId) {
-      if (!fileId) return '';
-      // 已有缓存则直接返回
-      if (this.authImageUrls[fileId]) return this.authImageUrls[fileId];
-      // 异步获取认证图片
-      fetchAuthImageUrl(fileId).then((url) => {
-        this.authImageUrls[fileId] = url;
-      });
-      return '';
+    onImageError(fileId) {
+      if (fileId in this.authImageUrls) {
+        this.authImageUrls[fileId] = '';
+      }
     },
     async query() {
       const res = await query({
@@ -124,6 +119,19 @@ export default {
       res.items.forEach((i) => {
         const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[i.status];
         if (key) this.statusCount[key]++;
+      });
+      // 主动触发认证图片 URL 的加载
+      res.items.forEach((item) => {
+        if (item.fileId && !(item.fileId in this.authImageUrls)) {
+          this.authImageUrls[item.fileId] = null;
+          fetchAuthImageUrl(item.fileId)
+            .then((url) => {
+              this.authImageUrls[item.fileId] = url;
+            })
+            .catch(() => {
+              this.authImageUrls[item.fileId] = '';
+            });
+        }
       });
     },
 
@@ -463,7 +471,38 @@ export default {
             <div class="status-badge" :class="getStatusClass(item.status)">
               {{ getStatusText(item.status) }}
             </div>
-            <img v-if="item.fileId" :src="getAuthSrc(item.fileId)" :alt="item.name" />
+            <!-- 图片三态：加载中骨架 / 已加载图片 / 无图或失败回退 -->
+            <template v-if="item.fileId">
+              <div
+                v-if="!(item.fileId in authImageUrls) || authImageUrls[item.fileId] === null"
+                class="image-skeleton"
+                aria-label="loading"
+              >
+                <div class="shimmer"></div>
+              </div>
+              <img
+                v-else-if="authImageUrls[item.fileId]"
+                :src="authImageUrls[item.fileId]"
+                :alt="item.name"
+                class="device-img"
+                @error="onImageError(item.fileId)"
+              />
+              <div v-else class="default-icon">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </div>
+            </template>
             <div v-else class="default-icon">
               <svg
                 viewBox="0 0 24 24"
@@ -472,7 +511,7 @@ export default {
               >
                 <path
                   d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
-                  stroke="#888"
+                  stroke="currentColor"
                   stroke-width="2"
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -557,14 +596,69 @@ export default {
   overflow: hidden;
 }
 
-.card-image img {
+.card-image .device-img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background-color: #f5f5f5;
+  background-color: hsl(var(--secondary, 210 10% 96%));
+  animation: img-fade-in 0.35s ease-out;
+}
+
+@keyframes img-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.image-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: hsl(var(--secondary, 210 10% 96%));
+  overflow: hidden;
+}
+
+.image-skeleton .shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 45%) 50%,
+    transparent 100%
+  );
+  animation: shimmer-move 1.4s infinite;
+}
+
+.dark .image-skeleton .shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 8%) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes shimmer-move {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .card-content {
@@ -632,7 +726,8 @@ export default {
   justify-content: center;
   width: 100%;
   height: 100%;
-  background-color: #f5f5f5;
+  color: hsl(var(--muted-foreground, 215 14% 53%));
+  background-color: hsl(var(--secondary, 210 10% 96%));
 }
 
 .default-icon svg {
