@@ -550,11 +550,11 @@ function navTo(nav: { url?: string }) {
       </template>
     </div>
     <div
-      class="mt-2 grid items-start gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3 lg:items-stretch"
+      class="mt-2 grid items-stretch gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3"
     >
       <!-- 时迹统计 -->
       <div
-        class="dashboard-section flex min-h-[220px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
+        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex cursor-pointer items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -589,12 +589,12 @@ function navTo(nav: { url?: string }) {
       </div>
 
       <!-- 快捷导航 -->
-      <QuickNavSection class="dashboard-section lg:min-h-[260px]" />
+      <QuickNavSection class="dashboard-section" />
 
       <!-- 待办。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="watchedLoading || watchedTasks.length > 0"
-        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
+        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -612,7 +612,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-if="watchedLoading"
-          class="max-h-[220px] flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+          class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <Skeleton
             v-for="i in 4"
@@ -626,7 +626,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-else-if="watchedTasks.length === 0"
-          class="m-2.5 rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
+          class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
         >
           <svg
             class="mx-auto mb-2 size-8 text-muted-foreground"
@@ -731,7 +731,7 @@ function navTo(nav: { url?: string }) {
 
       <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
-        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
+        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex cursor-pointer items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -753,7 +753,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-if="thoughtsLoading"
-          class="max-h-[220px] flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+          class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
         >
           <Skeleton
             v-for="i in 4"
@@ -767,7 +767,7 @@ function navTo(nav: { url?: string }) {
 
         <div
           v-else-if="pinnedThoughts.length === 0"
-          class="m-2.5 rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
+          class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
         >
           <svg
             class="mx-auto mb-2 size-8 text-muted-foreground"
@@ -831,7 +831,7 @@ function navTo(nav: { url?: string }) {
       <!-- 运动：按天 × 运动类型向下滚动加载。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="exerciseLoading || !exerciseEmpty"
-        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
+        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -871,7 +871,7 @@ function navTo(nav: { url?: string }) {
       <!-- GitHub 最近提交：未绑定时不渲染。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
       <div
         v-if="githubBound"
-        class="dashboard-section flex min-h-0 min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:min-h-[240px] lg:min-h-[260px]"
+        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"

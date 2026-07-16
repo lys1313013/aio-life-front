@@ -169,7 +169,7 @@ function dragChange() {
 <template>
   <!-- 注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
   <div
-    class="quick-nav-shell flex min-h-0 min-w-0 select-none flex-col rounded-xl bg-card text-card-foreground sm:min-h-[240px]"
+    class="quick-nav-shell flex h-[240px] min-w-0 select-none flex-col overflow-hidden rounded-xl bg-card text-card-foreground sm:h-[250px] lg:h-[280px]"
   >
     <div
       class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -204,11 +204,11 @@ function dragChange() {
       </div>
     </div>
 
-    <div class="w-full flex-1">
+    <div class="flex min-h-0 w-full flex-1 flex-col">
       <!-- 加载/失败/空态 -->
       <div
         v-if="isLoading || loadFailed || isEmpty"
-        class="flex min-h-[120px] items-center justify-center bg-card"
+        class="flex flex-1 items-center justify-center bg-card"
       >
         <ASpin v-if="isLoading" />
         <AEmpty

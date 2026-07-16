@@ -42,7 +42,7 @@ defineExpose({ load });
   <div class="flex min-h-0 flex-1 flex-col">
     <div
       v-if="loading"
-      class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 max-h-[220px] sm:p-3 sm:pt-1.5"
+      class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
     >
       <Skeleton
         v-for="i in 4"
@@ -55,7 +55,7 @@ defineExpose({ load });
     </div>
     <div
       v-else-if="loaded && commits.length === 0"
-      class="m-2.5 flex-1 rounded-xl border border-dashed border-border py-4 text-center sm:m-3"
+      class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-4 text-center sm:m-3"
     >
       <svg
         class="mx-auto mb-1.5 size-7 text-muted-foreground"
