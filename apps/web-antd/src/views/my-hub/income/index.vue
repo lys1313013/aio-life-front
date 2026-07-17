@@ -8,7 +8,7 @@ import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
 import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
-import { Button, Popconfirm } from 'ant-design-vue';
+import { Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/income';
@@ -80,6 +80,17 @@ const formOptions: VbenFormProps = {
       },
       fieldName: 'incTypeId', // 修改为按收入类型查询
       label: '收入类型',
+    },
+    {
+      component: 'RangePicker',
+      componentProps: {
+        placeholder: ['开始日期', '结束日期'],
+        format: 'YYYY-MM-DD',
+        valueFormat: 'YYYY-MM-DD',
+        style: { width: '100%' },
+      },
+      fieldName: 'incTimeRange',
+      label: '日期区间',
     },
   ],
   // 控制表单是否显示折叠按钮
@@ -168,11 +179,13 @@ const gridOptions: VxeGridProps<RowType> = {
     ajax: {
       query: async ({ page }, formValues) => {
         await loadIncomeTypes();
+        // 处理查询条件
+        const processedCondition = processQueryCondition(formValues);
         return await query({
           page: page.currentPage,
           pageSize: page.pageSize,
           condition: {
-            ...formValues,
+            ...processedCondition,
             // 添加年份条件，当选择"全部"时不传递year参数
             ...(selectedYear.value === 'all'
               ? {}
@@ -239,6 +252,38 @@ const handleYearChange = async (year: 'all' | number) => {
   await gridApi.reload();
 };
 
+// 处理查询条件，将日期区间转换为开始时间和结束时间
+const processQueryCondition = (formValues: any) => {
+  const condition = { ...formValues };
+  // 处理日期区间
+  if (condition.incTimeRange && Array.isArray(condition.incTimeRange)) {
+    const [startTime, endTime] = condition.incTimeRange;
+    if (startTime) {
+      condition.startTime = startTime;
+    }
+    if (endTime) {
+      condition.endTime = endTime;
+    }
+    // 删除原始的日期区间字段
+    delete condition.incTimeRange;
+  }
+  return condition;
+};
+
+// 处理从图表点击选择月份
+const handleMonthSelect = (payload: {
+  endDate: string;
+  monthStr: string;
+  startDate: string;
+}) => {
+  message.success(`已选择月份: ${payload.monthStr}`);
+  if (gridApi && gridApi.formApi) {
+    gridApi.formApi.setValues({
+      incTimeRange: [payload.startDate, payload.endDate],
+    });
+  }
+};
+
 const tableReload = async () => {
   await gridApi.reload();
   // 刷新看板数据，但只在非年份选择触发时调用
@@ -255,6 +300,7 @@ const tableReload = async () => {
     <TransactionDashboard
       ref="dashboardRef"
       type="income"
+      @month-select="handleMonthSelect"
       @year-change="handleYearChange"
     />
     <!-- 收入列表 -->
