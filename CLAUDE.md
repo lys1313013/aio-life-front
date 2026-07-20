@@ -51,6 +51,59 @@ export async function uploadHonorAttachment(file: File) {
 - `FileVO` 类型定义在 `api/core/common.ts`，各模块通过 `import type { FileVO } from './common'` 复用
 - 注意：后端 ID 是 **string** 类型
 
+### 接口出入参规范（新模块强制）
+
+历史模块（Honor 等）直接复用 Entity 作为请求 / 响应对象，Entity 上标 `@TableField(exist = false)` 的瞬态字段承接 `fileIds` / `files` 等关联数据。**新模块不再沿用此做法**，应按如下拆分：
+
+- **Entity**：纯表映射，不加瞬态字段；仅在持久化场景使用
+- **`XxxRequest`**：请求 DTO，仅含业务入参字段（创建时不含 `id` / `createTime` 等系统字段；更新时按需携带 `id`）
+- **`XxxVO`**：响应 VO，含 Entity 字段 + 关联数据（如 `files: FileVO[]`、`commentCount: number`、`userName: string`）
+- **详情 VO**：字段多时可单独定义 `XxxDetailVO extends XxxVO`，携带嵌套列表（如 `comments: XxxCommentVO[]`）
+
+前端 API 文件也要对应拆分类型：
+
+```ts
+// 类型定义
+export interface FeedbackCreateRequest {
+  title: string;
+  content: string;
+  feedbackType: 'BUG' | 'SUGGESTION' | 'QUESTION' | 'OTHER';
+  fileIds?: string[];
+}
+
+export interface FeedbackVO {
+  id: string;
+  title: string;
+  status: string;
+  files: FileVO[];
+  // ...
+}
+
+// 接口函数
+export async function createFeedback(data: FeedbackCreateRequest) {
+  return await requestClient.post<FeedbackVO>('/feedback', data);
+}
+
+export async function queryMyFeedbacks(params: { status?: string; page: number; size: number }) {
+  return await requestClient.get<Page<FeedbackVO>>('/feedback/my', { params });
+}
+```
+
+### 文件 / 附件处理模式
+
+项目**没有**全局 `/file/upload` 接口。每个业务模块各自包装一个 `/<biz>/upload-attachment` 接口，内部统一调用后端 `IFileService.uploadAndSave(file, bizType, bucket, objectName, isPublic)`，文件元信息写入全局 `file` 表。
+
+**统一三步走**：
+1. **上传**：前端调 `/<biz>/upload-attachment` → 后端写 `file` 表，`biz_type` 按业务传（如 `honor_record`、`feedback`、`feedback_comment`），此时 `biz_id` 为空
+2. **绑定**：业务记录创建 / 更新后，后端调 `fileService.bindBizId(fileIds, bizType, bizId)` 把文件与业务记录关联
+3. **查询**：调 `fileService.getByBiz(bizType, bizId)` 反查该业务的所有文件
+
+**前端约定**：
+- 业务 API 文件提供 `uploadXxxAttachment(file: File): Promise<FileVO>` 函数，封装业务专属的上传接口
+- 业务 Entity / 表单入参包含 `fileIds: string[]`（提交时传给后端用于绑定）
+- 业务 Entity 响应包含 `files: FileVO[]`（查询时后端填充）
+- 文件展示（尤其图片）需要鉴权时，用 `fetchAuthImageUrl(id)` 或 `useAuthImageUrl` composable
+
 ### 路由与权限
 
 路由文件在 `apps/web-antd/src/router/routes/modules/`，按业务模块拆分。meta 常用字段：
