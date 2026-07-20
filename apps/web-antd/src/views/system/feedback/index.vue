@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { FeedbackDetailVO } from '#/api/core/feedback';
 
 import { ref } from 'vue';
 
 import { Page } from '@vben/common-ui';
 
-import {
-  Button,
-  Drawer,
-  Form,
-  Input,
-  message,
-  Select,
-  Tag,
-  Textarea,
-} from 'ant-design-vue';
+import { Button, Drawer, message, Select, Tag, Textarea } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import {
@@ -24,8 +16,6 @@ import {
   getAdminFeedbackDetail,
   queryAllFeedbacks,
   uploadFeedbackAttachment,
-  type FeedbackCommentVO,
-  type FeedbackDetailVO,
 } from '#/api/core/feedback';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -260,7 +250,7 @@ const handleChangeStatus = async () => {
   }
 };
 
-const getImageUrl = (fileId: string | number) => {
+const getImageUrl = (fileId: number | string) => {
   return imageUrlMap.value[String(fileId)] || '';
 };
 </script>
@@ -316,7 +306,10 @@ const getImageUrl = (fileId: string | number) => {
         <!-- 内容 -->
         <div class="mb-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/30">
           <div class="whitespace-pre-wrap text-sm">{{ detail.content }}</div>
-          <div v-if="detail.files && detail.files.length > 0" class="mt-3 flex flex-wrap gap-2">
+          <div
+            v-if="detail.files && detail.files.length > 0"
+            class="mt-3 flex flex-wrap gap-2"
+          >
             <img
               v-for="f in detail.files"
               :key="f.id"
@@ -330,12 +323,24 @@ const getImageUrl = (fileId: string | number) => {
         <div class="mb-4 rounded-lg border border-border p-3">
           <div class="mb-2 text-sm font-medium">变更状态</div>
           <div class="flex items-center gap-2">
-            <Select v-model:value="newStatus" class="flex-1" placeholder="选择状态">
-              <Select.Option v-for="opt in statusOptions.filter(o => o.value)" :key="opt.value" :value="opt.value">
+            <Select
+              v-model:value="newStatus"
+              class="flex-1"
+              placeholder="选择状态"
+            >
+              <Select.Option
+                v-for="opt in statusOptions.filter((o) => o.value)"
+                :key="opt.value"
+                :value="opt.value"
+              >
                 {{ opt.label }}
               </Select.Option>
             </Select>
-            <Button type="primary" :loading="statusLoading" @click="handleChangeStatus">
+            <Button
+              type="primary"
+              :loading="statusLoading"
+              @click="handleChangeStatus"
+            >
               更新
             </Button>
           </div>
@@ -344,7 +349,10 @@ const getImageUrl = (fileId: string | number) => {
         <!-- 评论时间线 -->
         <div class="mb-4">
           <h4 class="mb-3 font-semibold">评论记录</h4>
-          <div v-if="!detail.comments || detail.comments.length === 0" class="py-4 text-center text-sm text-gray-400">
+          <div
+            v-if="!detail.comments || detail.comments.length === 0"
+            class="py-4 text-center text-sm text-gray-400"
+          >
             暂无评论
           </div>
           <div v-else class="space-y-3">
@@ -352,15 +360,32 @@ const getImageUrl = (fileId: string | number) => {
               v-for="comment in detail.comments"
               :key="comment.id"
               class="rounded-lg border border-border p-3"
-              :class="comment.roleType === 'ADMIN' ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''"
+              :class="
+                comment.roleType === 'ADMIN'
+                  ? 'bg-blue-50/50 dark:bg-blue-900/10'
+                  : ''
+              "
             >
               <div class="mb-1 flex items-center gap-2 text-sm">
                 <span class="font-medium">{{ comment.userName }}</span>
-                <Tag v-if="comment.roleType === 'ADMIN'" color="blue" class="m-0 text-xs">管理员</Tag>
-                <span class="ml-auto text-xs text-gray-400">{{ comment.createTime }}</span>
+                <Tag
+                  v-if="comment.roleType === 'ADMIN'"
+                  color="blue"
+                  class="m-0 text-xs"
+                >
+                  管理员
+                </Tag>
+                <span class="ml-auto text-xs text-gray-400">{{
+                  comment.createTime
+                }}</span>
               </div>
-              <div class="whitespace-pre-wrap text-sm">{{ comment.content }}</div>
-              <div v-if="comment.files && comment.files.length > 0" class="mt-2 flex flex-wrap gap-2">
+              <div class="whitespace-pre-wrap text-sm">
+                {{ comment.content }}
+              </div>
+              <div
+                v-if="comment.files && comment.files.length > 0"
+                class="mt-2 flex flex-wrap gap-2"
+              >
                 <img
                   v-for="f in comment.files"
                   :key="f.id"

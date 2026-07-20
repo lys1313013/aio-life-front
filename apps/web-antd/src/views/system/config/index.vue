@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { SystemConfigVO } from '#/api/system/system-config';
+
 import { onMounted, ref } from 'vue';
 
 import {
@@ -12,22 +14,23 @@ import {
   message,
 } from 'ant-design-vue';
 
+import { queryAdminUsers } from '#/api/core/feedback';
 import {
   querySystemConfigs,
   updateSystemConfig,
-  type SystemConfigVO,
 } from '#/api/system/system-config';
-import { getUserListApi } from '#/api/system/user';
 
 const loading = ref(false);
 const configs = ref<SystemConfigVO[]>([]);
-const savingKey = ref<string | null>(null);
+const savingKey = ref<null | string>(null);
 
 // 编辑中的值
 const editValues = ref<Record<string, any>>({});
 
 // 管理员列表（用于 feedback.notify_admin_ids 的 select）
-const adminUsers = ref<{ id: string; nickname: string; username: string }[]>([]);
+const adminUsers = ref<{ id: string; nickname: string; username: string }[]>(
+  [],
+);
 
 const loadConfigs = async () => {
   try {
@@ -57,12 +60,8 @@ const loadConfigs = async () => {
 
 const loadAdminUsers = async () => {
   try {
-    const res = await getUserListApi({ page: 1, pageSize: 100, role: 'admin' });
-    adminUsers.value = (res?.items || res || []).map((u: any) => ({
-      id: String(u.id),
-      nickname: u.nickname || '',
-      username: u.username || '',
-    }));
+    const res = await queryAdminUsers();
+    adminUsers.value = res || [];
   } catch (error) {
     console.error('加载管理员列表失败', error);
   }
@@ -121,7 +120,9 @@ const getUserLabel = (userId: string) => {
         >
           <template #title>
             <div class="flex items-center gap-2">
-              <span class="font-medium text-card-foreground">{{ cfg.description || cfg.configKey }}</span>
+              <span class="font-medium text-card-foreground">{{
+                cfg.description || cfg.configKey
+              }}</span>
               <ATag class="m-0 text-xs">{{ cfg.configType }}</ATag>
             </div>
           </template>
@@ -136,7 +137,12 @@ const getUserLabel = (userId: string) => {
           </div>
 
           <!-- JSON 类型 - 管理员选择器 -->
-          <div v-if="cfg.configType === 'JSON' && cfg.configKey === 'feedback.notify_admin_ids'">
+          <div
+            v-if="
+              cfg.configType === 'JSON' &&
+              cfg.configKey === 'feedback.notify_admin_ids'
+            "
+          >
             <ASelect
               v-model:value="editValues[cfg.configKey]"
               mode="multiple"
@@ -144,11 +150,18 @@ const getUserLabel = (userId: string) => {
               class="w-full"
               style="min-height: 32px"
             >
-              <ASelect.Option v-for="user in adminUsers" :key="user.id" :value="user.id">
+              <ASelect.Option
+                v-for="user in adminUsers"
+                :key="user.id"
+                :value="user.id"
+              >
                 {{ user.nickname || user.username }} ({{ user.username }})
               </ASelect.Option>
             </ASelect>
-            <div v-if="editValues[cfg.configKey]?.length > 0" class="mt-2 flex flex-wrap gap-1">
+            <div
+              v-if="editValues[cfg.configKey]?.length > 0"
+              class="mt-2 flex flex-wrap gap-1"
+            >
               <ATag
                 v-for="uid in editValues[cfg.configKey]"
                 :key="uid"
@@ -200,7 +213,10 @@ const getUserLabel = (userId: string) => {
           </div>
         </ACard>
 
-        <div v-if="configs.length === 0 && !loading" class="py-20 text-center text-muted-foreground">
+        <div
+          v-if="configs.length === 0 && !loading"
+          class="py-20 text-center text-muted-foreground"
+        >
           暂无配置项
         </div>
       </div>

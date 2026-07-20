@@ -31,5 +31,7 @@ export async function getSystemConfig(key: string) {
  * 更新单项配置
  */
 export async function updateSystemConfig(key: string, configValue: string) {
-  return await requestClient.put<SystemConfigVO>(`/system-config/${key}`, { configValue });
+  return await requestClient.put<SystemConfigVO>(`/system-config/${key}`, {
+    configValue,
+  });
 }

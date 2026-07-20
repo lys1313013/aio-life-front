@@ -41,6 +41,26 @@ const routes: RouteRecordRaw[] = [
         path: '/system/user-dict',
         component: () => import('#/views/system/user-dict/index.vue'),
       },
+      {
+        meta: {
+          icon: 'mdi:message-alert-outline',
+          title: '反馈管理',
+          authority: ['admin'],
+        },
+        name: 'FeedbackAdmin',
+        path: '/system/feedback',
+        component: () => import('#/views/system/feedback/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'mdi:cog-outline',
+          title: '系统配置',
+          authority: ['admin'],
+        },
+        name: 'SystemConfig',
+        path: '/system/config',
+        component: () => import('#/views/system/config/index.vue'),
+      },
     ],
   },
 ];
