@@ -242,6 +242,7 @@ if (enableShortcutKey.value) {
             {{ altView }} L
           </DropdownMenuShortcut>
         </DropdownMenuItem>
+        <slot name="after-lock-screen" />
         <DropdownMenuItem
           class="mx-1 flex cursor-pointer items-center rounded-sm py-1 leading-8"
           @click="handleLogout"

@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 
 import { AuthenticationLoginExpiredModal } from '@vben/common-ui';
 import { useWatermark } from '@vben/hooks';
+import { createIconifyIcon } from '@vben/icons';
 import {
   BasicLayout,
   LockScreen,
@@ -82,6 +83,12 @@ const avatar = computed(() => {
 
 async function handleLogout() {
   await authStore.logout(false);
+}
+
+const FeedbackIcon = createIconifyIcon('mdi:message-alert-outline');
+
+function handleFeedback() {
+  router.push({ name: 'Feedback' });
 }
 
 // Global cache for sender avatars to prevent repeated API calls
@@ -236,7 +243,17 @@ watch(
         :description="userStore.userInfo?.email"
         tag-text="Pro"
         @logout="handleLogout"
-      />
+      >
+        <template #after-lock-screen>
+          <div
+            class="hover:bg-accent hover:text-accent-foreground mx-1 flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm leading-8"
+            @click="handleFeedback"
+          >
+            <FeedbackIcon class="mr-2 size-4" />
+            反馈
+          </div>
+        </template>
+      </UserDropdown>
     </template>
     <template #notification>
       <Notification

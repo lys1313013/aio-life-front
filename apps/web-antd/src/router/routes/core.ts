@@ -36,7 +36,19 @@ const coreRoutes: RouteRecordRaw[] = [
     name: 'Root',
     path: '/',
     redirect: preferences.app.defaultHomePath,
-    children: [],
+    children: [
+      {
+        meta: {
+          hideInMenu: true,
+          icon: 'mdi:message-alert-outline',
+          keepAlive: true,
+          title: '反馈',
+        },
+        name: 'Feedback',
+        path: '/feedback',
+        component: () => import('#/views/my-hub/feedback/index.vue'),
+      },
+    ],
   },
   {
     component: AuthPageLayout,
