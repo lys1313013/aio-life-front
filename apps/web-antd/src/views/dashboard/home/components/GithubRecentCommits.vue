@@ -1,22 +1,90 @@
 <script lang="ts" setup>
 import type { GithubCommitVO } from '#/api/core/github';
 
-import { onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { Skeleton } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getRecentCommitsApi } from '#/api/core/github';
 
+const PAGE_SIZE = 10;
+
 const commits = ref<GithubCommitVO[]>([]);
 const loading = ref(true);
+const loadingMore = ref(false);
 const loaded = ref(false);
+const finished = ref(false);
+const page = ref(1);
+const scrollRoot = ref<HTMLElement | null>(null);
+const sentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+
+function appendCommits(incoming: GithubCommitVO[]) {
+  const existingIds = new Set(commits.value.map((item) => item.id));
+  commits.value = [
+    ...commits.value,
+    ...incoming.filter((item) => !item.id || !existingIds.has(item.id)),
+  ];
+}
+
+async function loadPage() {
+  if (finished.value || loadingMore.value) return;
+  loadingMore.value = true;
+  try {
+    const incoming = (await getRecentCommitsApi(PAGE_SIZE, page.value)) || [];
+    appendCommits(incoming);
+    if (incoming.length < PAGE_SIZE || page.value * PAGE_SIZE >= 1000) {
+      finished.value = true;
+    } else {
+      page.value += 1;
+    }
+  } catch (error) {
+    console.error('加载更多 GitHub 提交失败:', error);
+  } finally {
+    loadingMore.value = false;
+  }
+}
+
+function maybeLoadMore() {
+  if (loading.value || loadingMore.value || finished.value) return;
+  if (!scrollRoot.value || !sentinel.value) return;
+  const distance =
+    sentinel.value.getBoundingClientRect().bottom -
+    scrollRoot.value.getBoundingClientRect().bottom;
+  if (distance <= 160) {
+    loadPage();
+  }
+}
+
+function setupObserver() {
+  if (!sentinel.value) return;
+  observer?.disconnect();
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        maybeLoadMore();
+      }
+    },
+    { root: scrollRoot.value, rootMargin: '120px 0px', threshold: 0 },
+  );
+  observer.observe(sentinel.value);
+}
 
 async function load() {
+  observer?.disconnect();
   loading.value = true;
+  commits.value = [];
+  page.value = 1;
+  finished.value = false;
   try {
-    const list = await getRecentCommitsApi(10);
-    commits.value = list || [];
+    const incoming = (await getRecentCommitsApi(PAGE_SIZE, page.value)) || [];
+    commits.value = incoming;
+    if (incoming.length < PAGE_SIZE || page.value * PAGE_SIZE >= 1000) {
+      finished.value = true;
+    } else {
+      page.value += 1;
+    }
   } catch (error) {
     console.error('获取最近提交失败:', error);
     commits.value = [];
@@ -24,6 +92,9 @@ async function load() {
     loading.value = false;
     loaded.value = true;
   }
+  await nextTick();
+  setupObserver();
+  requestAnimationFrame(() => maybeLoadMore());
 }
 
 function formatDate(date?: string) {
@@ -33,6 +104,11 @@ function formatDate(date?: string) {
 
 onMounted(() => {
   load();
+});
+
+onBeforeUnmount(() => {
+  observer?.disconnect();
+  observer = null;
 });
 
 defineExpose({ load });
@@ -77,6 +153,7 @@ defineExpose({ load });
     </div>
     <div
       v-else
+      ref="scrollRoot"
       class="flex-1 space-y-1 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
     >
       <div
@@ -122,6 +199,28 @@ defineExpose({ load });
             {{ item.message }}
           </span>
         </div>
+      </div>
+
+      <div
+        v-if="!finished"
+        ref="sentinel"
+        aria-live="polite"
+        class="flex items-center justify-center py-2 text-[10px] text-muted-foreground"
+        role="status"
+      >
+        <span
+          v-if="loadingMore"
+          aria-hidden="true"
+          class="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary"
+        ></span>
+        <span v-if="loadingMore" class="sr-only">正在加载更多提交</span>
+        <span v-else>向下滚动加载更多</span>
+      </div>
+      <div
+        v-else-if="commits.length > 0"
+        class="py-2 text-center text-[10px] text-muted-foreground"
+      >
+        — 已经到底了 —
       </div>
     </div>
   </div>
