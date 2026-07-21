@@ -60,8 +60,15 @@ catalog:
   '@vite-pwa/vitepress': ^1.0.0
   '@vitejs/plugin-vue': ^6.0.1
   '@vitejs/plugin-vue-jsx': ^5.1.1
-  '@vue/reactivity': ^3.5.17
-  '@vue/shared': ^3.5.24
+  '@vue/compiler-core': 3.5.26
+  '@vue/compiler-dom': 3.5.26
+  '@vue/compiler-sfc': 3.5.26
+  '@vue/compiler-ssr': 3.5.26
+  '@vue/reactivity': 3.5.26
+  '@vue/runtime-core': 3.5.26
+  '@vue/runtime-dom': 3.5.26
+  '@vue/server-renderer': 3.5.26
+  '@vue/shared': 3.5.26
   '@vue/test-utils': ^2.4.6
   '@vueuse/core': ^13.4.0
   '@vueuse/integrations': ^14.0.0
@@ -183,7 +190,7 @@ catalog:
   vitepress: ^1.6.3
   vitepress-plugin-group-icons: ^1.6.1
   vitest: ^3.2.4
-  vue: ^3.5.24
+  vue: 3.5.26
   vue-eslint-parser: ^10.2.0
   vue-i18n: ^11.1.7
   vue-json-viewer: ^3.0.4

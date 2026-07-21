@@ -1,6 +1,6 @@
-import { requestClient } from '#/api/request';
-
 import type { FileVO } from './core/common';
+
+import { requestClient } from '#/api/request';
 
 /**
  * 阅读记录接口
@@ -10,6 +10,7 @@ export namespace ReadRecordApi {
     title?: string;
     type?: number;
     status?: number;
+    activeOnly?: boolean;
     current?: number;
     size?: number;
   }
@@ -52,7 +53,10 @@ export namespace ReadRecordApi {
    * 分页查询
    */
   export function pageList(data: ReadRecordQuery) {
-    return requestClient.post('/read-record/page', data);
+    return requestClient.post<{ records: ReadRecordVO[]; total: number }>(
+      '/read-record/page',
+      data,
+    );
   }
 
   /**

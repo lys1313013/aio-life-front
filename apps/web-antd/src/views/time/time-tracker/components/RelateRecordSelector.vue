@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
-import { CloseOutlined } from '@ant-design/icons-vue';
-import { Button, Card, Empty, Modal, Spin, Tag, theme } from 'ant-design-vue';
+import { CloseOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import {
+  Button,
+  Empty,
+  Input,
+  message,
+  Modal,
+  Spin,
+  Switch,
+  Tag,
+  theme,
+} from 'ant-design-vue';
 
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
@@ -21,55 +31,134 @@ const emit = defineEmits<{
 
 const visible = ref(false);
 const loading = ref(false);
+const loadingMore = ref(false);
 const recordList = ref<any[]>([]);
 const selectedItem = ref<any>(null);
+const searchKeyword = ref('');
+const showAll = ref(false);
+const currentPage = ref(1);
+const hasMore = ref(true);
+const recordGridRef = ref<HTMLElement>();
+
+const PAGE_SIZE = 24;
+const SEARCH_DEBOUNCE_MS = 350;
+let requestSerial = 0;
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 const { token } = theme.useToken();
 
 const isMobile = computed(() => window.innerWidth < 1024);
 
-const loadData = async () => {
-  if (!props.relateType) return;
-  loading.value = true;
-  try {
-    let data: any[] = [];
-    if (props.relateType === 1) {
-      data = await ReadRecordApi.listActive();
-    } else if (props.relateType === 2) {
-      data = await MovieApi.listActive();
-    }
-    recordList.value = data;
+const searchPlaceholder = computed(() =>
+  props.relateType === 2 ? '搜索影视名称或导演' : '搜索书名或作者',
+);
 
-    // 如果已经有关联ID，找到它并回显
-    if (props.relateId) {
-      const targetId = String(props.relateId);
-      let item = data.find((d) => String(d.id) === targetId);
-      if (!item) {
-        // active列表里没有（可能已看完/已读完），单独查
-        try {
-          if (props.relateType === 1) {
-            item = await ReadRecordApi.getById(props.relateId);
-          } else if (props.relateType === 2) {
-            item = await MovieApi.getById(props.relateId);
-          }
-        } catch {
-          // 忽略单独查询失败
-        }
-      }
-      if (item) {
-        selectedItem.value = item;
-      }
+const emptyDescription = computed(() => {
+  if (searchKeyword.value.trim()) return '没有找到匹配的记录';
+  return showAll.value ? '暂无可选记录' : '暂无未开始或进行中的记录';
+});
+
+const syncSelectedItem = async () => {
+  if (!props.relateId || !props.relateType) return;
+
+  const targetId = String(props.relateId);
+  const loadedItem = recordList.value.find(
+    (item) => String(item.id) === targetId,
+  );
+  if (loadedItem) {
+    selectedItem.value = loadedItem;
+    return;
+  }
+  if (String(selectedItem.value?.id) === targetId) return;
+
+  try {
+    const item =
+      props.relateType === 1
+        ? await ReadRecordApi.getById(props.relateId)
+        : await MovieApi.getById(props.relateId);
+    if (String(props.relateId) === targetId) {
+      selectedItem.value = item;
     }
+  } catch {
+    // 详情回显失败不影响候选记录加载
+  }
+};
+
+const loadData = async (loadMore = false) => {
+  if (!props.relateType) return;
+  if (loadMore && (loading.value || loadingMore.value || !hasMore.value)) {
+    return;
+  }
+
+  const targetPage = loadMore ? currentPage.value + 1 : 1;
+  const currentRequest = loadMore ? requestSerial : ++requestSerial;
+  if (loadMore) {
+    loadingMore.value = true;
+  } else {
+    loading.value = true;
+    loadingMore.value = false;
+    hasMore.value = true;
+  }
+
+  try {
+    const query = {
+      activeOnly: !showAll.value,
+      current: targetPage,
+      size: PAGE_SIZE,
+      title: searchKeyword.value.trim() || undefined,
+    };
+    const response =
+      props.relateType === 1
+        ? await ReadRecordApi.pageList(query)
+        : await MovieApi.pageList(query);
+
+    if (currentRequest !== requestSerial) return;
+
+    const records = response.records || [];
+    if (loadMore) {
+      const loadedIds = new Set(
+        recordList.value.map((item) => String(item.id)),
+      );
+      recordList.value.push(
+        ...records.filter((item) => !loadedIds.has(String(item.id))),
+      );
+    } else {
+      recordList.value = records;
+      await nextTick();
+      recordGridRef.value?.scrollTo({ top: 0 });
+    }
+    currentPage.value = targetPage;
+    hasMore.value = recordList.value.length < Number(response.total || 0);
+
+    if (!loadMore) await syncSelectedItem();
   } catch (error) {
-    console.error('获取关联数据失败', error);
+    if (currentRequest === requestSerial) {
+      console.error('获取关联数据失败', error);
+      message.error('加载关联记录失败，请稍后重试');
+    }
   } finally {
-    loading.value = false;
+    if (currentRequest === requestSerial) {
+      loading.value = false;
+      loadingMore.value = false;
+    }
   }
 };
 
 const openModal = () => {
   visible.value = true;
   loadData();
+};
+
+const handleScopeChange = () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  loadData();
+};
+
+const handleScroll = (event: Event) => {
+  const target = event.target as HTMLElement;
+  if (target.scrollHeight - target.scrollTop - target.clientHeight < 120) {
+    loadData(true);
+  }
 };
 
 const handleSelect = (item: any) => {
@@ -106,11 +195,13 @@ watch(
   () => props.relateType,
   (newVal, oldVal) => {
     if (newVal !== oldVal) {
+      showAll.value = false;
+      searchKeyword.value = '';
       if (oldVal !== undefined) {
         handleClear();
       }
       if (newVal && props.relateId) {
-        loadData();
+        syncSelectedItem();
       }
     }
   },
@@ -121,12 +212,29 @@ watch(
   () => props.relateId,
   (newVal) => {
     if (newVal && !selectedItem.value && props.relateType) {
-      loadData();
+      syncSelectedItem();
     } else if (!newVal) {
       selectedItem.value = null;
     }
   },
 );
+
+watch(searchKeyword, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  if (!visible.value) return;
+
+  searchTimer = setTimeout(() => {
+    if (visible.value) loadData();
+  }, SEARCH_DEBOUNCE_MS);
+});
+
+watch(visible, (isVisible) => {
+  if (!isVisible && searchTimer) clearTimeout(searchTimer);
+});
+
+onBeforeUnmount(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <template>
@@ -134,7 +242,11 @@ watch(
     <div
       v-if="selectedItem"
       class="selected-card"
+      role="button"
+      tabindex="0"
       @click="openModal"
+      @keydown.enter="openModal"
+      @keydown.space.prevent="openModal"
       style="cursor: pointer"
     >
       <div class="card-content">
@@ -150,14 +262,16 @@ watch(
           class="cover-img-cell"
           style="width: 60px; height: 80px; border-radius: 4px"
         >
-          <span class="cover-img-placeholder" />
+          <span class="cover-img-placeholder"></span>
           <img
             :src="selectedItem.coverImgUrl"
             :width="60"
             :height="80"
             class="cover-img-fade"
             referrerpolicy="no-referrer"
-            @load="(e) => (e.target as HTMLImageElement).classList.add('loaded')"
+            @load="
+              (e) => (e.target as HTMLImageElement).classList.add('loaded')
+            "
           />
         </span>
         <div class="info">
@@ -169,7 +283,12 @@ watch(
           </div>
         </div>
         <div class="actions" @click.stop>
-          <Button type="link" danger @click="handleClear">
+          <Button
+            type="link"
+            danger
+            aria-label="清除关联记录"
+            @click="handleClear"
+          >
             <template #icon><CloseOutlined /></template>
           </Button>
         </div>
@@ -177,12 +296,15 @@ watch(
     </div>
     <div v-else-if="loading" class="selected-card selected-card-skeleton">
       <div class="card-content">
-        <span class="cover-img-cell" style="width: 60px; height: 80px; border-radius: 4px">
-          <span class="cover-img-placeholder" />
+        <span
+          class="cover-img-cell"
+          style="width: 60px; height: 80px; border-radius: 4px"
+        >
+          <span class="cover-img-placeholder"></span>
         </span>
         <div class="info">
-          <div class="skeleton-line skeleton-line-short" />
-          <div class="skeleton-line skeleton-line-tag" />
+          <div class="skeleton-line skeleton-line-short"></div>
+          <div class="skeleton-line skeleton-line-tag"></div>
         </div>
       </div>
     </div>
@@ -194,21 +316,49 @@ watch(
 
     <Modal
       v-model:open="visible"
-      :closable="true"
+      :closable="false"
       :width="isMobile ? '95vw' : 600"
       :footer="null"
       :centered="true"
       destroy-on-close
     >
       <Spin :spinning="loading">
-        <div v-if="recordList.length > 0" class="record-grid">
-          <Card
+        <div class="record-toolbar">
+          <Input
+            v-model:value="searchKeyword"
+            allow-clear
+            :placeholder="searchPlaceholder"
+            class="record-search"
+          >
+            <template #prefix><SearchOutlined /></template>
+          </Input>
+          <label class="scope-switch">
+            <span>显示全部</span>
+            <Switch
+              v-model:checked="showAll"
+              :loading="loading"
+              size="small"
+              @change="handleScopeChange"
+            />
+          </label>
+        </div>
+        <div
+          v-if="recordList.length > 0"
+          ref="recordGridRef"
+          class="record-grid"
+          @scroll="handleScroll"
+        >
+          <div
             v-for="item in recordList"
             :key="item.id"
-            hoverable
             class="record-card"
-            :class="{ 'is-selected': relateId === item.id }"
+            :aria-label="`${item.title}，${getStatusText(item.status)}`"
+            :aria-pressed="String(relateId) === String(item.id)"
+            role="button"
+            tabindex="0"
             @click="handleSelect(item)"
+            @keydown.enter="handleSelect(item)"
+            @keydown.space.prevent="handleSelect(item)"
           >
             <div class="card-inner aspect-[3/4]">
               <AuthImage
@@ -227,7 +377,7 @@ watch(
                 class="cover-img-cell"
                 style="width: 100%; height: 100%; border-radius: 4px"
               >
-                <span class="cover-img-placeholder" />
+                <span class="cover-img-placeholder"></span>
                 <img
                   :src="item.coverImgUrl"
                   class="cover-img-fade"
@@ -239,13 +389,31 @@ watch(
                     border-radius: 4px;
                   "
                   referrerpolicy="no-referrer"
-                  @load="(e) => (e.target as HTMLImageElement).classList.add('loaded')"
+                  @load="
+                    (e) =>
+                      (e.target as HTMLImageElement).classList.add('loaded')
+                  "
                 />
               </span>
             </div>
-          </Card>
+            <div class="record-status">
+              <Tag :color="getStatusColor(item.status)">
+                {{ getStatusText(item.status) }}
+              </Tag>
+            </div>
+          </div>
+          <div v-if="loadingMore" class="load-more-status">
+            <Spin size="small" />
+            <span>加载更多...</span>
+          </div>
+          <div
+            v-else-if="!hasMore"
+            aria-label="已加载全部"
+            class="load-end-divider"
+            role="separator"
+          ></div>
         </div>
-        <Empty v-else description="暂无未开始或进行中的记录" />
+        <Empty v-else :description="emptyDescription" />
       </Spin>
     </Modal>
   </div>
@@ -313,6 +481,28 @@ watch(
   font-size: 16px;
 }
 
+.record-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.record-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.scope-switch {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  color: v-bind('token.colorText');
+  cursor: pointer;
+  font-size: 12px;
+}
+
 .record-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -330,26 +520,60 @@ watch(
 
 .record-card {
   cursor: pointer;
-  transition: all 0.3s;
-  padding: 0 !important;
+  background: transparent;
+  border: 0;
   border-radius: 4px;
-}
-
-.record-card :deep(.ant-card-body) {
   padding: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
-.record-card.is-selected {
-  border-color: v-bind('token.colorBorderSecondary');
-  box-shadow: 0 0 0 2px v-bind('token.colorBorderSecondary');
-  transform: scale(0.98);
+.record-card:hover {
+  opacity: 0.88;
+  transform: translateY(-2px);
+}
+
+.record-card:focus-visible {
+  outline: 2px solid v-bind('token.colorPrimary');
+  outline-offset: 2px;
+}
+
+.load-more-status {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 32px;
+  color: v-bind('token.colorTextSecondary');
+  font-size: 12px;
+}
+
+.load-end-divider {
+  grid-column: 1 / -1;
+  width: 40px;
+  height: 1px;
+  margin: 15px auto 16px;
+  background: v-bind('token.colorBorderSecondary');
 }
 
 .card-inner {
+  position: relative;
   display: block;
   width: 100%;
   border-radius: 4px;
   overflow: hidden;
+}
+
+.record-status {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+}
+
+.record-status .ant-tag {
+  margin-inline-end: 0;
 }
 
 .cover-img-cell {
@@ -401,7 +625,23 @@ watch(
 }
 
 @keyframes cover-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .record-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scope-switch {
+    justify-content: flex-end;
+  }
 }
 </style>

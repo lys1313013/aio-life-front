@@ -1,6 +1,6 @@
-import { requestClient } from '#/api/request';
-
 import type { FileVO } from './core/common';
+
+import { requestClient } from '#/api/request';
 
 /**
  * 观影记录接口
@@ -10,6 +10,7 @@ export namespace MovieApi {
     title?: string;
     type?: number;
     status?: number;
+    activeOnly?: boolean;
     current?: number;
     size?: number;
   }
@@ -52,7 +53,10 @@ export namespace MovieApi {
    * 分页查询
    */
   export function pageList(data: MovieQuery) {
-    return requestClient.post('/movie/page', data);
+    return requestClient.post<{ records: MovieVO[]; total: number }>(
+      '/movie/page',
+      data,
+    );
   }
 
   /**

@@ -11,6 +11,7 @@ import {
   Spin as ASpin,
   Switch as ASwitch,
   Tag as ATag,
+  Textarea as ATextarea,
   message,
 } from 'ant-design-vue';
 
@@ -178,9 +179,8 @@ const getUserLabel = (userId: string) => {
 
           <!-- JSON 类型 - 通用 -->
           <div v-else-if="cfg.configType === 'JSON'">
-            <AInput
+            <ATextarea
               v-model:value="editValues[cfg.configKey]"
-              type="textarea"
               :rows="3"
               placeholder="JSON 格式"
             />
