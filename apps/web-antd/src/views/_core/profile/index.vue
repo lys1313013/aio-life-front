@@ -15,7 +15,6 @@ import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const userStore = useUserStore();
-
 const tabsValue = ref<string>('basic');
 
 const tabs = ref([
@@ -46,6 +45,10 @@ const tabs = ref([
   {
     label: 'CBTI测试',
     value: 'cbti',
+  },
+  {
+    label: '通知设置',
+    value: 'notice',
   },
   {
     label: '系统设置',
