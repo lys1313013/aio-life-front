@@ -1,6 +1,6 @@
 import { requestClient } from '#/api/request';
 
-import type { FileVO } from './common';
+import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 查询
@@ -20,7 +20,7 @@ export async function insertOrUpdate(data: any) {
  * 上传设备图片
  */
 export async function uploadImage(file: File) {
-  return await requestClient.upload<FileVO>('/device/upload-image', { file });
+  return await uploadFile(file, FILE_BIZ_TYPE.DEVICE);
 }
 
 /**

@@ -28,12 +28,13 @@ const handlePaste = async (e: ClipboardEvent) => {
       const file = item.getAsFile();
       if (!file) continue;
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const url = await uploadAvatarApi(formData);
+        const uploaded = await uploadAvatarApi(file);
+        const url = uploaded.fileUrl;
         message.success('头像上传成功');
         const data = await authStore.fetchUserInfo();
-        const fileList = [{ name: 'avatar.png', status: 'done', uid: '-1', url }];
+        const fileList = [
+          { name: 'avatar.png', status: 'done', uid: '-1', url },
+        ];
         profileBaseSettingRef.value
           .getFormApi()
           .setValues({ ...data, avatar: fileList });
@@ -52,10 +53,9 @@ const formSchema = computed((): VbenFormSchema[] => {
       componentProps: {
         accept: 'image/*',
         customRequest: async ({ file, onError, onSuccess }: any) => {
-          const formData = new FormData();
-          formData.append('file', file);
           try {
-            const url = await uploadAvatarApi(formData);
+            const uploaded = await uploadAvatarApi(file);
+            const url = uploaded.fileUrl;
             file.url = url;
             onSuccess(url, file);
           } catch (error) {

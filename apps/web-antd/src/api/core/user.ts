@@ -1,6 +1,7 @@
 import type { UserInfo } from '@vben/types';
 
 import { requestClient } from '#/api/request';
+import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 获取用户信息
@@ -39,10 +40,6 @@ export async function updateUserInfoApi(params: UpdateUserParams) {
 /**
  * 上传头像
  */
-export async function uploadAvatarApi(file: FormData) {
-  return requestClient.post<string>('/users/avatar/upload', file, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+export async function uploadAvatarApi(file: File) {
+  return uploadFile(file, FILE_BIZ_TYPE.AVATAR);
 }

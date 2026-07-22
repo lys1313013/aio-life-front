@@ -32,14 +32,34 @@ export async function getByDictType(dictType: string): Promise<ResponseData> {
  * 文件VO
  */
 export interface FileVO {
-  id: number;
+  id: string;
   fileName: string;
   fileUrl: string;
-  fileSize: number;
+  fileSize: string;
   fileType: string;
   hashValue: string;
   bizType: string;
-  bizId: number;
+  bizId?: string;
   isPublic: number;
   createTime: string;
+}
+
+export const FILE_BIZ_TYPE = {
+  AVATAR: 'avatar',
+  DEVICE: 'device',
+  FEEDBACK: 'feedback',
+  FEEDBACK_COMMENT: 'feedback_comment',
+  HONOR_RECORD: 'honor_record',
+  MOVIE: 'movie',
+  READ_RECORD: 'read',
+  WARDROBE_ITEM: 'wardrobe_item',
+} as const;
+
+export type FileBizType = (typeof FILE_BIZ_TYPE)[keyof typeof FILE_BIZ_TYPE];
+
+/**
+ * 统一文件上传入口。
+ */
+export async function uploadFile(file: File, bizType: FileBizType) {
+  return requestClient.upload<FileVO>('/file/upload', { file, bizType });
 }

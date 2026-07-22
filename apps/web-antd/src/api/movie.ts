@@ -1,6 +1,5 @@
-import type { FileVO } from './core/common';
-
 import { requestClient } from '#/api/request';
+import { FILE_BIZ_TYPE, uploadFile } from './core/common';
 
 /**
  * 观影记录接口
@@ -104,6 +103,6 @@ export namespace MovieApi {
   }
 
   export const uploadCover = (file: File) => {
-    return requestClient.upload<FileVO>('/movie/upload-cover', { file });
+    return uploadFile(file, FILE_BIZ_TYPE.MOVIE);
   };
 }

@@ -1,5 +1,5 @@
 import { requestClient } from '#/api/request';
-import type { FileVO } from '../core/common';
+import { FILE_BIZ_TYPE, uploadFile } from '../core/common';
 
 /**
  * 衣物请求 DTO
@@ -124,7 +124,7 @@ export async function getWardrobeStats() {
  * 上传衣物照片
  */
 export async function uploadWardrobePhoto(file: File) {
-  return requestClient.upload<FileVO>('/wardrobe/upload-photo', { file });
+  return uploadFile(file, FILE_BIZ_TYPE.WARDROBE_ITEM);
 }
 
 // ==================== 分类接口 ====================

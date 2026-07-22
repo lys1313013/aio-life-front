@@ -35,6 +35,7 @@ import {
   getMyFeedbackDetail,
   queryMyFeedbacks,
   uploadFeedbackAttachment,
+  uploadFeedbackCommentAttachment,
 } from '#/api/core/feedback';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
@@ -505,7 +506,7 @@ const getImageUrl = (fileId: number | string) => {
             />
             <ImageUpload
               v-model:file-ids="commentFileIds"
-              :upload-fn="uploadFeedbackAttachment"
+              :upload-fn="uploadFeedbackCommentAttachment"
               :max-count="5"
             />
             <div class="mt-2 flex justify-end">

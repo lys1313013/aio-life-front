@@ -15,7 +15,7 @@ import {
   adminUpdateFeedbackStatus,
   getAdminFeedbackDetail,
   queryAllFeedbacks,
-  uploadFeedbackAttachment,
+  uploadFeedbackCommentAttachment,
 } from '#/api/core/feedback';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -408,7 +408,7 @@ const getImageUrl = (fileId: number | string) => {
           />
           <ImageUpload
             v-model:file-ids="replyFileIds"
-            :upload-fn="uploadFeedbackAttachment"
+            :upload-fn="uploadFeedbackCommentAttachment"
             :max-count="5"
           />
           <div class="mt-2 flex justify-end">

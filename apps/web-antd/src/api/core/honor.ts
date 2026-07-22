@@ -1,5 +1,6 @@
 import { requestClient } from '#/api/request';
 import type { FileVO } from './common';
+import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 荣誉记录实体
@@ -97,5 +98,5 @@ export async function queryHonorCategories() {
  * 上传附件
  */
 export async function uploadHonorAttachment(file: File) {
-  return await requestClient.upload<FileVO>('/honorRecords/upload-attachment', { file });
+  return await uploadFile(file, FILE_BIZ_TYPE.HONOR_RECORD);
 }

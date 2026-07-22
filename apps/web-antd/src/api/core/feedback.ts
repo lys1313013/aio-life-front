@@ -1,6 +1,7 @@
 import type { FileVO } from './common';
 
 import { requestClient } from '#/api/request';
+import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 分页响应
@@ -135,12 +136,16 @@ export async function cancelFeedback(id: string) {
  */
 export async function uploadFeedbackAttachment(
   file: File,
-  bizType = 'feedback',
+  bizType: 'feedback' | 'feedback_comment' = FILE_BIZ_TYPE.FEEDBACK,
 ) {
-  return await requestClient.upload<FileVO>('/feedback/upload-attachment', {
-    file,
-    bizType,
-  });
+  return await uploadFile(file, bizType);
+}
+
+/**
+ * 上传反馈评论附件
+ */
+export async function uploadFeedbackCommentAttachment(file: File) {
+  return await uploadFile(file, FILE_BIZ_TYPE.FEEDBACK_COMMENT);
 }
 
 // ==================== 管理员侧 ====================
