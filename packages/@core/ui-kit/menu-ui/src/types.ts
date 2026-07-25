@@ -91,6 +91,10 @@ interface MenuItemProps extends MenuRecordBadgeRaw {
    * @zh_CN menuitem 名称
    */
   path: string;
+  /**
+   * @zh_CN 是否启用二级锁
+   */
+  secondaryLock?: boolean;
 }
 
 interface MenuItemRegistered {

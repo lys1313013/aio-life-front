@@ -71,6 +71,14 @@ interface MenuRecordRaw extends MenuRecordBadgeRaw {
    * @default true
    */
   show?: boolean;
+  /**
+   * 菜单ID（后端返回）
+   */
+  menuId?: number;
+  /**
+   * 是否启用二级锁（前端计算填充）
+   */
+  secondaryLock?: boolean;
 }
 
 export type { ExRouteRecordRaw, MenuRecordBadgeRaw, MenuRecordRaw };

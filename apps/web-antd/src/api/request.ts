@@ -16,6 +16,7 @@ import { useAccessStore } from '@vben/stores';
 import { message } from 'ant-design-vue';
 
 import { useAuthStore } from '#/store';
+import { useSecondaryLockStore } from '#/store/secondary-lock';
 
 import { refreshTokenApi } from './core/auth';
 
@@ -91,6 +92,24 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     }),
   );
 
+  // 二级锁错误处理
+  client.addResponseInterceptor({
+    onFulfilled: (response) => response,
+    onRejected: (error) => {
+      const responseData = error?.response?.data ?? {};
+      if (responseData?.rscode === '2001') {
+        const requestUrl = error?.config?.url ?? '';
+        const menuPath = requestUrl.startsWith('/')
+          ? requestUrl
+          : `/${requestUrl}`;
+        const secondaryLockStore = useSecondaryLockStore();
+        secondaryLockStore.triggerUnlock(menuPath);
+        return Promise.reject(error);
+      }
+      return Promise.reject(error);
+    },
+  });
+
   // 通用的错误处理,如果没有进入上面的错误处理逻辑，就会进入这里
   client.addResponseInterceptor(
     errorMessageResponseInterceptor((msg: string, error) => {
@@ -101,9 +120,13 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       ) {
         return;
       }
+      // 二级锁错误不弹 error message，由二级锁弹窗处理
+      const responseData = error?.response?.data ?? {};
+      if (responseData?.rscode === '2001') {
+        return;
+      }
       // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       // 当前mock接口返回的错误字段是 error 或者 message
-      const responseData = error?.response?.data ?? {};
       const errorMessage = responseData?.result ?? '';
       // 如果没有错误信息，则会根据状态码进行提示
       message.error(errorMessage || msg);

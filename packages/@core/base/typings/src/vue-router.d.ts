@@ -126,6 +126,14 @@ interface RouteMeta {
    * 标题名称
    */
   title: string;
+  /**
+   * 菜单ID（后端返回）
+   */
+  menuId?: number;
+  /**
+   * 是否启用二级锁（用户级，前端填充）
+   */
+  secondaryLock?: boolean;
 }
 
 // 定义递归类型以将 RouteRecordRaw 的 component 属性更改为 string

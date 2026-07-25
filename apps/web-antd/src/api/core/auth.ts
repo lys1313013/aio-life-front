@@ -112,3 +112,86 @@ export async function getAccessCodesApi() {
 export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
   return requestClient.post('/auth/change-password', data);
 }
+
+/** 二级锁相关接口 */
+
+export interface SecondaryPasswordStatus {
+  hasPassword: boolean;
+}
+
+export interface SecondaryVerifyParams {
+  password: string;
+  menuPath: string;
+}
+
+export interface SetSecondaryPasswordParams {
+  password: string;
+  oldPassword?: string;
+}
+
+/**
+ * 查询是否已设置二级密码
+ */
+export async function getSecondaryPasswordStatusApi() {
+  return requestClient.get<SecondaryPasswordStatus>(
+    '/auth/secondary-password/status',
+  );
+}
+
+/**
+ * 设置/修改二级密码
+ */
+export async function setSecondaryPasswordApi(
+  data: SetSecondaryPasswordParams,
+) {
+  return requestClient.put('/auth/secondary-password', data);
+}
+
+/**
+ * 验证二级密码，解锁菜单
+ */
+export async function secondaryVerifyApi(data: SecondaryVerifyParams) {
+  return requestClient.post('/auth/secondary-verify', data);
+}
+
+export interface SaveSecondaryLockMenusParams {
+  menuIds: number[];
+}
+
+/**
+ * 获取当前用户锁定的菜单 ID 列表
+ */
+export async function getSecondaryLockMenusApi() {
+  return requestClient.get<number[]>('/auth/secondary-lock/menus');
+}
+
+/**
+ * 保存当前用户锁定的菜单 ID 列表
+ */
+export async function saveSecondaryLockMenusApi(
+  data: SaveSecondaryLockMenusParams,
+) {
+  return requestClient.put('/auth/secondary-lock/menus', data);
+}
+
+/**
+ * 发送重置二级密码验证码（发到当前用户绑定的邮箱）
+ */
+export async function sendResetSecondaryPasswordCodeApi() {
+  return requestClient.post('/auth/send-reset-secondary-password-code');
+}
+
+/** 重置二级密码参数 */
+export interface ResetSecondaryPasswordParams {
+  code: string;
+  password: string;
+}
+
+/**
+ * 通过邮箱验证码重置二级密码
+ */
+export async function resetSecondaryPasswordApi(
+  data: ResetSecondaryPasswordParams,
+) {
+  return requestClient.post('/auth/reset-secondary-password', data);
+}

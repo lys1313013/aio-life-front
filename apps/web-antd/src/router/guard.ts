@@ -1,3 +1,4 @@
+import type { MenuRecordRaw } from '@vben-core/typings';
 import type { Router } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
@@ -12,6 +13,7 @@ import { startProgress, stopProgress } from '@vben/utils';
 
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
+import { useSecondaryLockStore } from '#/store/secondary-lock';
 
 import { generateAccess } from './access';
 
@@ -92,6 +94,16 @@ function setupAccessGuard(router: Router) {
 
     // 是否已经生成过动态路由
     if (accessStore.isAccessChecked) {
+      // 二级锁检查
+      const secondaryLockStore = useSecondaryLockStore();
+      const menuId = to.meta.menuId;
+      if (menuId != null && secondaryLockStore.isMenuLocked(Number(menuId))) {
+        const menuPath = to.path;
+        if (!secondaryLockStore.isUnlocked(menuPath)) {
+          secondaryLockStore.triggerUnlock(menuPath);
+          return from.fullPath ? false : { path: '/' };
+        }
+      }
       return true;
     }
 
@@ -107,6 +119,11 @@ function setupAccessGuard(router: Router) {
       // 则会在菜单中显示，但是访问会被重定向到403
       routes: accessRoutes,
     });
+
+    // 加载用户锁定的菜单 ID 并补丁菜单树（给对应菜单打上 secondaryLock 标记）
+    const secondaryLockStore = useSecondaryLockStore();
+    await secondaryLockStore.loadLockedMenus();
+    patchMenuSecondaryLock(accessibleMenus, secondaryLockStore);
 
     // 保存菜单信息和路由信息
     accessStore.setAccessMenus(accessibleMenus);
@@ -165,6 +182,23 @@ function createRouterGuard(router: Router) {
   setupAccessGuard(router);
   /** 标签页自动刷新 */
   setupTabGuard(router);
+}
+
+/**
+ * 给菜单树打上二级锁标记，使菜单项图标能正确显示。
+ */
+function patchMenuSecondaryLock(
+  menus: MenuRecordRaw[],
+  store: ReturnType<typeof useSecondaryLockStore>,
+) {
+  for (const menu of menus) {
+    if (menu.menuId != null && store.isMenuLocked(menu.menuId)) {
+      menu.secondaryLock = true;
+    }
+    if (menu.children?.length) {
+      patchMenuSecondaryLock(menu.children, store);
+    }
+  }
 }
 
 export { createRouterGuard };

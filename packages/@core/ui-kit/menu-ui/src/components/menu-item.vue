@@ -9,12 +9,15 @@ import { VbenIcon, VbenTooltip } from '@vben-core/shadcn-ui';
 import { MenuBadge } from '../components';
 import { useMenu, useMenuContext, useSubMenuContext } from '../hooks';
 
-interface Props extends MenuItemProps {}
+interface Props extends MenuItemProps {
+  secondaryLock?: boolean;
+}
 
 defineOptions({ name: 'MenuItem' });
 
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
+  secondaryLock: false,
 });
 
 const emit = defineEmits<{ click: [MenuItemRegistered] }>();
@@ -117,6 +120,24 @@ onBeforeUnmount(() => {
       <VbenIcon :class="nsMenu.e('icon')" :icon="menuIcon" />
       <slot></slot>
       <slot name="title"></slot>
+      <span
+        v-if="props.secondaryLock"
+        :class="nsMenu.e('secondary-lock')"
+        class="ml-1 inline-flex items-center text-xs opacity-60"
+        title="已加菜单锁"
+      >
+        <svg
+          class="h-3 w-3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+      </span>
     </div>
   </li>
 </template>

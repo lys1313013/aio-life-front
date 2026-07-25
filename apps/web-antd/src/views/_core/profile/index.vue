@@ -11,6 +11,7 @@ import LLMSetting from './llm-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
+import SecondaryPasswordSetting from './secondary-password-setting.vue';
 import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
@@ -29,6 +30,10 @@ const tabs = ref([
   {
     label: '修改密码',
     value: 'password',
+  },
+  {
+    label: '二级密码',
+    value: 'secondary-password',
   },
   {
     label: 'API Key',
@@ -67,6 +72,7 @@ const tabs = ref([
       <ProfileBase v-if="tabsValue === 'basic'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
+      <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
       <ApiKeySetting v-if="tabsValue === 'api-key'" />
       <LLMSetting v-if="tabsValue === 'llm'" />
       <MbtiSetting v-if="tabsValue === 'mbti'" />

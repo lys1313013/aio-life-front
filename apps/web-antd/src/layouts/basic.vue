@@ -27,6 +27,7 @@ import { getUserBasicInfoApi } from '#/api/core/user';
 import { $t } from '#/locales';
 import { useAuthStore } from '#/store';
 import LoginForm from '#/views/_core/authentication/login.vue';
+import SecondaryLockModal from '#/views/_core/secondary-lock/secondary-lock-modal.vue';
 
 const notifications = ref<NotificationItem[]>([]);
 
@@ -274,6 +275,7 @@ watch(
       >
         <LoginForm />
       </AuthenticationLoginExpiredModal>
+      <SecondaryLockModal />
     </template>
     <template #lock-screen>
       <LockScreen :avatar @to-login="handleLogout" />

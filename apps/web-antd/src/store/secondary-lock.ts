@@ -2,11 +2,19 @@ import { ref } from 'vue';
 
 import { defineStore } from 'pinia';
 
+import { getSecondaryLockMenusApi, saveSecondaryLockMenusApi } from '#/api/core/auth';
+
 /**
- * 二级锁状态管理，记录已解锁的菜单路径。
+ * 用户级二级锁状态管理。
  */
 export const useSecondaryLockStore = defineStore('secondary-lock', () => {
-  /** 已解锁的菜单路径集合 */
+  /** 用户锁定的菜单 ID 集合（从后端加载） */
+  const lockedMenuIds = ref<Set<number>>(new Set());
+
+  /** 已加载过锁定菜单列表 */
+  const loaded = ref(false);
+
+  /** 当前会话已解锁的菜单路径 */
   const unlockedPaths = ref<Set<string>>(new Set());
 
   /** 待解锁后跳转的目标路径 */
@@ -14,6 +22,27 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
 
   /** 是否显示解锁弹窗 */
   const showModal = ref(false);
+
+  async function loadLockedMenus() {
+    if (loaded.value) return;
+    try {
+      const ids = await getSecondaryLockMenusApi();
+      lockedMenuIds.value = new Set(ids);
+    } catch {
+      // ignore
+    } finally {
+      loaded.value = true;
+    }
+  }
+
+  async function saveLockedMenus(ids: number[]) {
+    await saveSecondaryLockMenusApi({ menuIds: ids });
+    lockedMenuIds.value = new Set(ids);
+  }
+
+  function isMenuLocked(menuId: number): boolean {
+    return lockedMenuIds.value.has(menuId);
+  }
 
   function isUnlocked(menuPath: string): boolean {
     return unlockedPaths.value.has(menuPath);
@@ -35,6 +64,8 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   }
 
   function $reset() {
+    lockedMenuIds.value = new Set();
+    loaded.value = false;
     unlockedPaths.value = new Set();
     pendingTargetPath.value = null;
     showModal.value = false;
@@ -43,8 +74,13 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   return {
     $reset,
     cancelUnlock,
+    isMenuLocked,
     isUnlocked,
+    loadLockedMenus,
+    lockedMenuIds,
+    loaded,
     pendingTargetPath,
+    saveLockedMenus,
     showModal,
     triggerUnlock,
     unlock,

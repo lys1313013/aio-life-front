@@ -41,6 +41,7 @@ function generateMenus(
       hideChildrenInMenu = false,
       icon,
       link,
+      menuId,
       order,
       title = '',
     } = meta;
@@ -70,6 +71,7 @@ function generateMenus(
       badgeType,
       badgeVariants,
       icon,
+      menuId,
       name,
       order,
       parent: route.parent,

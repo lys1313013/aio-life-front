@@ -2,9 +2,7 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { Modal } from 'ant-design-vue';
-import { InputPassword } from 'ant-design-vue';
-import { message } from 'ant-design-vue';
+import { InputPassword, Modal, message } from 'ant-design-vue';
 
 import { secondaryVerifyApi } from '#/api/core/auth';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
@@ -49,6 +47,7 @@ function handleCancel() {
 
 <template>
   <Modal
+    :centered="true"
     :closable="false"
     :confirm-loading="loading"
     :mask-closable="false"
