@@ -1086,7 +1086,7 @@ const tableReload = () => {
           </Tag>
         </template>
         <template #exerciseCount="{ row }">
-          <span class="count-cell">{{ row.exerciseCount }}</span>
+          <span class="count-cell text-card-foreground">{{ row.exerciseCount }}</span>
         </template>
         <template #mobile-card="{ row }">
           <div class="mobile-card-item">
@@ -1247,7 +1247,6 @@ const tableReload = () => {
   width: 100%;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: #1f1f1f;
   text-align: right;
 }
 
