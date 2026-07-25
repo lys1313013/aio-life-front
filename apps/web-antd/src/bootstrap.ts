@@ -77,9 +77,15 @@ async function bootstrap(namespace: string) {
     registerSW({
       immediate: true,
       onRegistered(r) {
-        // 每小时检查一次更新
-        r && setInterval(() => r.update(), 60 * 60 * 1000);
+        // 每 5 分钟检查一次更新
+        r && setInterval(() => r.update(), 5 * 60 * 1000);
       },
+    });
+
+    // skipWaiting + clientsClaim 生效后，旧页面会被新 SW 接管，
+    // 此时刷新页面以加载最新资源
+    navigator.serviceWorker?.addEventListener('controllerchange', () => {
+      window.location.reload();
     });
   }
 }

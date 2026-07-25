@@ -10,10 +10,22 @@ export default defineConfig(async () => {
         devOptions: { enabled: true },
         includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
         workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
           cleanupOutdatedCaches: true,
           skipWaiting: true,
           clientsClaim: true,
+          runtimeCaching: [
+            {
+              // index.html 走 NetworkFirst，避免 SW 返回旧入口文件
+              urlPattern: ({ request }) => request.destination === 'document',
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'html-cache',
+                networkTimeoutSeconds: 3,
+                expiration: { maxEntries: 5, maxAgeSeconds: 300 },
+              },
+            },
+          ],
         },
         manifest: {
           name: 'AIO-LIFE',
