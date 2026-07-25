@@ -66,9 +66,18 @@ const loadExerciseTypes = async () => {
       label: item.dictLabel || item.label,
       value: String(item.id),
     }));
-    // 默认选择第一种运动类型
+    // 默认选择最近一次使用的运动类型
     if (!selectedExerciseType.value && dictOptions.value.length > 0) {
-      selectedExerciseType.value = dictOptions.value[0]?.value;
+      try {
+        const latestResult = await query({ page: 1, pageSize: 1, condition: {} });
+        if (latestResult?.items?.length > 0) {
+          selectedExerciseType.value = String(latestResult.items[0].exerciseTypeId);
+        } else {
+          selectedExerciseType.value = dictOptions.value[0]?.value;
+        }
+      } catch {
+        selectedExerciseType.value = dictOptions.value[0]?.value;
+      }
     }
   } catch (error) {
     console.error('加载运动类型失败:', error);
