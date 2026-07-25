@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { McpToolInfo } from '#/api/core/mcp';
 
-import { onMounted, ref } from 'vue';
+import { h, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-import { CaretRightOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import { CaretRightOutlined, CopyOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -18,14 +19,17 @@ import {
   Spin,
   Switch,
   Tag,
+  Tooltip,
 } from 'ant-design-vue';
 
 import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
+import { generateApiKeyApi } from '#/api/core/api-key';
 
 const tools = ref<McpToolInfo[]>([]);
 const loading = ref(true);
 const searchText = ref('');
 const filteredTools = ref<McpToolInfo[]>([]);
+const showGuide = ref(true);
 
 // 弹窗状态
 const modalVisible = ref(false);
@@ -34,6 +38,50 @@ const modalFormValues = ref<Record<string, any>>({});
 const modalResult = ref('');
 const modalCalling = ref(false);
 const modalIsError = ref(false);
+
+// MCP 配置信息
+const router = useRouter();
+const mcpUrl = `${window.location.origin}/api/mcp`;
+
+const copyUrl = async () => {
+  try {
+    await navigator.clipboard.writeText(mcpUrl);
+    message.success('已复制到剪贴板');
+  } catch {
+    message.error('复制失败，请手动复制');
+  }
+};
+
+// API Key 生成
+const apiKeyModalVisible = ref(false);
+const apiKeyGenerating = ref(false);
+const apiKeyForm = ref({ remark: 'MCP 客户端', expireDays: 0 });
+const generatedApiKey = ref('');
+
+const openApiKeyModal = () => {
+  apiKeyForm.value = { remark: 'MCP 客户端', expireDays: 0 };
+  generatedApiKey.value = '';
+  apiKeyModalVisible.value = true;
+};
+
+const handleGenerateApiKey = async () => {
+  apiKeyGenerating.value = true;
+  try {
+    const data = await generateApiKeyApi(apiKeyForm.value);
+    generatedApiKey.value = data.apiKey;
+  } finally {
+    apiKeyGenerating.value = false;
+  }
+};
+
+const copyApiKey = async () => {
+  try {
+    await navigator.clipboard.writeText(generatedApiKey.value);
+    message.success('已复制到剪贴板');
+  } catch {
+    message.error('复制失败，请手动复制');
+  }
+};
 
 const filterTools = () => {
   const keyword = searchText.value.toLowerCase();
@@ -198,6 +246,87 @@ onMounted(() => {
       </Input>
     </div>
 
+    <!-- 配置指南 -->
+    <Card
+      v-if="showGuide"
+      class="guide-card"
+      size="small"
+      :bordered="true"
+    >
+      <template #title>
+        <div class="guide-title-row">
+          <span class="guide-title">配置指南</span>
+          <Tag color="green">MCP 服务端</Tag>
+        </div>
+      </template>
+      <template #extra>
+        <Button type="link" size="small" @click="showGuide = false">收起</Button>
+      </template>
+
+      <div class="guide-body">
+        <!-- 基本连接信息 -->
+        <div class="guide-section">
+          <div class="guide-item">
+            <span class="guide-label">服务地址</span>
+            <div class="guide-url">
+              <code class="guide-code">{{ mcpUrl }}</code>
+              <Tooltip title="复制地址">
+                <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyUrl" />
+              </Tooltip>
+            </div>
+          </div>
+          <div class="guide-item">
+            <span class="guide-label">传输类型</span>
+            <Tag color="blue">Streamable HTTP</Tag>
+          </div>
+          <div class="guide-item">
+            <span class="guide-label">认证方式</span>
+            <div class="guide-auth">
+              <code class="guide-code">Authorization: Bearer &lt;API Key&gt;</code>
+              <div class="guide-hint">
+                <Button type="link" size="small" class="guide-generate-btn" @click="openApiKeyModal">
+                  生成密钥
+                </Button>
+                <span>或前往 <span class="guide-link" @click="router.push('/profile')">个人中心</span> 管理</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 客户端配置示例 -->
+        <div class="guide-section">
+          <div class="guide-section-title">客户端配置</div>
+          <pre class="guide-config-json">{{
+            JSON.stringify(
+              {
+                mcpServers: {
+                  'aio-life': {
+                    type: 'streamable-http',
+                    url: mcpUrl,
+                    headers: {
+                      Authorization: 'Bearer <your-api-key>',
+                    },
+                  },
+                },
+              },
+              null,
+              2,
+            )
+          }}</pre>
+        </div>
+      </div>
+    </Card>
+
+    <div
+      v-if="!showGuide"
+      class="guide-collapsed"
+      @click="showGuide = true"
+    >
+      <span>配置指南</span>
+      <Tag color="green" size="small">MCP 服务端</Tag>
+      <span class="guide-expand-link">展开</span>
+    </div>
+
     <Spin :spinning="loading">
       <Empty
         v-if="!loading && filteredTools.length === 0"
@@ -337,6 +466,76 @@ onMounted(() => {
           <div class="result-label">返回结果</div>
           <pre class="result-content" :class="{ 'is-error': modalIsError }">{{
             modalResult
+          }}</pre>
+        </div>
+      </div>
+    </Modal>
+
+    <!-- 生成 API Key 弹窗 -->
+    <Modal
+      v-model:open="apiKeyModalVisible"
+      title="生成 API Key"
+      :footer="null"
+      width="480px"
+      destroy-on-close
+    >
+      <div v-if="!generatedApiKey" class="api-key-modal">
+        <Form :model="apiKeyForm" layout="vertical">
+          <Form.Item label="备注" name="remark">
+            <Input
+              v-model:value="apiKeyForm.remark"
+              placeholder="输入备注，方便识别"
+            />
+          </Form.Item>
+          <Form.Item label="有效期" name="expireDays">
+            <Select v-model:value="apiKeyForm.expireDays">
+              <Select.Option :value="0">永不过期</Select.Option>
+              <Select.Option :value="30">30 天</Select.Option>
+              <Select.Option :value="90">90 天</Select.Option>
+              <Select.Option :value="365">365 天</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+        <Button
+          type="primary"
+          block
+          :loading="apiKeyGenerating"
+          @click="handleGenerateApiKey"
+        >
+          生成
+        </Button>
+      </div>
+      <div v-else class="api-key-result">
+        <div class="api-key-result-icon">
+          <Tag color="success">生成成功</Tag>
+        </div>
+        <p class="api-key-result-tip">
+          请复制并妥善保管您的 API Key，关闭后将无法再次查看完整密钥。
+        </p>
+        <div class="api-key-result-value">
+          <code>{{ generatedApiKey }}</code>
+          <Tooltip title="复制">
+            <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyApiKey" />
+          </Tooltip>
+        </div>
+        <div class="api-key-result-usage">
+          <div class="guide-section-title">使用方法</div>
+          <pre class="guide-config-json">{{
+            JSON.stringify(
+              {
+                mcpServers: {
+                  'aio-life': {
+                    type: 'streamable-http',
+                    url: mcpUrl,
+                    headers: {
+                      Authorization: `Bearer ${generatedApiKey}`,
+                    },
+                  },
+                },
+              },
+              null,
+              2,
+            )
           }}</pre>
         </div>
       </div>
@@ -564,6 +763,186 @@ onMounted(() => {
   background: #fff2f0;
 }
 
+/* 配置指南 */
+.guide-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.guide-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.guide-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.guide-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.guide-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide-section-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.guide-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.guide-label {
+  font-size: 13px;
+  color: #666;
+  min-width: 64px;
+  line-height: 28px;
+  flex-shrink: 0;
+}
+
+.guide-url {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.guide-code {
+  font-size: 12px;
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  word-break: break-all;
+}
+
+.guide-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-hint {
+  font-size: 12px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.guide-generate-btn {
+  padding: 0 4px;
+  font-size: 12px;
+  height: auto;
+}
+
+.guide-link {
+  color: #1677ff;
+  cursor: pointer;
+}
+
+.guide-link:hover {
+  text-decoration: underline;
+}
+
+.guide-config-json {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 11px;
+  background: #f7f8fa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 0;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.6;
+}
+
+.guide-collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: #fafafa;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #666;
+  transition: background 0.2s;
+}
+
+.guide-collapsed:hover {
+  background: #f0f0f0;
+}
+
+.guide-expand-link {
+  margin-left: auto;
+  color: #1677ff;
+  font-size: 12px;
+}
+
+/* API Key 弹窗 */
+.api-key-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.api-key-result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.api-key-result-icon {
+  text-align: center;
+}
+
+.api-key-result-tip {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+}
+
+.api-key-result-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f7f8fa;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.api-key-result-value code {
+  flex: 1;
+  font-size: 13px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  word-break: break-all;
+  color: #1677ff;
+}
+
+.api-key-result-usage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .tools-grid {
     grid-template-columns: 1fr;
@@ -577,6 +956,16 @@ onMounted(() => {
 
   .page-header .ant-input {
     width: 100% !important;
+  }
+
+  .guide-item {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .guide-config-json {
+    font-size: 10px;
+    max-height: 220px;
   }
 }
 </style>
