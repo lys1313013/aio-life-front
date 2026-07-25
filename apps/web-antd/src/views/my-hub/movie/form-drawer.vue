@@ -108,7 +108,7 @@ const [Form, formApi] = useVbenForm({
       },
     },
     {
-      component: 'InputNumber',
+      component: 'Input',
       fieldName: 'fileId',
       label: '封面图片文件ID',
       dependencies: {
@@ -190,6 +190,11 @@ const handleParseDouban = async () => {
       if (res.type) parsedValues.type = res.type;
       if (res.coverImgUrl) {
         parsedValues.coverImgUrl = res.coverImgUrl;
+      }
+      if (res.fileId) {
+        parsedValues.fileId = res.fileId;
+        previewImg.value = await fetchAuthImageUrl(res.fileId);
+      } else if (res.coverImgUrl) {
         previewImg.value = res.coverImgUrl;
       }
       if (res.totalProgress) parsedValues.totalProgress = res.totalProgress;
