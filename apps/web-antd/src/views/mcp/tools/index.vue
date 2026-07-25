@@ -230,7 +230,7 @@ onMounted(() => {
     <div class="page-header">
       <div class="header-info">
         <h2>MCP 工具</h2>
-        <span class="tool-count">共 {{ filteredTools.length }} 个工具</span>
+        <span class="tool-count text-gray-400">共 {{ filteredTools.length }} 个工具</span>
       </div>
       <Input
         v-model:value="searchText"
@@ -267,27 +267,27 @@ onMounted(() => {
         <!-- 基本连接信息 -->
         <div class="guide-section">
           <div class="guide-item">
-            <span class="guide-label">服务地址</span>
+            <span class="guide-label text-gray-500">服务地址</span>
             <div class="guide-url">
-              <code class="guide-code">{{ mcpUrl }}</code>
+              <code class="guide-code bg-gray-100 dark:bg-gray-800">{{ mcpUrl }}</code>
               <Tooltip title="复制地址">
                 <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyUrl" />
               </Tooltip>
             </div>
           </div>
           <div class="guide-item">
-            <span class="guide-label">传输类型</span>
+            <span class="guide-label text-gray-500">传输类型</span>
             <Tag color="blue">Streamable HTTP</Tag>
           </div>
           <div class="guide-item">
-            <span class="guide-label">认证方式</span>
+            <span class="guide-label text-gray-500">认证方式</span>
             <div class="guide-auth">
-              <code class="guide-code">Authorization: Bearer &lt;API Key&gt;</code>
-              <div class="guide-hint">
+              <code class="guide-code bg-gray-100 dark:bg-gray-800">Authorization: Bearer &lt;API Key&gt;</code>
+              <div class="guide-hint text-gray-400">
                 <Button type="link" size="small" class="guide-generate-btn" @click="openApiKeyModal">
                   生成密钥
                 </Button>
-                <span>或前往 <span class="guide-link" @click="router.push('/profile')">个人中心</span> 管理</span>
+                <span>或前往 <span class="guide-link text-blue-600 dark:text-blue-400" @click="router.push('/profile')">个人中心</span> 管理</span>
               </div>
             </div>
           </div>
@@ -295,8 +295,8 @@ onMounted(() => {
 
         <!-- 客户端配置示例 -->
         <div class="guide-section">
-          <div class="guide-section-title">客户端配置</div>
-          <pre class="guide-config-json">{{
+          <div class="guide-section-title text-gray-800 dark:text-gray-200">客户端配置</div>
+          <pre class="guide-config-json border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">{{
             JSON.stringify(
               {
                 mcpServers: {
@@ -319,12 +319,12 @@ onMounted(() => {
 
     <div
       v-if="!showGuide"
-      class="guide-collapsed"
+      class="guide-collapsed bg-gray-50 text-gray-500 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
       @click="showGuide = true"
     >
       <span>配置指南</span>
       <Tag color="green" size="small">MCP 服务端</Tag>
-      <span class="guide-expand-link">展开</span>
+      <span class="guide-expand-link text-blue-600 dark:text-blue-400">展开</span>
     </div>
 
     <Spin :spinning="loading">
@@ -343,7 +343,7 @@ onMounted(() => {
         >
           <template #title>
             <div class="tool-title">
-              <code class="tool-name">{{ tool.name }}</code>
+              <code class="tool-name bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{{ tool.name }}</code>
             </div>
           </template>
           <template #extra>
@@ -352,21 +352,21 @@ onMounted(() => {
             </Tag>
           </template>
 
-          <p class="tool-desc">{{ tool.description }}</p>
+          <p class="tool-desc text-gray-500">{{ tool.description }}</p>
 
           <Collapse v-if="getProperties(tool).length > 0" ghost size="small">
             <Collapse.Panel key="params">
               <template #header>
-                <span class="schema-header"> 输入参数 </span>
+                <span class="schema-header text-gray-500"> 输入参数 </span>
               </template>
               <div class="params-list">
                 <div
                   v-for="param in getProperties(tool)"
                   :key="param.name"
-                  class="param-item"
+                  class="param-item bg-gray-50 dark:bg-gray-800"
                 >
                   <div class="param-row">
-                    <code class="param-name">{{ param.name }}</code>
+                    <code class="param-name text-gray-800 dark:text-gray-200">{{ param.name }}</code>
                     <Tag :color="getTypeColor(param.type)" size="small">
                       {{ param.type }}
                     </Tag>
@@ -374,11 +374,11 @@ onMounted(() => {
                       必填
                     </Tag>
                   </div>
-                  <p v-if="param.description" class="param-desc">
+                  <p v-if="param.description" class="param-desc text-gray-400">
                     {{ param.description }}
                   </p>
                   <div v-if="param.enum" class="param-enum">
-                    <span class="enum-label">可选值：</span>
+                    <span class="enum-label text-gray-400">可选值：</span>
                     <Tag v-for="val in param.enum" :key="val" size="small">
                       {{ val }}
                     </Tag>
@@ -388,10 +388,10 @@ onMounted(() => {
             </Collapse.Panel>
           </Collapse>
 
-          <div v-else class="no-params">该工具无需输入参数</div>
+          <div v-else class="no-params text-gray-300 dark:text-gray-600">该工具无需输入参数</div>
 
-          <div class="card-footer">
-            <a class="action-btn primary" @click.stop="openCallModal(tool)">
+          <div class="card-footer border-t border-gray-100 dark:border-gray-700">
+            <a class="action-btn primary text-blue-600 dark:text-blue-400" @click.stop="openCallModal(tool)">
               <CaretRightOutlined /> 调用
             </a>
           </div>
@@ -408,10 +408,10 @@ onMounted(() => {
       destroy-on-close
     >
       <div v-if="modalTool" class="modal-call">
-        <p class="modal-tool-desc">{{ modalTool.description }}</p>
+        <p class="modal-tool-desc text-gray-500">{{ modalTool.description }}</p>
 
         <div class="modal-toolbar">
-          <span class="modal-label">参数配置</span>
+          <span class="modal-label text-gray-800 dark:text-gray-200">参数配置</span>
         </div>
 
         <Form
@@ -450,7 +450,7 @@ onMounted(() => {
             />
           </Form.Item>
         </Form>
-        <div v-else class="no-params">该工具无需输入参数</div>
+        <div v-else class="no-params text-gray-300 dark:text-gray-600">该工具无需输入参数</div>
 
         <Button
           type="primary"
@@ -463,8 +463,8 @@ onMounted(() => {
         </Button>
 
         <div v-if="modalResult" class="modal-result">
-          <div class="result-label">返回结果</div>
-          <pre class="result-content" :class="{ 'is-error': modalIsError }">{{
+          <div class="result-label text-gray-800 dark:text-gray-200">返回结果</div>
+          <pre class="result-content border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700" :class="{ 'is-error': modalIsError }">{{
             modalResult
           }}</pre>
         </div>
@@ -509,18 +509,18 @@ onMounted(() => {
         <div class="api-key-result-icon">
           <Tag color="success">生成成功</Tag>
         </div>
-        <p class="api-key-result-tip">
+        <p class="api-key-result-tip text-gray-400">
           请复制并妥善保管您的 API Key，关闭后将无法再次查看完整密钥。
         </p>
-        <div class="api-key-result-value">
-          <code>{{ generatedApiKey }}</code>
+        <div class="api-key-result-value border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <code class="text-blue-600 dark:text-blue-400">{{ generatedApiKey }}</code>
           <Tooltip title="复制">
             <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyApiKey" />
           </Tooltip>
         </div>
         <div class="api-key-result-usage">
-          <div class="guide-section-title">使用方法</div>
-          <pre class="guide-config-json">{{
+          <div class="guide-section-title text-gray-800 dark:text-gray-200">使用方法</div>
+          <pre class="guide-config-json border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">{{
             JSON.stringify(
               {
                 mcpServers: {
@@ -569,7 +569,6 @@ onMounted(() => {
 
 .tool-count {
   font-size: 13px;
-  color: #999;
 }
 
 .tools-grid {
@@ -583,10 +582,6 @@ onMounted(() => {
   transition: box-shadow 0.2s;
 }
 
-.tool-card:hover {
-  box-shadow: 0 2px 12px rgb(0 0 0 / 8%);
-}
-
 .tool-title {
   display: flex;
   align-items: center;
@@ -596,8 +591,6 @@ onMounted(() => {
 .tool-name {
   font-size: 13px;
   font-weight: 600;
-  color: #1677ff;
-  background: #f0f5ff;
   padding: 1px 6px;
   border-radius: 4px;
 }
@@ -605,7 +598,6 @@ onMounted(() => {
 .tool-desc {
   margin: 0 0 8px;
   font-size: 12px;
-  color: #666;
   line-height: 1.5;
 }
 
@@ -614,11 +606,6 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #666;
-}
-
-.collapse-icon {
-  font-size: 10px;
 }
 
 .params-list {
@@ -629,7 +616,6 @@ onMounted(() => {
 
 .param-item {
   padding: 6px 10px;
-  background: #fafafa;
   border-radius: 6px;
 }
 
@@ -643,13 +629,11 @@ onMounted(() => {
 .param-name {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
 }
 
 .param-desc {
   margin: 4px 0 0;
   font-size: 11px;
-  color: #999;
 }
 
 .param-enum {
@@ -662,12 +646,10 @@ onMounted(() => {
 
 .enum-label {
   font-size: 12px;
-  color: #999;
 }
 
 .no-params {
   font-size: 13px;
-  color: #ccc;
   text-align: center;
   padding: 12px 0;
 }
@@ -675,26 +657,19 @@ onMounted(() => {
 .card-footer {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
   display: flex;
   gap: 16px;
 }
 
 .action-btn {
   font-size: 12px;
-  color: #666;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.action-btn:hover {
-  color: #1677ff;
-}
-
 .action-btn.primary {
-  color: #1677ff;
   font-weight: 500;
 }
 
@@ -708,7 +683,6 @@ onMounted(() => {
 .modal-tool-desc {
   margin: 0;
   font-size: 13px;
-  color: #666;
 }
 
 .modal-toolbar {
@@ -720,12 +694,6 @@ onMounted(() => {
 .modal-label {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
-}
-
-.modal-textarea {
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
-  font-size: 12px;
 }
 
 .modal-call-btn {
@@ -739,15 +707,12 @@ onMounted(() => {
 .result-label {
   font-size: 12px;
   font-weight: 500;
-  color: #333;
   margin-bottom: 6px;
 }
 
 .result-content {
   font-family: 'SF Mono', Monaco, Consolas, monospace;
   font-size: 11px;
-  background: #f7f8fa;
-  border: 1px solid #e8e8e8;
   border-radius: 6px;
   padding: 10px;
   margin: 0;
@@ -795,7 +760,6 @@ onMounted(() => {
 .guide-section-title {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
 }
 
 .guide-item {
@@ -806,7 +770,6 @@ onMounted(() => {
 
 .guide-label {
   font-size: 13px;
-  color: #666;
   min-width: 64px;
   line-height: 28px;
   flex-shrink: 0;
@@ -820,7 +783,6 @@ onMounted(() => {
 
 .guide-code {
   font-size: 12px;
-  background: #f5f5f5;
   padding: 4px 8px;
   border-radius: 4px;
   font-family: 'SF Mono', Monaco, Consolas, monospace;
@@ -835,7 +797,6 @@ onMounted(() => {
 
 .guide-hint {
   font-size: 12px;
-  color: #999;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -848,7 +809,6 @@ onMounted(() => {
 }
 
 .guide-link {
-  color: #1677ff;
   cursor: pointer;
 }
 
@@ -859,8 +819,6 @@ onMounted(() => {
 .guide-config-json {
   font-family: 'SF Mono', Monaco, Consolas, monospace;
   font-size: 11px;
-  background: #f7f8fa;
-  border: 1px solid #e8e8e8;
   border-radius: 6px;
   padding: 12px;
   margin: 0;
@@ -877,21 +835,14 @@ onMounted(() => {
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  background: #fafafa;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
-  color: #666;
   transition: background 0.2s;
-}
-
-.guide-collapsed:hover {
-  background: #f0f0f0;
 }
 
 .guide-expand-link {
   margin-left: auto;
-  color: #1677ff;
   font-size: 12px;
 }
 
@@ -915,7 +866,6 @@ onMounted(() => {
 .api-key-result-tip {
   margin: 0;
   font-size: 12px;
-  color: #999;
   text-align: center;
 }
 
@@ -923,8 +873,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f7f8fa;
-  border: 1px solid #e8e8e8;
   border-radius: 6px;
   padding: 8px 12px;
 }
@@ -934,7 +882,6 @@ onMounted(() => {
   font-size: 13px;
   font-family: 'SF Mono', Monaco, Consolas, monospace;
   word-break: break-all;
-  color: #1677ff;
 }
 
 .api-key-result-usage {
