@@ -162,16 +162,54 @@ onMounted(() => {
           <Input v-model:value="formState.platformUsername" />
           <template v-if="formState.platform === 'douban'" #extra>
             <span class="text-xs text-gray-500">
-              豆瓣个人主页：
               <a
                 class="text-blue-500"
                 href="https://www.douban.com"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                访问豆瓣
+                douban.com
               </a>
-              ，点击右上角头像 → 我的主页，URL 格式：douban.com/people/{豆瓣用户ID}，其中花括号部分即为豆瓣用户 ID
+              → 点击右上角头像 → 我的主页，URL：douban.com/people/{豆瓣用户ID}
+            </span>
+          </template>
+          <template v-else-if="formState.platform === 'leetcode'" #extra>
+            <span class="text-xs text-gray-500">
+              <a
+                class="text-blue-500"
+                href="https://leetcode.cn"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                leetcode.cn
+              </a>
+              → 点击右上角头像 → 个人主页，URL：leetcode.cn/u/{用户名}
+            </span>
+          </template>
+          <template v-else-if="formState.platform === 'csdn'" #extra>
+            <span class="text-xs text-gray-500">
+              <a
+                class="text-blue-500"
+                href="https://www.csdn.net"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                csdn.net
+              </a>
+              → 点击右上角头像 → 个人主页，URL：blog.csdn.net/{用户名}
+            </span>
+          </template>
+          <template v-else-if="formState.platform === 'shanbay'" #extra>
+            <span class="text-xs text-gray-500">
+              <a
+                class="text-blue-500"
+                href="https://web.shanbay.com"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                web.shanbay.com
+              </a>
+              → 登录后 URL：web.shanbay.com/web/account/{用户ID}
             </span>
           </template>
         </Form.Item>
