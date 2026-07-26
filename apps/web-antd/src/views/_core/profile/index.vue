@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -15,14 +16,16 @@ import SecondaryPasswordSetting from './secondary-password-setting.vue';
 import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
+const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 
-const tabsValue = ref<string>(
-  localStorage.getItem('profile-tab') || 'basic',
-);
+const tabsValue = ref<string>((route.query.tab as string) || 'basic');
 
 watch(tabsValue, (val) => {
-  localStorage.setItem('profile-tab', val);
+  if (route.query.tab !== val) {
+    router.replace({ query: { tab: val } });
+  }
 });
 
 const tabs = ref([
