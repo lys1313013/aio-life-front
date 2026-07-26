@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -17,14 +17,15 @@ import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const route = useRoute();
-const router = useRouter();
 const userStore = useUserStore();
 
 const tabsValue = ref<string>((route.query.tab as string) || 'basic');
 
 watch(tabsValue, (val) => {
   if (route.query.tab !== val) {
-    router.replace({ query: { tab: val } });
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', val);
+    window.history.replaceState({}, '', url.toString());
   }
 });
 
