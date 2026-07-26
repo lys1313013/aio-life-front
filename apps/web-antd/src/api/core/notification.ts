@@ -27,10 +27,16 @@ export interface FeishuRecipientList {
   warning?: string;
 }
 
+export interface ChannelState {
+  channel: string;
+  enabled: boolean;
+}
+
 export interface NotificationPreference {
   bizType: string;
   description: string;
-  enabled: boolean;
+  visible: boolean;
+  channels: ChannelState[];
 }
 
 export async function getFeishuChannelConfigApi() {
@@ -74,7 +80,9 @@ export async function updateNotificationPreferencesApi(
   return await requestClient.put<NotificationPreference[]>(
     '/notification/preferences',
     {
-      items: items.map(({ bizType, enabled }) => ({ bizType, enabled })),
+      items: items.flatMap(({ bizType, channels }) =>
+        channels.map(({ channel, enabled }) => ({ bizType, channel, enabled })),
+      ),
     },
   );
 }

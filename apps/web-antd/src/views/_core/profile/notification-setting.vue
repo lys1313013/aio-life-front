@@ -14,6 +14,7 @@ import {
   Form,
   Input,
   message,
+  Modal,
   Popconfirm,
   Select,
   Spin,
@@ -31,6 +32,12 @@ import {
   updateNotificationPreferencesApi,
 } from '#/api/core/notification';
 
+const CHANNEL_LABELS: Record<string, string> = {
+  STATION: '站内',
+  EMAIL: '邮件',
+  FEISHU: '飞书',
+};
+
 const loading = ref(false);
 const saving = ref(false);
 const recipientLoading = ref(false);
@@ -39,6 +46,7 @@ const deleting = ref(false);
 const preferenceSaving = ref(false);
 const editingCredentials = ref(false);
 const manualOpenId = ref(false);
+const feishuModalVisible = ref(false);
 
 const config = ref<FeishuChannelConfig>({
   bound: false,
@@ -54,6 +62,22 @@ const formState = reactive({
   enabled: false,
   openId: '',
 });
+
+const feishuStatus = computed(() => {
+  if (!config.value.configured) return '未配置';
+  if (!config.value.bound) return '已配置凭证，待绑定接收人';
+  return config.value.enabled ? '已启用' : '已停用';
+});
+
+const feishuStatusColor = computed(() => {
+  if (!config.value.configured) return 'default';
+  if (config.value.enabled) return 'success';
+  return 'warning';
+});
+
+const visiblePreferences = computed(() =>
+  preferences.value.filter((p) => p.visible),
+);
 
 const receiverLabel = computed(() => {
   if (!config.value.bound) return '尚未选择';
@@ -90,6 +114,11 @@ async function fetchRecipients() {
   } finally {
     recipientLoading.value = false;
   }
+}
+
+async function openFeishuModal() {
+  feishuModalVisible.value = true;
+  await fetchRecipients();
 }
 
 async function fetchData() {
@@ -133,7 +162,6 @@ async function handleSaveConfig() {
         ? formState.appSecret.trim()
         : undefined,
       enabled: formState.enabled,
-      // open_id 只在当前应用内有效；更换凭证时由后端重新发现接收人。
       openId: editingCredentials.value
         ? undefined
         : formState.openId.trim() || undefined,
@@ -203,14 +231,33 @@ onMounted(fetchData);
 <template>
   <Spin :spinning="loading">
     <div class="notification-setting max-w-3xl space-y-4">
-      <Alert
-        show-icon
-        type="info"
-        message="填写 App ID 和 App Secret 即可配置飞书通知"
-        description="应用只有一个可见用户时会自动绑定；有多个用户时可直接选择。AIO Life 不会读取飞书消息。"
-      />
+      <!-- 飞书配置入口 -->
+      <div
+        class="feishu-entry flex cursor-pointer items-center justify-between rounded-md border border-gray-200 p-4 transition-colors hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-600"
+        @click="openFeishuModal"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-base font-medium">飞书通知</span>
+          <Tag :color="feishuStatusColor">{{ feishuStatus }}</Tag>
+        </div>
+        <Button type="link" size="small">配置</Button>
+      </div>
 
-      <Card title="飞书应用" :bordered="false">
+      <!-- 飞书配置弹窗 -->
+      <Modal
+        v-model:open="feishuModalVisible"
+        title="飞书通知配置"
+        :footer="null"
+        width="560px"
+        destroy-on-close
+      >
+        <Alert
+          show-icon
+          type="info"
+          message="填写 App ID 和 App Secret 即可配置飞书通知"
+          description="应用只有一个可见用户时会自动绑定；有多个用户时可直接选择。AIO Life 不会读取飞书消息。"
+          class="mb-4"
+        />
         <Form :model="formState" layout="vertical">
           <template v-if="!editingCredentials && config.configured">
             <Form.Item label="应用凭证">
@@ -341,22 +388,28 @@ onMounted(fetchData);
             </Popconfirm>
           </div>
         </Form>
-      </Card>
+      </Modal>
 
-      <Card title="发送类型" :bordered="false">
+      <Card title="通知类型" :bordered="false">
         <div class="divide-y divide-gray-100 dark:divide-gray-700">
           <div
-            v-for="item in preferences"
+            v-for="item in visiblePreferences"
             :key="item.bizType"
             class="preference-row"
           >
-            <div>
+            <div class="preference-label">
               <div class="font-medium">{{ item.description }}</div>
-              <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {{ item.bizType }}
+            </div>
+            <div class="channel-toggles">
+              <div
+                v-for="ch in item.channels"
+                :key="ch.channel"
+                class="channel-item"
+              >
+                <span class="channel-label">{{ CHANNEL_LABELS[ch.channel] || ch.channel }}</span>
+                <Switch v-model:checked="ch.enabled" size="small" />
               </div>
             </div>
-            <Switch v-model:checked="item.enabled" />
           </div>
         </div>
         <Button
@@ -365,7 +418,7 @@ onMounted(fetchData);
           :loading="preferenceSaving"
           @click="handleSavePreferences"
         >
-          保存发送类型
+          保存通知类型
         </Button>
       </Card>
     </div>
@@ -380,10 +433,43 @@ onMounted(fetchData);
   align-items: center;
 }
 
-.config-row,
-.preference-row {
+.config-row {
   justify-content: space-between;
   gap: 16px;
+}
+
+.preference-row {
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 56px;
+  padding: 12px 0;
+}
+
+.preference-label {
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+.channel-toggles {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.channel-label {
+  font-size: 13px;
+  color: #666;
+}
+
+.dark .channel-label {
+  color: #aaa;
 }
 
 .action-row {
@@ -391,15 +477,21 @@ onMounted(fetchData);
   gap: 8px;
 }
 
-.preference-row {
-  min-height: 64px;
-  padding: 12px 0;
-}
-
 @media (max-width: 640px) {
   .config-row {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .preference-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .channel-toggles {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .action-row {
