@@ -203,13 +203,13 @@ onMounted(() => {
             <span class="text-xs text-gray-500">
               <a
                 class="text-blue-500"
-                href="https://web.shanbay.com"
+                href="https://www.shanbay.com"
                 rel="noopener noreferrer"
                 target="_blank"
               >
-                web.shanbay.com
+                shanbay.com
               </a>
-              → 登录后 URL：web.shanbay.com/web/account/{用户ID}
+              → 点击右上角头像 → 个人设置，URL：shangbay.com/user/{用户ID}
             </span>
           </template>
         </Form.Item>
