@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UserBindEntity } from '#/api/core/user-bind';
 
-import { onMounted, ref } from 'vue';
+import { h, onMounted, ref } from 'vue';
 
 import {
   Button,
@@ -13,6 +13,7 @@ import {
   Select,
   Table,
 } from 'ant-design-vue';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 
 import {
   addUserBindApi,
@@ -28,8 +29,7 @@ const columns = [
     dataIndex: 'platformUsername',
     key: 'platformUsername',
   },
-  { title: '绑定时间', dataIndex: 'createTime', key: 'createTime' },
-  { title: '操作', key: 'action' },
+  { title: '操作', key: 'action', width: 100 },
 ];
 
 const data = ref<UserBindEntity[]>([]);
@@ -48,6 +48,7 @@ const platformOptions = [
   { label: 'LeetCode', value: 'leetcode' },
   { label: 'CSDN', value: 'csdn' },
   { label: '扇贝单词', value: 'shanbay' },
+  { label: '豆瓣', value: 'douban' },
 ];
 
 const fetchList = async () => {
@@ -117,16 +118,19 @@ onMounted(() => {
     >
       <template #bodyCell="{ column, record, text }">
         <template v-if="column.key === 'action'">
-          <Button type="link" size="small" @click="handleEdit(record)">
-            编辑
-          </Button>
+          <Button
+            type="link"
+            size="small"
+            @click="handleEdit(record)"
+            :icon="h(EditOutlined)"
+          />
           <Popconfirm
             title="确定要删除此绑定吗？"
             ok-text="确定"
             cancel-text="取消"
             @confirm="handleDelete(record.id)"
           >
-            <Button type="link" danger size="small">删除</Button>
+            <Button type="link" danger size="small" :icon="h(DeleteOutlined)" />
           </Popconfirm>
         </template>
         <template v-else-if="column.key === 'platform'">
@@ -156,6 +160,20 @@ onMounted(() => {
         </Form.Item>
         <Form.Item label="账号/用户名" required>
           <Input v-model:value="formState.platformUsername" />
+          <template v-if="formState.platform === 'douban'" #extra>
+            <span class="text-xs text-gray-500">
+              豆瓣个人主页：
+              <a
+                class="text-blue-500"
+                href="https://www.douban.com"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                访问豆瓣
+              </a>
+              ，点击右上角头像 → 我的主页，URL 格式：douban.com/people/{豆瓣用户ID}，其中花括号部分即为豆瓣用户 ID
+            </span>
+          </template>
         </Form.Item>
         <Form.Item v-if="formState.platform === 'github'" label="Access Token">
           <Input.Password
