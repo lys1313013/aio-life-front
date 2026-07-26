@@ -148,6 +148,7 @@ onMounted(() => {
     <Modal
       v-model:open="modalVisible"
       title="绑定账号"
+      centered
       @ok="handleOk"
       :confirm-loading="modalLoading"
     >
