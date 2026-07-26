@@ -94,8 +94,8 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
   // 二级锁错误处理
   client.addResponseInterceptor({
-    onFulfilled: (response) => response,
-    onRejected: (error) => {
+    fulfilled: (response) => response,
+    rejected: (error) => {
       const responseData = error?.response?.data ?? {};
       if (responseData?.rscode === '2001') {
         const requestUrl = error?.config?.url ?? '';

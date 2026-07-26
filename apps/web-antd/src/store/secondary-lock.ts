@@ -27,7 +27,8 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     if (loaded.value) return;
     try {
       const ids = await getSecondaryLockMenusApi();
-      lockedMenuIds.value = new Set(ids);
+      // 后端 Long 序列化为字符串，统一转 number 存储
+      lockedMenuIds.value = new Set(ids.map(Number));
     } catch {
       // ignore
     } finally {
@@ -36,12 +37,13 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   }
 
   async function saveLockedMenus(ids: number[]) {
-    await saveSecondaryLockMenusApi({ menuIds: ids });
-    lockedMenuIds.value = new Set(ids);
+    const uniqueIds = [...new Set(ids)];
+    await saveSecondaryLockMenusApi({ menuIds: uniqueIds });
+    lockedMenuIds.value = new Set(uniqueIds);
   }
 
-  function isMenuLocked(menuId: number): boolean {
-    return lockedMenuIds.value.has(menuId);
+  function isMenuLocked(menuId: number | string): boolean {
+    return lockedMenuIds.value.has(Number(menuId));
   }
 
   function isUnlocked(menuPath: string): boolean {
