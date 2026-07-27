@@ -10,6 +10,7 @@ import {
   Divider,
   message,
   Modal,
+  Popconfirm,
   Spin,
   Table,
   Tag,
@@ -18,6 +19,7 @@ import {
 import {
   checkMbtiResult,
   createMbtiTest,
+  deleteMbtiResult,
   getMbtiById,
   getMbtiHistory,
   saveMbtiResult,
@@ -27,12 +29,23 @@ const loading = ref(false);
 const testStarted = ref(false);
 const testCompleted = ref(false);
 const isFromHistory = ref(false);
+const resultSaved = ref(false);
 const currentTestId = ref('');
 const mbtiResult = ref<Partial<MbtiResult>>({});
 const checkData = ref<any>(null);
 const historyVisible = ref(false);
 const historyList = ref<MbtiResult[]>([]);
 const iframeLoadError = ref(false);
+
+const PENDING_TEST_KEY = 'mbti_pending_test';
+
+const savePendingTest = (testId: string, testUrl: string) => {
+  localStorage.setItem(PENDING_TEST_KEY, JSON.stringify({ testId, testUrl }));
+};
+
+const clearPendingTest = () => {
+  localStorage.removeItem(PENDING_TEST_KEY);
+};
 
 let pollTimer: null | number = null;
 
@@ -48,12 +61,13 @@ const handleStartTest = async () => {
       testUrl.value =
         res.testUrl || `https://devil.ai/api-personality-test/${res.testId}`;
       testStarted.value = true;
+      savePendingTest(res.testId, testUrl.value);
       startPolling();
     } else {
       message.error(res.message || '创建测试失败');
     }
   } catch {
-    message.error('创建测试失败');
+    // 全局拦截器已提示后端的错误信息，避免重复弹窗
   } finally {
     loading.value = false;
   }
@@ -77,30 +91,52 @@ const historyColumns = [
   },
 ];
 
-const startPolling = () => {
-  pollTimer = window.setInterval(async () => {
-    try {
-      const res = await checkMbtiResult(currentTestId.value);
-      if (res.success && res.mbtiType) {
-        mbtiResult.value = {
-          testId: currentTestId.value,
-          mbtiType: res.mbtiType,
-        };
-        checkData.value = res;
-        testCompleted.value = true;
-        stopPolling();
-        message.success('测试完成！');
-      }
-    } catch (error) {
-      console.error('查询结果失败', error);
+const checkResult = async () => {
+  try {
+    const res = await checkMbtiResult(currentTestId.value);
+    if (res.success && res.mbtiType) {
+      mbtiResult.value = {
+        testId: currentTestId.value,
+        mbtiType: res.mbtiType,
+      };
+      checkData.value = res;
+      testCompleted.value = true;
+      stopPolling();
+      await autoSaveResult();
     }
-  }, 5000);
+  } catch (error) {
+    console.error('查询结果失败', error);
+  }
+};
+
+const startPolling = () => {
+  pollTimer = window.setInterval(checkResult, 5000);
 };
 
 const stopPolling = () => {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+};
+
+const autoSaveResult = async () => {
+  try {
+    await saveMbtiResult({
+      testId: currentTestId.value,
+      mbtiType: mbtiResult.value.mbtiType,
+      predictions: checkData.value?.predictions,
+      traitOrderConscious: checkData.value?.traitOrderConscious,
+      traitOrderShadow: checkData.value?.traitOrderShadow,
+      matches: checkData.value?.matches,
+      resultsPage: checkData.value?.resultsPage,
+    });
+    resultSaved.value = true;
+    clearPendingTest();
+    message.success('测试完成，结果已自动保存');
+    historyList.value = await getMbtiHistory();
+  } catch {
+    message.warning('测试完成，但自动保存失败，请点击下方按钮手动保存');
   }
 };
 
@@ -115,6 +151,8 @@ const handleSaveResult = async () => {
       matches: checkData.value?.matches,
       resultsPage: checkData.value?.resultsPage,
     });
+    resultSaved.value = true;
+    clearPendingTest();
     message.success('保存成功');
     historyList.value = await getMbtiHistory();
   } catch {
@@ -131,6 +169,22 @@ const handleViewHistory = async () => {
     message.error('获取历史记录失败');
   } finally {
     loading.value = false;
+  }
+};
+
+const handleDelete = async (record: MbtiResult) => {
+  if (!record.id) return;
+  try {
+    await deleteMbtiResult(record.id);
+    message.success('删除成功');
+    historyList.value = historyList.value.filter(
+      (item) => item.id !== record.id,
+    );
+    if (isFromHistory.value && mbtiResult.value.id === record.id) {
+      handleReset();
+    }
+  } catch {
+    message.error('删除失败');
   }
 };
 
@@ -156,9 +210,12 @@ const handleViewDetail = async (record: any) => {
 };
 
 const handleReset = () => {
+  stopPolling();
+  clearPendingTest();
   testStarted.value = false;
   testCompleted.value = false;
   isFromHistory.value = false;
+  resultSaved.value = false;
   currentTestId.value = '';
   testUrl.value = '';
   iframeLoadError.value = false;
@@ -233,6 +290,26 @@ onMounted(async () => {
     historyList.value = await getMbtiHistory();
   } catch (error) {
     console.error('获取历史记录失败', error);
+  }
+
+  // 刷新后恢复未完成的测试
+  const pending = localStorage.getItem(PENDING_TEST_KEY);
+  if (pending) {
+    try {
+      const { testId, testUrl: url } = JSON.parse(pending);
+      if (testId) {
+        currentTestId.value = testId;
+        testUrl.value =
+          url || `https://devil.ai/api-personality-test/${testId}`;
+        testStarted.value = true;
+        await checkResult();
+        if (!testCompleted.value) {
+          startPolling();
+        }
+      }
+    } catch {
+      clearPendingTest();
+    }
   }
 });
 
@@ -399,7 +476,7 @@ onUnmounted(() => {
         <Card>
           <div class="result-actions">
             <Button
-              v-if="!isFromHistory"
+              v-if="!isFromHistory && !resultSaved"
               type="primary"
               @click="handleSaveResult"
             >
@@ -430,6 +507,14 @@ onUnmounted(() => {
             <Button type="link" size="small" @click="handleViewDetail(record)">
               查看详情
             </Button>
+            <Popconfirm
+              title="确定删除这条记录吗？"
+              ok-text="删除"
+              cancel-text="取消"
+              @confirm="handleDelete(record)"
+            >
+              <Button type="link" size="small" danger>删除</Button>
+            </Popconfirm>
           </template>
         </template>
       </Table>

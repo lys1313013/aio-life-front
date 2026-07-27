@@ -60,3 +60,7 @@ export async function getMbtiHistory() {
 export async function getMbtiById(id: string) {
   return await requestClient.get<MbtiResult>(`/mbti/result/${id}`);
 }
+
+export async function deleteMbtiResult(id: string) {
+  return await requestClient.delete<void>(`/mbti/result/${id}`);
+}
