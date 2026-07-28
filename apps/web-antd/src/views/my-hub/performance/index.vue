@@ -4,13 +4,14 @@ import { onMounted, ref } from 'vue';
 import {
   CalendarOutlined,
   EnvironmentOutlined,
-  PlusOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
-import { Button, Empty, message, Modal, Spin } from 'ant-design-vue';
+import { Empty, message, Modal, Spin } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
-import { query } from '#/api/core/performance';
+import { queryPerformances } from '#/api/core/performance';
+import AuthImage from '#/components/AuthImage.vue';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormDrawerDemo from './form-drawer-demo.vue';
 
@@ -22,8 +23,8 @@ interface RowType {
   performanceDate: string;
   venue: string;
   city: string;
-  imageUrl: string;
   ticketPrice: string;
+  files?: Array<{ id: string }>;
 }
 
 const loading = ref(false);
@@ -50,7 +51,7 @@ const getPerformanceTypeLabel = (value: string) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const res = await query({
+    const res = await queryPerformances({
       page: 1,
       pageSize: 100,
     });
@@ -81,32 +82,12 @@ const closeFormModal = () => {
 const tableReload = () => {
   fetchData();
 };
-
-const getImageUrl = (coverUrl: string) => {
-  if (!coverUrl) return '';
-  if (coverUrl.includes('bilibili.com') || coverUrl.includes('hdslb.com')) {
-    return `https://images.weserv.nl/?url=${encodeURIComponent(coverUrl)}&w=300&h=200&fit=cover`;
-  }
-  return coverUrl;
-};
-
-const handleImageError = (event: Event) => {
-  const target = event.target as HTMLImageElement;
-  target.style.display = 'none';
-};
 </script>
 
 <template>
   <div class="vp-raw min-h-full w-full bg-background/50 p-0 sm:p-4">
     <Spin :spinning="loading">
       <div class="px-2 py-4 sm:px-0">
-        <div class="mb-4 flex justify-end">
-          <Button type="primary" @click="openFormDrawer()">
-            <template #icon><PlusOutlined /></template>
-            <span class="hidden sm:inline">新增活动</span>
-          </Button>
-        </div>
-
         <div
           v-if="dataSource.length === 0 && !loading"
           class="py-12 text-center"
@@ -125,12 +106,11 @@ const handleImageError = (event: Event) => {
             @click="openFormDrawer(item)"
           >
             <div class="relative aspect-[16/10] overflow-hidden">
-              <img
-                v-if="item.imageUrl"
-                :src="getImageUrl(item.imageUrl)"
+              <AuthImage
+                v-if="item.files && item.files.length > 0"
+                :file-id="item.files[0]?.id"
                 :alt="item.performanceName"
                 class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                @error="handleImageError"
               />
               <div
                 v-else
@@ -196,6 +176,8 @@ const handleImageError = (event: Event) => {
         </div>
       </div>
     </Spin>
+
+    <GlobalFloatBtn @click="openFormDrawer()" />
 
     <Modal
       v-model:open="modalVisible"
