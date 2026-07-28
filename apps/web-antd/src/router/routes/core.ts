@@ -51,6 +51,15 @@ const coreRoutes: RouteRecordRaw[] = [
     ],
   },
   {
+    component: () => import('#/views/intro/index.vue'),
+    meta: {
+      ignoreAccess: true,
+      title: '产品介绍',
+    },
+    name: 'ProductIntro',
+    path: '/intro',
+  },
+  {
     component: AuthPageLayout,
     meta: {
       hideInTab: true,

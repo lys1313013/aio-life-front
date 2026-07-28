@@ -2,6 +2,7 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { AuthenticationLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
@@ -11,6 +12,7 @@ import { useAuthStore } from '#/store';
 defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
+const router = useRouter();
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -45,5 +47,26 @@ const formSchema = computed((): VbenFormSchema[] => {
     :show-qrcode-login="false"
     :show-third-party-login="false"
     @submit="authStore.authLogin"
-  />
+  >
+    <template #to-register>
+      <div class="mt-3 flex items-center justify-center gap-2 text-sm">
+        <span class="text-muted-foreground">
+          {{ $t('authentication.accountTip') }}
+        </span>
+        <span
+          class="vben-link text-sm font-normal"
+          @click="router.push('/auth/register')"
+        >
+          {{ $t('authentication.createAccount') }}
+        </span>
+        <span class="text-muted-foreground">·</span>
+        <span
+          class="vben-link text-sm font-normal"
+          @click="router.push('/intro')"
+        >
+          产品介绍
+        </span>
+      </div>
+    </template>
+  </AuthenticationLogin>
 </template>
