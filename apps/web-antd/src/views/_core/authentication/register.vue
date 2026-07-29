@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router';
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
 
 import { registerApi, sendEmailCodeApi } from '#/api/core/auth';
 
@@ -16,6 +16,16 @@ defineOptions({ name: 'Register' });
 
 const loading = ref(false);
 const router = useRouter();
+
+const policyVisible = ref(false);
+const policyType = ref<'privacy' | 'terms'>('privacy');
+
+function openPolicy(type: 'privacy' | 'terms', event: Event) {
+  event.preventDefault();
+  event.stopPropagation();
+  policyType.value = type;
+  policyVisible.value = true;
+}
 
 const formSchema = computed((): VbenFormSchema[] => {
   return [
@@ -127,10 +137,19 @@ const formSchema = computed((): VbenFormSchema[] => {
             h(
               'a',
               {
-                class: 'vben-link ml-1 ',
-                href: '',
+                class: 'vben-link ml-1',
+                onClick: (e: Event) => openPolicy('privacy', e),
               },
-              `${$t('authentication.privacyPolicy')} & ${$t('authentication.terms')}`,
+              $t('authentication.privacyPolicy'),
+            ),
+            ' & ',
+            h(
+              'a',
+              {
+                class: 'vben-link',
+                onClick: (e: Event) => openPolicy('terms', e),
+              },
+              $t('authentication.terms'),
             ),
           ]),
       }),
@@ -161,4 +180,73 @@ async function handleSubmit(value: Recordable<any>) {
     :loading="loading"
     @submit="handleSubmit"
   />
+  <Modal
+    v-model:open="policyVisible"
+    :title="
+      policyType === 'privacy'
+        ? $t('authentication.privacyPolicy')
+        : $t('authentication.terms')
+    "
+    :footer="null"
+    centered
+    width="600px"
+  >
+    <div class="policy-content">
+      <template v-if="policyType === 'privacy'">
+        <h4>1. 信息收集</h4>
+        <p>
+          注册邮箱仅用于账号验证、登录与密码找回；你主动接入的第三方平台（GitHub、LeetCode、CSDN
+          等）凭据仅用于同步你的公开数据。
+        </p>
+        <h4>2. 数据存储</h4>
+        <p>
+          你的所有记录数据均存储于本站私有部署的服务器中，不会出售、共享给任何第三方。密码经加密存储，敏感数据（如密码管理器内容）加密后保存。
+        </p>
+        <h4>3. Cookie 与本地存储</h4>
+        <p>仅用于维持登录状态与界面偏好设置，不用于任何跟踪或广告用途。</p>
+        <h4>4. 数据权利</h4>
+        <p>
+          你可以随时导出或删除自己的数据；注销账号后，相关数据将被彻底删除。
+        </p>
+      </template>
+      <template v-else>
+        <h4>1. 账号责任</h4>
+        <p>
+          你需妥善保管账号与密码，对账号下的所有操作负责。注册即表示你提供的信息真实有效。
+        </p>
+        <h4>2. 合法使用</h4>
+        <p>
+          不得利用本服务存储、传播违法违规内容，不得攻击、干扰服务的正常运行。违规账号将被停用。
+        </p>
+        <h4>3. 服务变更</h4>
+        <p>本服务可能随版本迭代调整功能，重要变更将通过站内通知告知。</p>
+        <h4>4. 免责声明</h4>
+        <p>
+          本服务按“现状”提供，因不可抗力或第三方平台接口变更导致的数据同步异常，本站不承担相应责任，请自行备份重要数据。
+        </p>
+      </template>
+    </div>
+  </Modal>
 </template>
+
+<style scoped>
+.policy-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  line-height: 1.8;
+}
+
+.policy-content h4 {
+  margin: 12px 0 4px;
+  font-weight: 600;
+}
+
+.policy-content h4:first-child {
+  margin-top: 0;
+}
+
+.policy-content p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+}
+</style>

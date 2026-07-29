@@ -59,13 +59,6 @@ const formSchema = computed((): VbenFormSchema[] => {
         >
           {{ $t('authentication.createAccount') }}
         </span>
-        <span class="text-muted-foreground">·</span>
-        <span
-          class="vben-link text-sm font-normal"
-          @click="router.push('/intro')"
-        >
-          产品介绍
-        </span>
       </div>
     </template>
   </AuthenticationLogin>
