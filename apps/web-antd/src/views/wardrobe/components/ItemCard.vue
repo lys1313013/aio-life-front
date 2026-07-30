@@ -15,7 +15,9 @@ const emit = defineEmits<{
   edit: [item: WardrobeItemVO];
 }>();
 
-const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
+const { blobUrl: coverImage, loading: imageLoading } = useAuthImageUrl(
+  () => props.item?.fileId,
+);
 </script>
 
 <template>
@@ -26,8 +28,10 @@ const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
           v-if="coverImage"
           :src="coverImage"
           :preview="false"
-          class="item-image"
         />
+        <div v-else-if="imageLoading" class="image-skeleton" aria-label="loading">
+          <div class="shimmer"></div>
+        </div>
         <div v-else class="no-image">
           <span>无图片</span>
         </div>
@@ -78,18 +82,70 @@ const { blobUrl: coverImage } = useAuthImageUrl(() => props.item?.fileId);
 .card-image {
   height: 180px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: hsl(var(--secondary, 210 10% 96%));
   border-radius: 6px 6px 0 0;
 }
 
-.item-image {
+.card-image :deep(.ant-image) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.card-image :deep(.ant-image-img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 0;
+  animation: img-fade-in 0.35s ease-out;
 }
 
-.item-image :deep(.ant-image-img) {
-  border-radius: 0;
+@keyframes img-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.image-skeleton {
+  width: 100%;
+  height: 100%;
+  background-color: hsl(var(--secondary, 210 10% 96%));
+  overflow: hidden;
+}
+
+.image-skeleton .shimmer {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 45%) 50%,
+    transparent 100%
+  );
+  animation: shimmer-move 1.4s infinite;
+}
+
+.dark .image-skeleton .shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 8%) 50%,
+    transparent 100%
+  );
+}
+
+@keyframes shimmer-move {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .no-image {
