@@ -121,10 +121,12 @@ const [Modal, modalApi] = useVbenModal({
   title: '',
   bordered: false,
   centered: true, // 手机端居中显示，避免全屏
+  closable: false,
+  fullscreenButton: false,
   header: false, // 隐藏标题区域
   headerClass: 'border-none',
-  footerClass: 'border-none',
-  contentClass: 'p-6',
+  footerClass: 'border-none px-6 pb-6 pt-2',
+  contentClass: 'p-6 pb-2',
 });
 </script>
 <template>

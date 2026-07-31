@@ -115,18 +115,6 @@ const gridOptions: VxeGridProps<RowType> = {
   columns: [
     { title: '序号', type: 'seq', width: 60 },
     {
-      field: 'amt',
-      cellType: 'number',
-      title: '金额',
-      width: 120,
-      sortable: true,
-      align: 'right',
-      formatter: ({ cellValue }) => {
-        return cellValue.toFixed(2);
-      },
-    },
-    { field: 'remark', title: '备注', sortable: true, minWidth: 150 },
-    {
       field: 'incTypeId',
       title: '收入类型',
       width: 120,
@@ -137,12 +125,24 @@ const gridOptions: VxeGridProps<RowType> = {
     },
     { field: 'incDate', title: '时间', sortable: true, width: 140 },
     {
+      field: 'amt',
+      cellType: 'number',
+      title: '金额',
+      width: 120,
+      sortable: true,
+      align: 'right',
+      formatter: ({ cellValue }) => {
+        return cellValue.toFixed(2);
+      },
+    },
+    {
       field: 'updateTime',
       title: '修改时间',
       sortable: true,
       width: 180,
       visible: false,
     },
+    { field: 'remark', title: '备注', sortable: true, minWidth: 150 },
     {
       field: 'action',
       slots: { default: 'action' },
