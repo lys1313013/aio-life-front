@@ -82,11 +82,23 @@ async function bootstrap(namespace: string) {
       },
     });
 
-    // skipWaiting + clientsClaim 生效后，旧页面会被新 SW 接管，
-    // 此时刷新页面以加载最新资源
+    // skipWaiting + clientsClaim 生效后，旧页面会被新 SW 接管。
+    // 仅在首页时立即刷新加载最新资源；其他页面等回到首页再刷新，避免打断用户操作
+    let pendingReload = false;
+    const reloadIfHome = () => {
+      if (
+        pendingReload &&
+        router.currentRoute.value.path === preferences.app.defaultHomePath
+      ) {
+        pendingReload = false;
+        window.location.reload();
+      }
+    };
     navigator.serviceWorker?.addEventListener('controllerchange', () => {
-      window.location.reload();
+      pendingReload = true;
+      reloadIfHome();
     });
+    router.afterEach(() => reloadIfHome());
   }
 }
 
