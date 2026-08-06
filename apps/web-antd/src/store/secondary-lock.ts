@@ -36,9 +36,9 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     }
   }
 
-  async function saveLockedMenus(ids: number[]) {
+  async function saveLockedMenus(ids: number[], secondaryPassword: string) {
     const uniqueIds = [...new Set(ids)];
-    await saveSecondaryLockMenusApi({ menuIds: uniqueIds });
+    await saveSecondaryLockMenusApi({ menuIds: uniqueIds, secondaryPassword });
     lockedMenuIds.value = new Set(uniqueIds);
   }
 

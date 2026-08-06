@@ -156,6 +156,8 @@ export async function secondaryVerifyApi(data: SecondaryVerifyParams) {
 
 export interface SaveSecondaryLockMenusParams {
   menuIds: number[];
+  /** 二级密码，修改菜单锁前必须验证 */
+  secondaryPassword: string;
 }
 
 /**

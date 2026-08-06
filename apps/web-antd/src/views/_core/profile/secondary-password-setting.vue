@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 
-import { Button, Checkbox, Form, FormItem, Input, InputPassword, message, Spin } from 'ant-design-vue';
+import { Button, Form, FormItem, Input, InputPassword, message, Modal, Spin, Tree } from 'ant-design-vue';
 
 import { getAllMenusApi } from '#/api/core/menu';
 import { useUserStore } from '@vben/stores';
@@ -15,7 +15,80 @@ import {
 } from '#/api/core/auth';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 
-// ── 密码设置 ──
+// ── 菜单锁选择 ──
+interface MenuTreeNode {
+  key: string | number;
+  title: string;
+  children?: MenuTreeNode[];
+}
+
+const treeData = ref<MenuTreeNode[]>([]);
+const checkedKeys = ref<Array<string | number>>([]);
+const menuLoading = ref(true);
+const menuSaving = ref(false);
+
+// 保存菜单锁弹窗
+const saveModalOpen = ref(false);
+const savePassword = ref('');
+
+// 二级密码设置弹窗
+const pwdModalOpen = ref(false);
+
+async function loadMenuList() {
+  try {
+    const tree = await getAllMenusApi();
+    treeData.value = buildTree(tree);
+  } finally {
+    menuLoading.value = false;
+  }
+}
+
+function buildTree(nodes: any[]): MenuTreeNode[] {
+  return (nodes || [])
+    .filter((n) => n.meta?.menuId != null && n.meta?.title)
+    .map((n) => ({
+      key: Number(n.meta.menuId),
+      title: n.meta.title,
+      children: n.children?.length ? buildTree(n.children) : undefined,
+    }));
+}
+
+async function loadCheckedMenus() {
+  try {
+    const ids = await getSecondaryLockMenusApi();
+    checkedKeys.value = ids.map(Number);
+  } catch (e) {
+    console.error('加载菜单锁失败', e);
+  }
+}
+
+function getCheckedIds(): number[] {
+  return checkedKeys.value.map((k) => Number(k));
+}
+
+function onCheck(keys: Array<string | number>) {
+  checkedKeys.value = keys;
+}
+
+function openSaveModal() {
+  savePassword.value = '';
+  saveModalOpen.value = true;
+}
+
+async function handleSaveMenus() {
+  if (!savePassword.value) { message.error('请输入二级密码'); return; }
+  menuSaving.value = true;
+  try {
+    const ids = getCheckedIds();
+    await useSecondaryLockStore().saveLockedMenus(ids, savePassword.value);
+    message.success('菜单锁已保存');
+    saveModalOpen.value = false;
+    savePassword.value = '';
+  } catch (e: any) { message.error(e?.message || '保存失败'); }
+  finally { menuSaving.value = false; }
+}
+
+// ── 二级密码设置 ──
 const userStore = useUserStore();
 const userEmail = computed(() => userStore.userInfo?.email ?? '');
 
@@ -48,6 +121,11 @@ onMounted(async () => {
     passwordLoading.value = false;
   }
 });
+
+function openPwdModal(recovery = false) {
+  showRecovery.value = recovery;
+  pwdModalOpen.value = true;
+}
 
 async function handleSetPassword() {
   if (!pwdForm.password) { message.error('请输入密码'); return; }
@@ -96,85 +174,78 @@ async function handleResetPassword() {
   finally { recoverySubmitting.value = false; }
 }
 
-// ── 菜单锁选择 ──
-interface FlatMenu {
-  id: number;
-  title: string;
-  path: string;
-  indent: number;
-}
-
-const flatMenus = ref<FlatMenu[]>([]);
-const checkedMap = reactive<Record<number, boolean>>({});
-const menuLoading = ref(true);
-const menuSaving = ref(false);
-
-async function loadMenuList() {
-  try {
-    const tree = await getAllMenusApi();
-    const flat: FlatMenu[] = [];
-    flattenMenuTree(tree, 0, flat);
-    flatMenus.value = flat;
-  } finally {
-    menuLoading.value = false;
-  }
-}
-
-function flattenMenuTree(nodes: any[], depth: number, result: FlatMenu[]) {
-  for (const node of nodes) {
-    const menuId = node.meta?.menuId ?? node.id;
-    const title = node.meta?.title ?? node.name ?? '';
-    if (menuId != null && title) {
-      result.push({ id: Number(menuId), title, path: node.path ?? '', indent: depth });
-    }
-    if (node.children?.length) {
-      flattenMenuTree(node.children, depth + 1, result);
-    }
-  }
-}
-
-async function loadCheckedMenus() {
-  try {
-    const ids = await getSecondaryLockMenusApi();
-    // 先清空再赋值，确保响应式更新
-    Object.keys(checkedMap).forEach((k) => delete checkedMap[Number(k)]);
-    for (const id of ids) {
-      checkedMap[id] = true;
-    }
-  } catch (e) {
-    console.error('加载菜单锁失败', e);
-  }
-}
-
-function getCheckedIds(): number[] {
-  return Object.entries(checkedMap)
-    .filter(([, v]) => v)
-    .map(([k]) => Number(k));
-}
-
-async function handleSaveMenus() {
-  menuSaving.value = true;
-  try {
-    const ids = getCheckedIds();
-    await useSecondaryLockStore().saveLockedMenus(ids);
-    message.success('菜单锁已保存');
-  } catch (e: any) { message.error(e?.message || '保存失败'); }
-  finally { menuSaving.value = false; }
-}
-
 loadCheckedMenus();
 </script>
 
 <template>
   <div class="max-w-lg space-y-8">
-    <!-- 密码设置 -->
-    <Spin :spinning="passwordLoading">
-      <div class="bg-card border-border rounded-lg border p-4">
-        <h3 class="mb-4 text-base font-medium">二级密码</h3>
+    <!-- 菜单锁（主功能） -->
+    <div class="bg-card border-border rounded-lg border p-4">
+      <h3 class="mb-1 text-base font-medium">菜单锁</h3>
+      <p class="text-muted-foreground mb-2 text-sm">
+        勾选的菜单在访问时需要输入二级密码解锁
+      </p>
+      <Spin :spinning="menuLoading">
+        <div class="max-h-80 overflow-y-auto">
+          <Tree
+            :checked-keys="checkedKeys"
+            :tree-data="treeData"
+            checkable
+            :selectable="false"
+            :default-expand-all="false"
+            block-line
+            @update:checked-keys="onCheck"
+          />
+          <div v-if="treeData.length === 0 && !menuLoading" class="text-muted-foreground py-4 text-center text-sm">
+            暂无菜单数据
+          </div>
+        </div>
+      </Spin>
+      <div class="mt-3">
+        <Button type="primary" block @click="openSaveModal">
+          保存菜单锁
+        </Button>
+        <p
+          v-if="!hasPassword && !passwordLoading"
+          class="text-muted-foreground mt-2 text-center text-sm"
+        >
+          尚未设置二级密码，请先在下方「二级密码」卡片设置
+        </p>
+      </div>
+    </div>
+
+    <!-- 二级密码设置 -->
+    <div class="bg-card border-border rounded-lg border p-4">
+      <h3 class="mb-1 text-base font-medium">二级密码</h3>
+      <p class="text-muted-foreground mb-4 text-sm">
+        菜单锁解锁所需密码，可在此设置或修改
+      </p>
+      <Button type="default" block @click="openPwdModal(false)">
+        {{ hasPassword ? '修改二级密码' : '设置二级密码' }}
+      </Button>
+      <div class="mt-2 text-center">
+        <a
+          v-if="hasPassword"
+          class="text-muted-foreground cursor-pointer text-sm hover:underline"
+          @click="openPwdModal(true)"
+        >
+          忘记二级密码？
+        </a>
+      </div>
+    </div>
+
+    <!-- 二级密码设置弹窗 -->
+    <Modal
+      v-model:open="pwdModalOpen"
+      :centered="true"
+      :footer="null"
+      :title="'二级密码设置'"
+    >
+      <Spin :spinning="passwordLoading">
         <a-alert
           v-if="!hasPassword && !passwordLoading"
           class="mb-4"
-          message="尚未设置二级密码，设置后可对菜单加锁保护"
+          message="尚未设置二级密码，设置后可为菜单加锁保护"
           type="info"
           show-icon
         />
@@ -256,41 +327,31 @@ loadCheckedMenus();
             </a>
           </div>
         </div>
-      </div>
-    </Spin>
-
-    <!-- 菜单锁选择 -->
-    <div class="bg-card border-border rounded-lg border p-4">
-      <h3 class="mb-1 text-base font-medium">菜单锁</h3>
-      <p class="text-muted-foreground mb-4 text-sm">
-        勾选的菜单在访问时需要输入二级密码
-      </p>
-      <Spin :spinning="menuLoading">
-        <div class="max-h-80 overflow-y-auto">
-          <div
-            v-for="menu in flatMenus"
-            :key="menu.id"
-            :style="{ paddingLeft: `${menu.indent * 20}px` }"
-            class="hover:bg-secondary rounded px-2 py-1.5 transition-colors"
-          >
-            <Checkbox v-model:checked="checkedMap[menu.id]">
-              {{ menu.title }}
-            </Checkbox>
-          </div>
-          <div v-if="flatMenus.length === 0 && !menuLoading" class="text-muted-foreground py-4 text-center text-sm">
-            暂无菜单数据
-          </div>
-        </div>
-        <Button
-          class="mt-4"
-          type="primary"
-          :loading="menuSaving"
-          block
-          @click="handleSaveMenus"
-        >
-          保存菜单锁
-        </Button>
       </Spin>
-    </div>
+    </Modal>
+
+    <!-- 保存菜单锁：验证二级密码弹窗 -->
+    <Modal
+      v-model:open="saveModalOpen"
+      :centered="true"
+      :closable="false"
+      :confirm-loading="menuSaving"
+      :mask-closable="false"
+      :title="'保存菜单锁'"
+      cancel-text="取消"
+      ok-text="确认保存"
+      @ok="handleSaveMenus"
+    >
+      <div class="py-4">
+        <p class="text-muted-foreground mb-4 text-sm">
+          修改菜单锁需验证二级密码
+        </p>
+        <InputPassword
+          v-model:value="savePassword"
+          placeholder="请输入二级密码"
+          @keydown.enter="handleSaveMenus"
+        />
+      </div>
+    </Modal>
   </div>
 </template>

@@ -52,7 +52,7 @@ function handleCancel() {
     :confirm-loading="loading"
     :mask-closable="false"
     :open="store.showModal"
-    :title="'二级密码验证'"
+    :title="'菜单锁验证'"
     cancel-text="取消"
     ok-text="确认解锁"
     @cancel="handleCancel"
@@ -60,7 +60,7 @@ function handleCancel() {
   >
     <div class="py-4">
       <p class="text-muted-foreground mb-4 text-sm">
-        当前菜单需要二级密码验证
+        当前菜单已被菜单锁锁定，请输入二级密码解锁
       </p>
       <InputPassword
         v-model:value="password"

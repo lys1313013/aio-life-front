@@ -43,7 +43,7 @@ const tabs = ref([
     value: 'password',
   },
   {
-    label: '二级密码',
+    label: '菜单锁',
     value: 'secondary-password',
   },
   {
