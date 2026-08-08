@@ -5,13 +5,16 @@ import type {
   RelationshipReq,
 } from '#/api/relationship';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import {
   DeleteOutlined,
   EditOutlined,
+  FullscreenOutlined,
   PlusOutlined,
   TeamOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -39,6 +42,7 @@ import {
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
+import { getRelationColor } from './constants';
 
 // ==================== 状态 ====================
 const loading = ref(false);
@@ -48,6 +52,26 @@ const drawerVisible = ref(false);
 const personFormVisible = ref(false);
 const relationshipFormVisible = ref(false);
 const editingPersonId = ref<null | string>(null);
+const graphRef = ref<InstanceType<typeof ForceGraph2DWrapper> | null>(null);
+// 图例点选高亮的关系类型
+const highlightRelationType = ref<null | string>(null);
+
+// 图例：只展示当前图中实际出现的关系类型
+const legendItems = computed(() => {
+  const types = new Set<string>();
+  for (const link of graphData.value.links) {
+    if (link.relationType) types.add(link.relationType);
+  }
+  return [...types].map((type) => ({
+    type,
+    color: getRelationColor(type),
+  }));
+});
+
+const toggleLegendHighlight = (type: string) => {
+  highlightRelationType.value =
+    highlightRelationType.value === type ? null : type;
+};
 
 // 关系类型选项
 const relationTypes = [
@@ -112,13 +136,15 @@ const fetchGraphData = async () => {
     // 按关系数量排序，关系最多的排第一
     const sortedNodes = [...nodes].sort(
       (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
-    );// 计算最大连接数（用于大小映射）
-    // const maxRelCount = relCountMap.get(sortedNodes[0]?.id || '') || 1;
+    );
+    // 计算最大连接数（用于大小映射）
+    const maxRelCount = Math.max(relCountMap.get(sortedNodes[0]?.id || '') || 0, 1);
 
     // 径向布局：关系最多的在中心 (0,0)，其他按同心圆分布
     const layoutNodes = sortedNodes.map((n, i) => {
       const count = relCountMap.get(n.id) || 0;
-      // const ratio = count / maxRelCount;
+      // 节点大小按关系数映射到 8~24
+      const val = 8 + (count / maxRelCount) * 16;
       let x = 0;
       let y = 0;
 
@@ -147,13 +173,17 @@ const fetchGraphData = async () => {
       return {
         id: n.id,
         name: n.name,
+        avatar: n.avatar,
+        category: n.category,
         x,
         y,
         fx: x, // 固定位置，不让力模拟移动
         fy: y,
         relationshipCount: count,
-        // 节点大小统一
-        val: 20,
+        // 中心节点（关系最多者）标记，用于光环效果
+        isCenter: i === 0,
+        // 节点大小按关系数区分（8~24）
+        val,
       };
     });
 
@@ -167,7 +197,7 @@ const fetchGraphData = async () => {
     };
   } catch (error) {
     console.error('Failed to fetch graph data:', error);
-    message.error('加载失败');
+    // 具体错误提示由全局拦截器展示（如后端未开启 Neo4j 时给出明确指引）
   } finally {
     loading.value = false;
   }
@@ -209,7 +239,7 @@ const openPersonForm = (personId?: string) => {
       personForm.value = {
         name: node.name,
         avatar: '',
-        category: '',
+        category: node.category || '',
         description: '',
         tags: '',
         birthday: '',
@@ -322,16 +352,30 @@ onMounted(() => {
   <div class="relationship-page">
     <Spin :spinning="loading">
       <!-- 顶部工具栏 -->
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <TeamOutlined style="font-size: 20px; margin-right: 8px" />
-          <span style="font-size: 16px; font-weight: 500">人际关系图谱</span>
-          <span style="margin-left: 16px; color: #999">
-            {{ graphData.nodes?.length || 0 }} 人 ·
+      <div
+        class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary"
+          >
+            <TeamOutlined style="font-size: 18px" />
+          </span>
+          <span class="text-base font-semibold text-card-foreground">
+            人际关系图谱
+          </span>
+          <span
+            class="ml-2 rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground"
+          >
+            {{ graphData.nodes?.length || 0 }} 人
+          </span>
+          <span
+            class="rounded-full bg-secondary px-2.5 py-0.5 text-xs text-muted-foreground"
+          >
             {{ graphData.links?.length || 0 }} 条关系
           </span>
         </div>
-        <div class="toolbar-right">
+        <div class="flex items-center">
           <Button type="primary" @click="openPersonForm()">
             <PlusOutlined /> 添加人物
           </Button>
@@ -339,16 +383,80 @@ onMounted(() => {
       </div>
 
       <!-- 图谱区域 -->
-      <div class="graph-container">
+      <div
+        class="graph-container relative flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+      >
         <ForceGraph2DWrapper
           v-if="graphData.nodes?.length"
+          ref="graphRef"
           :graph-data="graphData"
+          :highlight-relation-type="highlightRelationType"
           node-label="name"
-          background-color="#fff"
           :link-directional-arrow-length="6"
           :link-directional-arrow-rel-pos="1"
           @node-click="handleNodeClick"
         />
+
+        <!-- 图例 -->
+        <div
+          v-if="legendItems.length"
+          class="absolute left-3 top-3 z-10 max-w-[45%] rounded-xl border border-border bg-card/90 p-3 shadow-md backdrop-blur"
+        >
+          <div class="mb-2 text-xs font-medium text-muted-foreground">
+            关系图例
+          </div>
+          <div class="flex flex-wrap gap-x-3 gap-y-1.5">
+            <button
+              v-for="item in legendItems"
+              :key="item.type"
+              type="button"
+              class="flex cursor-pointer items-center gap-1.5 rounded-full px-1.5 py-0.5 text-xs transition-opacity hover:bg-secondary"
+              :class="{
+                'opacity-40':
+                  highlightRelationType && highlightRelationType !== item.type,
+              }"
+              @click="toggleLegendHighlight(item.type)"
+            >
+              <span
+                class="inline-block h-2.5 w-2.5 rounded-full"
+                :style="{ backgroundColor: item.color }"
+              ></span>
+              <span class="text-card-foreground">{{ item.type }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 画布控件 -->
+        <div
+          v-if="graphData.nodes?.length"
+          class="absolute right-3 top-3 z-10 flex flex-col gap-1 rounded-xl border border-border bg-card/90 p-1.5 shadow-md backdrop-blur"
+        >
+          <Button
+            type="text"
+            size="small"
+            title="放大"
+            @click="graphRef?.zoomIn()"
+          >
+            <ZoomInOutlined />
+          </Button>
+          <Button
+            type="text"
+            size="small"
+            title="缩小"
+            @click="graphRef?.zoomOut()"
+          >
+            <ZoomOutOutlined />
+          </Button>
+          <Button
+            type="text"
+            size="small"
+            title="适应全屏"
+            @click="graphRef?.zoomToFit()"
+          >
+            <FullscreenOutlined />
+          </Button>
+        </div>
+
         <Empty
           v-if="!graphData.nodes?.length"
           description="暂无人物，点击添加开始"
@@ -574,35 +682,8 @@ onMounted(() => {
   height: 100%;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #fff;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  color: #1890ff;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
 .graph-container {
-  flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  position: relative;
-  min-height: calc(100vh - 200px);
-  overflow: hidden;
+  min-height: calc(100vh - 220px);
 }
 
 .empty-overlay {
@@ -622,13 +703,13 @@ onMounted(() => {
 
 .detail-section h4 {
   margin-bottom: 12px;
-  color: #333;
+  color: hsl(var(--card-foreground));
   font-weight: 500;
 }
 
 .detail-section p {
   margin-bottom: 8px;
-  color: #666;
+  color: hsl(var(--muted-foreground));
 }
 
 .section-header {
@@ -653,8 +734,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
+  background: hsl(var(--secondary));
+  border-radius: 6px;
 }
 
 .rel-info {
@@ -662,16 +743,16 @@ onMounted(() => {
 }
 
 .rel-type {
-  color: #1890ff;
+  color: hsl(var(--primary));
   font-weight: 500;
 }
 
 .rel-name {
-  color: #333;
+  color: hsl(var(--card-foreground));
 }
 
 .rel-actions {
-  color: #ff4d4f;
+  color: hsl(var(--destructive));
   cursor: pointer;
 }
 
