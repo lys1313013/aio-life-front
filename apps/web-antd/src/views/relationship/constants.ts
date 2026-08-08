@@ -24,3 +24,17 @@ export const DEFAULT_RELATION_COLOR = '#9e9e9e';
 export function getRelationColor(type?: string): string {
   return (type && RELATION_COLORS[type]) || DEFAULT_RELATION_COLOR;
 }
+
+// 人物分类颜色映射（筛选 chips 与画布节点共用）
+export const CATEGORY_COLORS: Record<string, string> = {
+  亲属: '#f43f5e',
+  社会: '#3b82f6',
+  情感: '#a855f7',
+  其他: '#94a3b8',
+};
+
+export const DEFAULT_CATEGORY_COLOR = '#6366f1';
+
+export function getCategoryColor(category?: string): string {
+  return (category && CATEGORY_COLORS[category]) || DEFAULT_CATEGORY_COLOR;
+}

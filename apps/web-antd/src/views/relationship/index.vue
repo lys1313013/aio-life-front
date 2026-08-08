@@ -45,7 +45,7 @@ import {
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
-import { getRelationColor } from './constants';
+import { getCategoryColor, getRelationColor } from './constants';
 
 // ==================== 状态 ====================
 const loading = ref(false);
@@ -275,6 +275,18 @@ const relTagStyle = (type: string) => {
       };
 };
 
+const catTagStyle = (category: string) => {
+  const color = getCategoryColor(category === '未分类' ? '' : category);
+  const checked = !uncheckedCategories.value.includes(category);
+  return checked
+    ? { borderColor: color, color, backgroundColor: `${color}26` }
+    : {
+        borderColor: `${color}55`,
+        color: `${color}99`,
+        backgroundColor: 'transparent',
+      };
+};
+
 // ==================== 表单处理 ====================
 const personForm = ref<PersonReq>({
   name: '',
@@ -464,6 +476,8 @@ onMounted(() => {
             v-for="c in presentCategories"
             :key="c"
             :checked="!uncheckedCategories.includes(c)"
+            class="rel-type-tag"
+            :style="catTagStyle(c)"
             @change="toggleCategory(c)"
           >
             {{ c }}

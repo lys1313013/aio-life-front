@@ -3,7 +3,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import ForceGraph2D from 'force-graph';
 
-import { getRelationColor } from '../constants';
+import { getCategoryColor, getRelationColor } from '../constants';
 
 // 简易碰撞力，避免节点重叠（不引入 d3 类型依赖）
 function forceCollideSimple(radius: number) {
@@ -62,8 +62,6 @@ interface GraphPayload {
   links: GraphLink[];
 }
 
-const NODE_COLOR = '#3f51b5';
-
 const props = defineProps<{
   graphData: GraphPayload;
   linkDirectionalArrowLength?: number;
@@ -121,6 +119,10 @@ function linkColorOf(link: GraphLink): string {
     return withAlpha(base, 0.12);
   }
   return base;
+}
+
+function nodeColorOf(node: GraphNode): string {
+  return getCategoryColor(node.category);
 }
 
 function linkIdOf(endpoint: any): string {
@@ -183,13 +185,14 @@ function drawNode(
 ) {
   const r = Math.sqrt(Math.max(0, node.val ?? 20)) * 4;
   const dimmed = isNodeDimmed(node);
+  const nodeColor = nodeColorOf(node);
   const x = node.x ?? 0;
   const y = node.y ?? 0;
 
   // 节点圆
   ctx.save();
   if (dimmed) ctx.globalAlpha = 0.18;
-  ctx.fillStyle = NODE_COLOR;
+  ctx.fillStyle = nodeColor;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI, false);
   ctx.fill();
@@ -197,7 +200,7 @@ function drawNode(
   // 聚焦节点描边
   if (node.id === focusNodeId.value) {
     ctx.lineWidth = 2.5 / globalScale;
-    ctx.strokeStyle = NODE_COLOR;
+    ctx.strokeStyle = nodeColor;
     ctx.beginPath();
     ctx.arc(x, y, r + 3 / globalScale, 0, 2 * Math.PI, false);
     ctx.stroke();
@@ -220,7 +223,7 @@ function drawNode(
     const t = ((performance.now() - pulseStart) / 1000) % 1;
     ctx.save();
     ctx.lineWidth = 2 / globalScale;
-    ctx.strokeStyle = withAlpha(NODE_COLOR, Math.max(0, 0.9 - t * 0.9));
+    ctx.strokeStyle = withAlpha(nodeColorOf(node), Math.max(0, 0.9 - t * 0.9));
     ctx.beginPath();
     ctx.arc(x, y, r + 4 + t * 16, 0, 2 * Math.PI, false);
     ctx.stroke();
