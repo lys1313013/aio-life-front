@@ -78,6 +78,9 @@ let instance: any = null;
 let themeObserver: MutationObserver | null = null;
 let pulseFrame: null | number = null;
 let pulseClearTimer: null | ReturnType<typeof setTimeout> = null;
+let initialFitTimer: null | ReturnType<typeof setTimeout> = null;
+// 用户一旦手动缩放/拖动，就不再执行初始 zoomToFit
+let userInteracted = false;
 
 // canvas 无法使用 Tailwind 类，读取主题 CSS 变量适配暗色
 const theme = ref({ background: '#ffffff', text: '#333333' });
@@ -290,7 +293,16 @@ const initGraph = () => {
     .d3AlphaDecay(0.022)
     .graphData(props.graphData);
 
-  setTimeout(() => instance?.zoomToFit(600, 60), 1200);
+  // 用户手动操作（滚轮缩放/按下拖动）后，不再自动重置视图
+  const markInteracted = () => {
+    userInteracted = true;
+  };
+  container.value.addEventListener('wheel', markInteracted, { passive: true });
+  container.value.addEventListener('pointerdown', markInteracted);
+
+  initialFitTimer = setTimeout(() => {
+    if (!userInteracted) instance?.zoomToFit(600, 60);
+  }, 1200);
 };
 
 onMounted(() => {
@@ -322,6 +334,7 @@ onBeforeUnmount(() => {
   themeObserver = null;
   if (pulseFrame !== null) cancelAnimationFrame(pulseFrame);
   if (pulseClearTimer) clearTimeout(pulseClearTimer);
+  if (initialFitTimer) clearTimeout(initialFitTimer);
   instance?._destructor?.();
   instance = null;
 });
