@@ -2,6 +2,7 @@
 import type {
   PersonDetailVO,
   PersonReq,
+  RelationshipDetailVO,
   RelationshipReq,
 } from '#/api/relationship';
 
@@ -42,6 +43,7 @@ import {
   getGraphData,
   getPerson,
   updatePerson,
+  updateRelationship,
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
@@ -106,6 +108,7 @@ const relationshipForm = ref<RelationshipReq>({
   description: '',
   tags: '',
 });
+const editingRelationshipId = ref<null | number>(null);
 
 // ==================== 计算属性 ====================
 const linkIdOf = (endpoint: any): string =>
@@ -366,6 +369,7 @@ const handleDeletePerson = async (id: string) => {
 
 const openRelationshipForm = () => {
   if (!selectedPersonDetail.value) return;
+  editingRelationshipId.value = null;
   relationshipForm.value = {
     sourcePersonId: selectedPersonDetail.value.id,
     targetPersonId: '',
@@ -377,10 +381,35 @@ const openRelationshipForm = () => {
   relationshipFormVisible.value = true;
 };
 
+// 后端历史数据带字面双引号（如 "\"配偶\""），回填表单时剥掉
+const stripQuotes = (val?: string) => val?.replace(/^"|"$/g, '') ?? '';
+
+const openEditRelationshipForm = (rel: RelationshipDetailVO) => {
+  if (!selectedPersonDetail.value || !rel.target?.id) return;
+  editingRelationshipId.value = rel.id;
+  relationshipForm.value = {
+    sourcePersonId: selectedPersonDetail.value.id,
+    targetPersonId: rel.target.id,
+    relationType: stripQuotes(rel.relationType),
+    direction: stripQuotes(rel.direction) || '双向',
+    description: stripQuotes(rel.description),
+    tags: stripQuotes(rel.tags),
+  };
+  relationshipFormVisible.value = true;
+};
+
 const handleRelationshipSubmit = async () => {
   try {
-    await createRelationship(relationshipForm.value);
-    message.success('添加成功');
+    if (editingRelationshipId.value !== null) {
+      await updateRelationship(
+        editingRelationshipId.value,
+        relationshipForm.value,
+      );
+      message.success('保存成功');
+    } else {
+      await createRelationship(relationshipForm.value);
+      message.success('添加成功');
+    }
     relationshipFormVisible.value = false;
     await fetchGraphData();
     if (selectedPersonDetail.value) {
@@ -607,6 +636,10 @@ onMounted(() => {
                     <span class="rel-name"> → {{ rel.target?.name }}</span>
                   </div>
                   <div class="rel-actions">
+                    <EditOutlined
+                      class="rel-edit-icon"
+                      @click="openEditRelationshipForm(rel)"
+                    />
                     <DeleteOutlined
                       @click="handleDeleteRelationship(rel.target?.id || '')"
                     />
@@ -696,7 +729,7 @@ onMounted(() => {
     <!-- 关系表单弹窗 -->
     <Modal
       v-model:open="relationshipFormVisible"
-      title="添加关系"
+      :title="editingRelationshipId === null ? '添加关系' : '编辑关系'"
       width="400px"
       @ok="handleRelationshipSubmit"
     >
@@ -719,6 +752,7 @@ onMounted(() => {
           <Select
             v-model:value="relationshipForm.targetPersonId"
             placeholder="选择人物"
+            :disabled="editingRelationshipId !== null"
           >
             <SelectOption
               v-for="n in allNodes.filter(
@@ -860,6 +894,13 @@ onMounted(() => {
 .rel-actions {
   color: hsl(var(--destructive, 0 84% 60%));
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rel-actions .rel-edit-icon {
+  color: hsl(var(--muted-foreground, 215 16% 47%));
 }
 
 .detail-actions {
