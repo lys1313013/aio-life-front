@@ -5,13 +5,12 @@ import type {
   RelationshipReq,
 } from '#/api/relationship';
 
-import { onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import {
-  DeleteOutlined,
-  EditOutlined,
   PlusOutlined,
   TeamOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -22,7 +21,6 @@ import {
   Input,
   message,
   Modal,
-  Popconfirm,
   Select,
   SelectOption,
   Spin,
@@ -39,15 +37,37 @@ import {
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
+import PersonDetailPanel from './components/PersonDetailPanel.vue';
+import PersonListPanel from './components/PersonListPanel.vue';
+import { getRelationColor } from './constants';
 
 // ==================== 状态 ====================
 const loading = ref(false);
 const graphData = ref<{ links: any[]; nodes: any[] }>({ nodes: [], links: [] });
 const selectedPersonDetail = ref<null | PersonDetailVO>(null);
-const drawerVisible = ref(false);
+const detailLoading = ref(false);
+const selectedId = ref<null | string>(null);
 const personFormVisible = ref(false);
 const relationshipFormVisible = ref(false);
 const editingPersonId = ref<null | string>(null);
+const listDrawerVisible = ref(false);
+const graphRef = ref<InstanceType<typeof ForceGraph2DWrapper> | null>(null);
+
+const desktopMq = window.matchMedia('(min-width: 1024px)');
+const isDesktopView = ref(desktopMq.matches);
+const updateViewport = () => {
+  isDesktopView.value = desktopMq.matches;
+};
+const isDesktop = () => desktopMq.matches;
+
+// 页面高度自适应可视区域（布局父链是 min-h 模式，h-full 会把页面撑出视口）
+const pageRef = ref<HTMLDivElement | null>(null);
+const pageHeight = ref('600px');
+const updatePageHeight = () => {
+  if (!pageRef.value) return;
+  const top = pageRef.value.getBoundingClientRect().top;
+  pageHeight.value = `${Math.max(window.innerHeight - top - 12, 400)}px`;
+};
 
 // 关系类型选项
 const relationTypes = [
@@ -87,6 +107,106 @@ const relationshipForm = ref<RelationshipReq>({
   tags: '',
 });
 
+// ==================== 计算属性 ====================
+interface PersonListEntry {
+  category?: string;
+  id: string;
+  name: string;
+  relationshipCount: number;
+}
+
+const personList = computed<PersonListEntry[]>(() =>
+  graphData.value.nodes.map((n) => ({
+    id: n.id,
+    name: n.name,
+    category: n.category,
+    relationshipCount: n.relationshipCount || 0,
+  })),
+);
+
+// 图例：只显示实际出现的关系类型
+const activeRelationTypes = computed(() => {
+  const set = new Set<string>();
+  for (const link of graphData.value.links) {
+    if (link.relationType) set.add(link.relationType);
+  }
+  return [...set];
+});
+
+// ==================== 分簇径向布局 ====================
+// 关系最多者居中；其余按 category 分簇，每簇占一个扇区，簇内按关系数由内向外排
+const computeClusterLayout = (
+  nodes: any[],
+  relCountMap: Map<string, number>,
+) => {
+  const sortedNodes = [...nodes].sort(
+    (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
+  );
+
+  const positionMap = new Map<string, { x: number; y: number }>();
+  if (sortedNodes.length === 0) return { positionMap, sortedNodes };
+
+  // 中心节点
+  const center = sortedNodes[0];
+  positionMap.set(center.id, { x: 0, y: 0 });
+
+  const rest = sortedNodes.slice(1);
+  if (rest.length === 0) return { positionMap, sortedNodes };
+
+  // 按分类分组（组内保持关系数降序）
+  const groups = new Map<string, any[]>();
+  for (const n of rest) {
+    const cat = n.category || '未分类';
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat)!.push(n);
+  }
+  // 人数多的分类先排
+  const categories = [...groups.entries()].sort(
+    (a, b) => b[1].length - a[1].length,
+  );
+
+  // 扇区角度按人数比例分配（保证最小扇区，再归一化到 2π）
+  const MIN_SECTOR = Math.PI / 5;
+  const rawAngles = categories.map(([, members]) =>
+    Math.max(MIN_SECTOR, (2 * Math.PI * members.length) / rest.length),
+  );
+  const totalAngle = rawAngles.reduce((s, a) => s + a, 0);
+  const scale = (2 * Math.PI) / totalAngle;
+
+  let cursor = -Math.PI / 2; // 从正上方开始
+  categories.forEach(([, members], idx) => {
+    const sector = rawAngles[idx]! * scale;
+    const a0 = cursor;
+    const a1 = cursor + sector;
+    cursor = a1;
+
+    const pad = Math.min(0.12, sector * 0.08);
+    const span = a1 - a0 - 2 * pad;
+
+    // 簇内由内向外填环，环容量按弧长估算，避免同环重叠
+    let ring = 0;
+    let idxInRing = 0;
+    let ringCapacity = 0;
+    let radius = 0;
+    members.forEach((n) => {
+      if (idxInRing >= ringCapacity) {
+        ring += 1;
+        idxInRing = 0;
+        radius = 160 + (ring - 1) * 130;
+        ringCapacity = Math.max(1, Math.floor((span * radius) / 90));
+      }
+      const angle = a0 + pad + (span * (idxInRing + 0.5)) / ringCapacity;
+      positionMap.set(n.id, {
+        x: radius * Math.cos(angle),
+        y: radius * Math.sin(angle),
+      });
+      idxInRing += 1;
+    });
+  });
+
+  return { positionMap, sortedNodes };
+};
+
 // ==================== 数据获取 ====================
 const fetchGraphData = async () => {
   loading.value = true;
@@ -109,50 +229,20 @@ const fetchGraphData = async () => {
       relCountMap.set(edge.target, (relCountMap.get(edge.target) || 0) + 1);
     }
 
-    // 按关系数量排序，关系最多的排第一
-    const sortedNodes = [...nodes].sort(
-      (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
-    );// 计算最大连接数（用于大小映射）
-    // const maxRelCount = relCountMap.get(sortedNodes[0]?.id || '') || 1;
+    const { positionMap } = computeClusterLayout(nodes, relCountMap);
 
-    // 径向布局：关系最多的在中心 (0,0)，其他按同心圆分布
-    const layoutNodes = sortedNodes.map((n, i) => {
-      const count = relCountMap.get(n.id) || 0;
-      // const ratio = count / maxRelCount;
-      let x = 0;
-      let y = 0;
-
-      if (i === 0) {
-        // 关系最多的节点放中心
-        x = 0;
-        y = 0;
-      } else {
-        // 其余节点按同心圆分布
-        // 第1层最多6个，第2层最多12个，第3层最多18个...
-        let layer = 1;
-        let cumulativeCount = 0;
-        while (cumulativeCount + Math.floor(6 * layer) < i && layer < 5) {
-          cumulativeCount += Math.floor(6 * layer);
-          layer++;
-        }
-        const indexInLayer = i - 1 - cumulativeCount;
-        const nodesInThisLayer = Math.min(Math.floor(6 * layer), sortedNodes.length - i + indexInLayer);
-        const angle =
-          (2 * Math.PI * indexInLayer) / Math.max(nodesInThisLayer, 1) - Math.PI / 2;
-        const layerRadius = layer * 120;
-        x = layerRadius * Math.cos(angle);
-        y = layerRadius * Math.sin(angle);
-      }
-
+    const layoutNodes = nodes.map((n) => {
+      const pos = positionMap.get(n.id) || { x: 0, y: 0 };
       return {
         id: n.id,
         name: n.name,
-        x,
-        y,
-        fx: x, // 固定位置，不让力模拟移动
-        fy: y,
-        relationshipCount: count,
-        // 节点大小统一
+        avatar: n.avatar,
+        category: n.category,
+        x: pos.x,
+        y: pos.y,
+        fx: pos.x, // 固定位置，不让力模拟移动
+        fy: pos.y,
+        relationshipCount: relCountMap.get(n.id) || 0,
         val: 20,
       };
     });
@@ -167,24 +257,48 @@ const fetchGraphData = async () => {
     };
   } catch (error) {
     console.error('Failed to fetch graph data:', error);
-    message.error('加载失败');
+    // 具体错误提示由全局拦截器展示（如后端未开启 Neo4j 时给出明确指引）
   } finally {
     loading.value = false;
   }
 };
 
 // ==================== 交互处理 ====================
+const loadPersonDetail = async (id: string) => {
+  detailLoading.value = true;
+  try {
+    selectedPersonDetail.value = await getPerson(id);
+  } catch {
+    message.error('获取详情失败');
+    selectedPersonDetail.value = null;
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
+// 图谱节点点击 → 选中 + 详情（列表内滚动联动由 PersonListPanel 监听 selectedId）
 const handleNodeClick = async (node: any) => {
   if (!node?.id || node.id === 'null' || node.id === 'undefined') {
     message.error('该人物数据缺少有效 ID，请到 Neo4j 删除该节点后重新添加');
     return;
   }
-  try {
-    selectedPersonDetail.value = await getPerson(node.id);
-    drawerVisible.value = true;
-  } catch {
-    message.error('获取详情失败');
+  selectedId.value = node.id;
+  await loadPersonDetail(node.id);
+};
+
+// 列表点击 → 画布居中高亮；桌面端同时展开详情
+const handleListSelect = async (id: string) => {
+  selectedId.value = id;
+  listDrawerVisible.value = false;
+  graphRef.value?.focusNode(id);
+  if (isDesktop()) {
+    await loadPersonDetail(id);
   }
+};
+
+const closeDetail = () => {
+  selectedPersonDetail.value = null;
+  selectedId.value = null;
 };
 
 // ==================== 表单处理 ====================
@@ -201,38 +315,54 @@ const personForm = ref<PersonReq>({
   notes: '',
 });
 
-const openPersonForm = (personId?: string) => {
+const emptyPersonForm = (): PersonReq => ({
+  name: '',
+  avatar: '',
+  category: '',
+  description: '',
+  tags: '',
+  birthday: '',
+  phone: '',
+  email: '',
+  socialLinks: '',
+  notes: '',
+});
+
+const openPersonForm = async (personId?: string) => {
   if (personId) {
     editingPersonId.value = personId;
-    const node = graphData.value.nodes.find((n) => n.id === personId);
-    if (node) {
-      personForm.value = {
-        name: node.name,
-        avatar: '',
-        category: '',
-        description: '',
-        tags: '',
-        birthday: '',
-        phone: '',
-        email: '',
-        socialLinks: '',
-        notes: '',
-      };
+    // 优先用已加载的详情回填，否则拉取
+    let source: null | PersonDetailVO = null;
+    if (selectedPersonDetail.value?.id === personId) {
+      source = selectedPersonDetail.value;
+    } else {
+      try {
+        source = await getPerson(personId);
+      } catch {
+        source = null;
+      }
     }
+    personForm.value = source
+      ? {
+          name: source.name,
+          avatar: source.avatar || '',
+          category: source.category || '',
+          description: source.description || '',
+          tags: source.tags || '',
+          birthday: source.birthday || '',
+          phone: source.phone || '',
+          email: source.email || '',
+          socialLinks: source.socialLinks || '',
+          notes: source.notes || '',
+        }
+      : {
+          ...emptyPersonForm(),
+          name:
+            graphData.value.nodes.find((n) => n.id === personId)?.name || '',
+        };
   } else {
     editingPersonId.value = null;
-    personForm.value = {
-      name: '',
-      avatar: '',
-      category: '',
-      description: '',
-      tags: '',
-      birthday: '',
-      phone: '',
-      email: '',
-      socialLinks: '',
-      notes: '',
-    };
+    personForm.value = emptyPersonForm();
   }
   personFormVisible.value = true;
 };
@@ -241,12 +371,16 @@ const handlePersonSubmit = async () => {
   try {
     if (editingPersonId.value) {
       await updatePerson(editingPersonId.value, personForm.value);
+      message.success('保存成功');
     } else {
       await createPerson(personForm.value);
       message.success('添加成功');
     }
     personFormVisible.value = false;
     await fetchGraphData();
+    if (editingPersonId.value && selectedPersonDetail.value) {
+      await loadPersonDetail(editingPersonId.value);
+    }
   } catch {
     message.error('保存失败');
   }
@@ -256,8 +390,7 @@ const handleDeletePerson = async (id: string) => {
   try {
     await deletePerson(id);
     message.success('删除成功');
-    drawerVisible.value = false;
-    selectedPersonDetail.value = null;
+    closeDetail();
     await fetchGraphData();
   } catch {
     message.error('删除失败');
@@ -284,9 +417,7 @@ const handleRelationshipSubmit = async () => {
     relationshipFormVisible.value = false;
     await fetchGraphData();
     if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(
-        selectedPersonDetail.value.id,
-      );
+      await loadPersonDetail(selectedPersonDetail.value.id);
     }
   } catch {
     message.error('保存失败');
@@ -303,9 +434,7 @@ const handleDeleteRelationship = async (targetId: string) => {
     message.success('删除成功');
     await fetchGraphData();
     if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(
-        selectedPersonDetail.value.id,
-      );
+      await loadPersonDetail(selectedPersonDetail.value.id);
     }
   } catch {
     message.error('删除失败');
@@ -314,139 +443,164 @@ const handleDeleteRelationship = async (targetId: string) => {
 
 // ==================== 生命周期 ====================
 onMounted(() => {
+  desktopMq.addEventListener('change', updateViewport);
+  window.addEventListener('resize', updatePageHeight);
+  updatePageHeight();
   fetchGraphData();
+});
+
+onBeforeUnmount(() => {
+  desktopMq.removeEventListener('change', updateViewport);
+  window.removeEventListener('resize', updatePageHeight);
 });
 </script>
 
 <template>
-  <div class="relationship-page">
-    <Spin :spinning="loading">
-      <!-- 顶部工具栏 -->
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <TeamOutlined style="font-size: 20px; margin-right: 8px" />
-          <span style="font-size: 16px; font-weight: 500">人际关系图谱</span>
-          <span style="margin-left: 16px; color: #999">
-            {{ graphData.nodes?.length || 0 }} 人 ·
-            {{ graphData.links?.length || 0 }} 条关系
+  <div
+    ref="pageRef"
+    class="relationship-page flex gap-3 p-3 lg:p-4"
+    :style="{ height: pageHeight }"
+  >
+    <!-- 左侧人物列表（桌面端固定面板） -->
+    <aside
+      class="hidden w-[260px] shrink-0 flex-col overflow-hidden rounded-lg bg-card lg:flex"
+    >
+      <div class="shrink-0 border-b border-border px-4 py-3">
+        <div class="flex items-center justify-between">
+          <span
+            class="flex items-center text-base font-medium text-card-foreground"
+          >
+            <TeamOutlined class="mr-2" /> 人际关系图谱
           </span>
         </div>
-        <div class="toolbar-right">
-          <Button type="primary" @click="openPersonForm()">
-            <PlusOutlined /> 添加人物
-          </Button>
+        <div class="mt-1 text-xs text-muted-foreground">
+          {{ graphData.nodes?.length || 0 }} 人 ·
+          {{ graphData.links?.length || 0 }} 条关系
+        </div>
+        <Button block class="mt-3" type="primary" @click="openPersonForm()">
+          <PlusOutlined /> 添加人物
+        </Button>
+      </div>
+      <div class="min-h-0 flex-1">
+        <PersonListPanel
+          :persons="personList"
+          :selected-id="selectedId"
+          @select="handleListSelect"
+        />
+      </div>
+    </aside>
+
+    <!-- 图谱主区 -->
+    <div class="relative min-w-0 flex-1 overflow-hidden rounded-lg bg-card">
+      <Spin :spinning="loading" wrapper-class-name="graph-spin">
+        <div class="h-full w-full">
+          <ForceGraph2DWrapper
+            v-if="graphData.nodes?.length"
+            ref="graphRef"
+            :graph-data="graphData"
+            :link-directional-arrow-length="6"
+            :link-directional-arrow-rel-pos="1"
+            :selected-id="selectedId"
+            node-label="name"
+            @node-click="handleNodeClick"
+          />
+          <Empty
+            v-if="!loading && !graphData.nodes?.length"
+            class="empty-overlay"
+            description="暂无人物，点击添加开始"
+          />
+        </div>
+      </Spin>
+
+      <!-- 关系图例（只显示实际出现的类型） -->
+      <div
+        v-if="activeRelationTypes.length > 0"
+        class="absolute right-3 top-3 max-h-[40%] overflow-y-auto rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-sm"
+      >
+        <div
+          v-for="type in activeRelationTypes"
+          :key="type"
+          class="flex items-center py-0.5 text-muted-foreground"
+        >
+          <span
+            class="mr-1.5 inline-block h-2 w-4 rounded-sm"
+            :style="{ backgroundColor: getRelationColor(type) }"
+          ></span>
+          {{ type }}
         </div>
       </div>
 
-      <!-- 图谱区域 -->
-      <div class="graph-container">
-        <ForceGraph2DWrapper
-          v-if="graphData.nodes?.length"
-          :graph-data="graphData"
-          node-label="name"
-          background-color="#fff"
-          :link-directional-arrow-length="6"
-          :link-directional-arrow-rel-pos="1"
-          @node-click="handleNodeClick"
-        />
-        <Empty
-          v-if="!graphData.nodes?.length"
-          description="暂无人物，点击添加开始"
-          class="empty-overlay"
-        />
+      <!-- 移动端浮动按钮 -->
+      <div class="absolute bottom-4 left-3 lg:hidden">
+        <Button @click="listDrawerVisible = true">
+          <UnorderedListOutlined /> 人物 ({{ graphData.nodes?.length || 0 }})
+        </Button>
       </div>
-    </Spin>
+      <div class="absolute bottom-4 right-3 lg:hidden">
+        <Button type="primary" @click="openPersonForm()">
+          <PlusOutlined /> 添加人物
+        </Button>
+      </div>
+    </div>
 
-    <!-- 人物详情抽屉 -->
-    <Drawer
-      v-model:open="drawerVisible"
-      :title="selectedPersonDetail?.name || '人物详情'"
-      width="400"
+    <!-- 右侧详情面板（桌面端） -->
+    <aside
+      v-if="selectedPersonDetail || detailLoading"
+      class="hidden w-[340px] shrink-0 overflow-hidden rounded-lg bg-card lg:block"
     >
-      <template v-if="selectedPersonDetail">
-        <div class="person-detail">
-          <div class="detail-section">
-            <h4>基本信息</h4>
-            <p v-if="selectedPersonDetail.category">
-              <strong>分类：</strong>{{ selectedPersonDetail.category }}
-            </p>
-            <p v-if="selectedPersonDetail.description">
-              <strong>简介：</strong>{{ selectedPersonDetail.description }}
-            </p>
-            <p v-if="selectedPersonDetail.birthday">
-              <strong>生日：</strong>{{ selectedPersonDetail.birthday }}
-            </p>
-            <p v-if="selectedPersonDetail.phone">
-              <strong>电话：</strong>{{ selectedPersonDetail.phone }}
-            </p>
-            <p v-if="selectedPersonDetail.email">
-              <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
-            </p>
-            <p v-if="selectedPersonDetail.tags">
-              <strong>标签：</strong>{{ selectedPersonDetail.tags }}
-            </p>
-            <p v-if="selectedPersonDetail.notes">
-              <strong>备注：</strong>{{ selectedPersonDetail.notes }}
-            </p>
-          </div>
+      <PersonDetailPanel
+        :detail="selectedPersonDetail"
+        :loading="detailLoading"
+        show-close
+        @add-relationship="openRelationshipForm"
+        @close="closeDetail"
+        @delete-person="handleDeletePerson"
+        @delete-relationship="handleDeleteRelationship"
+        @edit="openPersonForm"
+      />
+    </aside>
 
-          <div class="detail-section">
-            <div class="section-header">
-              <h4>
-                关系 ({{ selectedPersonDetail.relationships?.length || 0 }})
-              </h4>
-              <Button type="link" size="small" @click="openRelationshipForm">
-                <PlusOutlined /> 添加关系
-              </Button>
-            </div>
-            <div
-              v-if="selectedPersonDetail.relationships?.length"
-              class="relationship-list"
-            >
-              <div
-                v-for="rel in selectedPersonDetail.relationships"
-                :key="rel.id"
-                class="relationship-item"
-              >
-                <div class="rel-info">
-                  <span class="rel-type">{{ rel.relationType }}</span>
-                  <span class="rel-name"> → {{ rel.target?.name }}</span>
-                </div>
-                <div class="rel-actions">
-                  <DeleteOutlined
-                    @click="handleDeleteRelationship(rel.target?.id || '')"
-                  />
-                </div>
-              </div>
-            </div>
-            <Empty
-              v-else
-              description="暂无关系"
-              :image="Empty.PRESENTED_IMAGE_SIMPLE"
-            />
-          </div>
+    <!-- 移动端：人物列表抽屉（Drawer 走 portal，CSS 断点类无法隐藏，需 v-if） -->
+    <Drawer
+      v-if="!isDesktopView"
+      v-model:open="listDrawerVisible"
+      :width="280"
+      placement="left"
+      title="人物列表"
+    >
+      <PersonListPanel
+        :persons="personList"
+        :selected-id="selectedId"
+        @select="handleListSelect"
+      />
+    </Drawer>
 
-          <div class="detail-actions">
-            <Button @click="openPersonForm(selectedPersonDetail.id)">
-              <EditOutlined /> 编辑
-            </Button>
-            <Popconfirm
-              title="确定删除此人物？"
-              @confirm="handleDeletePerson(selectedPersonDetail.id)"
-            >
-              <Button type="primary" danger> <DeleteOutlined /> 删除 </Button>
-            </Popconfirm>
-          </div>
-        </div>
-      </template>
+    <!-- 移动端：详情底部抽屉 -->
+    <Drawer
+      v-if="!isDesktopView"
+      :open="!!selectedPersonDetail || detailLoading"
+      height="75%"
+      placement="bottom"
+      @close="closeDetail"
+    >
+      <PersonDetailPanel
+        :detail="selectedPersonDetail"
+        :loading="detailLoading"
+        show-close
+        @add-relationship="openRelationshipForm"
+        @close="closeDetail"
+        @delete-person="handleDeletePerson"
+        @delete-relationship="handleDeleteRelationship"
+        @edit="openPersonForm"
+      />
     </Drawer>
 
     <!-- 人物表单弹窗 -->
     <Modal
       v-model:open="personFormVisible"
       :title="editingPersonId ? '编辑人物' : '添加人物'"
-      @ok="handlePersonSubmit"
       width="500px"
+      @ok="handlePersonSubmit"
     >
       <Form layout="vertical">
         <FormItem label="姓名" required>
@@ -466,8 +620,8 @@ onMounted(() => {
         <FormItem label="简介">
           <Input.TextArea
             v-model:value="personForm.description"
-            placeholder="简短描述"
             :rows="2"
+            placeholder="简短描述"
           />
         </FormItem>
         <FormItem label="标签">
@@ -491,8 +645,8 @@ onMounted(() => {
         <FormItem label="备注">
           <Input.TextArea
             v-model:value="personForm.notes"
-            placeholder="其他备注"
             :rows="2"
+            placeholder="其他备注"
           />
         </FormItem>
       </Form>
@@ -502,8 +656,8 @@ onMounted(() => {
     <Modal
       v-model:open="relationshipFormVisible"
       title="添加关系"
-      @ok="handleRelationshipSubmit"
       width="400px"
+      @ok="handleRelationshipSubmit"
     >
       <Form layout="vertical">
         <FormItem label="关系类型" required>
@@ -545,8 +699,8 @@ onMounted(() => {
         <FormItem label="描述">
           <Input.TextArea
             v-model:value="relationshipForm.description"
-            placeholder="关系描述"
             :rows="2"
+            placeholder="关系描述"
           />
         </FormItem>
         <FormItem label="标签">
@@ -561,48 +715,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.relationship-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-}
-
+.relationship-page :deep(.graph-spin),
 .relationship-page :deep(.ant-spin-container) {
-  display: flex;
-  flex-direction: column;
   height: 100%;
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #fff;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  color: #1890ff;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
-.graph-container {
-  flex: 1;
-  background: #fff;
-  border-radius: 8px;
-  position: relative;
-  min-height: calc(100vh - 200px);
-  overflow: hidden;
 }
 
 .empty-overlay {
@@ -610,74 +725,5 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-
-.person-detail {
-  padding: 8px;
-}
-
-.detail-section {
-  margin-bottom: 24px;
-}
-
-.detail-section h4 {
-  margin-bottom: 12px;
-  color: #333;
-  font-weight: 500;
-}
-
-.detail-section p {
-  margin-bottom: 8px;
-  color: #666;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.section-header h4 {
-  margin-bottom: 0;
-}
-
-.relationship-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.relationship-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.rel-info {
-  font-size: 14px;
-}
-
-.rel-type {
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.rel-name {
-  color: #333;
-}
-
-.rel-actions {
-  color: #ff4d4f;
-  cursor: pointer;
-}
-
-.detail-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 24px;
 }
 </style>
