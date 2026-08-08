@@ -6,7 +6,7 @@ import type {
   RelationshipReq,
 } from '#/api/relationship';
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, markRaw, onMounted, ref } from 'vue';
 
 import {
   DeleteOutlined,
@@ -199,7 +199,8 @@ const fetchGraphData = async () => {
         y = layerRadius * Math.sin(angle);
       }
 
-      return {
+      // markRaw：力模拟每帧读写 x/y/vx/vy，不能走 Vue 响应式代理
+      return markRaw({
         id: n.id,
         name: n.name,
         category: n.category,
@@ -210,14 +211,16 @@ const fetchGraphData = async () => {
         initialX: x,
         initialY: y,
         val: 20,
-      };
+      });
     });
 
-    allLinks.value = edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      relationType: e.relationType,
-    }));
+    allLinks.value = edges.map((e) =>
+      markRaw({
+        source: e.source,
+        target: e.target,
+        relationType: e.relationType,
+      }),
+    );
   } catch (error) {
     console.error('Failed to fetch graph data:', error);
     // 具体错误提示由全局拦截器展示（如后端未开启 Neo4j 时给出明确指引）

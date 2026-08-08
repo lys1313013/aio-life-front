@@ -314,7 +314,7 @@ watch(
     }
     instance?.graphData(val);
   },
-  { deep: true },
+  // 不能 deep：节点 x/y 每帧被力模拟改写，deep 会导致拖动时反复回灌数据
 );
 
 onBeforeUnmount(() => {
