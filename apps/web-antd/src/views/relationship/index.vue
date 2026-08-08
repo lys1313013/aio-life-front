@@ -5,13 +5,17 @@ import type {
   RelationshipReq,
 } from '#/api/relationship';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import {
   DeleteOutlined,
   EditOutlined,
+  FullscreenOutlined,
   PlusOutlined,
+  ReloadOutlined,
   TeamOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -26,6 +30,8 @@ import {
   Select,
   SelectOption,
   Spin,
+  Tag,
+  Tooltip,
 } from 'ant-design-vue';
 
 import {
@@ -39,15 +45,29 @@ import {
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
+import { getRelationColor } from './constants';
 
 // ==================== 状态 ====================
 const loading = ref(false);
-const graphData = ref<{ links: any[]; nodes: any[] }>({ nodes: [], links: [] });
+const detailLoading = ref(false);
+// allNodes / allLinks 保持对象引用不变（force-graph 会在其上写入坐标），
+// 过滤时复用同一批对象可避免布局被重置
+const allNodes = ref<any[]>([]);
+const allLinks = ref<any[]>([]);
 const selectedPersonDetail = ref<null | PersonDetailVO>(null);
 const drawerVisible = ref(false);
 const personFormVisible = ref(false);
 const relationshipFormVisible = ref(false);
 const editingPersonId = ref<null | string>(null);
+
+const graphRef = ref<InstanceType<typeof ForceGraph2DWrapper> | null>(null);
+
+// 搜索定位
+const searchValue = ref<string | undefined>();
+
+// 筛选：用「未勾选」集合，新出现的类型/分类默认选中
+const uncheckedRelationTypes = ref<string[]>([]);
+const uncheckedCategories = ref<string[]>([]);
 
 // 关系类型选项
 const relationTypes = [
@@ -87,6 +107,41 @@ const relationshipForm = ref<RelationshipReq>({
   tags: '',
 });
 
+// ==================== 计算属性 ====================
+const linkIdOf = (endpoint: any): string =>
+  typeof endpoint === 'object' ? endpoint.id : String(endpoint);
+
+const relTypeOf = (link: any): string => link.relationType || '其他';
+const catOf = (node: any): string => node.category || '未分类';
+
+const presentRelationTypes = computed(() => [
+  ...new Set(allLinks.value.map((l) => relTypeOf(l))),
+]);
+
+const presentCategories = computed(() => [
+  ...new Set(allNodes.value.map((n) => catOf(n))),
+]);
+
+const searchOptions = computed(() =>
+  allNodes.value.map((n) => ({ label: n.name, value: n.id })),
+);
+
+const filteredGraphData = computed(() => {
+  const nodes = allNodes.value.filter(
+    (n) => !uncheckedCategories.value.includes(catOf(n)),
+  );
+  const ids = new Set(nodes.map((n) => n.id));
+  return {
+    nodes,
+    links: allLinks.value.filter(
+      (l) =>
+        ids.has(linkIdOf(l.source)) &&
+        ids.has(linkIdOf(l.target)) &&
+        !uncheckedRelationTypes.value.includes(relTypeOf(l)),
+    ),
+  };
+});
+
 // ==================== 数据获取 ====================
 const fetchGraphData = async () => {
   loading.value = true;
@@ -112,22 +167,15 @@ const fetchGraphData = async () => {
     // 按关系数量排序，关系最多的排第一
     const sortedNodes = [...nodes].sort(
       (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
-    );// 计算最大连接数（用于大小映射）
-    // const maxRelCount = relCountMap.get(sortedNodes[0]?.id || '') || 1;
+    );
 
-    // 径向布局：关系最多的在中心 (0,0)，其他按同心圆分布
-    const layoutNodes = sortedNodes.map((n, i) => {
+    // 径向布局作为力模拟初始位置：关系最多的在中心 (0,0)，其他按同心圆分布
+    allNodes.value = sortedNodes.map((n, i) => {
       const count = relCountMap.get(n.id) || 0;
-      // const ratio = count / maxRelCount;
       let x = 0;
       let y = 0;
 
-      if (i === 0) {
-        // 关系最多的节点放中心
-        x = 0;
-        y = 0;
-      } else {
-        // 其余节点按同心圆分布
+      if (i > 0) {
         // 第1层最多6个，第2层最多12个，第3层最多18个...
         let layer = 1;
         let cumulativeCount = 0;
@@ -136,9 +184,13 @@ const fetchGraphData = async () => {
           layer++;
         }
         const indexInLayer = i - 1 - cumulativeCount;
-        const nodesInThisLayer = Math.min(Math.floor(6 * layer), sortedNodes.length - i + indexInLayer);
+        const nodesInThisLayer = Math.min(
+          Math.floor(6 * layer),
+          sortedNodes.length - i + indexInLayer,
+        );
         const angle =
-          (2 * Math.PI * indexInLayer) / Math.max(nodesInThisLayer, 1) - Math.PI / 2;
+          (2 * Math.PI * indexInLayer) / Math.max(nodesInThisLayer, 1) -
+          Math.PI / 2;
         const layerRadius = layer * 120;
         x = layerRadius * Math.cos(angle);
         y = layerRadius * Math.sin(angle);
@@ -147,44 +199,80 @@ const fetchGraphData = async () => {
       return {
         id: n.id,
         name: n.name,
+        category: n.category,
+        relationshipCount: count,
+        // 力模拟初始位置（不固定，可自由展开）
         x,
         y,
-        fx: x, // 固定位置，不让力模拟移动
-        fy: y,
-        relationshipCount: count,
-        // 节点大小统一
+        initialX: x,
+        initialY: y,
         val: 20,
       };
     });
 
-    graphData.value = {
-      nodes: layoutNodes,
-      links: edges.map((e) => ({
-        source: e.source,
-        target: e.target,
-        relationType: e.relationType,
-      })),
-    };
+    allLinks.value = edges.map((e) => ({
+      source: e.source,
+      target: e.target,
+      relationType: e.relationType,
+    }));
   } catch (error) {
     console.error('Failed to fetch graph data:', error);
-    message.error('加载失败');
+    // 具体错误提示由全局拦截器展示（如后端未开启 Neo4j 时给出明确指引）
   } finally {
     loading.value = false;
   }
 };
 
 // ==================== 交互处理 ====================
-const handleNodeClick = async (node: any) => {
+const handleNodeDblClick = async (node: any) => {
   if (!node?.id || node.id === 'null' || node.id === 'undefined') {
     message.error('该人物数据缺少有效 ID，请到 Neo4j 删除该节点后重新添加');
     return;
   }
+  detailLoading.value = true;
+  drawerVisible.value = true;
   try {
     selectedPersonDetail.value = await getPerson(node.id);
-    drawerVisible.value = true;
   } catch {
     message.error('获取详情失败');
+    drawerVisible.value = false;
+  } finally {
+    detailLoading.value = false;
   }
+};
+
+const handleSearchSelect = (id: any) => {
+  graphRef.value?.centerOnNode(String(id));
+};
+
+const toggleRelationType = (type: string) => {
+  const idx = uncheckedRelationTypes.value.indexOf(type);
+  if (idx >= 0) {
+    uncheckedRelationTypes.value.splice(idx, 1);
+  } else {
+    uncheckedRelationTypes.value.push(type);
+  }
+};
+
+const toggleCategory = (cat: string) => {
+  const idx = uncheckedCategories.value.indexOf(cat);
+  if (idx >= 0) {
+    uncheckedCategories.value.splice(idx, 1);
+  } else {
+    uncheckedCategories.value.push(cat);
+  }
+};
+
+const relTagStyle = (type: string) => {
+  const color = getRelationColor(type);
+  const checked = !uncheckedRelationTypes.value.includes(type);
+  return checked
+    ? { borderColor: color, color, backgroundColor: `${color}26` }
+    : {
+        borderColor: `${color}55`,
+        color: `${color}99`,
+        backgroundColor: 'transparent',
+      };
 };
 
 // ==================== 表单处理 ====================
@@ -204,7 +292,7 @@ const personForm = ref<PersonReq>({
 const openPersonForm = (personId?: string) => {
   if (personId) {
     editingPersonId.value = personId;
-    const node = graphData.value.nodes.find((n) => n.id === personId);
+    const node = allNodes.value.find((n) => n.id === personId);
     if (node) {
       personForm.value = {
         name: node.name,
@@ -322,38 +410,129 @@ onMounted(() => {
   <div class="relationship-page">
     <Spin :spinning="loading">
       <!-- 顶部工具栏 -->
-      <div class="toolbar">
-        <div class="toolbar-left">
-          <TeamOutlined style="font-size: 20px; margin-right: 8px" />
-          <span style="font-size: 16px; font-weight: 500">人际关系图谱</span>
-          <span style="margin-left: 16px; color: #999">
-            {{ graphData.nodes?.length || 0 }} 人 ·
-            {{ graphData.links?.length || 0 }} 条关系
+      <div
+        class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-card px-4 py-3"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <TeamOutlined class="text-primary text-xl" />
+          <span class="text-card-foreground text-base font-medium">
+            人际关系图谱
           </span>
+          <span class="text-muted-foreground text-sm">
+            {{ filteredGraphData.nodes.length || 0 }} 人 ·
+            {{ filteredGraphData.links.length || 0 }} 条关系
+          </span>
+          <Select
+            v-model:value="searchValue"
+            show-search
+            allow-clear
+            placeholder="搜索人物并定位"
+            class="w-44"
+            :options="searchOptions"
+            option-filter-prop="label"
+            @select="handleSearchSelect"
+          />
         </div>
-        <div class="toolbar-right">
+        <div class="flex items-center">
           <Button type="primary" @click="openPersonForm()">
             <PlusOutlined /> 添加人物
           </Button>
         </div>
       </div>
 
+      <!-- 筛选栏 -->
+      <div
+        v-if="allNodes.length"
+        class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-card px-4 py-2"
+      >
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="text-muted-foreground mr-1 text-xs">关系类型</span>
+          <Tag.CheckableTag
+            v-for="t in presentRelationTypes"
+            :key="t"
+            :checked="!uncheckedRelationTypes.includes(t)"
+            class="rel-type-tag"
+            :style="relTagStyle(t)"
+            @change="toggleRelationType(t)"
+          >
+            {{ t }}
+          </Tag.CheckableTag>
+        </div>
+        <div class="flex flex-wrap items-center gap-1">
+          <span class="text-muted-foreground mr-1 text-xs">分类</span>
+          <Tag.CheckableTag
+            v-for="c in presentCategories"
+            :key="c"
+            :checked="!uncheckedCategories.includes(c)"
+            @change="toggleCategory(c)"
+          >
+            {{ c }}
+          </Tag.CheckableTag>
+        </div>
+        <span class="text-muted-foreground ml-auto hidden text-xs md:inline">
+          单击节点聚焦 · 双击查看详情 · 拖拽后固定位置
+        </span>
+      </div>
+
       <!-- 图谱区域 -->
-      <div class="graph-container">
+      <div class="graph-container bg-card">
         <ForceGraph2DWrapper
-          v-if="graphData.nodes?.length"
-          :graph-data="graphData"
+          v-if="filteredGraphData.nodes.length"
+          ref="graphRef"
+          :graph-data="filteredGraphData"
           node-label="name"
-          background-color="#fff"
           :link-directional-arrow-length="6"
           :link-directional-arrow-rel-pos="1"
-          @node-click="handleNodeClick"
+          @node-dblclick="handleNodeDblClick"
         />
         <Empty
-          v-if="!graphData.nodes?.length"
+          v-if="!filteredGraphData.nodes.length"
           description="暂无人物，点击添加开始"
           class="empty-overlay"
         />
+
+        <!-- 画布工具栏 -->
+        <div
+          v-if="filteredGraphData.nodes.length"
+          class="border-border bg-card absolute bottom-4 right-4 z-10 flex flex-col overflow-hidden rounded-lg border shadow-md"
+        >
+          <Tooltip title="放大" placement="left">
+            <button
+              class="canvas-tool-btn"
+              type="button"
+              @click="graphRef?.zoomIn()"
+            >
+              <ZoomInOutlined />
+            </button>
+          </Tooltip>
+          <Tooltip title="缩小" placement="left">
+            <button
+              class="canvas-tool-btn"
+              type="button"
+              @click="graphRef?.zoomOut()"
+            >
+              <ZoomOutOutlined />
+            </button>
+          </Tooltip>
+          <Tooltip title="适应全屏" placement="left">
+            <button
+              class="canvas-tool-btn"
+              type="button"
+              @click="graphRef?.fitView()"
+            >
+              <FullscreenOutlined />
+            </button>
+          </Tooltip>
+          <Tooltip title="重置布局" placement="left">
+            <button
+              class="canvas-tool-btn"
+              type="button"
+              @click="graphRef?.resetLayout()"
+            >
+              <ReloadOutlined />
+            </button>
+          </Tooltip>
+        </div>
       </div>
     </Spin>
 
@@ -363,90 +542,92 @@ onMounted(() => {
       :title="selectedPersonDetail?.name || '人物详情'"
       width="400"
     >
-      <template v-if="selectedPersonDetail">
-        <div class="person-detail">
-          <div class="detail-section">
-            <h4>基本信息</h4>
-            <p v-if="selectedPersonDetail.category">
-              <strong>分类：</strong>{{ selectedPersonDetail.category }}
-            </p>
-            <p v-if="selectedPersonDetail.description">
-              <strong>简介：</strong>{{ selectedPersonDetail.description }}
-            </p>
-            <p v-if="selectedPersonDetail.birthday">
-              <strong>生日：</strong>{{ selectedPersonDetail.birthday }}
-            </p>
-            <p v-if="selectedPersonDetail.phone">
-              <strong>电话：</strong>{{ selectedPersonDetail.phone }}
-            </p>
-            <p v-if="selectedPersonDetail.email">
-              <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
-            </p>
-            <p v-if="selectedPersonDetail.tags">
-              <strong>标签：</strong>{{ selectedPersonDetail.tags }}
-            </p>
-            <p v-if="selectedPersonDetail.notes">
-              <strong>备注：</strong>{{ selectedPersonDetail.notes }}
-            </p>
-          </div>
-
-          <div class="detail-section">
-            <div class="section-header">
-              <h4>
-                关系 ({{ selectedPersonDetail.relationships?.length || 0 }})
-              </h4>
-              <Button type="link" size="small" @click="openRelationshipForm">
-                <PlusOutlined /> 添加关系
-              </Button>
+      <Spin :spinning="detailLoading">
+        <template v-if="selectedPersonDetail">
+          <div class="person-detail">
+            <div class="detail-section">
+              <h4>基本信息</h4>
+              <p v-if="selectedPersonDetail.category">
+                <strong>分类：</strong>{{ selectedPersonDetail.category }}
+              </p>
+              <p v-if="selectedPersonDetail.description">
+                <strong>简介：</strong>{{ selectedPersonDetail.description }}
+              </p>
+              <p v-if="selectedPersonDetail.birthday">
+                <strong>生日：</strong>{{ selectedPersonDetail.birthday }}
+              </p>
+              <p v-if="selectedPersonDetail.phone">
+                <strong>电话：</strong>{{ selectedPersonDetail.phone }}
+              </p>
+              <p v-if="selectedPersonDetail.email">
+                <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
+              </p>
+              <p v-if="selectedPersonDetail.tags">
+                <strong>标签：</strong>{{ selectedPersonDetail.tags }}
+              </p>
+              <p v-if="selectedPersonDetail.notes">
+                <strong>备注：</strong>{{ selectedPersonDetail.notes }}
+              </p>
             </div>
-            <div
-              v-if="selectedPersonDetail.relationships?.length"
-              class="relationship-list"
-            >
+
+            <div class="detail-section">
+              <div class="section-header">
+                <h4>
+                  关系 ({{ selectedPersonDetail.relationships?.length || 0 }})
+                </h4>
+                <Button type="link" size="small" @click="openRelationshipForm">
+                  <PlusOutlined /> 添加关系
+                </Button>
+              </div>
               <div
-                v-for="rel in selectedPersonDetail.relationships"
-                :key="rel.id"
-                class="relationship-item"
+                v-if="selectedPersonDetail.relationships?.length"
+                class="relationship-list"
               >
-                <div class="rel-info">
-                  <span class="rel-type">{{ rel.relationType }}</span>
-                  <span class="rel-name"> → {{ rel.target?.name }}</span>
-                </div>
-                <div class="rel-actions">
-                  <DeleteOutlined
-                    @click="handleDeleteRelationship(rel.target?.id || '')"
-                  />
+                <div
+                  v-for="rel in selectedPersonDetail.relationships"
+                  :key="rel.id"
+                  class="relationship-item bg-secondary"
+                >
+                  <div class="rel-info">
+                    <span class="rel-type">{{ rel.relationType }}</span>
+                    <span class="rel-name"> → {{ rel.target?.name }}</span>
+                  </div>
+                  <div class="rel-actions">
+                    <DeleteOutlined
+                      @click="handleDeleteRelationship(rel.target?.id || '')"
+                    />
+                  </div>
                 </div>
               </div>
+              <Empty
+                v-else
+                description="暂无关系"
+                :image="Empty.PRESENTED_IMAGE_SIMPLE"
+              />
             </div>
-            <Empty
-              v-else
-              description="暂无关系"
-              :image="Empty.PRESENTED_IMAGE_SIMPLE"
-            />
-          </div>
 
-          <div class="detail-actions">
-            <Button @click="openPersonForm(selectedPersonDetail.id)">
-              <EditOutlined /> 编辑
-            </Button>
-            <Popconfirm
-              title="确定删除此人物？"
-              @confirm="handleDeletePerson(selectedPersonDetail.id)"
-            >
-              <Button type="primary" danger> <DeleteOutlined /> 删除 </Button>
-            </Popconfirm>
+            <div class="detail-actions">
+              <Button @click="openPersonForm(selectedPersonDetail.id)">
+                <EditOutlined /> 编辑
+              </Button>
+              <Popconfirm
+                title="确定删除此人物？"
+                @confirm="handleDeletePerson(selectedPersonDetail.id)"
+              >
+                <Button type="primary" danger> <DeleteOutlined /> 删除 </Button>
+              </Popconfirm>
+            </div>
           </div>
-        </div>
-      </template>
+        </template>
+      </Spin>
     </Drawer>
 
     <!-- 人物表单弹窗 -->
     <Modal
       v-model:open="personFormVisible"
       :title="editingPersonId ? '编辑人物' : '添加人物'"
-      @ok="handlePersonSubmit"
       width="500px"
+      @ok="handlePersonSubmit"
     >
       <Form layout="vertical">
         <FormItem label="姓名" required>
@@ -502,8 +683,8 @@ onMounted(() => {
     <Modal
       v-model:open="relationshipFormVisible"
       title="添加关系"
-      @ok="handleRelationshipSubmit"
       width="400px"
+      @ok="handleRelationshipSubmit"
     >
       <Form layout="vertical">
         <FormItem label="关系类型" required>
@@ -526,7 +707,7 @@ onMounted(() => {
             placeholder="选择人物"
           >
             <SelectOption
-              v-for="n in graphData.nodes?.filter(
+              v-for="n in allNodes.filter(
                 (n) => n.id !== selectedPersonDetail?.id,
               )"
               :key="n.id"
@@ -574,34 +755,11 @@ onMounted(() => {
   height: 100%;
 }
 
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
-  background: #fff;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  color: #1890ff;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-}
-
 .graph-container {
   flex: 1;
-  background: #fff;
   border-radius: 8px;
   position: relative;
-  min-height: calc(100vh - 200px);
+  min-height: calc(100vh - 260px);
   overflow: hidden;
 }
 
@@ -610,6 +768,33 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+.canvas-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  color: hsl(var(--card-foreground));
+  background: transparent;
+  border: none;
+}
+
+.canvas-tool-btn:hover {
+  color: hsl(var(--primary));
+  background: hsl(var(--secondary));
+}
+
+.rel-type-tag {
+  border: 1px solid;
+  border-radius: 4px;
+  margin-inline-end: 0;
+}
+
+.rel-type-tag::before {
+  display: none;
 }
 
 .person-detail {
@@ -622,13 +807,11 @@ onMounted(() => {
 
 .detail-section h4 {
   margin-bottom: 12px;
-  color: #333;
   font-weight: 500;
 }
 
 .detail-section p {
   margin-bottom: 8px;
-  color: #666;
 }
 
 .section-header {
@@ -653,7 +836,6 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f5f5f5;
   border-radius: 4px;
 }
 
@@ -661,17 +843,8 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.rel-type {
-  color: #1890ff;
-  font-weight: 500;
-}
-
-.rel-name {
-  color: #333;
-}
-
 .rel-actions {
-  color: #ff4d4f;
+  color: hsl(var(--destructive, 0 84% 60%));
   cursor: pointer;
 }
 
