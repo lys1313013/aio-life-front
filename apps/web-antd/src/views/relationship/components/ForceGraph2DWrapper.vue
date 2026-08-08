@@ -83,7 +83,7 @@ let initialFitTimer: null | ReturnType<typeof setTimeout> = null;
 let userInteracted = false;
 
 // canvas 无法使用 Tailwind 类，读取主题 CSS 变量适配暗色
-const theme = ref({ background: '#ffffff', text: '#333333' });
+const theme = ref({ background: '#ffffff', text: '#666666' });
 
 // 聚焦状态
 const focusNodeId = ref<null | string>(null);
@@ -100,10 +100,10 @@ let lastClick: { id: string; time: number } = { id: '', time: 0 };
 function readTheme() {
   const styles = getComputedStyle(document.documentElement);
   const card = styles.getPropertyValue('--card').trim();
-  const fg = styles.getPropertyValue('--card-foreground').trim();
+  const fg = styles.getPropertyValue('--muted-foreground').trim();
   theme.value = {
     background: card ? `hsl(${card})` : '#ffffff',
-    text: fg ? `hsl(${fg})` : '#333333',
+    text: fg ? `hsl(${fg})` : '#666666',
   };
   instance?.backgroundColor(theme.value.background);
   instance?.refresh?.();
@@ -213,7 +213,7 @@ function drawNode(
   const label = (node as any)[props.nodeLabel ?? 'name'] ?? '';
   if (label) {
     const fontSize = 14 / globalScale;
-    ctx.font = `bold ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+    ctx.font = `500 ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
     ctx.fillStyle = theme.value.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
