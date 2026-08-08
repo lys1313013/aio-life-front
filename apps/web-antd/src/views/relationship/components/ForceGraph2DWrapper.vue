@@ -213,7 +213,7 @@ function drawNode(
   const label = (node as any)[props.nodeLabel ?? 'name'] ?? '';
   if (label) {
     const fontSize = 14 / globalScale;
-    ctx.font = `500 ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
+    ctx.font = `400 ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
     ctx.fillStyle = theme.value.text;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
