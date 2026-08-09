@@ -239,8 +239,7 @@ function drawLinkLabel(link: GraphLink, ctx: CanvasRenderingContext2D) {
   if (focusNodeId.value && !focusLinks.has(link)) return;
   const midX = ((link.source.x ?? 0) + (link.target.x ?? 0)) / 2;
   const midY = ((link.source.y ?? 0) + (link.target.y ?? 0)) / 2;
-  ctx.font =
-    '11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.font = '11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.fillStyle = linkColorOf(link);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -264,8 +263,13 @@ const initGraph = () => {
     .enablePointerInteraction(true)
     .onNodeClick(handleNodeClick)
     .onBackgroundClick(() => applyFocus(null))
+    .onNodeDrag((node: GraphNode) => {
+      // force-graph 会区分拖拽和点击；拖动节点时也应同步切换聚焦对象
+      if (focusNodeId.value !== node.id) applyFocus(node);
+    })
     .onNodeDragEnd((node: GraphNode) => {
       // 拖拽后固定在当前位置
+      applyFocus(node);
       node.fx = node.x;
       node.fy = node.y;
     })

@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons-vue';
 import {
   Button,
+  DatePicker,
   Drawer,
   Empty,
   Form,
@@ -59,6 +60,7 @@ const allLinks = ref<any[]>([]);
 const selectedPersonDetail = ref<null | PersonDetailVO>(null);
 const drawerVisible = ref(false);
 const personFormVisible = ref(false);
+const personSubmitLoading = ref(false);
 const relationshipFormVisible = ref(false);
 const editingPersonId = ref<null | string>(null);
 
@@ -303,6 +305,7 @@ const personForm = ref<PersonReq>({
   birthday: '',
   phone: '',
   email: '',
+  school: '',
   socialLinks: '',
   notes: '',
 });
@@ -310,19 +313,20 @@ const personForm = ref<PersonReq>({
 const openPersonForm = (personId?: string) => {
   if (personId) {
     editingPersonId.value = personId;
-    const node = allNodes.value.find((n) => n.id === personId);
-    if (node) {
+    const detail = selectedPersonDetail.value;
+    if (detail?.id === personId) {
       personForm.value = {
-        name: node.name,
-        avatar: '',
-        category: '',
-        description: '',
-        tags: '',
-        birthday: '',
-        phone: '',
-        email: '',
-        socialLinks: '',
-        notes: '',
+        name: detail.name,
+        avatar: detail.avatar || '',
+        category: detail.category || '',
+        description: detail.description || '',
+        tags: detail.tags || '',
+        birthday: detail.birthday || '',
+        phone: detail.phone || '',
+        email: detail.email || '',
+        school: detail.school || '',
+        socialLinks: detail.socialLinks || '',
+        notes: detail.notes || '',
       };
     }
   } else {
@@ -336,6 +340,7 @@ const openPersonForm = (personId?: string) => {
       birthday: '',
       phone: '',
       email: '',
+      school: '',
       socialLinks: '',
       notes: '',
     };
@@ -344,17 +349,24 @@ const openPersonForm = (personId?: string) => {
 };
 
 const handlePersonSubmit = async () => {
+  personSubmitLoading.value = true;
   try {
     if (editingPersonId.value) {
       await updatePerson(editingPersonId.value, personForm.value);
+      message.success('保存成功');
     } else {
       await createPerson(personForm.value);
       message.success('添加成功');
     }
     personFormVisible.value = false;
     await fetchGraphData();
+    if (editingPersonId.value && selectedPersonDetail.value) {
+      selectedPersonDetail.value = await getPerson(editingPersonId.value);
+    }
   } catch {
     message.error('保存失败');
+  } finally {
+    personSubmitLoading.value = false;
   }
 };
 
@@ -458,11 +470,11 @@ onMounted(() => {
         class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-card px-4 py-3"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <TeamOutlined class="text-primary text-xl" />
-          <span class="text-card-foreground text-base font-medium">
+          <TeamOutlined class="text-xl text-primary" />
+          <span class="text-base font-medium text-card-foreground">
             人际关系图谱
           </span>
-          <span class="text-muted-foreground text-sm">
+          <span class="text-sm text-muted-foreground">
             {{ filteredGraphData.nodes.length || 0 }} 人 ·
             {{ filteredGraphData.links.length || 0 }} 条关系
           </span>
@@ -490,7 +502,7 @@ onMounted(() => {
         class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-card px-4 py-2"
       >
         <div class="flex flex-wrap items-center gap-1">
-          <span class="text-muted-foreground mr-1 text-xs">关系类型</span>
+          <span class="mr-1 text-xs text-muted-foreground">关系类型</span>
           <Tag.CheckableTag
             v-for="t in presentRelationTypes"
             :key="t"
@@ -503,7 +515,7 @@ onMounted(() => {
           </Tag.CheckableTag>
         </div>
         <div class="flex flex-wrap items-center gap-1">
-          <span class="text-muted-foreground mr-1 text-xs">分类</span>
+          <span class="mr-1 text-xs text-muted-foreground">分类</span>
           <Tag.CheckableTag
             v-for="c in presentCategories"
             :key="c"
@@ -515,7 +527,7 @@ onMounted(() => {
             {{ c }}
           </Tag.CheckableTag>
         </div>
-        <span class="text-muted-foreground ml-auto hidden text-xs md:inline">
+        <span class="ml-auto hidden text-xs text-muted-foreground md:inline">
           单击节点聚焦 · 双击查看详情 · 拖拽后固定位置
         </span>
       </div>
@@ -540,7 +552,7 @@ onMounted(() => {
         <!-- 画布工具栏 -->
         <div
           v-if="filteredGraphData.nodes.length"
-          class="border-border bg-card absolute bottom-4 right-4 z-10 flex flex-col overflow-hidden rounded-lg border shadow-md"
+          class="absolute bottom-4 right-4 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-md"
         >
           <Tooltip title="放大" placement="left">
             <button
@@ -586,6 +598,7 @@ onMounted(() => {
     <Drawer
       v-model:open="drawerVisible"
       :title="selectedPersonDetail?.name || '人物详情'"
+      :mask="false"
       width="400"
     >
       <Spin :spinning="detailLoading">
@@ -604,6 +617,9 @@ onMounted(() => {
               </p>
               <p v-if="selectedPersonDetail.phone">
                 <strong>电话：</strong>{{ selectedPersonDetail.phone }}
+              </p>
+              <p v-if="selectedPersonDetail.school">
+                <strong>学校：</strong>{{ selectedPersonDetail.school }}
               </p>
               <p v-if="selectedPersonDetail.email">
                 <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
@@ -676,10 +692,12 @@ onMounted(() => {
     <Modal
       v-model:open="personFormVisible"
       :title="editingPersonId ? '编辑人物' : '添加人物'"
-      width="500px"
+      :confirm-loading="personSubmitLoading"
+      centered
+      width="560px"
       @ok="handlePersonSubmit"
     >
-      <Form layout="vertical">
+      <Form class="person-form" layout="vertical">
         <FormItem label="姓名" required>
           <Input v-model:value="personForm.name" placeholder="请输入姓名" />
         </FormItem>
@@ -694,7 +712,7 @@ onMounted(() => {
             </SelectOption>
           </Select>
         </FormItem>
-        <FormItem label="简介">
+        <FormItem class="form-item-full" label="简介">
           <Input.TextArea
             v-model:value="personForm.description"
             placeholder="简短描述"
@@ -708,18 +726,20 @@ onMounted(() => {
           />
         </FormItem>
         <FormItem label="生日">
-          <Input
+          <DatePicker
             v-model:value="personForm.birthday"
-            placeholder="如：1990-01-01"
+            placeholder="请选择生日"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
           />
         </FormItem>
         <FormItem label="电话">
           <Input v-model:value="personForm.phone" placeholder="手机号" />
         </FormItem>
-        <FormItem label="邮箱">
-          <Input v-model:value="personForm.email" placeholder="邮箱" />
+        <FormItem label="学校">
+          <Input v-model:value="personForm.school" placeholder="请输入学校" />
         </FormItem>
-        <FormItem label="备注">
+        <FormItem class="form-item-full" label="备注">
           <Input.TextArea
             v-model:value="personForm.notes"
             placeholder="其他备注"
@@ -910,5 +930,29 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   margin-top: 24px;
+}
+
+.person-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.person-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.person-form .form-item-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 575px) {
+  .person-form {
+    grid-template-columns: 1fr;
+  }
+
+  .person-form .form-item-full {
+    grid-column: auto;
+  }
 }
 </style>

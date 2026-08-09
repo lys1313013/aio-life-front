@@ -62,6 +62,7 @@ const handleDeleteRelationship = async (targetId: string) => {
   <Drawer
     :open="open"
     :title="personDetail?.name || '人物详情'"
+    :mask="false"
     width="400"
     @update:open="$emit('update:open', $event)"
   >
@@ -80,6 +81,9 @@ const handleDeleteRelationship = async (targetId: string) => {
           </p>
           <p v-if="personDetail.phone">
             <strong>电话：</strong>{{ personDetail.phone }}
+          </p>
+          <p v-if="personDetail.school">
+            <strong>学校：</strong>{{ personDetail.school }}
           </p>
           <p v-if="personDetail.email">
             <strong>邮箱：</strong>{{ personDetail.email }}

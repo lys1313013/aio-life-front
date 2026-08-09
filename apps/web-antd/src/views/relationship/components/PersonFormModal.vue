@@ -4,6 +4,7 @@ import type { PersonReq } from '#/api/relationship';
 import { ref, watch } from 'vue';
 
 import {
+  DatePicker,
   Form,
   FormItem,
   Input,
@@ -39,6 +40,7 @@ const personForm = ref<PersonReq>({
   birthday: '',
   phone: '',
   email: '',
+  school: '',
   socialLinks: '',
   notes: '',
 });
@@ -61,6 +63,7 @@ watch(
           birthday: '',
           phone: '',
           email: '',
+          school: '',
           socialLinks: '',
           notes: '',
         };
@@ -94,11 +97,12 @@ const handlePersonSubmit = async () => {
     :open="open"
     :title="editingPersonId ? '编辑人物' : '添加人物'"
     :confirm-loading="submitLoading"
+    centered
     @update:open="$emit('update:open', $event)"
     @ok="handlePersonSubmit"
     width="500px"
   >
-    <Form layout="vertical">
+    <Form class="person-form" layout="vertical">
       <FormItem label="姓名" required>
         <Input v-model:value="personForm.name" placeholder="请输入姓名" />
       </FormItem>
@@ -113,7 +117,7 @@ const handlePersonSubmit = async () => {
           </SelectOption>
         </Select>
       </FormItem>
-      <FormItem label="简介">
+      <FormItem class="form-item-full" label="简介">
         <Input.TextArea
           v-model:value="personForm.description"
           placeholder="简短描述"
@@ -127,18 +131,20 @@ const handlePersonSubmit = async () => {
         />
       </FormItem>
       <FormItem label="生日">
-        <Input
+        <DatePicker
           v-model:value="personForm.birthday"
-          placeholder="如：1990-01-01"
+          placeholder="请选择生日"
+          value-format="YYYY-MM-DD"
+          style="width: 100%"
         />
       </FormItem>
       <FormItem label="电话">
         <Input v-model:value="personForm.phone" placeholder="手机号" />
       </FormItem>
-      <FormItem label="邮箱">
-        <Input v-model:value="personForm.email" placeholder="邮箱" />
+      <FormItem label="学校">
+        <Input v-model:value="personForm.school" placeholder="请输入学校" />
       </FormItem>
-      <FormItem label="备注">
+      <FormItem class="form-item-full" label="备注">
         <Input.TextArea
           v-model:value="personForm.notes"
           placeholder="其他备注"
@@ -148,3 +154,29 @@ const handlePersonSubmit = async () => {
     </Form>
   </Modal>
 </template>
+
+<style scoped>
+.person-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.person-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.form-item-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 575px) {
+  .person-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-item-full {
+    grid-column: auto;
+  }
+}
+</style>

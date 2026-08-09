@@ -42,6 +42,7 @@ export interface PersonReq {
   birthday?: string;
   phone?: string;
   email?: string;
+  school?: string;
   socialLinks?: string;
   notes?: string;
 }
@@ -83,6 +84,7 @@ export interface PersonDetailVO {
   birthday?: string;
   phone?: string;
   email?: string;
+  school?: string;
   socialLinks?: string;
   notes?: string;
   createdAt?: string;
