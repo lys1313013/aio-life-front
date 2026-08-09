@@ -172,15 +172,24 @@ const handleViewHistory = async () => {
   }
 };
 
-const handleDelete = async (record: MbtiResult) => {
-  if (!record.id) return;
+const handleDelete = async (record: unknown) => {
+  if (
+    typeof record !== 'object' ||
+    record === null ||
+    !('id' in record) ||
+    typeof record.id !== 'string'
+  ) {
+    return;
+  }
+
+  const recordId = record.id;
   try {
-    await deleteMbtiResult(record.id);
+    await deleteMbtiResult(recordId);
     message.success('删除成功');
     historyList.value = historyList.value.filter(
-      (item) => item.id !== record.id,
+      (item) => item.id !== recordId,
     );
-    if (isFromHistory.value && mbtiResult.value.id === record.id) {
+    if (isFromHistory.value && mbtiResult.value.id === recordId) {
       handleReset();
     }
   } catch {

@@ -21,6 +21,24 @@ export const RELATION_COLORS: Record<string, string> = {
 
 export const DEFAULT_RELATION_COLOR = '#9e9e9e';
 
+export const ONE_WAY_RELATION_TYPES = new Set([
+  'mentor',
+  '子女',
+  '学生',
+  '暗恋',
+  '母亲',
+  '父亲',
+  '父母',
+  '老师',
+]);
+
+export function isBidirectionalRelation(
+  type?: string,
+  direction?: string,
+): boolean {
+  return direction === '双向' && !ONE_WAY_RELATION_TYPES.has(type ?? '');
+}
+
 export function getRelationColor(type?: string): string {
   return (type && RELATION_COLORS[type]) || DEFAULT_RELATION_COLOR;
 }

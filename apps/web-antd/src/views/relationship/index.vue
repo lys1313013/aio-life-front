@@ -48,7 +48,11 @@ import {
 } from '#/api/relationship';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
-import { getCategoryColor, getRelationColor } from './constants';
+import {
+  getCategoryColor,
+  getRelationColor,
+  ONE_WAY_RELATION_TYPES,
+} from './constants';
 
 // ==================== 状态 ====================
 const loading = ref(false);
@@ -221,6 +225,7 @@ const fetchGraphData = async () => {
         source: e.source,
         target: e.target,
         relationType: e.relationType,
+        direction: e.direction || '双向',
       }),
     );
   } catch (error) {
@@ -255,19 +260,19 @@ const handleSearchSelect = (id: any) => {
 
 const toggleRelationType = (type: string) => {
   const idx = uncheckedRelationTypes.value.indexOf(type);
-  if (idx >= 0) {
-    uncheckedRelationTypes.value.splice(idx, 1);
-  } else {
+  if (idx === -1) {
     uncheckedRelationTypes.value.push(type);
+  } else {
+    uncheckedRelationTypes.value.splice(idx, 1);
   }
 };
 
 const toggleCategory = (cat: string) => {
   const idx = uncheckedCategories.value.indexOf(cat);
-  if (idx >= 0) {
-    uncheckedCategories.value.splice(idx, 1);
-  } else {
+  if (idx === -1) {
     uncheckedCategories.value.push(cat);
+  } else {
+    uncheckedCategories.value.splice(idx, 1);
   }
 };
 
@@ -396,8 +401,15 @@ const openRelationshipForm = () => {
   relationshipFormVisible.value = true;
 };
 
+const handleRelationTypeChange = (type: unknown) => {
+  if (typeof type !== 'string') return;
+  relationshipForm.value.direction = ONE_WAY_RELATION_TYPES.has(type)
+    ? '单向'
+    : '双向';
+};
+
 // 后端历史数据带字面双引号（如 "\"配偶\""），回填表单时剥掉
-const stripQuotes = (val?: string) => val?.replace(/^"|"$/g, '') ?? '';
+const stripQuotes = (val?: string) => val?.replaceAll(/^"|"$/g, '') ?? '';
 
 const openEditRelationshipForm = (rel: RelationshipDetailVO) => {
   if (!selectedPersonDetail.value || !rel.target?.id) return;
@@ -415,15 +427,15 @@ const openEditRelationshipForm = (rel: RelationshipDetailVO) => {
 
 const handleRelationshipSubmit = async () => {
   try {
-    if (editingRelationshipId.value !== null) {
+    if (editingRelationshipId.value === null) {
+      await createRelationship(relationshipForm.value);
+      message.success('添加成功');
+    } else {
       await updateRelationship(
         editingRelationshipId.value,
         relationshipForm.value,
       );
       message.success('保存成功');
-    } else {
-      await createRelationship(relationshipForm.value);
-      message.success('添加成功');
     }
     relationshipFormVisible.value = false;
     await fetchGraphData();
@@ -498,7 +510,7 @@ onMounted(() => {
 
       <!-- 筛选栏 -->
       <div
-        v-if="allNodes.length"
+        v-if="allNodes.length > 0"
         class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-card px-4 py-2"
       >
         <div class="flex flex-wrap items-center gap-1">
@@ -535,7 +547,7 @@ onMounted(() => {
       <!-- 图谱区域 -->
       <div class="graph-container bg-card">
         <ForceGraph2DWrapper
-          v-if="filteredGraphData.nodes.length"
+          v-if="filteredGraphData.nodes.length > 0"
           ref="graphRef"
           :graph-data="filteredGraphData"
           node-label="name"
@@ -544,14 +556,14 @@ onMounted(() => {
           @node-dblclick="handleNodeDblClick"
         />
         <Empty
-          v-if="!filteredGraphData.nodes.length"
+          v-if="filteredGraphData.nodes.length === 0"
           description="暂无人物，点击添加开始"
           class="empty-overlay"
         />
 
         <!-- 画布工具栏 -->
         <div
-          v-if="filteredGraphData.nodes.length"
+          v-if="filteredGraphData.nodes.length > 0"
           class="absolute bottom-4 right-4 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-md"
         >
           <Tooltip title="放大" placement="left">
@@ -761,6 +773,7 @@ onMounted(() => {
           <Select
             v-model:value="relationshipForm.relationType"
             placeholder="选择关系类型"
+            @change="handleRelationTypeChange"
           >
             <SelectOption
               v-for="opt in relationTypes"
@@ -790,8 +803,8 @@ onMounted(() => {
         </FormItem>
         <FormItem label="方向">
           <Select v-model:value="relationshipForm.direction">
-            <SelectOption value="双向">双向</SelectOption>
-            <SelectOption value="单向">单向</SelectOption>
+            <SelectOption value="单向">单向（当前人物 → 对方）</SelectOption>
+            <SelectOption value="双向">双向（彼此）</SelectOption>
           </Select>
         </FormItem>
         <FormItem label="描述">

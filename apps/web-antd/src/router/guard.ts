@@ -1,5 +1,6 @@
-import type { MenuRecordRaw } from '@vben-core/typings';
 import type { Router } from 'vue-router';
+
+import type { MenuRecordRaw } from '@vben/types';
 
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';

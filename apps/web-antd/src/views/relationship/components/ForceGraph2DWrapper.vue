@@ -3,7 +3,62 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import ForceGraph2D from 'force-graph';
 
-import { getCategoryColor, getRelationColor } from '../constants';
+import {
+  getCategoryColor,
+  getRelationColor,
+  isBidirectionalRelation,
+} from '../constants';
+
+interface GraphNode {
+  id: string;
+  name: string;
+  category?: string;
+  relationshipCount?: number;
+  val?: number;
+  initialX?: number;
+  initialY?: number;
+  x?: number;
+  y?: number;
+  fx?: null | number;
+  fy?: null | number;
+  vx?: number;
+  vy?: number;
+}
+
+interface GraphLink {
+  source: any;
+  target: any;
+  direction?: string;
+  relationType?: string;
+}
+
+interface GraphPayload {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+interface NodeMotion {
+  anchorX: number;
+  anchorY: number;
+  epoch: number;
+  phaseX: number;
+  phaseY: number;
+  radiusX: number;
+  radiusY: number;
+  speedX: number;
+  speedY: number;
+}
+
+const props = defineProps<{
+  graphData: GraphPayload;
+  linkDirectionalArrowLength?: number;
+  linkDirectionalArrowRelPos?: number;
+  nodeLabel?: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'node-dblclick', node: GraphNode): void;
+}>();
 
 // 简易碰撞力，避免节点重叠（不引入 d3 类型依赖）
 function forceCollideSimple(radius: number) {
@@ -35,50 +90,16 @@ function forceCollideSimple(radius: number) {
   return force;
 }
 
-interface GraphNode {
-  id: string;
-  name: string;
-  category?: string;
-  relationshipCount?: number;
-  val?: number;
-  initialX?: number;
-  initialY?: number;
-  x?: number;
-  y?: number;
-  fx?: null | number;
-  fy?: null | number;
-  vx?: number;
-  vy?: number;
-}
-
-interface GraphLink {
-  source: any;
-  target: any;
-  relationType?: string;
-}
-
-interface GraphPayload {
-  nodes: GraphNode[];
-  links: GraphLink[];
-}
-
-const props = defineProps<{
-  graphData: GraphPayload;
-  linkDirectionalArrowLength?: number;
-  linkDirectionalArrowRelPos?: number;
-  nodeLabel?: string;
-}>();
-
-const emit = defineEmits<{
-  (e: 'node-dblclick', node: GraphNode): void;
-}>();
-
 const container = ref<HTMLDivElement | null>(null);
 let instance: any = null;
 let themeObserver: MutationObserver | null = null;
 let pulseFrame: null | number = null;
 let pulseClearTimer: null | ReturnType<typeof setTimeout> = null;
 let initialFitTimer: null | ReturnType<typeof setTimeout> = null;
+let lastMotionFrame = 0;
+let motionPausedUntil = Number.POSITIVE_INFINITY;
+let draggingNodeId: null | string = null;
+const nodeMotions = new Map<string, NodeMotion>();
 // 用户一旦手动缩放/拖动，就不再执行初始 zoomToFit
 let userInteracted = false;
 
@@ -126,6 +147,81 @@ function linkColorOf(link: GraphLink): string {
 
 function nodeColorOf(node: GraphNode): string {
   return getCategoryColor(node.category);
+}
+
+function hashNodeId(id: string): number {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
+  return hash;
+}
+
+function createNodeMotion(node: GraphNode, now: number): NodeMotion {
+  const seed = hashNodeId(node.id);
+  const phaseX = ((seed % 360) * Math.PI) / 180;
+  const phaseY = ((((seed >>> 8) % 360) + 70) * Math.PI) / 180;
+  const radiusX = 7 + (seed % 7);
+  const radiusY = 6 + ((seed >>> 4) % 7);
+  const speedX = (Math.PI * 2) / (22_000 + (seed % 9000));
+  const speedY = (Math.PI * 2) / (26_000 + ((seed >>> 6) % 10_000));
+  const x = node.x ?? node.initialX ?? 0;
+  const y = node.y ?? node.initialY ?? 0;
+  const offsetX =
+    Math.sin(phaseX) * radiusX + Math.sin(phaseY) * radiusX * 0.22;
+  const offsetY =
+    Math.cos(phaseX) * radiusY + Math.cos(phaseY) * radiusY * 0.22;
+
+  return {
+    anchorX: x - offsetX,
+    anchorY: y - offsetY,
+    epoch: now,
+    phaseX,
+    phaseY,
+    radiusX,
+    radiusY,
+    speedX,
+    speedY,
+  };
+}
+
+function updateMotionAnchor(node: GraphNode) {
+  const now = performance.now();
+  nodeMotions.set(node.id, createNodeMotion(node, now));
+}
+
+function updateNodeMotion(now: number) {
+  if (now < motionPausedUntil || now - lastMotionFrame < 32) return;
+  lastMotionFrame = now;
+
+  for (const node of props.graphData.nodes) {
+    if (node.id === draggingNodeId) continue;
+    let motion = nodeMotions.get(node.id);
+    if (!motion) {
+      motion = createNodeMotion(node, now);
+      nodeMotions.set(node.id, motion);
+    }
+    const elapsed = now - motion.epoch;
+    const primaryAngle = motion.phaseX + elapsed * motion.speedX;
+    const secondaryAngle = motion.phaseY + elapsed * motion.speedY;
+    const x =
+      motion.anchorX +
+      Math.sin(primaryAngle) * motion.radiusX +
+      Math.sin(secondaryAngle) * motion.radiusX * 0.22;
+    const y =
+      motion.anchorY +
+      Math.cos(primaryAngle) * motion.radiusY +
+      Math.cos(motion.phaseY + elapsed * motion.speedY * 0.83) *
+        motion.radiusY *
+        0.22;
+    node.x = x;
+    node.y = y;
+    node.fx = x;
+    node.fy = y;
+  }
+}
+
+function scheduleMotionStart(delay = 2400) {
+  motionPausedUntil = performance.now() + delay;
+  lastMotionFrame = 0;
 }
 
 function linkIdOf(endpoint: any): string {
@@ -186,38 +282,74 @@ function drawNode(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
 ) {
-  const r = Math.sqrt(Math.max(0, node.val ?? 20)) * 4;
   const dimmed = isNodeDimmed(node);
+  const selected = node.id === focusNodeId.value;
+  const baseRadius = Math.sqrt(Math.max(0, node.val ?? 20)) * 4;
+  const r = selected ? baseRadius * 1.1 : baseRadius;
   const nodeColor = nodeColorOf(node);
   const x = node.x ?? 0;
   const y = node.y ?? 0;
+  const breath = (Math.sin(performance.now() / 580) + 1) / 2;
 
   // 节点圆
   ctx.save();
-  if (dimmed) ctx.globalAlpha = 0.18;
+  if (dimmed) {
+    // 关系线从节点圆心连接；淡化前先用画布背景遮住，避免线条透过节点
+    ctx.fillStyle = theme.value.background;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 1 / globalScale, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.globalAlpha = 0.18;
+  }
+
+  // 选中态仅使用无硬边的呼吸光晕
+  if (selected) {
+    ctx.save();
+    const glowRadius = r + (7 + breath * 2.5) / globalScale;
+    const glow = ctx.createRadialGradient(x, y, r * 0.72, x, y, glowRadius);
+    glow.addColorStop(0, withAlpha(nodeColor, 0.82 + breath * 0.12));
+    glow.addColorStop(0.55, withAlpha(nodeColor, 0.48 + breath * 0.1));
+    glow.addColorStop(1, withAlpha(nodeColor, 0));
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, glowRadius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
   ctx.fillStyle = nodeColor;
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI, false);
   ctx.fill();
 
-  // 聚焦节点描边
-  if (node.id === focusNodeId.value) {
-    ctx.lineWidth = 2.5 / globalScale;
-    ctx.strokeStyle = nodeColor;
-    ctx.beginPath();
-    ctx.arc(x, y, r + 3 / globalScale, 0, 2 * Math.PI, false);
-    ctx.stroke();
-  }
-
   // 名字
   const label = (node as any)[props.nodeLabel ?? 'name'] ?? '';
   if (label) {
     const fontSize = 14 / globalScale;
-    ctx.font = `normal ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
-    ctx.fillStyle = theme.value.text;
+    ctx.font = `${selected ? 600 : 400} ${fontSize}px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(label, x, y + r + fontSize * 0.7);
+    const labelY = y + r + fontSize * 0.85;
+    if (selected) {
+      const textWidth = ctx.measureText(label).width;
+      const paddingX = 6 / globalScale;
+      const paddingY = 3 / globalScale;
+      ctx.fillStyle = withAlpha(nodeColor, 0.16);
+      ctx.strokeStyle = withAlpha(nodeColor, 0.55);
+      ctx.lineWidth = 1 / globalScale;
+      ctx.beginPath();
+      ctx.roundRect(
+        x - textWidth / 2 - paddingX,
+        labelY - fontSize / 2 - paddingY,
+        textWidth + paddingX * 2,
+        fontSize + paddingY * 2,
+        5 / globalScale,
+      );
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = theme.value.text;
+    ctx.fillText(label, x, labelY);
   }
   ctx.restore();
 
@@ -234,7 +366,41 @@ function drawNode(
   }
 }
 
-function drawLinkLabel(link: GraphLink, ctx: CanvasRenderingContext2D) {
+function drawSourceArrow(link: GraphLink, ctx: CanvasRenderingContext2D) {
+  if (!isBidirectionalRelation(link.relationType, link.direction)) return;
+
+  const source = link.source as GraphNode;
+  const target = link.target as GraphNode;
+  const sourceX = source.x ?? 0;
+  const sourceY = source.y ?? 0;
+  const dx = (target.x ?? 0) - sourceX;
+  const dy = (target.y ?? 0) - sourceY;
+  const distance = Math.hypot(dx, dy);
+  if (!distance) return;
+
+  const unitX = dx / distance;
+  const unitY = dy / distance;
+  const nodeRadius = Math.sqrt(Math.max(0, source.val ?? 20)) * 4;
+  const arrowLength = props.linkDirectionalArrowLength ?? 6;
+  const arrowWidth = arrowLength * 0.65;
+  const tipX = sourceX + unitX * nodeRadius;
+  const tipY = sourceY + unitY * nodeRadius;
+  const baseX = tipX + unitX * arrowLength;
+  const baseY = tipY + unitY * arrowLength;
+
+  ctx.save();
+  ctx.fillStyle = linkColorOf(link);
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(baseX - unitY * arrowWidth, baseY + unitX * arrowWidth);
+  ctx.lineTo(baseX + unitY * arrowWidth, baseY - unitX * arrowWidth);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawLink(link: GraphLink, ctx: CanvasRenderingContext2D) {
+  drawSourceArrow(link, ctx);
   if (!link.relationType) return;
   if (focusNodeId.value && !focusLinks.has(link)) return;
   const midX = ((link.source.x ?? 0) + (link.target.x ?? 0)) / 2;
@@ -254,29 +420,33 @@ const initGraph = () => {
 
   instance
     .backgroundColor(theme.value.background)
+    // 节点漂游和选中光晕需要在力模拟冷却后继续逐帧绘制
+    .autoPauseRedraw(false)
     .nodeVal((n: GraphNode) => n.val ?? 20)
     .linkColor(linkColorOf)
     .linkWidth((link: GraphLink) => (focusLinks.has(link) ? 2 : 1))
     .linkDirectionalArrowLength(props.linkDirectionalArrowLength ?? 6)
     .linkDirectionalArrowRelPos(props.linkDirectionalArrowRelPos ?? 1)
     .linkDirectionalArrowColor(linkColorOf)
+    .onRenderFramePre(() => updateNodeMotion(performance.now()))
     .enablePointerInteraction(true)
     .onNodeClick(handleNodeClick)
     .onBackgroundClick(() => applyFocus(null))
     .onNodeDrag((node: GraphNode) => {
       // force-graph 会区分拖拽和点击；拖动节点时也应同步切换聚焦对象
+      draggingNodeId = node.id;
       if (focusNodeId.value !== node.id) applyFocus(node);
     })
     .onNodeDragEnd((node: GraphNode) => {
-      // 拖拽后固定在当前位置
+      // 拖拽后以新位置作为缓慢漂游的中心
       applyFocus(node);
-      node.fx = node.x;
-      node.fy = node.y;
+      updateMotionAnchor(node);
+      draggingNodeId = null;
     })
     .nodeCanvasObjectMode(() => 'replace')
     .nodeCanvasObject(drawNode)
     .linkCanvasObjectMode(() => 'after')
-    .linkCanvasObject(drawLinkLabel)
+    .linkCanvasObject(drawLink)
     .nodePointerAreaPaint(
       (node: GraphNode, color: string, ctx: CanvasRenderingContext2D) => {
         const r = Math.sqrt(Math.max(0, node.val ?? 20)) * 4 + 6;
@@ -307,6 +477,7 @@ const initGraph = () => {
   initialFitTimer = setTimeout(() => {
     if (!userInteracted) instance?.zoomToFit(600, 60);
   }, 1200);
+  scheduleMotionStart();
 };
 
 onMounted(() => {
@@ -372,6 +543,8 @@ function fitView() {
 }
 
 function resetLayout() {
+  nodeMotions.clear();
+  draggingNodeId = null;
   for (const n of props.graphData.nodes) {
     n.x = n.initialX;
     n.y = n.initialY;
@@ -382,6 +555,7 @@ function resetLayout() {
   }
   applyFocus(null);
   instance?.d3ReheatSimulation?.();
+  scheduleMotionStart(1800);
   setTimeout(() => instance?.zoomToFit(600, 60), 1200);
 }
 
