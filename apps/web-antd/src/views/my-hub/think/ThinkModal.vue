@@ -15,6 +15,7 @@ import {
   Modal,
   Popconfirm,
   Space,
+  Spin,
   Switch,
   Tooltip,
 } from 'ant-design-vue';
@@ -40,14 +41,14 @@ interface ThoughtForm {
 }
 
 const props = defineProps<{
-  visible: boolean;
   thoughtId: null | number | string;
+  visible: boolean;
 }>();
 
 const emit = defineEmits<{
-  'update:visible': [value: boolean];
-  saved: [thought: any];
   deleted: [id: number | string];
+  saved: [thought: any];
+  'update:visible': [value: boolean];
 }>();
 
 const form = reactive<ThoughtForm>({
@@ -64,6 +65,7 @@ const form = reactive<ThoughtForm>({
 });
 
 const saving = ref(false);
+const loading = ref(false);
 const currentEditId = ref<null | number | string>(null);
 
 const modalTitle = computed(() => '');
@@ -83,33 +85,40 @@ function resetForm() {
 }
 
 async function loadThought(id: number | string) {
+  loading.value = true;
   try {
     const res = await queryThink({ page: 1, pageSize: 1, condition: { id } });
     const list = res?.items || [];
-    if (list.length > 0) {
-      const thought = list[0];
-      form.content = thought.content || '';
-      form.isPinned = thought.isPinned ?? 0;
-      form.hiddenContent = thought.hiddenContent ?? false;
-      const evs = Array.isArray(thought.events) ? thought.events : [];
-      form.events =
-        evs.length > 0
-          ? evs.map((e: any) => ({
-              ...e,
-              create_time:
-                e?.create_time ?? e?.createTime ?? new Date().toISOString(),
-            }))
-          : [
-              {
-                id: Date.now(),
-                content: '',
-                create_time: new Date().toISOString(),
-              },
-            ];
-      currentEditId.value = id;
+    if (list.length === 0) {
+      message.error('闪念不存在或已被删除');
+      close();
+      return;
     }
+    const thought = list[0];
+    form.content = thought.content || '';
+    form.isPinned = thought.isPinned ?? 0;
+    form.hiddenContent = thought.hiddenContent ?? false;
+    const evs = Array.isArray(thought.events) ? thought.events : [];
+    form.events =
+      evs.length > 0
+        ? evs.map((e: any) => ({
+            ...e,
+            create_time:
+              e?.create_time ?? e?.createTime ?? new Date().toISOString(),
+          }))
+        : [
+            {
+              id: Date.now(),
+              content: '',
+              create_time: new Date().toISOString(),
+            },
+          ];
+    currentEditId.value = id;
   } catch {
     message.error('加载闪念失败');
+    close();
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -117,10 +126,10 @@ watch(
   () => props.visible,
   (val) => {
     if (val) {
+      // 先重置表单，避免加载期间闪烁上一次的内容
+      resetForm();
       if (props.thoughtId) {
         loadThought(props.thoughtId);
-      } else {
-        resetForm();
       }
     }
   },
@@ -151,7 +160,9 @@ async function save() {
 
   saving.value = true;
 
-  const validEvents = form.events.filter((event) => event.content.trim() !== '');
+  const validEvents = form.events.filter(
+    (event) => event.content.trim() !== '',
+  );
 
   const payload: any = {
     content: form.content.trim(),
@@ -242,118 +253,125 @@ function formatDate(dateString: string) {
     centered
     @cancel="close"
   >
-    <Form layout="vertical" class="modern-form">
-      <Form.Item required>
-        <Input.TextArea
-          v-model:value="form.content"
-          :auto-size="{ minRows: 4, maxRows: 12 }"
-          placeholder="这一刻的想法..."
-          class="content-textarea"
-          :bordered="false"
-        />
-      </Form.Item>
+    <Spin :spinning="loading">
+      <Form layout="vertical" class="modern-form">
+        <Form.Item required>
+          <Input.TextArea
+            v-model:value="form.content"
+            :auto-size="{ minRows: 4, maxRows: 12 }"
+            placeholder="这一刻的想法..."
+            class="content-textarea"
+            :bordered="false"
+          />
+        </Form.Item>
 
-      <Form.Item>
-        <div class="events-section">
-          <div class="events-header">
-            <span class="events-title">关联事件流</span>
-          </div>
-          <div
-            v-for="event in [...form.events].reverse()"
-            :key="event.id"
-            class="event-item"
-          >
-            <div class="event-row">
-              <Input
-                v-model:value="event.content"
-                placeholder="记录相关事件..."
-                :bordered="false"
-                class="event-input"
-              />
-              <Button
-                type="text"
-                danger
-                shape="circle"
-                @click="removeEventById(event.id)"
-                v-if="form.events.length > 1"
-              >
-                <template #icon><DeleteOutlined /></template>
-              </Button>
+        <Form.Item>
+          <div class="events-section">
+            <div class="events-header">
+              <span class="events-title">关联事件流</span>
             </div>
-            <div class="event-time">{{ formatDate(event.create_time) }}</div>
-          </div>
-          <Button type="dashed" block @click="addEvent" class="add-event-btn">
-            <template #icon><PlusOutlined /></template>
-            补充事件
-          </Button>
-        </div>
-      </Form.Item>
-
-      <div
-        class="form-actions"
-        :style="{
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }"
-      >
-        <div>
-          <Popconfirm
-            v-if="currentEditId"
-            title="确定要删除这条思考吗？"
-            ok-text="确定"
-            cancel-text="取消"
-            @confirm="handleDelete"
-          >
-            <Button danger type="text">
-              <template #icon><DeleteOutlined /></template>
-              删除
+            <div
+              v-for="event in [...form.events].reverse()"
+              :key="event.id"
+              class="event-item"
+            >
+              <div class="event-row">
+                <Input
+                  v-model:value="event.content"
+                  placeholder="记录相关事件..."
+                  :bordered="false"
+                  class="event-input"
+                />
+                <Button
+                  type="text"
+                  danger
+                  shape="circle"
+                  @click="removeEventById(event.id)"
+                  v-if="form.events.length > 1"
+                >
+                  <template #icon><DeleteOutlined /></template>
+                </Button>
+              </div>
+              <div class="event-time">{{ formatDate(event.create_time) }}</div>
+            </div>
+            <Button type="dashed" block @click="addEvent" class="add-event-btn">
+              <template #icon><PlusOutlined /></template>
+              补充事件
             </Button>
-          </Popconfirm>
-        </div>
-        <Space>
-          <div style="display: flex; align-items: center">
-            <Tooltip :title="form.hiddenContent ? '显示内容' : '隐藏内容'">
-              <Button
-                type="text"
-                shape="circle"
-                @click="form.hiddenContent = !form.hiddenContent"
-                :class="
-                  form.hiddenContent
-                    ? '!text-slate-400'
-                    : '!text-slate-600 dark:!text-slate-300'
-                "
-              >
-                <template #icon>
-                  <EyeOutlined v-if="form.hiddenContent" />
-                  <EyeInvisibleOutlined v-else />
-                </template>
+          </div>
+        </Form.Item>
+
+        <div
+          class="form-actions"
+          :style="{
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }"
+        >
+          <div>
+            <Popconfirm
+              v-if="currentEditId"
+              title="确定要删除这条思考吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDelete"
+            >
+              <Button danger type="text">
+                <template #icon><DeleteOutlined /></template>
+                删除
               </Button>
-            </Tooltip>
+            </Popconfirm>
           </div>
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              margin-right: 16px;
-              margin-left: 8px;
-            "
-          >
-            <span style="font-size: 14px; opacity: 0.85">添加到首页</span>
-            <Switch
-              v-model:checked="form.isPinned"
-              :checked-value="1"
-              :un-checked-value="0"
-              size="small"
-            />
-          </div>
-          <Button @click="close" shape="round">取消</Button>
-          <Button type="primary" @click="save" shape="round" :loading="saving">
-            保存
-          </Button>
-        </Space>
-      </div>
-    </Form>
+          <Space>
+            <div style="display: flex; align-items: center">
+              <Tooltip :title="form.hiddenContent ? '显示内容' : '隐藏内容'">
+                <Button
+                  type="text"
+                  shape="circle"
+                  @click="form.hiddenContent = !form.hiddenContent"
+                  :class="
+                    form.hiddenContent
+                      ? '!text-slate-400'
+                      : '!text-slate-600 dark:!text-slate-300'
+                  "
+                >
+                  <template #icon>
+                    <EyeOutlined v-if="form.hiddenContent" />
+                    <EyeInvisibleOutlined v-else />
+                  </template>
+                </Button>
+              </Tooltip>
+            </div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-right: 16px;
+                margin-left: 8px;
+              "
+            >
+              <span style="font-size: 14px; opacity: 0.85">添加到首页</span>
+              <Switch
+                v-model:checked="form.isPinned"
+                :checked-value="1"
+                :un-checked-value="0"
+                size="small"
+              />
+            </div>
+            <Button @click="close" shape="round">取消</Button>
+            <Button
+              type="primary"
+              @click="save"
+              shape="round"
+              :loading="saving"
+            >
+              保存
+            </Button>
+          </Space>
+        </div>
+      </Form>
+    </Spin>
   </Modal>
 </template>
 

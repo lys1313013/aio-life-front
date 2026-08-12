@@ -22,7 +22,7 @@ import {
 import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/common';
-import { deleteData, insertOrUpdate, query, uploadImage } from '#/api/core/device';
+import { add, deleteData, query, update, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
@@ -181,7 +181,11 @@ export default {
         endDate: formattedEndDate,
       };
 
-      await insertOrUpdate(deviceData);
+      if (deviceData.id) {
+        await update(deviceData.id, deviceData);
+      } else {
+        await add(deviceData);
+      }
 
       this.query();
       this.visible = false;

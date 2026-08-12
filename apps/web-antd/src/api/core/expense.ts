@@ -29,7 +29,7 @@ export async function saveBatch(dataList: any) {
  * 删除
  */
 export async function deleteData(data: any) {
-  return await requestClient.post('/expense/delete', data);
+  return await requestClient.delete(`/expense/${data.id}`);
 }
 
 export async function deleteBatch(data: any) {

@@ -12,8 +12,15 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insertOrUpdate(data: any) {
-  return await requestClient.post('/device/insertOrUpdate', data);
+export async function add(data: any) {
+  return await requestClient.post('/device', data);
+}
+
+/**
+ * 更新
+ */
+export async function update(id: number | string, data: any) {
+  return await requestClient.put(`/device/${id}`, data);
 }
 
 /**

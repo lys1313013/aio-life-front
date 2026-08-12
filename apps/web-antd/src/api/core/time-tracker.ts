@@ -60,21 +60,21 @@ export async function getById(id: string): Promise<TimeRecordEntity> {
  * 更新数据
  */
 export async function update(data: Partial<TimeRecordEntity>): Promise<void> {
-  return await requestClient.post('/timeRecord/update', data);
+  return await requestClient.put(`/timeRecord/${data.id}`, data);
 }
 
 /**
  * 保存数据
  */
 export async function save(data: Partial<TimeRecordEntity>): Promise<boolean> {
-  return await requestClient.post('/timeRecord/save', data);
+  return await requestClient.post('/timeRecord', data);
 }
 
 /**
  * 删除数据
  */
 export async function deleteData(data: { id: string }): Promise<void> {
-  return await requestClient.post('/timeRecord/delete', data);
+  return await requestClient.delete(`/timeRecord/${data.id}`);
 }
 
 /**

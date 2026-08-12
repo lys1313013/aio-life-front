@@ -10,13 +10,20 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insertOrUpdate(data: any) {
-  return await requestClient.post('/sysDictData/insertOrUpdate', data);
+export async function add(data: any) {
+  return await requestClient.post('/sysDictData', data);
+}
+
+/**
+ * 更新
+ */
+export async function update(dictCode: number | string, data: any) {
+  return await requestClient.put(`/sysDictData/${dictCode}`, data);
 }
 
 /**
  * 删除
  */
 export async function deleteData(data: any) {
-  return await requestClient.post('/sysDictData/delete', data);
+  return await requestClient.delete(`/sysDictData/${data.dictCode}`);
 }

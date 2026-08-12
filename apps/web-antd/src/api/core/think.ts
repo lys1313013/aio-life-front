@@ -5,11 +5,11 @@ export async function query(data: any) {
 }
 
 export async function save(data: any) {
-  return await requestClient.post('/thought/save', data);
+  return await requestClient.post('/thought', data);
 }
 
 export async function update(data: any) {
-  return await requestClient.post('/thought/update', data);
+  return await requestClient.put(`/thought/${data.id}`, data);
 }
 
 export async function getPinnedThoughts() {

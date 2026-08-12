@@ -10,15 +10,22 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insertOrUpdate(data: any) {
-  return await requestClient.post('/income/insertOrUpdate', data);
+export async function add(data: any) {
+  return await requestClient.post('/income', data);
+}
+
+/**
+ * 更新
+ */
+export async function update(incomeId: number | string, data: any) {
+  return await requestClient.put(`/income/${incomeId}`, data);
 }
 
 /**
  * 删除
  */
 export async function deleteData(data: any) {
-  return await requestClient.post('/income/delete', data);
+  return await requestClient.delete(`/income/${data.incomeId}`);
 }
 
 /**

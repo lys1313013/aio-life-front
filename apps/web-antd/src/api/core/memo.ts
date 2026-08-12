@@ -19,13 +19,13 @@ export async function getMemoListApi() {
 }
 
 export async function createMemoApi(memo: Partial<Memo>) {
-  return requestClient.post<boolean>('/memo/save', memo);
+  return requestClient.post<boolean>('/memo', memo);
 }
 
 export async function updateMemoApi(memo: Partial<Memo>) {
-  return requestClient.post<boolean>('/memo/update', memo);
+  return requestClient.put<boolean>(`/memo/${memo.id}`, memo);
 }
 
 export async function deleteMemoApi(id: string) {
-  return requestClient.post<boolean>('/memo/delete', { id });
+  return requestClient.delete<boolean>(`/memo/${id}`);
 }

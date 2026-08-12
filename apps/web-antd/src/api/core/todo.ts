@@ -5,15 +5,15 @@ export async function getTaskColumnList(data: any) {
 }
 
 export async function saveColumn(data: any) {
-  return await requestClient.post('/taskColumn/save', data);
+  return await requestClient.post('/taskColumn', data);
 }
 
 export async function updateColumn(data: any) {
-  return await requestClient.post('/taskColumn/update', data);
+  return await requestClient.put(`/taskColumn/${data.id}`, data);
 }
 
 export async function deleteColumn(data: any) {
-  return await requestClient.post('/taskColumn/delete', data);
+  return await requestClient.delete(`/taskColumn/${data.id}`);
 }
 
 export async function reSortColumn(data: any) {
@@ -82,15 +82,15 @@ export async function unstarTaskDetail(id: string) {
 }
 
 export async function saveTask(data: any) {
-  return await requestClient.post('/tasks/save', data);
+  return await requestClient.post('/tasks', data);
 }
 
 export async function updateTask(data: any) {
-  return await requestClient.post('/tasks/update', data);
+  return await requestClient.put(`/tasks/${data.id}`, data);
 }
 
 export async function deleteTask(data: any) {
-  return await requestClient.post('/tasks/delete', data);
+  return await requestClient.delete(`/tasks/${data.id}`);
 }
 
 export async function reSortTask(data: any) {

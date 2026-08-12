@@ -4,7 +4,7 @@ import { onMounted, ref, toRaw } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { insertOrUpdate } from '#/api/core/income';
+import { add, update } from '#/api/core/income';
 import { getByDictType } from '#/api/core/userDictType';
 
 defineOptions({
@@ -101,8 +101,12 @@ const [Modal, modalApi] = useVbenModal({
   onConfirm: async () => {
     modalApi.lock();
     try {
-      const newVar = await formApi.submitForm();
-      await insertOrUpdate(toRaw(newVar));
+      const newVar = toRaw(await formApi.submitForm());
+      if (newVar.incomeId) {
+        await update(newVar.incomeId, newVar);
+      } else {
+        await add(newVar);
+      }
       modalApi.close();
       tableReload();
     } finally {

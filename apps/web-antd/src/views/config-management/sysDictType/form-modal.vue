@@ -4,7 +4,7 @@ import { toRaw } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 
 import { useVbenForm } from '#/adapter/form';
-import { insertOrUpdate } from '#/api/core/sysDictType';
+import { add, update } from '#/api/core/sysDictType';
 
 defineOptions({
   name: 'FormModal',
@@ -65,8 +65,12 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
-    const newVar = await formApi.submitForm();
-    await insertOrUpdate(toRaw(newVar));
+    const newVar = toRaw(await formApi.submitForm());
+    if (newVar.dictId) {
+      await update(newVar.dictId, newVar);
+    } else {
+      await add(newVar);
+    }
     modalApi.close();
     tableReload();
   },

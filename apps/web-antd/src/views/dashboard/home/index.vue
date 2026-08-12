@@ -3,7 +3,7 @@ import type { Component } from 'vue';
 
 import type { WatchedTaskDetail } from '#/api/core/dashboard';
 
-import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { openWindow } from '@vben/utils';
@@ -62,9 +62,7 @@ const timeTrackerModalRef = ref();
 // 上次时迹记录的结束时间（分钟数，0 表示今日无记录）
 const timeTrackerLastEnd = ref(0);
 // 当前时间（分钟数），每分钟更新，用于计算"距离上次记录已过去多久"
-const nowMinutes = ref(
-  new Date().getHours() * 60 + new Date().getMinutes(),
-);
+const nowMinutes = ref(new Date().getHours() * 60 + new Date().getMinutes());
 const timeTrackerNowTimer = ref<ReturnType<typeof setInterval>>();
 // 距离上次记录已过去的时长（格式化）
 const timeTrackerElapsedText = computed(() => {
@@ -573,7 +571,7 @@ function navTo(nav: { url?: string }) {
           >
             <span
               v-if="timeTrackerElapsedText"
-              class="font-mono text-xs leading-none tabular-nums text-foreground"
+              class="font-mono text-xs tabular-nums leading-none text-foreground"
             >
               {{ timeTrackerElapsedText }}
             </span>
@@ -814,6 +812,7 @@ function navTo(nav: { url?: string }) {
               <div class="flex items-start justify-between gap-2">
                 <span
                   class="line-clamp-3 flex-1 whitespace-pre-wrap text-xs font-medium leading-snug text-foreground"
+                  :class="{ 'select-none blur-sm': thought.hiddenContent }"
                 >
                   {{ thought.content }}
                 </span>

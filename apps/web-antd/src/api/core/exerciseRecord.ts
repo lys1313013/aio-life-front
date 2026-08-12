@@ -34,21 +34,14 @@ export async function getAll(data: any) {
  * 新增运动记录
  */
 export async function add(data: any) {
-  return await requestClient.post('/exerciseRecord/add', data);
+  return await requestClient.post('/exerciseRecord', data);
 }
 
 /**
  * 修改运动记录
  */
 export async function update(data: any) {
-  return await requestClient.post('/exerciseRecord/update', data);
-}
-
-/**
- * 删除运动记录
- */
-export async function deleteData(data: any) {
-  return await requestClient.post('/exerciseRecord/delete', data);
+  return await requestClient.put(`/exerciseRecord/${data.id}`, data);
 }
 
 /**
