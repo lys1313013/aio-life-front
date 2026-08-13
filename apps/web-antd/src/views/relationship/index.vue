@@ -553,6 +553,7 @@ onMounted(() => {
           node-label="name"
           :link-directional-arrow-length="6"
           :link-directional-arrow-rel-pos="1"
+          :paused="personFormVisible || relationshipFormVisible"
           @node-dblclick="handleNodeDblClick"
         />
         <Empty

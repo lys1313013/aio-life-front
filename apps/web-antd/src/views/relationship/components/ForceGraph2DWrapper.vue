@@ -54,6 +54,11 @@ const props = defineProps<{
   linkDirectionalArrowLength?: number;
   linkDirectionalArrowRelPos?: number;
   nodeLabel?: string;
+  /**
+   * 暂停动画（如图谱被弹窗遮住时）。
+   * 持续重绘会占用主线程，可能干扰中文输入法组合；暂停后恢复重绘并重新锚定漂游位置。
+   */
+  paused?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -502,6 +507,24 @@ watch(
     instance?.graphData(val);
   },
   // 不能 deep：节点 x/y 每帧被力模拟改写，deep 会导致拖动时反复回灌数据
+);
+
+// 弹窗打开时暂停动画，避免持续重绘占用主线程干扰输入法；恢复时重新锚定漂游起点
+watch(
+  () => props.paused,
+  (paused) => {
+    if (!instance) return;
+    if (paused) {
+      instance.pauseAnimation();
+    } else {
+      // 暂停期间 nodeMotions 的时间戳已过期，若直接恢复节点会跳到随机角度；
+      // 以暂停后的当前位置重新创建漂游，保证平滑衔接
+      for (const n of props.graphData.nodes) {
+        updateMotionAnchor(n);
+      }
+      instance.resumeAnimation();
+    }
+  },
 );
 
 onBeforeUnmount(() => {
