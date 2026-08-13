@@ -60,7 +60,7 @@ function handleCancel() {
   >
     <div class="py-4">
       <p class="text-muted-foreground mb-4 text-sm">
-        当前菜单已被菜单锁锁定，请输入二级密码解锁
+        当前菜单已锁定，请输入二级密码解锁
       </p>
       <InputPassword
         v-model:value="password"

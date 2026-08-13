@@ -16,6 +16,7 @@ const incomeCategoryChartRef = ref<EchartsUIType>();
 const expenseCategoryChartRef = ref<EchartsUIType>();
 const yearChartRef = ref<EchartsUIType>();
 const yearlyBalancePieChartRef = ref<EchartsUIType>();
+const depositChartRef = ref<EchartsUIType>();
 
 const { renderEcharts: renderBalanceChart } = useEcharts(balanceChartRef);
 const { renderEcharts: renderIncomeCategoryChart } = useEcharts(
@@ -28,6 +29,7 @@ const { renderEcharts: renderYearChart } = useEcharts(yearChartRef);
 const { renderEcharts: renderYearlyBalancePieChart } = useEcharts(
   yearlyBalancePieChartRef,
 );
+const { renderEcharts: renderDepositChart } = useEcharts(depositChartRef);
 
 // 数据接口
 interface FinanceDetail {
@@ -251,9 +253,36 @@ const filteredData = computed(() => {
 // 是否为单年模式
 const isSingleYear = computed(() => selectedYear.value !== 'all');
 
+// 累计存款趋势（按月/年累计结余）
+const cumulativeDeposits = computed(() => {
+  const data: any[] = isSingleYear.value
+    ? filteredData.value.monthly
+    : filteredData.value.yearly;
+
+  const sorted = [...data].sort((a, b) =>
+    isSingleYear.value ? a.month.localeCompare(b.month) : a.year - b.year,
+  );
+
+  let deposit = 0;
+  let income = 0;
+  let expense = 0;
+  return sorted.map((item: any) => {
+    deposit += item.balance;
+    income += item.income;
+    expense += item.expense;
+    return {
+      label: isSingleYear.value ? item.month : `${item.year}年`,
+      deposit: Number(deposit.toFixed(2)),
+      income: Number(income.toFixed(2)),
+      expense: Number(expense.toFixed(2)),
+    };
+  });
+});
+
 // 更新图表
 const updateCharts = () => {
   updateBalanceChart();
+  updateDepositChart();
   updateIncomeCategoryChart();
   updateExpenseCategoryChart();
   updateYearChart();
@@ -298,6 +327,110 @@ const updateBalanceChart = () => {
         data: chartData.map((item) => item.balance),
         itemStyle: { color: '#1890ff' },
         lineStyle: { width: 3 },
+      },
+    ],
+  });
+};
+
+// 更新累计存款趋势图
+const updateDepositChart = () => {
+  const data = cumulativeDeposits.value;
+
+  if (!data || data.length === 0) return;
+
+  renderDepositChart({
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const name = params[0]?.name;
+        const rows = params
+          .map(
+            (p: any) =>
+              `${p.marker} ${p.seriesName}: ${formatCurrency(p.value)}`,
+          )
+          .join('<br/>');
+        return `${name}<br/>${rows}`;
+      },
+    },
+    legend: {},
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      data: data.map((item) => item.label),
+      axisLabel: { rotate: 45 },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { formatter: (value: number) => formatCurrency(value) },
+    },
+    series: [
+      {
+        name: '累计存款',
+        type: 'line',
+        data: data.map((item) => item.deposit),
+        smooth: true,
+        symbolSize: 6,
+        itemStyle: { color: '#1890ff' },
+        lineStyle: { width: 3 },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(24, 144, 255, 0.35)' },
+              { offset: 1, color: 'rgba(24, 144, 255, 0.02)' },
+            ],
+          },
+        },
+        markLine: {
+          symbol: 'none',
+          label: {
+            formatter: (params: any) => `平均: ${formatCurrency(params.value)}`,
+          },
+          lineStyle: { type: 'dashed', color: '#999' },
+          data: [{ type: 'average', name: '平均累计存款' }],
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (params: any) => formatCurrency(params.value),
+        },
+      },
+      {
+        name: '累计收入',
+        type: 'line',
+        data: data.map((item) => item.income),
+        smooth: true,
+        symbolSize: 4,
+        itemStyle: { color: '#52c41a' },
+        lineStyle: { width: 2 },
+        label: {
+          show: true,
+          position: 'bottom',
+          formatter: (params: any) => formatCurrency(params.value),
+        },
+      },
+      {
+        name: '累计支出',
+        type: 'line',
+        data: data.map((item) => item.expense),
+        smooth: true,
+        symbolSize: 4,
+        itemStyle: { color: '#ff4d4f' },
+        lineStyle: { width: 2 },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: (params: any) => formatCurrency(params.value),
+        },
       },
     ],
   });
@@ -636,6 +769,15 @@ onMounted(() => {
         <Col :span="24">
           <Card class="chart-card" title="月度收支结余趋势">
             <EchartsUI ref="balanceChartRef" style="height: 400px" />
+          </Card>
+        </Col>
+
+        <Col :span="24">
+          <Card
+            class="chart-card"
+            :title="isSingleYear ? '月度累计存款趋势' : '年度累计存款趋势'"
+          >
+            <EchartsUI ref="depositChartRef" style="height: 350px" />
           </Card>
         </Col>
 

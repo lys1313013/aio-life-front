@@ -255,10 +255,10 @@ onUnmounted(() => {
       :width="isMobile ? '90%' : '70%'"
       :centered="true"
       :body-style="{
-        height: isMobile ? '50vh' : '60vh',
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
+        maxHeight: isMobile ? '80vh' : '85vh',
+        overflow: 'auto',
       }"
       class="memo-modal"
     >
@@ -267,16 +267,26 @@ onUnmounted(() => {
         placeholder="标题"
         class="!mb-2 !border-0 !px-0 !text-lg !font-bold focus:!shadow-none"
         :bordered="false"
+        style="flex-shrink: 0"
       />
       <Input.TextArea
         v-model:value="formState.content"
         placeholder="记下你的想法..."
-        class="flex-1 !resize-none !border-0 !px-0 !text-base !leading-relaxed focus:!shadow-none"
+        class="!border-0 !px-0 !text-base !leading-relaxed focus:!shadow-none"
         :bordered="false"
-        style="height: 100%"
+        :style="{
+          alignSelf: 'flex-start',
+          flexShrink: 0,
+          resize: 'both',
+          width: '100%',
+          minHeight: isMobile ? '30vh' : '160px',
+          height: isMobile ? '40vh' : '50vh',
+          maxHeight: '75vh',
+        }"
       />
       <div
         class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800"
+        style="flex-shrink: 0"
       >
         <Tooltip :title="formState.hiddenContent ? '显示内容' : '隐藏内容'">
           <Button
