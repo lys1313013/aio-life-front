@@ -414,7 +414,7 @@ const updateDepositChart = () => {
         lineStyle: { width: 2 },
         label: {
           show: true,
-          position: 'bottom',
+          position: 'top',
           formatter: (params: any) => formatCurrency(params.value),
         },
       },
@@ -428,7 +428,7 @@ const updateDepositChart = () => {
         lineStyle: { width: 2 },
         label: {
           show: true,
-          position: 'top',
+          position: 'bottom',
           formatter: (params: any) => formatCurrency(params.value),
         },
       },
