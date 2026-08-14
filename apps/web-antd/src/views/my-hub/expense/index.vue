@@ -7,7 +7,11 @@ import { onMounted, ref } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
-import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import {
+  ColumnWidthOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from '@ant-design/icons-vue';
 import { Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -42,7 +46,6 @@ const { isMobile } = usePreferences();
 
 const dictOptions = ref<Array<any>>([]);
 const payTypeOptions = ref<Array<any>>([]);
-const tableData = ref<RowType[]>([]);
 
 const loadExpTypes = async () => {
   try {
@@ -286,28 +289,6 @@ const gridOptions: VxeGridProps<RowType> = {
           pageSize: page.pageSize,
           condition: processedCondition,
         });
-
-        // 确保数据格式正确 - 使用items字段而不是records
-        if (result && result.items) {
-          // 检查数据字段格式
-          const firstRecord = result.items[0];
-          if (firstRecord) {
-            console.log('第一条记录字段:', Object.keys(firstRecord));
-            console.log('amt字段值:', firstRecord.amt);
-            console.log('expTime字段值:', firstRecord.expTime);
-            console.log('expTypeId字段值:', firstRecord.expTypeId);
-          }
-
-          // 保存表格数据用于图表统计
-          tableData.value = result.items;
-
-          // 更新年度统计数据
-          if (dashboardRef.value) {
-            await dashboardRef.value.refreshData();
-          }
-        } else {
-          tableData.value = [];
-        }
 
         return result;
       },

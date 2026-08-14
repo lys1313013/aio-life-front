@@ -102,7 +102,12 @@ function setupAccessGuard(router: Router) {
         const menuPath = to.path;
         if (!secondaryLockStore.isUnlocked(menuPath)) {
           secondaryLockStore.triggerUnlock(menuPath);
-          return from.fullPath ? false : { path: '/' };
+          // 硬刷新直接访问被锁菜单时不能 return false（会停在无匹配路由导致白屏），
+          // 也不能跳 '/' —— '/' 存在 redirect，在守卫内返回带 redirect 的路径会卡死（matched 为空、白屏）。
+          // 直接跳默认首页，正常渲染并弹出解锁弹窗。
+          return from.fullPath
+            ? false
+            : { path: preferences.app.defaultHomePath };
         }
       }
       return true;
@@ -135,8 +140,20 @@ function setupAccessGuard(router: Router) {
         ? userInfo.homePath || preferences.app.defaultHomePath
         : to.fullPath)) as string;
 
+    // 目标菜单被二级锁锁定：先弹出解锁弹窗，并跳默认首页。
+    // 不能把被锁目标作为守卫返回的 location —— 会先路由到该目标再触发二级锁的二次递归导航，导致白屏卡死。
+    const target = router.resolve(decodeURIComponent(redirectPath));
+    const targetMenuId = target.meta?.menuId;
+    if (
+      targetMenuId != null &&
+      secondaryLockStore.isMenuLocked(Number(targetMenuId))
+    ) {
+      secondaryLockStore.triggerUnlock(target.path);
+      return { path: preferences.app.defaultHomePath };
+    }
+
     return {
-      ...router.resolve(decodeURIComponent(redirectPath)),
+      ...target,
       replace: true,
     };
   });
