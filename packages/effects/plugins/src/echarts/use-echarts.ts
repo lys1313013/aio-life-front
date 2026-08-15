@@ -82,6 +82,12 @@ function useEcharts(chartRef: Ref<EchartsUIType>) {
       return {
         ...resolvedOptions,
         ...getOptions.value,
+        tooltip: {
+          // tooltip 挂载到 body，避免被卡片 overflow 裁剪；confine 兜底限制在图表区域内
+          appendTo: 'body',
+          confine: true,
+          ...resolvedOptions.tooltip,
+        },
       };
     };
     return new Promise((resolve) => {
