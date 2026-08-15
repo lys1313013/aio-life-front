@@ -2,6 +2,7 @@
 import type { Component } from 'vue';
 
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { VbenIcon } from '@vben/common-ui';
 
@@ -45,13 +46,24 @@ const emit = defineEmits<{
   (e: 'title-click', url: string): void;
 }>();
 
+const router = useRouter();
+
 // 首次加载（loading）也用同一套滑动条样式：保留高度，只把数值换成 "—" 占位
 const isUpdating = computed(() => props.loading || props.refreshing);
+
+// 内部路由（以 / 开头）走应用内跳转，外部 http 链接新开窗口
+function navigate(url: string) {
+  if (url.startsWith('http')) {
+    window.open(url, '_blank');
+  } else {
+    router.push(url);
+  }
+}
 
 function handleIconClick(e: MouseEvent) {
   if (props.iconClickUrl) {
     e.stopPropagation();
-    window.open(props.iconClickUrl, '_blank');
+    navigate(props.iconClickUrl);
   }
 }
 
@@ -61,7 +73,7 @@ function handleTitleClick(e: MouseEvent) {
     if (props.titleClickUrl.startsWith('action:')) {
       emit('title-click', props.titleClickUrl);
     } else {
-      window.open(props.titleClickUrl, '_blank');
+      navigate(props.titleClickUrl);
     }
   }
 }

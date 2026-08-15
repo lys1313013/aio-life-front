@@ -467,7 +467,8 @@ function handleTitleClick(url: string) {
   if (url === ACTION_OPEN_TIME_TRACKER_MODAL) {
     timeTrackerModalRef.value?.open();
   } else if (url === ACTION_OPEN_EXERCISE_MODAL) {
-    exerciseModalRef.value?.open();
+    // 点击「今日运动」标题进入运动页面，而非弹出录入弹窗（长按卡片仍可快速录入）
+    navTo({ url: '/record/exercise' });
   }
 }
 
