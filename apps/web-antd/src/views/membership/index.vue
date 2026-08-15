@@ -390,29 +390,10 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
         <div
           v-for="item in filteredMembers"
           :key="item.id"
-          class="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:p-5"
+          class="group relative cursor-pointer rounded-2xl border border-border bg-card p-4 transition-colors duration-200 hover:border-border/60 hover:shadow-sm sm:p-5"
           @click="handleEdit(item)"
         >
-          <!-- 顶部渐变条 -->
-          <div
-            class="absolute inset-x-0 top-0 h-1.5 opacity-80"
-            :style="{
-              background: `linear-gradient(90deg, ${item.color || '#1677ff'}, ${item.color || '#1677ff'}33)`,
-            }"
-          />
-
           <div class="mb-3 flex items-center gap-3">
-            <div
-              class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
-              :style="{
-                background: `linear-gradient(135deg, ${item.color || '#1677ff'}, ${item.color || '#1677ff'}88)`,
-              }"
-            >
-              <IconifyIcon
-                :icon="getCategoryMeta(item.category).icon"
-                class="text-xl"
-              />
-            </div>
             <div class="min-w-0 flex-1">
               <h3
                 class="truncate text-lg font-bold text-card-foreground"
