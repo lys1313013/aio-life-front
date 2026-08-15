@@ -18,18 +18,19 @@ describe('maskedPasswordInput', () => {
     const wrapper = mount(MaskedPasswordInput);
     const input = wrapper.find('input');
     expect(input.attributes('type')).toBe('text');
-    // 遮罩类挂在 affix-wrapper 上，由组件内 :deep 规则选中内部原生 input 施加遮罩
-    expect(wrapper.find('.ant-input-affix-wrapper').classes()).toContain(
-      'masked-password-input',
-    );
+    // 遮罩类挂在组件自有的包裹 div 上（带 scoped data-v），
+    // 由 :deep 规则选中内部原生 input 施加遮罩
+    const wrap = wrapper.find('.masked-password-input');
+    expect(wrap.exists()).toBe(true);
+    expect(wrap.classes()).not.toContain('is-plain');
   });
 
-  it('点击眼睛切换明文后移除遮罩类', async () => {
+  it('点击眼睛切换明文后加上 is-plain 类移除遮罩', async () => {
     const wrapper = mount(MaskedPasswordInput);
-    const affix = wrapper.find('.ant-input-affix-wrapper');
-    expect(affix.classes()).toContain('masked-password-input');
+    const wrap = wrapper.find('.masked-password-input');
+    expect(wrap.classes()).not.toContain('is-plain');
     await wrapper.find('[role="button"]').trigger('click');
-    expect(affix.classes()).not.toContain('masked-password-input');
+    expect(wrap.classes()).toContain('is-plain');
   });
 
   it('输入时通过 v-model:value 向上抛值', async () => {

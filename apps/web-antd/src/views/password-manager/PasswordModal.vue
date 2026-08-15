@@ -23,6 +23,7 @@ import {
   getPasswordApi,
   updatePasswordApi,
 } from '#/api/core/password-manager';
+import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { usePasswordVaultStore } from '#/store/password-vault';
 import {
   decryptText,
@@ -273,11 +274,10 @@ defineExpose({ openModal });
 
         <FormItem label="密码" required class="mb-0">
           <div class="flex gap-2">
-            <Input.Password
+            <MaskedPasswordInput
               v-model:value="formState.password"
               placeholder="请输入密码"
               class="flex-1"
-              autocomplete="new-password"
             />
             <Button @click="showGenerator = true">
               <LockOutlined /> 生成

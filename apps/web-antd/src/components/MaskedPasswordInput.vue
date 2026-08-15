@@ -37,15 +37,6 @@ const emit = defineEmits<{
 /** 明文 / 密文切换 */
 const visible = ref(false);
 
-/**
- * 密文态给组件挂类名。ant Input 带 suffix 时，组件 class 会落到外层
- * affix-wrapper span 上，由下方 :deep 规则选中内部原生 input 施加 CSS 遮罩。
- * 不用 :style / input-class-name：前者落在外层 span，后者被 ant Input 覆盖丢弃。
- */
-const maskedClassName = computed(() =>
-  visible.value ? undefined : 'masked-password-input',
-);
-
 const innerValue = computed({
   get: () => props.value,
   set: (v: string) => emit('update:value', v),
@@ -53,41 +44,49 @@ const innerValue = computed({
 </script>
 
 <template>
-  <Input
-    v-model:value="innerValue"
-    autocapitalize="off"
-    autocomplete="off"
-    autocorrect="off"
-    data-1p-ignore="true"
-    data-bwignore="true"
-    data-lpignore="true"
-    :class="maskedClassName"
-    :disabled="disabled"
-    name="secondary-password"
-    :placeholder="placeholder"
-    spellcheck="false"
-    type="text"
-    @keydown="emit('keydown', $event)"
-  >
-    <template #suffix>
-      <span
-        role="button"
-        :aria-label="visible ? '隐藏密码' : '显示密码'"
-        class="cursor-pointer text-sm text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
-        @mousedown.prevent
-        @click="visible = !visible"
-      >
-        <EyeInvisibleOutlined v-if="visible" />
-        <EyeOutlined v-else />
-      </span>
-    </template>
-  </Input>
+  <!--
+    遮罩类必须挂在组件自有的包裹 div 上，不能直接挂在 <Input> 上：
+    ant Input 会把 class 落到 affix-wrapper 根节点，而 scoped :deep 编译后是
+    [data-v-x] .xxx 后代选择器 —— 根节点自身带 data-v 却没有带 data-v 的祖先，
+    选择器永远匹配不上，遮罩失效（明文显示）。包裹 div 带本组件 data-v，
+    保证选择器命中内部原生 input。
+  -->
+  <div class="masked-password-input" :class="{ 'is-plain': visible }">
+    <Input
+      v-model:value="innerValue"
+      autocapitalize="off"
+      autocomplete="off"
+      autocorrect="off"
+      data-1p-ignore="true"
+      data-bwignore="true"
+      data-lpignore="true"
+      :disabled="disabled"
+      name="secondary-password"
+      :placeholder="placeholder"
+      spellcheck="false"
+      type="text"
+      @keydown="emit('keydown', $event)"
+    >
+      <template #suffix>
+        <span
+          role="button"
+          :aria-label="visible ? '隐藏密码' : '显示密码'"
+          class="cursor-pointer text-sm text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+          @mousedown.prevent
+          @click="visible = !visible"
+        >
+          <EyeInvisibleOutlined v-if="visible" />
+          <EyeOutlined v-else />
+        </span>
+      </template>
+    </Input>
+  </div>
 </template>
 
 <style scoped>
-/* 密文态：选中外层 affix-wrapper 里的原生 input，把字符渲染成圆点。
+/* 密文态：选中包裹层里的原生 input，把字符渲染成圆点。
    不用 type="password"，浏览器密码管理器就不介入。 */
-:deep(.ant-input-affix-wrapper.masked-password-input .ant-input) {
+.masked-password-input:not(.is-plain) :deep(.ant-input) {
   -webkit-text-security: disc;
   text-security: disc;
 }

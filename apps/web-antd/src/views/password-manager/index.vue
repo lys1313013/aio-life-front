@@ -39,6 +39,7 @@ import {
   updatePasswordApi,
 } from '#/api/core/password-manager';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { usePasswordVaultStore } from '#/store/password-vault';
 import { copyToClipboard } from '#/utils/clipboard';
 import { decryptText } from '#/utils/crypto';
@@ -406,7 +407,9 @@ onUnmounted(() => {
         class="w-full sm:max-w-xs"
         allow-clear
       >
-        <template #prefix><SearchOutlined class="text-muted-foreground" /></template>
+        <template #prefix>
+          <SearchOutlined class="text-muted-foreground" />
+        </template>
       </Input>
       <Select
         v-model:value="selectedCategory"
@@ -543,9 +546,7 @@ onUnmounted(() => {
                 <div
                   class="group/copy flex min-w-0 flex-1 items-center justify-end gap-2"
                 >
-                  <span
-                    class="truncate font-mono text-sm text-foreground"
-                  >
+                  <span class="truncate font-mono text-sm text-foreground">
                     {{
                       item.showPassword
                         ? item.decryptedPassword || '******'
@@ -665,21 +666,17 @@ onUnmounted(() => {
     >
       <Form layout="vertical" class="mt-4" @submit.prevent="handleUnlockSubmit">
         <FormItem :label="isFirstTime ? '设置主密码' : '主密码'">
-          <Input
+          <MaskedPasswordInput
             v-model:value="masterPasswordInput"
-            type="password"
             placeholder="请输入主密码"
-            :autocomplete="isFirstTime ? 'new-password' : 'current-password'"
-            @keyup.enter="handleUnlockSubmit"
+            @keydown.enter="handleUnlockSubmit"
           />
         </FormItem>
         <FormItem v-if="isFirstTime" label="确认主密码">
-          <Input
+          <MaskedPasswordInput
             v-model:value="confirmPasswordInput"
-            type="password"
             placeholder="请再次输入主密码"
-            autocomplete="new-password"
-            @keyup.enter="handleUnlockSubmit"
+            @keydown.enter="handleUnlockSubmit"
           />
         </FormItem>
       </Form>
