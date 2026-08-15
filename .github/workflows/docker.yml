@@ -71,5 +71,10 @@ jobs:
             ${{ github.event_name != 'pull_request' && format('{0}/{1}/aio-life-front:latest', env.ACR_REGISTRY, env.ACR_NAMESPACE) || '' }}
             ${{ github.event_name != 'pull_request' && format('{0}/{1}/aio-life-front:{2}', env.ACR_REGISTRY, env.ACR_NAMESPACE, github.sha) || '' }}
           labels: ${{ steps.meta.outputs.labels }}
+          # 关闭 provenance/sbom 证明：buildx 默认生成的 OCI attestation 清单
+          # （application/vnd.oci.empty.v1+json）会被阿里云 ACR 拒绝，
+          # 报 unknown manifest class
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
