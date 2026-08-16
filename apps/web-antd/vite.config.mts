@@ -4,53 +4,6 @@ export default defineConfig(async () => {
   return {
     application: {
       compress: true,
-      pwaOptions: {
-        registerType: 'autoUpdate',
-        injectRegister: false,
-        devOptions: { enabled: true },
-        includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
-        workbox: {
-          globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
-          cleanupOutdatedCaches: true,
-          skipWaiting: true,
-          clientsClaim: true,
-          runtimeCaching: [
-            {
-              // index.html 走 NetworkFirst，避免 SW 返回旧入口文件
-              urlPattern: ({ request }) => request.destination === 'document',
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'html-cache',
-                networkTimeoutSeconds: 3,
-                expiration: { maxEntries: 5, maxAgeSeconds: 300 },
-              },
-            },
-          ],
-        },
-        manifest: {
-          name: 'AIO-LIFE',
-          short_name: 'AIO',
-          description: '个人生活全能管家 - 衣柜、日程、记账、健康一体化',
-          theme_color: '#1677ff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          orientation: 'portrait',
-          start_url: '/',
-          scope: '/',
-          lang: 'zh-CN',
-          icons: [
-            { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
-            { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-            { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-            {
-              src: 'maskable-icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'maskable',
-            },
-          ],
-        },
-      },
     },
     vite: {
       optimizeDeps: {

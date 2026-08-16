@@ -71,35 +71,6 @@ async function bootstrap(namespace: string) {
   });
 
   app.mount('#app');
-
-  if (import.meta.env.PROD && import.meta.env.VITE_PWA === 'true') {
-    const { registerSW } = await import('virtual:pwa-register');
-    registerSW({
-      immediate: true,
-      onRegistered(r) {
-        // 每 5 分钟检查一次更新
-        r && setInterval(() => r.update(), 5 * 60 * 1000);
-      },
-    });
-
-    // skipWaiting + clientsClaim 生效后，旧页面会被新 SW 接管。
-    // 仅在首页时立即刷新加载最新资源；其他页面等回到首页再刷新，避免打断用户操作
-    let pendingReload = false;
-    const reloadIfHome = () => {
-      if (
-        pendingReload &&
-        router.currentRoute.value.path === preferences.app.defaultHomePath
-      ) {
-        pendingReload = false;
-        window.location.reload();
-      }
-    };
-    navigator.serviceWorker?.addEventListener('controllerchange', () => {
-      pendingReload = true;
-      reloadIfHome();
-    });
-    router.afterEach(() => reloadIfHome());
-  }
 }
 
 export { bootstrap };
