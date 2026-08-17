@@ -2848,11 +2848,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
     min-width: 0;
   }
 
-  /* 修复月视图时间槽溢出问题 */
+  /* 月视图时间槽：与日/周一致，高度严格按时长比例，不设最小高度 */
   .month-day-track .time-slot {
     left: 1px;
     width: calc(100% - 2px);
-    min-height: 20px;
   }
 
   .month-day-track .slot-content {

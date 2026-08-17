@@ -6,12 +6,17 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
 
-import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import {
+  ColumnWidthOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -69,9 +74,15 @@ const loadExerciseTypes = async () => {
     // 默认选择最近一次使用的运动类型
     if (!selectedExerciseType.value && dictOptions.value.length > 0) {
       try {
-        const latestResult = await query({ page: 1, pageSize: 1, condition: {} });
+        const latestResult = await query({
+          page: 1,
+          pageSize: 1,
+          condition: {},
+        });
         if (latestResult?.items?.length > 0) {
-          selectedExerciseType.value = String(latestResult.items[0].exerciseTypeId);
+          selectedExerciseType.value = String(
+            latestResult.items[0].exerciseTypeId,
+          );
         } else {
           selectedExerciseType.value = dictOptions.value[0]?.value;
         }
@@ -480,12 +491,11 @@ const updateCharts = () => {
   });
 };
 
-// 监听设备变化，重新渲染图表和调整表格
+// 监听设备变化，重新渲染图表（表格通过 Grid 的 :key 自动重建）
 watch(isMobile, () => {
   setTimeout(() => {
     updateCharts();
     updateDailyChart();
-    updateColumnsVisibility();
   }, 200);
 });
 
@@ -611,14 +621,6 @@ const updateDailyChart = () => {
   });
 };
 
-// 在组件挂载时加载值集数据
-onMounted(() => {
-  // 延迟调整列显隐，确保 Grid 已初始化
-  setTimeout(() => {
-    updateColumnsVisibility();
-  }, 500);
-});
-
 // 监听筛选条件变化，重新加载统计图表数据
 const reloadStatsData = async (formValues: any) => {
   try {
@@ -653,8 +655,8 @@ const closeFormModal = () => {
 };
 
 const formOptions: VbenFormProps = {
-  // 默认展开
-  collapsed: false,
+  // 手机端默认折叠，桌面端默认展开
+  collapsed: isMobile.value,
   schema: [
     // 搜索
     {
@@ -701,25 +703,36 @@ const handleCellClick = (params: any) => {
   }
 };
 
-const gridOptions: VxeGridProps<RowType> = {
-  border: true, // 表格是否显示边框
-  stripe: true, // 是否显示斑马纹
-  maxHeight: 600, // 表格最大高度
-  size: 'medium',
+const gridOptions = computed<VxeGridProps<RowType>>(() => ({
+  // 手机端使用卡片式布局：隐藏表头/表尾/边框/斑马纹
+  // 注意：scrollY（虚拟滚动）会强制固定行高裁剪卡片内容，且 vxe 初始化后不可热切换，
+  // 因此结构性配置只能在初始化时按端确定，断点变化时通过 Grid 的 :key 重建表格
+  border: !isMobile.value,
+  stripe: !isMobile.value,
+  // 手机端去掉表格圆角外框，避免多套一层壳
+  round: !isMobile.value,
+  showHeader: !isMobile.value,
+  showFooter: !isMobile.value,
+  maxHeight: isMobile.value ? undefined : 800,
+  size: isMobile.value ? 'mini' : 'medium',
+  scrollY: {
+    enabled: !isMobile.value,
+  },
+  // 手机端卡片列占满整行宽度
+  scrollX: {
+    enabled: !isMobile.value,
+  },
+  rowClassName: isMobile.value ? 'mobile-row' : '',
   checkboxConfig: {
     isShiftKey: true,
   },
-  // 添加事件监听
   rowConfig: {
-    isHover: true,
-    isCurrent: true,
-    height: 52,
+    isHover: !isMobile.value,
+    isCurrent: !isMobile.value,
   },
-  cellConfig: {
-    padding: true,
-  },
-  // 显示表尾合计行
-  showFooter: true,
+  cellConfig: isMobile.value
+    ? { padding: false }
+    : { padding: true, height: 52 },
   footerMethod: ({ columns, data }) => {
     const footerData = columns.map((column) => {
       if (column.field === 'exerciseCount') {
@@ -737,7 +750,13 @@ const gridOptions: VxeGridProps<RowType> = {
     return [footerData];
   },
   columns: [
-    { type: 'checkbox', title: '', width: 50, fixed: 'left' },
+    {
+      type: 'checkbox',
+      title: '',
+      width: 50,
+      fixed: 'left',
+      visible: !isMobile.value,
+    },
     {
       title: '序号',
       type: 'seq',
@@ -752,6 +771,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       headerAlign: 'center',
       align: 'center',
+      visible: !isMobile.value,
     },
     {
       field: 'exerciseTypeId',
@@ -760,6 +780,7 @@ const gridOptions: VxeGridProps<RowType> = {
       headerAlign: 'center',
       align: 'center',
       slots: { default: 'exerciseType' },
+      visible: !isMobile.value,
     },
     {
       field: 'exerciseCount',
@@ -769,6 +790,7 @@ const gridOptions: VxeGridProps<RowType> = {
       align: 'right',
       className: 'col-count',
       slots: { default: 'exerciseCount' },
+      visible: !isMobile.value,
     },
     {
       field: 'description',
@@ -776,6 +798,7 @@ const gridOptions: VxeGridProps<RowType> = {
       headerAlign: 'center',
       align: 'left',
       showOverflow: 'tooltip',
+      visible: !isMobile.value,
     },
     {
       field: 'action',
@@ -789,9 +812,9 @@ const gridOptions: VxeGridProps<RowType> = {
     {
       field: 'mobileCard',
       title: '详情',
-      visible: false,
+      visible: isMobile.value,
       slots: { default: 'mobile-card' },
-      width: '100%',
+      align: 'left',
       showOverflow: false,
       className: 'mobile-card-col',
     },
@@ -831,7 +854,7 @@ const gridOptions: VxeGridProps<RowType> = {
     // 隐藏默认列配置按钮，使用自定义按钮
     custom: false,
   },
-};
+}));
 
 // 新增运动记录
 const openAddFormModal = () => {
@@ -858,7 +881,8 @@ const submitDeleteData = async () => {
 
 const [Grid, gridApi] = useVbenVxeGrid({
   formOptions,
-  gridOptions,
+  // 初始挂载使用快照；断点变化时通过模板上的 :grid-options + :key 重建表格
+  gridOptions: gridOptions.value,
   gridEvents: {
     cellClick: handleCellClick,
     // vxe-table 不直接支持 rowTouchStart 事件，需要通过 cell-mouseenter 等间接方式或者自定义事件
@@ -870,76 +894,6 @@ const openColumnConfig = () => {
   gridApi.grid?.openCustom();
 };
 
-const updateColumnsVisibility = () => {
-  if (!gridApi?.grid) return;
-
-  const mobile = isMobile.value;
-  // 手机端隐藏表头、边框、斑马纹，清除最大高度
-  gridApi.setState({
-    gridOptions: {
-      showHeader: true, // 手机端也显示表头
-      border: !mobile, // 手机端不显示边框，保持简洁
-      stripe: !mobile,
-      maxHeight: mobile ? 800 : 800,
-      size: mobile ? 'mini' : 'small', // 手机端使用更紧凑的尺寸
-      rowClassName: mobile ? 'mobile-row' : '',
-    },
-  });
-
-  // 获取所有列配置
-  const { fullColumn } = gridApi.grid.getTableColumn();
-
-  fullColumn.forEach((col) => {
-    // 手机端不显示 mobileCard，而是显示精简的表格列
-    if (col.field === 'mobileCard') {
-      col.visible = false;
-    } else if (
-      [
-        'description',
-        'exerciseCount',
-        'exerciseDate',
-        'exerciseTypeId',
-      ].includes(col.field)
-    ) {
-      col.visible = true;
-      // 手机端自动调整宽度
-      if (mobile) {
-        switch (col.field) {
-          case 'exerciseCount': {
-            col.width = 90;
-
-            break;
-          }
-          case 'exerciseDate': {
-            col.width = 110;
-
-            break;
-          }
-          case 'exerciseTypeId': {
-            col.width = 'auto';
-
-            break;
-          }
-          default: {
-            col.minWidth = 100;
-          }
-        }
-      }
-    } else if (col.field === 'action') {
-      // 手机端隐藏操作列以节省空间
-      col.visible = !mobile;
-    } else if (col.type === 'checkbox' || col.type === 'seq') {
-      // 手机端隐藏复选框、序号列
-      col.visible = !mobile;
-    } else {
-      // 隐藏其他所有列
-      col.visible = !mobile;
-    }
-  });
-
-  gridApi.grid.refreshColumn();
-};
-
 const deleteRow = async (row: RowType) => {
   try {
     await deleteBatch({
@@ -948,6 +902,36 @@ const deleteRow = async (row: RowType) => {
   } catch (error) {
     console.error('捕获异常：', error);
   }
+};
+
+// 移动端卡片交互：点击编辑，长按删除
+const longPressTriggered = ref(false);
+let longPressTimer: ReturnType<typeof setTimeout> | undefined;
+
+const handleCardClick = (row: RowType) => {
+  // 长按已触发删除确认，忽略本次点击
+  if (longPressTriggered.value) {
+    longPressTriggered.value = false;
+    return;
+  }
+  openFormModal(row);
+};
+
+const handleCardTouchStart = (row: RowType) => {
+  longPressTriggered.value = false;
+  longPressTimer = setTimeout(() => {
+    longPressTriggered.value = true;
+    Modal.confirm({
+      title: '是否确认删除该条运动记录?',
+      okText: '是',
+      cancelText: '否',
+      onOk: () => deleteRow(row),
+    });
+  }, 500);
+};
+
+const handleCardTouchEnd = () => {
+  clearTimeout(longPressTimer);
 };
 
 // 处理查询条件，将日期区间转换为开始时间和结束时间
@@ -1044,13 +1028,32 @@ const tableReload = () => {
     </div>
 
     <!-- 表格区域 -->
-    <Card class="table-card" title="运动记录" :bordered="false">
-      <Grid>
+    <Card
+      class="table-card"
+      :class="{ 'mobile-naked': isMobile }"
+      :title="isMobile ? undefined : '运动记录'"
+      :bordered="false"
+    >
+      <!-- 断点变化时通过 key 重建表格（虚拟滚动等结构性配置不可热切换） -->
+      <Grid
+        :key="isMobile ? 'mobile' : 'desktop'"
+        :grid-options="gridOptions"
+        :show-search-form="!isMobile"
+      >
         <template #toolbar-tools>
-          <Button class="mr-2" type="primary" @click="openAddFormModal">
+          <Button
+            v-if="isMobile"
+            type="primary"
+            shape="circle"
+            @click="openAddFormModal"
+          >
+            <template #icon><PlusOutlined /></template>
+          </Button>
+          <Button v-else class="mr-2" type="primary" @click="openAddFormModal">
             新增
           </Button>
           <Popconfirm
+            v-if="!isMobile"
             title="确认删除选中的记录吗?"
             ok-text="确定"
             cancel-text="取消"
@@ -1058,7 +1061,12 @@ const tableReload = () => {
           >
             <Button class="mr-2" type="primary" danger> 删除 </Button>
           </Popconfirm>
-          <Button class="ml-auto" type="text" @click="openColumnConfig">
+          <Button
+            v-if="!isMobile"
+            class="ml-auto"
+            type="text"
+            @click="openColumnConfig"
+          >
             <ColumnWidthOutlined />
           </Button>
         </template>
@@ -1086,36 +1094,31 @@ const tableReload = () => {
           </Tag>
         </template>
         <template #exerciseCount="{ row }">
-          <span class="count-cell text-card-foreground">{{ row.exerciseCount }}</span>
+          <span class="count-cell text-card-foreground">{{
+            row.exerciseCount
+          }}</span>
         </template>
         <template #mobile-card="{ row }">
-          <div class="mobile-card-item">
-            <div class="card-header">
-              <span class="card-title">{{
-                getExerciseTypeLabel(row.exerciseTypeId)
-              }}</span>
+          <!-- 点击编辑，长按删除 -->
+          <div
+            class="mobile-card-item"
+            @click="handleCardClick(row)"
+            @touchstart="handleCardTouchStart(row)"
+            @touchend="handleCardTouchEnd"
+            @touchmove="handleCardTouchEnd"
+          >
+            <div class="card-main">
+              <Tag
+                :color="getExerciseTypeColor(row.exerciseTypeId)"
+                class="type-tag"
+              >
+                {{ getExerciseTypeLabel(row.exerciseTypeId) }}
+              </Tag>
+              <span class="card-count">{{ row.exerciseCount }}</span>
               <span class="card-date">{{ row.exerciseDate }}</span>
             </div>
-            <div class="card-body">
-              <div class="card-row" v-if="row.description">
-                <span class="label">备注:</span>
-                <span class="value">{{ row.description }}</span>
-              </div>
-            </div>
-            <div class="card-footer">
-              <Button size="small" type="link" @click="openFormModal(row)">
-                <template #icon><EditOutlined /></template>
-              </Button>
-              <Popconfirm
-                title="是否确认删除?"
-                ok-text="是"
-                cancel-text="否"
-                @confirm="deleteRow(row)"
-              >
-                <Button size="small" type="link" danger>
-                  <template #icon><DeleteOutlined /></template>
-                </Button>
-              </Popconfirm>
+            <div class="card-desc" v-if="row.description">
+              {{ row.description }}
             </div>
           </div>
         </template>
@@ -1177,6 +1180,20 @@ const tableReload = () => {
   .daily-chart-card :deep(.ant-select) {
     width: 100% !important;
   }
+}
+
+/* 手机端去掉卡片外壳，列表直接平铺 */
+.table-card.mobile-naked {
+  background: transparent;
+  box-shadow: none;
+}
+
+.table-card.mobile-naked :deep(.ant-card-body) {
+  padding: 0;
+}
+
+.table-card.mobile-naked :deep(.vxe-grid) {
+  background: transparent;
 }
 
 .exercise-wrapper {
@@ -1295,9 +1312,8 @@ const tableReload = () => {
 }
 
 :deep(.mobile-row .vxe-body--column) {
-  height: 48px !important;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
 }
 
 /* 隐藏移动端的排序图标以节省空间，或者保留但变小 */
@@ -1370,60 +1386,45 @@ const tableReload = () => {
 }
 
 .mobile-card-item {
-  padding: 12px;
-  margin-bottom: 8px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.card-header {
+.mobile-card-item:active {
+  background: hsl(var(--muted));
+}
+
+.card-main {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 10px;
 }
 
-.card-title {
-  font-size: 16px;
+.card-count {
+  font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: hsl(var(--foreground));
+  font-variant-numeric: tabular-nums;
 }
 
 .card-date {
+  margin-left: auto;
   font-size: 12px;
-  color: #999;
+  color: hsl(var(--muted-foreground));
 }
 
-.card-body {
-  margin-bottom: 8px;
-}
-
-.card-row {
-  display: flex;
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.card-row .label {
-  flex-shrink: 0;
-  width: 50px;
-  color: #666;
-}
-
-.card-row .value {
-  flex: 1;
-  color: #333;
-}
-
-.card-footer {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px dashed #f0f0f0;
+.card-desc {
+  margin-top: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
