@@ -6,7 +6,14 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { computed, ref, watch } from 'vue';
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { usePreferences } from '@vben/preferences';
@@ -820,10 +827,13 @@ const gridOptions = computed<VxeGridProps<RowType>>(() => ({
     },
   ],
   keepSource: true,
-  pagerConfig: {
-    pageSize: 50,
-    pageSizes: [10, 20, 30, 50, 100, 200, 1000, 10_000],
-  },
+  // 手机端分页器用 CSS 隐藏（滚动加载），不能用 enabled:false，否则 vxe 不再维护分页状态
+  pagerConfig: isMobile.value
+    ? { pageSize: 20 }
+    : {
+        pageSize: 50,
+        pageSizes: [10, 20, 30, 50, 100, 200, 1000, 10_000],
+      },
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
@@ -843,6 +853,16 @@ const gridOptions = computed<VxeGridProps<RowType>>(() => ({
           await reloadStatsData(formValues);
         }
 
+        // 手机端滚动加载：记录分页状态供 loadMore 使用
+        if (isMobile.value) {
+          mobileLoadState.page = page.currentPage;
+          mobileLoadState.pageSize = page.pageSize;
+          mobileLoadState.total = result?.total ?? 0;
+          mobileLoadState.formValues = formValues ?? {};
+          mobileLoadState.finished =
+            (result?.items?.length ?? 0) >= mobileLoadState.total;
+        }
+
         return result;
       },
     },
@@ -855,6 +875,73 @@ const gridOptions = computed<VxeGridProps<RowType>>(() => ({
     custom: false,
   },
 }));
+
+// 手机端滚动加载状态（分页器隐藏，由滚动监听追加数据）
+const mobileLoadState = reactive({
+  page: 1,
+  pageSize: 20,
+  total: 0,
+  loading: false,
+  finished: false,
+  formValues: {} as any,
+});
+
+// 加载下一页并追加到表格
+const loadMoreMobile = async () => {
+  if (
+    !isMobile.value ||
+    mobileLoadState.loading ||
+    mobileLoadState.finished ||
+    mobileLoadState.total === 0 // 首次查询未完成，不触发
+  ) {
+    return;
+  }
+  const grid = gridApi.grid;
+  if (!grid?.loadData) return;
+
+  mobileLoadState.loading = true;
+  try {
+    const nextPage = mobileLoadState.page + 1;
+    const condition = processQueryCondition(mobileLoadState.formValues);
+    const result = await query({
+      page: nextPage,
+      pageSize: mobileLoadState.pageSize,
+      condition,
+    });
+    const items = result?.items ?? [];
+    if (items.length === 0) {
+      mobileLoadState.finished = true;
+      return;
+    }
+    mobileLoadState.page = nextPage;
+    const { fullData } = grid.getTableData();
+    await grid.loadData([...fullData, ...items]);
+    mobileLoadState.finished =
+      fullData.length + items.length >= mobileLoadState.total;
+  } catch (error) {
+    console.error('加载更多失败:', error);
+  } finally {
+    mobileLoadState.loading = false;
+  }
+};
+
+// 滚动到底部附近时加载更多
+const handleMobileScroll = () => {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const remaining =
+    document.documentElement.scrollHeight - (scrollTop + window.innerHeight);
+  if (remaining < 300) {
+    loadMoreMobile();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('scroll', handleMobileScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleMobileScroll);
+});
 
 // 新增运动记录
 const openAddFormModal = () => {
@@ -1123,6 +1210,13 @@ const tableReload = () => {
           </div>
         </template>
       </Grid>
+      <!-- 手机端滚动加载提示 -->
+      <div v-if="isMobile" class="mobile-load-tip">
+        <span v-if="mobileLoadState.loading">加载中...</span>
+        <span v-else-if="mobileLoadState.finished && mobileLoadState.total > 0">
+          已经到底啦
+        </span>
+      </div>
     </Card>
 
     <!-- 表单模态框 -->
@@ -1192,8 +1286,42 @@ const tableReload = () => {
   padding: 0;
 }
 
+/* 去掉 vben/vxe 的白色包裹层与内边距，避免多套一层壳 */
 .table-card.mobile-naked :deep(.vxe-grid) {
+  padding: 0;
   background: transparent;
+}
+
+.table-card.mobile-naked :deep(.vxe-grid > div) {
+  background: transparent;
+  border-radius: 0;
+}
+
+.table-card.mobile-naked :deep(.vxe-table--layout-wrapper),
+.table-card.mobile-naked :deep(.vxe-table--body-wrapper),
+.table-card.mobile-naked :deep(.vxe-table--body-inner-wrapper),
+.table-card.mobile-naked :deep(.vxe-table--viewport-wrapper),
+.table-card.mobile-naked :deep(.vxe-table--main-wrapper) {
+  background: transparent;
+}
+
+/* vxe 用 background-image 画行边框，手机端去掉 */
+.table-card.mobile-naked :deep(.vxe-body--row),
+.table-card.mobile-naked :deep(.vxe-body--column),
+.table-card.mobile-naked :deep(.vxe-table--body) {
+  background-image: none !important;
+}
+
+.mobile-load-tip {
+  padding: 12px 0;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+}
+
+/* 手机端隐藏分页器（滚动加载），不能用 enabled:false，否则分页状态丢失 */
+.table-card.mobile-naked :deep(.vxe-grid--pager-wrapper) {
+  display: none;
 }
 
 .exercise-wrapper {
