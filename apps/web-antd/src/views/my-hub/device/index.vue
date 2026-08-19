@@ -63,11 +63,11 @@ export default {
         name: '',
         spec: '',
         purchasePrice: 0,
-        purchaseDate: '',
+        purchaseDate: null,
         fileId: null,
         status: '1',
         purchasePlace: '',
-        endDate: '',
+        endDate: null,
         remark: '',
       },
       electronics: [],
@@ -144,7 +144,7 @@ export default {
         status: '1',
         fileId: null,
         purchasePlace: '',
-        endDate: '',
+        endDate: null,
         remark: '',
         type: this.tabKey,
       };
@@ -159,7 +159,7 @@ export default {
       this.visible = true;
     },
     async handleOk() {
-      let formattedPurchaseDate = '';
+      let formattedPurchaseDate = null;
       if (this.newDevice.purchaseDate) {
         formattedPurchaseDate =
           typeof this.newDevice.purchaseDate === 'string'
@@ -167,7 +167,7 @@ export default {
             : this.newDevice.purchaseDate.format('YYYY-MM-DD');
       }
 
-      let formattedEndDate = '';
+      let formattedEndDate = null;
       if (this.newDevice.endDate) {
         formattedEndDate =
           typeof this.newDevice.endDate === 'string'
@@ -200,10 +200,10 @@ export default {
         name: '',
         spec: '',
         purchasePrice: 0,
-        purchaseDate: '',
+        purchaseDate: null,
         fileId: null,
         purchasePlace: '',
-        endDate: '',
+        endDate: null,
         remark: '',
       };
     },
