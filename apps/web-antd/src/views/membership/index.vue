@@ -9,8 +9,9 @@ import type {
 
 import { computed, onMounted, ref } from 'vue';
 
-import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import { IconifyIcon } from '@vben/icons';
+
+import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
   DatePicker as ADatePicker,
@@ -49,6 +50,8 @@ interface FormState {
   startDate?: Dayjs;
   expiryDate?: Dayjs;
   price?: number;
+  billingCycle: string;
+  monthlyAmount?: number;
   autoRenew: boolean;
   note?: string;
 }
@@ -83,10 +86,16 @@ const QUICK_DATES = [
   { label: '1年', getDate: (base: Dayjs) => base.add(1, 'year') },
 ];
 
-const STATUS_META: Record<
-  string,
-  { label: string; color: string }
-> = {
+const BILLING_CYCLES = [
+  { value: 'week', label: '一周' },
+  { value: 'two_weeks', label: '两周' },
+  { value: 'month', label: '一个月' },
+  { value: 'quarter', label: '一季度' },
+  { value: 'half_year', label: '半年' },
+  { value: 'year', label: '一年' },
+];
+
+const STATUS_META: Record<string, { color: string; label: string }> = {
   active: { label: '生效中', color: 'success' },
   expiring: { label: '即将到期', color: 'warning' },
   expired: { label: '已过期', color: 'default' },
@@ -99,6 +108,7 @@ const stats = ref<MembershipStatsVO>({
   expiringCount: 0,
   expiredCount: 0,
   expiringThisMonthCount: 0,
+  monthlyAmount: 0,
 });
 const loading = ref(false);
 const statsLoading = ref(false);
@@ -123,6 +133,8 @@ const emptyForm = (): FormState => ({
   startDate: undefined,
   expiryDate: undefined,
   price: undefined,
+  billingCycle: 'month',
+  monthlyAmount: undefined,
   autoRenew: false,
   note: '',
 });
@@ -131,7 +143,9 @@ const formState = ref<FormState>(emptyForm());
 
 const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入会员名称', trigger: 'blur' }],
-  expiryDate: [{ required: true, message: '请选择到期日期', trigger: 'change' }],
+  expiryDate: [
+    { required: true, message: '请选择到期日期', trigger: 'change' },
+  ],
 };
 
 // Computed
@@ -157,10 +171,13 @@ const filteredMembers = computed(() => {
 });
 
 const getCategoryMeta = (value?: string): (typeof CATEGORIES)[number] => {
-  return CATEGORIES.find((c) => c.value === value) ?? CATEGORIES[CATEGORIES.length - 1]!;
+  return (
+    CATEGORIES.find((c) => c.value === value) ??
+    CATEGORIES[CATEGORIES.length - 1]!
+  );
 };
 
-const getStatusMeta = (status: string): { label: string; color: string } => {
+const getStatusMeta = (status: string): { color: string; label: string } => {
   return STATUS_META[status] ?? { label: status, color: 'default' };
 };
 
@@ -210,6 +227,8 @@ const handleEdit = (item: MembershipVO) => {
     startDate: item.startDate ? dayjs(item.startDate) : undefined,
     expiryDate: item.expiryDate ? dayjs(item.expiryDate) : undefined,
     price: item.price,
+    billingCycle: item.billingCycle || 'month',
+    monthlyAmount: item.monthlyAmount ?? item.price,
     autoRenew: item.autoRenew === 1,
     note: item.note || '',
   };
@@ -242,6 +261,8 @@ const handleSave = async () => {
       startDate: formState.value.startDate?.format('YYYY-MM-DD'),
       expiryDate: formState.value.expiryDate!.format('YYYY-MM-DD'),
       price: formState.value.price,
+      billingCycle: formState.value.billingCycle,
+      monthlyAmount: formState.value.monthlyAmount,
       autoRenew: formState.value.autoRenew ? 1 : 0,
       note: formState.value.note || undefined,
     };
@@ -272,6 +293,45 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
   const base = formState.value.startDate || dayjs();
   formState.value.expiryDate = opt.getDate(base);
 };
+
+const recalculateMonthlyAmount = () => {
+  const price = formState.value.price;
+  if (price === undefined || price === null) {
+    formState.value.monthlyAmount = undefined;
+    return;
+  }
+
+  const amount = (() => {
+    switch (formState.value.billingCycle) {
+      case 'half_year': {
+        return price / 6;
+      }
+      case 'quarter': {
+        return price / 3;
+      }
+      case 'two_weeks': {
+        return (price / 14) * 30;
+      }
+      case 'week': {
+        return (price / 7) * 30;
+      }
+      case 'year': {
+        return price / 12;
+      }
+      default: {
+        return price;
+      }
+    }
+  })();
+
+  formState.value.monthlyAmount = Math.round(amount * 100) / 100;
+};
+
+const getBillingCycleLabel = (value?: string) => {
+  return BILLING_CYCLES.find((item) => item.value === value)?.label ?? '一个月';
+};
+
+const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
 </script>
 
 <template>
@@ -288,7 +348,9 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
         </div>
         <div>
           <p class="text-xs text-muted-foreground">生效中</p>
-          <p class="mt-0.5 text-2xl font-bold leading-none text-card-foreground">
+          <p
+            class="mt-0.5 text-2xl font-bold leading-none text-card-foreground"
+          >
             {{ stats.activeCount }}
           </p>
         </div>
@@ -318,7 +380,9 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
         </div>
         <div>
           <p class="text-xs text-muted-foreground">即将到期</p>
-          <p class="mt-0.5 text-2xl font-bold leading-none text-card-foreground">
+          <p
+            class="mt-0.5 text-2xl font-bold leading-none text-card-foreground"
+          >
             {{ stats.expiringCount }}
           </p>
         </div>
@@ -327,14 +391,14 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
         class="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-500/10 text-gray-400"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500"
         >
-          <IconifyIcon icon="mdi:clock-outline" class="text-xl" />
+          <IconifyIcon icon="mdi:cash-multiple" class="text-xl" />
         </div>
         <div>
-          <p class="text-xs text-muted-foreground">已过期</p>
-          <p class="mt-0.5 text-2xl font-bold leading-none text-gray-400">
-            {{ stats.expiredCount }}
+          <p class="text-xs text-muted-foreground">当前月均</p>
+          <p class="mt-0.5 text-xl font-bold leading-none text-blue-500">
+            ￥{{ formatAmount(stats.monthlyAmount) }}
           </p>
         </div>
       </div>
@@ -401,7 +465,10 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
               >
                 {{ item.name }}
               </h3>
-              <p v-if="item.provider" class="truncate text-xs text-muted-foreground">
+              <p
+                v-if="item.provider"
+                class="truncate text-xs text-muted-foreground"
+              >
                 {{ item.provider }}
               </p>
             </div>
@@ -432,7 +499,9 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
 
           <!-- 到期信息 -->
           <div class="mt-4 flex items-center justify-between">
-            <span class="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span
+              class="flex items-center gap-1.5 text-xs text-muted-foreground"
+            >
               <CalendarOutlined class="opacity-50" />
               <span class="font-medium text-card-foreground/80">
                 {{ item.expiryDate }}
@@ -457,13 +526,19 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
           </div>
 
           <!-- 金额 -->
-          <div
-            v-if="item.price"
-            class="mt-3 border-t border-dashed border-border/60 pt-3 text-right"
-          >
-            <span class="text-base font-bold leading-none text-card-foreground">
-              ￥{{ item.price }}
-            </span>
+          <div class="mt-3 border-t border-dashed border-border/60 pt-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs text-muted-foreground">
+                {{ getBillingCycleLabel(item.billingCycle) }} ￥{{
+                  formatAmount(item.price)
+                }}
+              </span>
+              <span
+                class="text-base font-bold leading-none text-card-foreground"
+              >
+                月均 ￥{{ formatAmount(item.monthlyAmount) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -575,13 +650,41 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
           </button>
         </div>
 
-        <AFormItem label="支付金额" name="price">
+        <div class="flex gap-4">
+          <AFormItem label="支付金额" name="price" class="flex-1">
+            <AInputNumber
+              v-model:value="formState.price"
+              class="w-full"
+              :min="0"
+              :precision="2"
+              placeholder="￥"
+              @change="recalculateMonthlyAmount()"
+            />
+          </AFormItem>
+
+          <AFormItem label="计费周期" name="billingCycle" class="flex-1">
+            <ASelect
+              v-model:value="formState.billingCycle"
+              @change="recalculateMonthlyAmount()"
+            >
+              <ASelectOption
+                v-for="cycle in BILLING_CYCLES"
+                :key="cycle.value"
+                :value="cycle.value"
+              >
+                {{ cycle.label }}
+              </ASelectOption>
+            </ASelect>
+          </AFormItem>
+        </div>
+
+        <AFormItem label="每月金额" name="monthlyAmount">
           <AInputNumber
-            v-model:value="formState.price"
+            v-model:value="formState.monthlyAmount"
             class="w-full"
             :min="0"
             :precision="2"
-            placeholder="￥"
+            placeholder="选择周期后自动计算，也可以手动修改"
           />
         </AFormItem>
 
@@ -591,10 +694,12 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
               v-for="c in COLOR_PRESETS"
               :key="c"
               class="h-6 w-6 cursor-pointer rounded-full border-2 transition-transform hover:scale-110"
-              :class="formState.color === c ? 'border-black/40' : 'border-transparent'"
+              :class="
+                formState.color === c ? 'border-black/40' : 'border-transparent'
+              "
               :style="{ background: c }"
               @click="formState.color = c"
-            />
+            ></span>
           </div>
         </AFormItem>
 
@@ -602,7 +707,11 @@ const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
           <div class="flex items-center gap-2">
             <ASwitch v-model:checked="formState.autoRenew" />
             <span class="text-sm text-muted-foreground">
-              {{ formState.autoRenew ? '到期后自动扣费续期' : '到期后需要手动续费' }}
+              {{
+                formState.autoRenew
+                  ? '到期后自动扣费续期'
+                  : '到期后需要手动续费'
+              }}
             </span>
           </div>
         </AFormItem>

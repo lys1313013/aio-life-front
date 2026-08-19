@@ -13,6 +13,8 @@ export interface MembershipReq {
   startDate?: string;
   expiryDate: string;
   price?: number;
+  billingCycle?: string;
+  monthlyAmount?: number;
   autoRenew?: number;
   note?: string;
 }
@@ -30,10 +32,12 @@ export interface MembershipVO {
   startDate?: string;
   expiryDate: string;
   price?: number;
+  billingCycle?: string;
+  monthlyAmount?: number;
   autoRenew?: number;
   note?: string;
   /** active-生效中 expiring-即将到期 expired-已过期 */
-  status: 'active' | 'expiring' | 'expired';
+  status: 'active' | 'expired' | 'expiring';
   /** 剩余天数，已过期为负数 */
   remainingDays: number;
 }
@@ -46,6 +50,7 @@ export interface MembershipStatsVO {
   expiringCount: number;
   expiredCount: number;
   expiringThisMonthCount: number;
+  monthlyAmount: number;
 }
 
 /**
