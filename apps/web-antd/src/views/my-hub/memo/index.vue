@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CSSProperties } from 'vue';
+
 import type { Memo } from '#/api/core/memo';
 
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
@@ -38,7 +40,132 @@ const loading = ref(false);
 const modalOpen = ref(false);
 const modalTitle = ref('新建');
 const confirmLoading = ref(false);
+const modalWidthPx = ref<null | number>(null);
+const modalHeightPx = ref<null | number>(null);
+const modalOffset = reactive({ x: 0, y: 0 });
 const { isMobile } = usePreferences();
+
+const modalWidth = computed(() => {
+  if (isMobile.value) return 'calc(100vw - 32px)';
+  return modalWidthPx.value ?? '70%';
+});
+
+const modalStyle = computed<CSSProperties>(() =>
+  isMobile.value
+    ? {}
+    : {
+        transform: `translate(${modalOffset.x}px, ${modalOffset.y}px)`,
+      },
+);
+
+const modalBodyStyle = computed<CSSProperties>(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  height:
+    !isMobile.value && modalHeightPx.value
+      ? `${Math.max(160, modalHeightPx.value - 116)}px`
+      : undefined,
+  maxHeight: isMobile.value ? '80dvh' : '85dvh',
+  overflow: 'auto',
+}));
+
+const editorStyle = computed<CSSProperties>(() => ({
+  alignSelf: 'stretch',
+  flex: !isMobile.value && modalHeightPx.value ? '1 1 auto' : '0 0 auto',
+  minHeight: isMobile.value ? '30dvh' : '160px',
+  height:
+    !isMobile.value && modalHeightPx.value
+      ? undefined
+      : isMobile.value
+        ? '40dvh'
+        : '50dvh',
+  maxHeight: !isMobile.value && modalHeightPx.value ? undefined : '75dvh',
+  resize: 'none',
+  width: '100%',
+}));
+
+const resizeDirections = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'] as const;
+type ResizeDirection = (typeof resizeDirections)[number];
+
+let stopModalResize: (() => void) | undefined;
+
+const startModalResize = (event: PointerEvent, direction: ResizeDirection) => {
+  if (isMobile.value) return;
+
+  const modal = (event.currentTarget as HTMLElement).closest(
+    '.ant-modal',
+  ) as HTMLElement | null;
+  if (!modal) return;
+
+  event.preventDefault();
+  stopModalResize?.();
+
+  const rect = modal.getBoundingClientRect();
+  const startX = event.clientX;
+  const startY = event.clientY;
+  const startOffsetX = modalOffset.x;
+  const startOffsetY = modalOffset.y;
+  const minWidth = Math.min(480, window.innerWidth - 32);
+  const minHeight = Math.min(400, window.innerHeight - 32);
+  const maxWidth = direction.includes('e')
+    ? window.innerWidth - rect.left - 16
+    : direction.includes('w')
+      ? rect.right - 16
+      : window.innerWidth - 32;
+  const maxHeight = direction.includes('s')
+    ? window.innerHeight - rect.top - 16
+    : direction.includes('n')
+      ? rect.bottom - 16
+      : window.innerHeight - 32;
+
+  modalWidthPx.value = rect.width;
+  modalHeightPx.value = rect.height;
+  document.body.style.userSelect = 'none';
+
+  const onPointerMove = (moveEvent: PointerEvent) => {
+    const deltaX = moveEvent.clientX - startX;
+    const deltaY = moveEvent.clientY - startY;
+
+    if (direction.includes('e') || direction.includes('w')) {
+      const desiredWidth = direction.includes('e')
+        ? rect.width + deltaX
+        : rect.width - deltaX;
+      const nextWidth = Math.min(maxWidth, Math.max(minWidth, desiredWidth));
+      const widthDelta = nextWidth - rect.width;
+      modalWidthPx.value = nextWidth;
+      modalOffset.x =
+        startOffsetX + (direction.includes('e') ? widthDelta : -widthDelta) / 2;
+    }
+
+    if (direction.includes('n') || direction.includes('s')) {
+      const desiredHeight = direction.includes('s')
+        ? rect.height + deltaY
+        : rect.height - deltaY;
+      const nextHeight = Math.min(
+        maxHeight,
+        Math.max(minHeight, desiredHeight),
+      );
+      const heightDelta = nextHeight - rect.height;
+      modalHeightPx.value = nextHeight;
+      modalOffset.y =
+        startOffsetY +
+        (direction.includes('s') ? heightDelta : -heightDelta) / 2;
+    }
+  };
+
+  const onPointerUp = () => {
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
+    window.removeEventListener('pointercancel', onPointerUp);
+    document.body.style.removeProperty('user-select');
+    stopModalResize = undefined;
+  };
+
+  stopModalResize = onPointerUp;
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
+};
 
 const formState = reactive({
   id: '',
@@ -74,6 +201,14 @@ const handleEdit = (item: Memo) => {
   formState.content = item.content;
   formState.hiddenContent = item.hiddenContent ?? false;
   modalOpen.value = true;
+};
+
+const resetModalSize = () => {
+  stopModalResize?.();
+  modalWidthPx.value = null;
+  modalHeightPx.value = null;
+  modalOffset.x = 0;
+  modalOffset.y = 0;
 };
 
 const handleToggleHide = async (item: Memo) => {
@@ -152,6 +287,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  stopModalResize?.();
   window.removeEventListener('resize', onResize);
 });
 </script>
@@ -248,20 +384,30 @@ onUnmounted(() => {
 
     <Modal
       v-model:open="modalOpen"
-      :title="modalTitle"
       :confirm-loading="confirmLoading"
       :mask-closable="false"
       @ok="handleOk"
-      :width="isMobile ? '90%' : '70%'"
+      @after-close="resetModalSize"
+      :width="modalWidth"
       :centered="true"
-      :body-style="{
-        display: 'flex',
-        flexDirection: 'column',
-        maxHeight: isMobile ? '80vh' : '85vh',
-        overflow: 'auto',
-      }"
+      :body-style="modalBodyStyle"
+      :style="modalStyle"
       class="memo-modal"
     >
+      <template #title>
+        <div class="memo-modal-title">
+          <span>{{ modalTitle }}</span>
+          <template v-if="!isMobile">
+            <i
+              v-for="direction in resizeDirections"
+              :key="direction"
+              :class="`memo-resize-handle memo-resize-handle-${direction}`"
+              aria-hidden="true"
+              @pointerdown="startModalResize($event, direction)"
+            ></i>
+          </template>
+        </div>
+      </template>
       <Input
         v-model:value="formState.title"
         placeholder="标题"
@@ -274,15 +420,7 @@ onUnmounted(() => {
         placeholder="记下你的想法..."
         class="!border-0 !px-0 !text-base !leading-relaxed focus:!shadow-none"
         :bordered="false"
-        :style="{
-          alignSelf: 'flex-start',
-          flexShrink: 0,
-          resize: 'both',
-          width: '100%',
-          minHeight: isMobile ? '30vh' : '160px',
-          height: isMobile ? '40vh' : '50vh',
-          maxHeight: '75vh',
-        }"
+        :style="editorStyle"
       />
       <div
         class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800"
@@ -317,6 +455,87 @@ onUnmounted(() => {
   max-width: 1400px;
   padding: 16px;
   margin: 0 auto;
+}
+
+.memo-modal-title {
+  padding-right: 32px;
+}
+
+.memo-resize-handle {
+  position: absolute;
+  z-index: 10;
+  display: block;
+  touch-action: none;
+}
+
+.memo-resize-handle-n,
+.memo-resize-handle-s {
+  right: 12px;
+  left: 12px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.memo-resize-handle-e,
+.memo-resize-handle-w {
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.memo-resize-handle-n {
+  top: -5px;
+}
+
+.memo-resize-handle-e {
+  right: -5px;
+}
+
+.memo-resize-handle-s {
+  bottom: -5px;
+}
+
+.memo-resize-handle-w {
+  left: -5px;
+}
+
+.memo-resize-handle-ne,
+.memo-resize-handle-nw,
+.memo-resize-handle-se,
+.memo-resize-handle-sw {
+  width: 14px;
+  height: 14px;
+}
+
+.memo-resize-handle-ne,
+.memo-resize-handle-sw {
+  cursor: nesw-resize;
+}
+
+.memo-resize-handle-nw,
+.memo-resize-handle-se {
+  cursor: nwse-resize;
+}
+
+.memo-resize-handle-ne,
+.memo-resize-handle-nw {
+  top: -7px;
+}
+
+.memo-resize-handle-se,
+.memo-resize-handle-sw {
+  bottom: -7px;
+}
+
+.memo-resize-handle-ne,
+.memo-resize-handle-se {
+  right: -7px;
+}
+
+.memo-resize-handle-nw,
+.memo-resize-handle-sw {
+  left: -7px;
 }
 
 .empty-wrap {
