@@ -3,6 +3,7 @@ import type { UserBindEntity } from '#/api/core/user-bind';
 
 import { h, onMounted, ref } from 'vue';
 
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import {
   Button,
   Form,
@@ -13,7 +14,6 @@ import {
   Select,
   Table,
 } from 'ant-design-vue';
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 
 import {
   addUserBindApi,
@@ -51,6 +51,13 @@ const platformOptions = [
   { label: '豆瓣', value: 'douban' },
 ];
 
+// 与首页 index.vue 共用：GitHub 绑定变更后清除本地决策缓存，回首页即时重新判断
+const GITHUB_BIND_CACHE_KEY = 'aio-life:github-bind';
+
+function clearGithubBindCache() {
+  localStorage.removeItem(GITHUB_BIND_CACHE_KEY);
+}
+
 const fetchList = async () => {
   loading.value = true;
   try {
@@ -76,7 +83,11 @@ const handleEdit = (record: any) => {
 
 const handleDelete = async (id: number) => {
   try {
+    const record = data.value.find((item) => item.id === id);
     await deleteUserBindApi(id);
+    if (record?.platform === 'github') {
+      clearGithubBindCache();
+    }
     message.success('删除成功');
     fetchList();
   } catch {
@@ -90,6 +101,9 @@ const handleOk = async () => {
     await (formState.value.id
       ? updateUserBindApi(formState.value)
       : addUserBindApi(formState.value));
+    if (formState.value.platform === 'github') {
+      clearGithubBindCache();
+    }
     message.success('保存成功');
     modalVisible.value = false;
     fetchList();

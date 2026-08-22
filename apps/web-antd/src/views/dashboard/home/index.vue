@@ -94,20 +94,62 @@ async function refreshTimeTracker() {
   await timeTrackerCardRef.value?.loadData();
 }
 
-async function checkGithubBound(): Promise<boolean> {
+// 本地缓存的 GitHub 绑定决策 + 用户名：秒填，让最近提交区块与其它区块同时出现
+const GITHUB_BIND_CACHE_KEY = 'aio-life:github-bind';
+
+interface GithubBindCache {
+  bound: boolean;
+  username?: string;
+}
+
+function readGithubBindCache(): GithubBindCache | null {
+  try {
+    const raw = localStorage.getItem(GITHUB_BIND_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as GithubBindCache) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeGithubBindCache(data: GithubBindCache) {
+  try {
+    localStorage.setItem(GITHUB_BIND_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // 隐私模式等场景忽略写入失败
+  }
+}
+
+function clearGithubBindCache() {
+  localStorage.removeItem(GITHUB_BIND_CACHE_KEY);
+}
+
+function restoreGithubCache() {
+  const cached = readGithubBindCache();
+  if (cached) {
+    githubBound.value = cached.bound;
+    githubUsername.value = cached.username || '';
+  }
+}
+
+// 并行校验 GitHub 绑定状态：刷新用户名并回写缓存，不阻塞首页渲染
+async function verifyGithub() {
   try {
     const binds = await getUserBindListApi(true);
     const githubBind = binds.find(
       (item) => item.platform === 'github' && item.platformUsername,
     );
-    if (githubBind?.platformUsername) {
-      githubUsername.value = githubBind.platformUsername;
-      return true;
+    const username = githubBind?.platformUsername || '';
+    githubUsername.value = username;
+    if (username) {
+      writeGithubBindCache({
+        bound: githubBound.value,
+        username,
+      });
+    } else {
+      clearGithubBindCache();
     }
-    return false;
   } catch (error) {
     console.error('查询 GitHub 绑定失败:', error);
-    return false;
   }
 }
 const longPressTimer = ref<ReturnType<typeof setTimeout>>();
@@ -377,14 +419,21 @@ onMounted(() => {
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange);
   quickNavStore.load();
-  // 判断 GitHub 绑定状态：未绑定则不展示最近提交卡片
-  githubBound.value = await checkGithubBound();
+  // 秒填本地缓存的 GitHub 绑定决策 + 用户名：最近提交区块与其它区块同帧出现；并行校验不阻塞渲染
+  restoreGithubCache();
+  verifyGithub();
   try {
     loading.value = true;
     loadWatchedTasks();
     loadPinnedThoughts();
     // 1. 获取任务列表
     const tasks = await getDashboardTasks();
+    // GITHUB 卡出现 ⟺ 后端 Redis 决策判定展示（未绑定则无此卡）；以任务列表为准修正本地缓存
+    githubBound.value = tasks.some((t) => t.type === 'GITHUB');
+    writeGithubBindCache({
+      bound: githubBound.value,
+      username: githubUsername.value,
+    });
     const items: OverviewItem[] = [];
     // 2. 构建初始列表（占位符）
     tasks.forEach((task) => {
@@ -472,16 +521,25 @@ function handleTitleClick(url: string) {
   }
 }
 
-function handleTimeTrackerSuccess() {
-  refreshTimeTracker();
+// 时迹记录可携带运动明细 / 关联阅读，波及这两张卡片
+const TIME_TRACKER_RELATED_CARDS = ['EXERCISE', 'READ'];
+
+function refreshCardsByTypes(types: string[]) {
+  const typeSet = new Set(types);
   overviewItems.value.forEach((item) => {
-    if (
-      item.titleClickUrl === ACTION_OPEN_TIME_TRACKER_MODAL ||
-      item.iconClickUrl === ACTION_OPEN_TIME_TRACKER_MODAL
-    ) {
+    if (item.type && typeSet.has(item.type)) {
       refreshCard(item);
     }
   });
+}
+
+function handleTimeTrackerSuccess() {
+  // 1. 时迹区块
+  refreshTimeTracker();
+  // 2. 时迹波及的卡片（refreshCard 有值变化检测，未变化不重渲染）
+  refreshCardsByTypes(TIME_TRACKER_RELATED_CARDS);
+  // 3. 运动区块（时迹分类可能带运动明细）
+  exerciseSummaryCardRef.value?.reload?.();
 }
 
 function handleExerciseSuccess() {
