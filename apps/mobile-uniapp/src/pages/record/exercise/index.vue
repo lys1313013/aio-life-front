@@ -61,6 +61,7 @@ import { getByDictType } from '@/api/userDictType';
 interface ExerciseRecord {
   id: string;
   exerciseType: string;
+  // 后端 Long 经全局 ToStringSerializer 序列化为字符串，值为 user_dict_data.id
   exerciseTypeId: string;
   exerciseCount: number;
   exerciseDate: string;
@@ -75,14 +76,14 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 const hasMore = ref(true);
 const isRefreshing = ref(false);
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>([]);
+const dictOptions = ref<Array<{ label: string; value: string }>>([]);
 
 const loadExerciseTypes = async () => {
   try {
     const res: any = await getByDictType('exercise_type');
     if (res && res.dictDetailList) {
+      // value 取 String(dict_data.id)，与 web-antd 及后端 Long 字段对齐（非 dictValue）
       dictOptions.value = res.dictDetailList.map((item: any) => ({
-        id: Number(item.id),
         label: item.dictLabel || item.label,
         value: String(item.id),
       }));
@@ -92,7 +93,7 @@ const loadExerciseTypes = async () => {
   }
 };
 
-const getExerciseTypeLabel = (typeId: string) => {
+const getExerciseTypeLabel = (typeId?: string) => {
   const option = dictOptions.value.find((item) => item.value === typeId);
   return option ? option.label : '未知运动';
 };
@@ -149,8 +150,13 @@ const handleAdd = () => {
 };
 
 const handleEdit = (item: ExerciseRecord) => {
-  uni.$emit('editExercise', item);
-  uni.navigateTo({ url: '/pages/record/exercise/edit' });
+  // 通过 eventChannel 向编辑页传递待编辑记录，替代全局 uni.$emit/$on（避免监听时序与泄漏问题）
+  uni.navigateTo({
+    url: '/pages/record/exercise/edit',
+    success: (res) => {
+      res.eventChannel.emit('editExercise', item);
+    },
+  });
 };
 
 const handleDelete = (item: ExerciseRecord) => {

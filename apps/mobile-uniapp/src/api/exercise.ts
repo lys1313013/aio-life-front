@@ -55,37 +55,3 @@ export async function deleteBatch(data: any) {
 export async function getExercise(data: any) {
   return await get(`/exerciseRecord/get/${data.id}`);
 }
-
-export interface ExerciseDashboardItemVO {
-  exerciseTypeId?: string;
-  typeLabel?: string;
-  icon?: string;
-  color?: string;
-  count?: number;
-  prevDate?: string;
-  prevCount?: number;
-  deltaCount?: number;
-  deltaPercent?: number;
-}
-
-export interface ExerciseDashboardDayVO {
-  date?: string;
-  totalCount?: number;
-  items?: ExerciseDashboardItemVO[];
-}
-
-export interface ExerciseDashboardSummaryVO {
-  lastDate?: string;
-  hasMore?: boolean;
-  days?: ExerciseDashboardDayVO[];
-}
-
-export async function getDashboardSummaryApi(params?: {
-  lastDate?: string;
-  limit?: number;
-}) {
-  return await get<ExerciseDashboardSummaryVO>(
-    '/exerciseRecord/dashboardSummary',
-    params,
-  );
-}

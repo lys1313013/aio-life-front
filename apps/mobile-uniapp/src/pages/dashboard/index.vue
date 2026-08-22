@@ -207,7 +207,7 @@
     </view>
 
     <!-- 运动概览 -->
-    <view class="panel" v-if="exerciseSummary">
+    <view class="panel" v-if="exerciseDays.length > 0">
       <view class="panel-header" @click="navigateTo('/pages/record/exercise/index')">
         <text class="panel-title">运动</text>
         <view class="header-actions">
@@ -215,15 +215,32 @@
           <uni-icons type="right" size="16" color="#999"></uni-icons>
         </view>
       </view>
-      <view class="panel-body exercise-grid">
-        <view class="ex-stat">
-          <text class="ex-value">{{ exerciseSummary.totalTimes || 0 }}</text>
-          <text class="ex-label">累计运动次数</text>
-        </view>
-        <view class="ex-divider"></view>
-        <view class="ex-stat">
-          <text class="ex-value">{{ exerciseSummary.totalDuration || 0 }}</text>
-          <text class="ex-label">累计时长(分钟)</text>
+      <view class="panel-body exercise-list">
+        <view class="ex-day" v-for="(day, dayIndex) in exerciseDays" :key="day.date || dayIndex">
+          <view class="ex-day-header">
+            <text class="ex-day-label">{{ formatDayLabel(day.date) }}</text>
+            <text class="ex-day-week">{{ weekdayLabel(day.date) }}</text>
+            <text class="ex-day-total">共 {{ day.totalCount || 0 }} 次</text>
+          </view>
+          <view class="ex-chips">
+            <view
+              class="ex-chip"
+              v-for="item in day.items || []"
+              :key="`${day.date}-${item.exerciseTypeId}`"
+              :style="{ backgroundColor: chipBgColor(item), color: chipColor(item) }"
+            >
+              <view class="ex-chip-icon" :style="getIconifyStyle(item.icon || 'mdi:run')"></view>
+              <text class="ex-chip-name">{{ item.typeLabel || '其他' }}</text>
+              <text class="ex-chip-count">{{ item.count ?? 0 }}</text>
+              <text
+                v-if="chipDelta(item)"
+                class="ex-chip-delta"
+                :class="'is-' + chipDelta(item)!.tone"
+              >
+                {{ chipDelta(item)!.text }}
+              </text>
+            </view>
+          </view>
         </view>
       </view>
     </view>
@@ -265,7 +282,8 @@ import type {
   QuickNavItem,
   ThoughtItem,
   GithubCommitVO,
-  ExerciseDashboardSummaryVO
+  ExerciseDashboardSummaryVO,
+  ExerciseDashboardItemVO
 } from '../../api/dashboard';
 import type { TimeTrackerCategoryEntity } from '../../api/time-tracker-category';
 import { useUserStore } from '../../store/user';
@@ -277,6 +295,8 @@ const quickNavs = ref<QuickNavItem[]>([]);
 const pinnedThoughts = ref<ThoughtItem[]>([]);
 const githubCommits = ref<GithubCommitVO[]>([]);
 const exerciseSummary = ref<ExerciseDashboardSummaryVO | null>(null);
+/** 运动概览按天分组数据（后端按日期降序返回） */
+const exerciseDays = computed(() => exerciseSummary.value?.days || []);
 const timeRecords = ref<any[]>([]);
 const categories = ref<TimeTrackerCategoryEntity[]>([]);
 
@@ -527,6 +547,59 @@ const getIconifyStyle = (iconStr: string, keepColor = false) => {
   };
 };
 
+// ---------------- 运动概览辅助 ----------------
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const toDateStr = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+/** 日期展示为 今天 / 昨天 / MM-DD */
+const formatDayLabel = (date?: string) => {
+  if (!date) return '';
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date === toDateStr(new Date())) return '今天';
+  if (date === toDateStr(yesterday)) return '昨天';
+  return date.slice(5);
+};
+
+const WEEK_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const weekdayLabel = (date?: string) => {
+  if (!date) return '';
+  const d = new Date(`${date}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? '' : WEEK_LABELS[d.getDay()] || '';
+};
+
+/** 无字典色时的兜底色板（按类型 ID 哈希取色，与 Web 端一致） */
+const EX_FALLBACK_COLORS = ['#3FB27F', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#10B981'];
+const chipColor = (item: ExerciseDashboardItemVO): string => {
+  if (item.color) return item.color;
+  const seed = item.exerciseTypeId;
+  if (!seed) return EX_FALLBACK_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return EX_FALLBACK_COLORS[hash % EX_FALLBACK_COLORS.length];
+};
+/** chip 背景色 = 主色加约 10% 透明度（Hex 追加 alpha） */
+const chipBgColor = (item: ExerciseDashboardItemVO): string => `${chipColor(item)}1A`;
+
+interface ChipDelta {
+  text: string;
+  tone: 'down' | 'neutral' | 'new' | 'up';
+}
+/** 与上一次同类型运动对比：首次记录 → 新增；其余显示箭头 + 差值 */
+const chipDelta = (item: ExerciseDashboardItemVO): ChipDelta | undefined => {
+  // 后端 NON_NULL 序列化，首次记录时 prevCount 字段缺失
+  if (item.prevCount === undefined || item.prevCount === null) {
+    return { text: '新增', tone: 'new' };
+  }
+  const delta = item.deltaCount ?? 0;
+  const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '=';
+  const sign = delta > 0 ? '+' : '';
+  const tone: ChipDelta['tone'] = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+  return { text: `${arrow} ${sign}${delta}`, tone };
+};
+
 // ---------------- 单独刷新方法 ----------------
 const refreshTimeTracker = async () => {
   uni.showLoading({ title: '刷新中...', mask: true });
@@ -564,7 +637,7 @@ const refreshExercise = async () => {
   uni.showLoading({ title: '刷新中...', mask: true });
   try {
     const res = await getDashboardSummaryApi();
-    exerciseSummary.value = res || { totalTimes: 0, totalDuration: 0, recentRecords: [] };
+    exerciseSummary.value = res || null;
   } catch (err) {
     console.error('refreshExercise error:', err);
   } finally {
@@ -617,7 +690,7 @@ const fetchData = () => {
   const p5 = getPinnedThoughts().then(res => pinnedThoughts.value = res || []).catch(err => console.error('PinnedThoughts error:', err));
   const p6 = getRecentCommitsApi(5).then(res => githubCommits.value = res || []).catch(err => console.error('Commits error:', err));
   const p7 = getDashboardSummaryApi().then(res => {
-    exerciseSummary.value = res || { totalTimes: 0, totalDuration: 0, recentRecords: [] };
+    exerciseSummary.value = res || null;
   }).catch(err => console.error('Exercise error:', err));
 
   Promise.allSettled([p1, p2, p3, p4, p5, p6, p7]).finally(() => {
@@ -1085,33 +1158,88 @@ onPullDownRefresh(() => {
 }
 
 /* 运动概览 */
-.exercise-grid {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.exercise-list {
+  .ex-day {
+    padding: 16rpx 0;
 
-  .ex-stat {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    .ex-value {
-      font-size: 48rpx;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 8rpx;
+    &:first-child {
+      padding-top: 0;
     }
-    .ex-label {
-      font-size: 24rpx;
+    &:last-child {
+      padding-bottom: 0;
+    }
+    &:not(:last-child) {
+      border-bottom: 1rpx solid #f5f5f5;
+      margin-bottom: 16rpx;
+    }
+  }
+
+  .ex-day-header {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 12rpx;
+
+    .ex-day-label {
+      font-size: 26rpx;
+      font-weight: 600;
+      color: #333;
+    }
+    .ex-day-week {
+      font-size: 20rpx;
+      color: #999;
+      margin-left: 8rpx;
+    }
+    .ex-day-total {
+      margin-left: auto;
+      font-size: 22rpx;
       color: #999;
     }
   }
 
-  .ex-divider {
-    width: 2rpx;
-    height: 60rpx;
-    background-color: #eee;
+  .ex-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+  }
+
+  .ex-chip {
+    display: flex;
+    align-items: center;
+    border-radius: 999rpx;
+    padding: 8rpx 16rpx;
+    font-size: 22rpx;
+    font-weight: 500;
+
+    .ex-chip-icon {
+      width: 26rpx;
+      height: 26rpx;
+      margin-right: 6rpx;
+    }
+    .ex-chip-name {
+      max-width: 220rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .ex-chip-count {
+      margin-left: 8rpx;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .ex-chip-delta {
+      margin-left: 10rpx;
+      padding: 0 10rpx;
+      border-radius: 999rpx;
+      background-color: rgba(255, 255, 255, 0.6);
+      font-size: 20rpx;
+
+      &.is-up {
+        color: #10b981;
+      }
+      &.is-down {
+        color: #ef4444;
+      }
+    }
   }
 }
 

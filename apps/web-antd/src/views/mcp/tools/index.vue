@@ -404,14 +404,15 @@ onMounted(() => {
       v-model:open="modalVisible"
       :title="modalTool ? `调用 - ${modalTool.name}` : '调用'"
       :footer="null"
-      width="560px"
+      width="480px"
       destroy-on-close
     >
       <div v-if="modalTool" class="modal-call">
-        <p class="modal-tool-desc text-gray-500">{{ modalTool.description }}</p>
+        <p v-if="modalTool.description" class="modal-tool-desc text-gray-500">{{ modalTool.description }}</p>
 
-        <div class="modal-toolbar">
+        <div class="modal-actions">
           <span class="modal-label text-gray-800 dark:text-gray-200">参数配置</span>
+          <Button type="primary" size="small" :loading="modalCalling" @click="callTool">调用</Button>
         </div>
 
         <Form
@@ -432,39 +433,38 @@ onMounted(() => {
               :options="param.enum.map((e: any) => ({ label: e, value: e }))"
               placeholder="请选择"
               allow-clear
+              size="small"
             />
             <Switch
               v-else-if="param.type === 'boolean'"
               v-model:checked="modalFormValues[param.name]"
+              size="small"
             />
             <InputNumber
               v-else-if="param.type === 'number' || param.type === 'integer'"
               v-model:value="modalFormValues[param.name]"
               style="width: 100%"
               placeholder="请输入数字"
+              size="small"
             />
             <Input
               v-else
               v-model:value="modalFormValues[param.name]"
               placeholder="请输入"
+              size="small"
             />
           </Form.Item>
         </Form>
         <div v-else class="no-params text-gray-300 dark:text-gray-600">该工具无需输入参数</div>
 
-        <Button
-          type="primary"
-          block
-          :loading="modalCalling"
-          class="modal-call-btn"
-          @click="callTool"
-        >
-          调用
-        </Button>
-
         <div v-if="modalResult" class="modal-result">
           <div class="result-label text-gray-800 dark:text-gray-200">返回结果</div>
-          <pre class="result-content border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700" :class="{ 'is-error': modalIsError }">{{
+          <pre
+            class="result-content border"
+            :class="modalIsError
+              ? 'text-red-500 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/30 dark:border-red-800'
+              : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'"
+          >{{
             modalResult
           }}</pre>
         </div>
@@ -685,7 +685,7 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.modal-toolbar {
+.modal-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -696,8 +696,9 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.modal-call-btn {
-  margin-top: 4px;
+/* small 控件下收紧行距（antd 默认 24px 偏松） */
+.modal-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
 }
 
 .modal-result {
@@ -720,12 +721,6 @@ onMounted(() => {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-all;
-}
-
-.result-content.is-error {
-  color: #ff4d4f;
-  border-color: #ffccc7;
-  background: #fff2f0;
 }
 
 /* 配置指南 */

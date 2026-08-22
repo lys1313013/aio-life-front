@@ -218,15 +218,17 @@ const onRelateRecordChange = (e: any) => {
   }
 };
 
+// 后端 exerciseTypeId 存的是 user_dict_data 主键 id，按 id 匹配回显（不能拿 dictValue 比对）
 const getExerciseTypeName = (val: string) => {
-  const item = exerciseTypeOptions.value.find((o: any) => o.dictValue === val);
+  const item = exerciseTypeOptions.value.find((o: any) => String(o.id) === String(val));
   return item ? item.dictLabel : '请选择';
 };
 
 const onExerciseTypeChange = (e: any, index: number) => {
   const selectedIdx = e.detail.value;
   if (formData.value.exercises && formData.value.exercises[index]) {
-    formData.value.exercises[index].exerciseTypeId = exerciseTypeOptions.value[selectedIdx].dictValue;
+    // 提交 user_dict_data.id（后端 Long 字段全局序列化为 string），dictValue 仅是展示值
+    formData.value.exercises[index].exerciseTypeId = String(exerciseTypeOptions.value[selectedIdx].id);
   }
 };
 

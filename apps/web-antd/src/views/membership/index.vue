@@ -10,6 +10,7 @@ import type {
 import { computed, onMounted, ref } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
+import { usePreferences } from '@vben/preferences';
 
 import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
@@ -40,6 +41,8 @@ import {
   updateMembership,
 } from '#/api/membership';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+
+const { isMobile } = usePreferences();
 
 interface FormState {
   id?: string;
@@ -87,12 +90,12 @@ const QUICK_DATES = [
 ];
 
 const BILLING_CYCLES = [
-  { value: 'week', label: '一周' },
+  { value: 'week', label: '周' },
   { value: 'two_weeks', label: '两周' },
-  { value: 'month', label: '一个月' },
-  { value: 'quarter', label: '一季度' },
+  { value: 'month', label: '月' },
+  { value: 'quarter', label: '季' },
   { value: 'half_year', label: '半年' },
-  { value: 'year', label: '一年' },
+  { value: 'year', label: '年' },
 ];
 
 const STATUS_META: Record<string, { color: string; label: string }> = {
@@ -328,7 +331,7 @@ const recalculateMonthlyAmount = () => {
 };
 
 const getBillingCycleLabel = (value?: string) => {
-  return BILLING_CYCLES.find((item) => item.value === value)?.label ?? '一个月';
+  return BILLING_CYCLES.find((item) => item.value === value)?.label ?? '月';
 };
 
 const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
@@ -339,10 +342,10 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
     <!-- Stats -->
     <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       <div
-        class="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-500/10 text-green-500"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-500/10 text-green-500 sm:h-10 sm:w-10"
         >
           <IconifyIcon icon="mdi:check-circle-outline" class="text-xl" />
         </div>
@@ -356,10 +359,10 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500 sm:h-10 sm:w-10"
         >
           <IconifyIcon icon="mdi:calendar-alert" class="text-xl" />
         </div>
@@ -371,10 +374,10 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 sm:h-10 sm:w-10"
         >
           <IconifyIcon icon="mdi:clock-alert-outline" class="text-xl" />
         </div>
@@ -388,16 +391,19 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         </div>
       </div>
       <div
-        class="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm"
+        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
       >
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500"
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 sm:h-10 sm:w-10"
         >
           <IconifyIcon icon="mdi:cash-multiple" class="text-xl" />
         </div>
-        <div>
+        <div class="min-w-0">
           <p class="text-xs text-muted-foreground">当前月均</p>
-          <p class="mt-0.5 text-xl font-bold leading-none text-blue-500">
+          <p
+            class="mt-0.5 truncate text-base font-bold leading-none text-blue-500 sm:text-xl"
+            :title="`￥${formatAmount(stats.monthlyAmount)}`"
+          >
             ￥{{ formatAmount(stats.monthlyAmount) }}
           </p>
         </div>
@@ -406,11 +412,11 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
 
     <!-- Filters -->
     <div class="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div class="flex flex-wrap items-center gap-4">
+      <div class="flex flex-wrap items-center gap-3">
         <AInput
           v-model:value="filters.keyword"
           placeholder="搜索会员名称、平台..."
-          class="w-64"
+          class="w-full sm:w-64"
           allow-clear
         >
           <template #prefix><SearchOutlined class="text-gray-400" /></template>
@@ -419,7 +425,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         <ASelect
           v-model:value="filters.category"
           placeholder="分类筛选"
-          class="w-40"
+          class="w-full sm:w-40"
           allow-clear
         >
           <ASelectOption
@@ -449,18 +455,18 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
 
       <div
         v-else
-        class="grid grid-cols-2 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4"
       >
         <div
           v-for="item in filteredMembers"
           :key="item.id"
-          class="group relative cursor-pointer rounded-2xl border border-border bg-card p-4 transition-colors duration-200 hover:border-border/60 hover:shadow-sm sm:p-5"
+          class="group relative cursor-pointer rounded-2xl border border-border bg-card p-3 transition-colors duration-200 hover:border-border/60 hover:shadow-sm sm:p-5"
           @click="handleEdit(item)"
         >
-          <div class="mb-3 flex items-center gap-3">
+          <div class="mb-3 flex items-center gap-2 sm:gap-3">
             <div class="min-w-0 flex-1">
               <h3
-                class="truncate text-lg font-bold text-card-foreground"
+                class="truncate text-base font-bold text-card-foreground sm:text-lg"
                 :title="item.name"
               >
                 {{ item.name }}
@@ -498,7 +504,9 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           </div>
 
           <!-- 到期信息 -->
-          <div class="mt-4 flex items-center justify-between">
+          <div
+            class="mt-4 flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1"
+          >
             <span
               class="flex items-center gap-1.5 text-xs text-muted-foreground"
             >
@@ -508,7 +516,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
               </span>
             </span>
             <span
-              class="rounded-full px-2 py-0.5 text-xs font-semibold"
+              class="ml-auto rounded-full px-2 py-0.5 text-xs font-semibold"
               :class="
                 item.status === 'expired'
                   ? 'bg-gray-500/10 text-gray-400'
@@ -527,14 +535,16 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
 
           <!-- 金额 -->
           <div class="mt-3 border-t border-dashed border-border/60 pt-3">
-            <div class="flex items-center justify-between gap-2">
+            <div
+              class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1"
+            >
               <span class="text-xs text-muted-foreground">
                 {{ getBillingCycleLabel(item.billingCycle) }} ￥{{
                   formatAmount(item.price)
                 }}
               </span>
               <span
-                class="text-base font-bold leading-none text-card-foreground"
+                class="ml-auto text-xs font-bold leading-none text-card-foreground sm:text-base"
               >
                 月均 ￥{{ formatAmount(item.monthlyAmount) }}
               </span>
@@ -548,10 +558,12 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
     <AModal
       v-model:open="modalVisible"
       :confirm-loading="submitLoading"
-      width="600px"
+      :width="isMobile ? '92vw' : 600"
       :centered="true"
       :closable="false"
-      :body-style="{ padding: '28px 24px 12px' }"
+      :body-style="
+        isMobile ? { padding: '20px 16px 8px' } : { padding: '28px 24px 12px' }
+      "
     >
       <template #footer>
         <div class="flex items-center justify-between">
@@ -581,7 +593,8 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         ref="formRef"
         :model="formState"
         :rules="rules"
-        layout="horizontal"
+        :layout="isMobile ? 'vertical' : 'horizontal'"
+        :size="isMobile ? 'small' : 'default'"
       >
         <AFormItem label="名称" name="name">
           <AInput
@@ -591,7 +604,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           />
         </AFormItem>
 
-        <div class="flex gap-4">
+        <div class="flex flex-col sm:flex-row sm:gap-4">
           <AFormItem label="分类" name="category" class="flex-1">
             <ASelect
               v-model:value="formState.category"
@@ -619,7 +632,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           </AFormItem>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex flex-col sm:flex-row sm:gap-4">
           <AFormItem label="开通日期" name="startDate" class="flex-1">
             <ADatePicker
               v-model:value="formState.startDate"
@@ -637,7 +650,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           </AFormItem>
         </div>
 
-        <div class="mb-4 flex flex-wrap items-center gap-1.5">
+        <div class="mb-3 flex flex-wrap items-center gap-1.5 sm:mb-4">
           <span class="mr-1 text-xs text-muted-foreground">从开通日算起：</span>
           <button
             v-for="opt in QUICK_DATES"
@@ -650,7 +663,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           </button>
         </div>
 
-        <div class="flex gap-4">
+        <div class="flex flex-col sm:flex-row sm:gap-4">
           <AFormItem label="支付金额" name="price" class="flex-1">
             <AInputNumber
               v-model:value="formState.price"
@@ -730,3 +743,11 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
     <GlobalFloatBtn @click="handleAdd" />
   </div>
 </template>
+
+<style scoped>
+@media (max-width: 767.98px) {
+  :deep(.ant-form-item) {
+    margin-bottom: 12px;
+  }
+}
+</style>

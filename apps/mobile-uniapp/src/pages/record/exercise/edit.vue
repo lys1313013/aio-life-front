@@ -44,7 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, getCurrentInstance, onMounted } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import { add, update } from '@/api/exercise';
 import { getByDictType } from '@/api/userDictType';
 
@@ -73,6 +74,26 @@ const formData = ref({
   remark: '',
 });
 
+// 待回显的编辑记录：eventChannel 接收后先暂存，待字典选项加载完成后再回显匹配
+let pendingEditItem: any = null;
+
+// 回显编辑记录，必须在 exerciseTypeOptions 加载完成后调用，保证运动类型匹配正确
+const applyEditItem = (item: any) => {
+  isEdit.value = true;
+  editId.value = item.id;
+  formData.value = {
+    exerciseTypeId: item.exerciseTypeId || '',
+    exerciseCount: item.exerciseCount,
+    exerciseDate: item.exerciseDate || todayStr(),
+    duration: item.duration,
+    calories: item.calories,
+    remark: item.remark || '',
+  };
+  // 后端返回的是 Long(id)，按 String(id) 匹配选项
+  const idx = exerciseTypeOptions.value.findIndex((o: any) => String(o.id) === String(item.exerciseTypeId));
+  exerciseTypeIndex.value = idx >= 0 ? idx : 0;
+};
+
 onMounted(async () => {
   try {
     const dictRes = await getByDictType('exercise_type');
@@ -83,27 +104,34 @@ onMounted(async () => {
     console.error('加载运动类型失败', e);
   }
 
-  uni.$on('editExercise', (item: any) => {
-    if (item) {
-      isEdit.value = true;
-      editId.value = item.id;
-      formData.value = {
-        exerciseTypeId: item.exerciseTypeId || '',
-        exerciseCount: item.exerciseCount,
-        exerciseDate: item.exerciseDate || todayStr(),
-        duration: item.duration,
-        calories: item.calories,
-        remark: item.remark || '',
-      };
-      const idx = exerciseTypeOptions.value.findIndex((o: any) => o.dictValue === item.exerciseTypeId);
-      exerciseTypeIndex.value = idx >= 0 ? idx : 0;
+  // 字典就绪后回显，保持「接收记录 → 加载字典 → 回显匹配」的顺序
+  if (pendingEditItem) {
+    applyEditItem(pendingEditItem);
+    pendingEditItem = null;
+  }
+});
+
+// 页面加载时通过 eventChannel 接收列表页传来的待编辑记录（uni.navigateTo success 中 emit，
+// emit 先于 on 注册也会被缓冲补发，无时序问题，且随页面销毁自动回收，无监听泄漏）
+onLoad(() => {
+  // uniapp 未在 ComponentPublicInstance 类型上声明 getOpenerEventChannel，需断言
+  const eventChannel = (getCurrentInstance()?.proxy as any)?.getOpenerEventChannel?.();
+  eventChannel?.on('editExercise', (item: any) => {
+    if (!item) return;
+    pendingEditItem = item;
+    // 兜底：字典已加载完才直接回显，否则等 onMounted 加载完字典后统一回显
+    if (exerciseTypeOptions.value.length > 0) {
+      applyEditItem(pendingEditItem);
+      pendingEditItem = null;
     }
   });
 });
 
 const onExerciseTypeChange = (e: any) => {
   exerciseTypeIndex.value = e.detail.value;
-  formData.value.exerciseTypeId = exerciseTypeOptions.value[exerciseTypeIndex.value]?.dictValue || '';
+  const option = exerciseTypeOptions.value[exerciseTypeIndex.value];
+  // 提交 user_dict_data.id（后端 Long 字段），与 web-antd / dashboard 一致
+  formData.value.exerciseTypeId = option ? String(option.id) : '';
 };
 
 const onDateChange = (e: any) => { formData.value.exerciseDate = e.detail.value; };
