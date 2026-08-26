@@ -13,7 +13,6 @@ import {
   Form,
   Input,
   InputNumber,
-  message,
   Modal,
   Popconfirm,
   Row,
@@ -289,8 +288,8 @@ export default {
         await deleteData(item.id);
         await this.query();
       } catch (error) {
+        // 全局拦截器已提示
         console.error('删除失败:', error);
-        message.error('删除失败');
       }
     },
     async handleDeleteFromModal() {

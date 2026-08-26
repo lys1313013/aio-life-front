@@ -105,8 +105,8 @@ const fetchTabs = async () => {
       activeTab.value = tabList.value[0].value;
     }
   } catch (error) {
+    // 全局拦截器已提示
     console.error('Failed to fetch tabs:', error);
-    message.error('获取分类选项卡失败');
   }
 };
 
@@ -127,8 +127,8 @@ const fetchCategories = async () => {
     // 按 dictSort 排序
     categories.value.sort((a, b) => (a.dictSort || 0) - (b.dictSort || 0));
   } catch (error) {
+    // 全局拦截器已提示
     console.error('Failed to fetch categories:', error);
-    message.error('获取分类列表失败');
   } finally {
     loading.value = false;
   }
@@ -183,7 +183,7 @@ const handleToggleStatus = async (record: any, checked: boolean) => {
   } catch {
     // 失败时回滚到原状态
     record.status = previousStatus;
-    message.error('操作失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -193,8 +193,8 @@ const handleDelete = async (record: any) => {
     message.success('删除成功');
     fetchCategories();
   } catch (error) {
+    // 全局拦截器已提示
     console.error('Failed to delete category:', error);
-    message.error('删除失败');
   }
 };
 
@@ -260,7 +260,7 @@ const initSortable = () => {
           await Promise.all(updatePromises);
           fetchCategories();
         } catch {
-          message.error('排序失败');
+          // 全局拦截器已提示
         }
       },
     });

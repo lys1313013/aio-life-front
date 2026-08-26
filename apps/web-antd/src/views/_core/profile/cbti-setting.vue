@@ -471,8 +471,8 @@ const init = async () => {
     ]);
     questionsResp.value = q;
     personalities.value = p;
-  } catch (error: any) {
-    message.error(error?.message || '初始化 CBTI 数据失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     initializing.value = false;
   }
@@ -634,12 +634,17 @@ const saveAdminPersonality = async () => {
       weaknesses: parseLines(adminWeaknessesText.value),
     };
 
-    if (adminEditingId.value == null) {
-      await createCbtiPersonalityApi(payload);
-      message.success('新增成功');
-    } else {
-      await updateCbtiPersonalityApi(adminEditingId.value, payload);
-      message.success('更新成功');
+    try {
+      if (adminEditingId.value == null) {
+        await createCbtiPersonalityApi(payload);
+        message.success('新增成功');
+      } else {
+        await updateCbtiPersonalityApi(adminEditingId.value, payload);
+        message.success('更新成功');
+      }
+    } catch {
+      // 全局拦截器已提示
+      return;
     }
     adminEditVisible.value = false;
     await Promise.all([loadAdminList(), refreshPersonalities()]);
@@ -656,8 +661,8 @@ const deleteAdminPersonality = async (row: any) => {
     await deleteCbtiPersonalityApi(r.id);
     message.success('删除成功');
     await Promise.all([loadAdminList(), refreshPersonalities()]);
-  } catch (error: any) {
-    message.error(error?.message || '删除失败');
+  } catch {
+    // 全局拦截器已提示
   }
 };
 
@@ -753,8 +758,8 @@ const calculate = async () => {
     });
     result.value = r;
     phase.value = 'result';
-  } catch (error: any) {
-    message.error(error?.message || '计算结果失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     calculating.value = false;
   }
@@ -770,8 +775,8 @@ const openHistory = async () => {
   try {
     historyList.value = await getCbtiHistoryApi();
     historyVisible.value = true;
-  } catch (error: any) {
-    message.error(error?.message || '获取历史失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     historyLoading.value = false;
   }
@@ -789,8 +794,8 @@ const viewHistoryDetail = async (record: any) => {
     };
     phase.value = 'result';
     historyVisible.value = false;
-  } catch (error: any) {
-    message.error(error?.message || '获取详情失败');
+  } catch {
+    // 全局拦截器已提示
   }
 };
 
@@ -801,8 +806,8 @@ const deleteHistoryItem = async (record: any) => {
     await deleteCbtiHistoryApi(id);
     message.success('删除成功');
     historyList.value = await getCbtiHistoryApi();
-  } catch (error: any) {
-    message.error(error?.message || '删除失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     historyDeleting.value = { ...historyDeleting.value, [id]: false };
   }

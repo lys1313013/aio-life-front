@@ -124,7 +124,7 @@ const fetchPasswordForEdit = async (id: string) => {
     formState.value.salt = data.salt;
     formState.value.favorite = data.favorite || false;
   } catch {
-    message.error('获取密码详情失败');
+    // 全局拦截器已提示
     visible.value = false;
   } finally {
     loading.value = false;
@@ -167,6 +167,7 @@ const handleSubmit = async () => {
   }
 
   loading.value = true;
+  let data;
   try {
     // 如果没有盐值，前端自己生成
     if (!formState.value.salt) {
@@ -185,7 +186,7 @@ const handleSubmit = async () => {
       formState.value.salt,
     );
 
-    const data = {
+    data = {
       title: formState.value.title,
       website: formState.value.website,
       category: formState.value.category,
@@ -195,7 +196,14 @@ const handleSubmit = async () => {
       remark: encryptedRemark,
       favorite: formState.value.favorite,
     };
+  } catch {
+    // 本地加密失败
+    message.error(isEdit.value ? '更新失败' : '添加失败');
+    loading.value = false;
+    return;
+  }
 
+  try {
     if (isEdit.value && editId.value) {
       await updatePasswordApi(editId.value, data);
       message.success('更新成功');
@@ -207,7 +215,7 @@ const handleSubmit = async () => {
     visible.value = false;
     emit('success');
   } catch {
-    message.error(isEdit.value ? '更新失败' : '添加失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }

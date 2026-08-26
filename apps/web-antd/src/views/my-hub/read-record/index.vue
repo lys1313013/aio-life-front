@@ -11,7 +11,6 @@ import {
   Button,
   Empty,
   Input,
-  message,
   Modal,
   Select,
   Spin,
@@ -70,8 +69,8 @@ const loadData = async (isLoadMore = false) => {
     // 判断是否还有更多数据
     hasMore.value = records.value.length < totalCount;
   } catch (error) {
+    // 全局拦截器已提示
     console.error('Failed to load read records', error);
-    message.error('加载阅读记录失败');
   } finally {
     loading.value = false;
   }

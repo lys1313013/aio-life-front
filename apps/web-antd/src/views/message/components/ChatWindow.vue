@@ -74,7 +74,7 @@ const handleDeleteMessage = async () => {
     emit('delete', selectedMessage.value.id);
     deleteModalVisible.value = false;
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   } finally {
     deleteLoading.value = false;
   }

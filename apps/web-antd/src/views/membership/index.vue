@@ -246,7 +246,7 @@ const handleDelete = async (id: string) => {
     loadStats();
   } catch (error) {
     console.error('Failed to delete membership:', error);
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 

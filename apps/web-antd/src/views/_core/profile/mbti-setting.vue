@@ -136,7 +136,7 @@ const autoSaveResult = async () => {
     message.success('测试完成，结果已自动保存');
     historyList.value = await getMbtiHistory();
   } catch {
-    message.warning('测试完成，但自动保存失败，请点击下方按钮手动保存');
+    // 全局拦截器已提示
   }
 };
 
@@ -156,7 +156,7 @@ const handleSaveResult = async () => {
     message.success('保存成功');
     historyList.value = await getMbtiHistory();
   } catch {
-    message.error('保存失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -166,7 +166,7 @@ const handleViewHistory = async () => {
     historyList.value = await getMbtiHistory();
     historyVisible.value = true;
   } catch {
-    message.error('获取历史记录失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -193,7 +193,7 @@ const handleDelete = async (record: unknown) => {
       handleReset();
     }
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -214,7 +214,7 @@ const handleViewDetail = async (record: any) => {
       historyVisible.value = false;
     }
   } catch {
-    message.error('获取详情失败');
+    // 全局拦截器已提示
   }
 };
 

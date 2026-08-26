@@ -82,7 +82,7 @@ const fetchCategories = async () => {
     publicCategories.value = list;
   } catch (error) {
     console.error('Failed to fetch categories:', error);
-    message.error('获取分类列表失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -158,7 +158,7 @@ const handleDeleteCategory = async (record: any) => {
     fetchCategories();
   } catch (error) {
     console.error('Failed to delete category:', error);
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -171,7 +171,7 @@ const handleToggleEnable = async (record: any, checked: any) => {
     fetchCategories();
   } catch (error) {
     console.error('Failed to toggle enable:', error);
-    message.error('操作失败');
+    // 全局拦截器已提示
   } finally {
     loadingCategoryId.value = null;
   }

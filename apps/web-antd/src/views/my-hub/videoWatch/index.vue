@@ -286,8 +286,8 @@ export default {
         message.success('删除成功');
         await this.query();
       } catch (error) {
+        // 全局拦截器已提示
         console.error('删除失败:', error);
-        message.error('删除失败');
       }
     },
 

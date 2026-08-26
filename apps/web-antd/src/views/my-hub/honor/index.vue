@@ -262,8 +262,8 @@ const handleDelete = async (id: number) => {
     message.success('删除成功');
     loadData();
   } catch (error) {
+    // 全局拦截器已提示
     console.error('Failed to delete honor:', error);
-    message.error('删除失败');
   }
 };
 

@@ -247,7 +247,7 @@ const handleNodeDblClick = async (node: any) => {
   try {
     selectedPersonDetail.value = await getPerson(node.id);
   } catch {
-    message.error('获取详情失败');
+    // 全局拦截器已提示
     drawerVisible.value = false;
   } finally {
     detailLoading.value = false;
@@ -369,7 +369,7 @@ const handlePersonSubmit = async () => {
       selectedPersonDetail.value = await getPerson(editingPersonId.value);
     }
   } catch {
-    message.error('保存失败');
+    // 全局拦截器已提示
   } finally {
     personSubmitLoading.value = false;
   }
@@ -383,7 +383,7 @@ const handleDeletePerson = async (id: string) => {
     selectedPersonDetail.value = null;
     await fetchGraphData();
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -445,7 +445,7 @@ const handleRelationshipSubmit = async () => {
       );
     }
   } catch {
-    message.error('保存失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -464,7 +464,7 @@ const handleDeleteRelationship = async (targetId: string) => {
       );
     }
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 

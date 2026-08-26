@@ -6,7 +6,6 @@ import {
   Button,
   Empty,
   Input,
-  message,
   Modal,
   Spin,
   Switch,
@@ -134,7 +133,7 @@ const loadData = async (loadMore = false) => {
   } catch (error) {
     if (currentRequest === requestSerial) {
       console.error('获取关联数据失败', error);
-      message.error('加载关联记录失败，请稍后重试');
+      // 全局拦截器已提示
     }
   } finally {
     if (currentRequest === requestSerial) {

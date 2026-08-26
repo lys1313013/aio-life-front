@@ -119,7 +119,7 @@ const loadThoughts = async () => {
           new Date(b.createTime).getTime() - new Date(a.createTime).getTime(),
       );
   } catch {
-    message.error('加载失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }

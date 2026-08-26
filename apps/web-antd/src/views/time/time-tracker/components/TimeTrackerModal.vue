@@ -211,7 +211,7 @@ const handleSave = async (formData: TimeSlotFormData) => {
       }
     } catch (error) {
       console.error(error);
-      message.error('保存失败');
+      // 全局拦截器已提示
     } finally {
       loading.value = false;
     }
@@ -229,7 +229,7 @@ const handleDelete = async (slotId: string) => {
     emit('success', { action: 'delete', id: slotId });
   } catch (error) {
     console.error('删除失败:', error);
-    message.error('删除失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }

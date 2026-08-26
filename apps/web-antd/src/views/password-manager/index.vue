@@ -140,7 +140,7 @@ const fetchPasswords = async () => {
       await decryptPasswords();
     }
   } catch {
-    message.error('获取密码列表失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -312,7 +312,7 @@ const handleToggleFavorite = async (item: DecryptedPassword) => {
     item.favorite = !item.favorite;
     message.success(item.favorite ? '已添加收藏' : '已取消收藏');
   } catch {
-    message.error('操作失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -322,7 +322,7 @@ const handleDelete = async (id: string) => {
     message.success('删除成功');
     fetchPasswords();
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 

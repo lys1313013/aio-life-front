@@ -127,7 +127,7 @@ const handlePaste = async (e: ClipboardEvent) => {
         }
         message.success('上传成功');
       } catch {
-        message.error('上传失败');
+        // 全局拦截器已提示
       } finally {
         uploading.value = false;
       }

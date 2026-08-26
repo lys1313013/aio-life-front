@@ -527,7 +527,7 @@ const loadData = async () => {
     }
   } catch (error) {
     console.error('加载数据失败:', error);
-    message.error('加载数据失败');
+    // 全局拦截器已提示
     timeSlots.value = [];
     previousPeriodTimeSlots.value = [];
   } finally {
@@ -563,7 +563,7 @@ const confirmResetData = async () => {
     message.success('数据删除成功');
   } catch (error) {
     console.error('删除数据失败:', error);
-    message.error('删除数据失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
     showDeleteConfirmModal.value = false;

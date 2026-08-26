@@ -203,7 +203,7 @@ const loadData = async () => {
     goals.value = res;
   } catch (error) {
     console.error('Failed to load goals:', error);
-    message.error('加载目标列表失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -287,7 +287,7 @@ const handleDelete = async (id: number) => {
         loadData();
       } catch (error) {
         console.error('Failed to delete goal:', error);
-        message.error('删除失败');
+        // 全局拦截器已提示
       }
     },
   });

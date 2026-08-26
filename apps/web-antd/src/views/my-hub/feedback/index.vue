@@ -167,8 +167,8 @@ const loadDetail = async (id: string) => {
       await preloadImages(allItems);
     }
   } catch (error) {
+    // 全局拦截器已提示
     console.error('加载反馈详情失败', error);
-    message.error('加载详情失败');
   } finally {
     detailLoading.value = false;
   }
@@ -213,8 +213,8 @@ const handleCancel = async (id: string) => {
       drawerVisible.value = false;
     }
   } catch (error) {
+    // 全局拦截器已提示
     console.error('撤销失败', error);
-    message.error('撤销失败');
   }
 };
 
@@ -242,8 +242,8 @@ const handleAddComment = async () => {
     // 刷新详情
     await loadDetail(detail.value.id);
   } catch (error) {
+    // 全局拦截器已提示
     console.error('评论失败', error);
-    message.error('评论失败');
   } finally {
     commentLoading.value = false;
   }

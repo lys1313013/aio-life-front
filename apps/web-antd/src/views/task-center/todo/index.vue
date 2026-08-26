@@ -180,12 +180,7 @@ const onDragEnd = async (event: any) => {
     sortOrder: index + 1,
   }));
 
-  const hide = message.loading('更新排序中...', 0);
-  try {
-    await reSortTask(sortedTasks);
-  } finally {
-    hide();
-  }
+  await reSortTask(sortedTasks);
 };
 
 const onColumnDragEnd = async () => {
@@ -193,12 +188,7 @@ const onColumnDragEnd = async () => {
     id: col.id,
     sortOrder: index + 1,
   }));
-  const hide = message.loading('更新排序中...', 0);
-  try {
-    await reSortColumn(sortedData);
-  } finally {
-    hide();
-  }
+  await reSortColumn(sortedData);
 };
 
 // --- 任务编辑抽屉 ---

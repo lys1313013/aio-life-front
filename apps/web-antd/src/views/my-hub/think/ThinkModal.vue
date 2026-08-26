@@ -115,7 +115,7 @@ async function loadThought(id: number | string) {
           ];
     currentEditId.value = id;
   } catch {
-    message.error('加载闪念失败');
+    // 全局拦截器已提示
     close();
   } finally {
     loading.value = false;
@@ -211,7 +211,7 @@ async function save() {
     close();
     message.success('保存成功');
   } catch {
-    message.error('保存失败');
+    // 全局拦截器已提示
   } finally {
     saving.value = false;
   }
@@ -225,7 +225,7 @@ async function handleDelete() {
     close();
     message.success('删除成功');
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 }
 

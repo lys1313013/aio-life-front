@@ -78,7 +78,7 @@ const fetchData = async () => {
     categories.value = categoriesData;
     stats.value = statsData;
   } catch {
-    message.error('加载失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -100,7 +100,7 @@ const handleDelete = async (id: number) => {
     message.success('删除成功');
     await fetchData();
   } catch {
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -114,7 +114,7 @@ const handleSave = async (data: WardrobeItemReq) => {
     formVisible.value = false;
     await fetchData();
   } catch {
-    message.error('保存失败');
+    // 全局拦截器已提示
   }
 };
 

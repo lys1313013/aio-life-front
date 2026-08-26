@@ -91,8 +91,8 @@ const handleSave = async (key: string) => {
     // 刷新
     await loadConfigs();
   } catch (error) {
+    // 全局拦截器已提示
     console.error('保存失败', error);
-    message.error('保存失败');
   } finally {
     savingKey.value = null;
   }

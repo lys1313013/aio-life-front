@@ -130,8 +130,8 @@ const load = async () => {
     if (isAllExpanded.value) {
       expandAll();
     }
-  } catch (error: any) {
-    message.error(error?.message || '加载菜单失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -171,8 +171,8 @@ const loadRoleOptions = async () => {
   try {
     const roles = await getMenuRoleOptionsApi();
     roleOptions.value = (roles || []).map((r) => ({ label: r, value: r }));
-  } catch (error: any) {
-    message.error(error?.message || '加载角色失败');
+  } catch {
+    // 全局拦截器已提示
     roleOptions.value = [
       { label: 'admin', value: 'admin' },
       { label: 'user', value: 'user' },
@@ -291,8 +291,8 @@ const save = async () => {
     editVisible.value = false;
     await load();
     await refreshAccessibleMenus();
-  } catch (error: any) {
-    message.error(error?.message || '保存失败');
+  } catch {
+    // 全局拦截器已提示
   } finally {
     saving.value = false;
   }
@@ -306,8 +306,8 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
     message.success(status === 1 ? '已启用' : '已禁用');
     await load();
     await refreshAccessibleMenus();
-  } catch (error: any) {
-    message.error(error?.message || '更新状态失败');
+  } catch {
+    // 全局拦截器已提示
     await load();
   } finally {
     statusChanging.value = { ...statusChanging.value, [id]: false };
@@ -392,8 +392,8 @@ const initSortable = () => {
             await Promise.all(updates);
             await load();
             await refreshAccessibleMenus();
-          } catch (error: any) {
-            message.error(error?.message || '排序更新失败');
+          } catch {
+            // 全局拦截器已提示
             await load();
           } finally {
             loading.value = false;
@@ -418,8 +418,8 @@ const handleDelete = async (row: Record<string, any>) => {
     message.success('删除成功');
     await load();
     await refreshAccessibleMenus();
-  } catch (error: any) {
-    message.error(error?.message || '删除失败');
+  } catch {
+    // 全局拦截器已提示
   }
 };
 

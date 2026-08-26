@@ -13,7 +13,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 关键行为：
 - 请求头自动带 `Authorization: Bearer <token>` 和 `Accept-Language`
 - token 过期自动刷新，失败后触发 re-authenticate（弹窗或直接登出）
-- 全局错误拦截器会 `message.error` 提示，但 `/dashboard/card` 和 `/message/unread-count` 两个接口**静默忽略错误**
+- **全局错误拦截器自动提示**：`errorMessageResponseInterceptor` 对任何请求失败（`rscode != '0'` 或 HTTP 错误）自动 `message.error` 弹出后端错误信息（`result` 字段），无需业务代码再提示
+  - 静默例外：`/dashboard/card`、`/message/unread-count` 两个接口及 `rscode === '2001'`（二级锁，由二级锁弹窗处理）
+  - **禁止在 catch 里对 requestClient 的 API 调用再写 `message.error('删除失败')` 之类提示**，否则会与全局提示同时弹出两次。catch 块只需做状态回滚/重置等逻辑，或留空
+  - catch 里仅允许对**非 API 错误**提示：本地校验、加解密、剪贴板、URL 解析等不走 requestClient 的异常
+  - 同一个 try 块混合本地逻辑和 API 调用时，应拆分 try/catch，避免一个 catch 承接两类异常
 - `baseRequestClient` 是未经拦截器包装的裸客户端，仅在需要原始响应时使用
 
 ### API 层编码模式

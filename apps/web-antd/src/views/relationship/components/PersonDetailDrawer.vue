@@ -34,7 +34,7 @@ const handleDeletePerson = async (id: string) => {
     emit('update:open', false);
     emit('refresh');
   } catch (error) {
-    message.error('删除失败');
+    // 全局拦截器已提示
     console.error(error);
   } finally {
     deleteLoading.value = false;
@@ -52,7 +52,7 @@ const handleDeleteRelationship = async (targetId: string) => {
     message.success('删除成功');
     emit('refresh'); // 触发父组件重新获取详情和图谱
   } catch (error) {
-    message.error('删除失败');
+    // 全局拦截器已提示
     console.error(error);
   }
 };

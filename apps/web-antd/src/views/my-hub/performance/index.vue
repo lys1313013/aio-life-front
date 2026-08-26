@@ -6,7 +6,7 @@ import {
   EnvironmentOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
-import { Empty, message, Modal, Spin } from 'ant-design-vue';
+import { Empty, Modal, Spin } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
 import { queryPerformances } from '#/api/core/performance';
@@ -57,8 +57,8 @@ const fetchData = async () => {
     });
     dataSource.value = res.items || [];
   } catch (error) {
+    // 全局拦截器已提示
     console.error('加载数据失败:', error);
-    message.error('加载数据失败');
   } finally {
     loading.value = false;
   }

@@ -178,7 +178,7 @@ const fetchCategories = async () => {
     mergedCategories.value = merged;
   } catch (error) {
     console.error('Failed to fetch categories:', error);
-    message.error('获取分类列表失败');
+    // 全局拦截器已提示
   } finally {
     loading.value = false;
   }
@@ -255,7 +255,7 @@ const handleHide = async (record: any) => {
     message.success('已隐藏');
     fetchCategories();
   } catch {
-    message.error('隐藏失败');
+    // 全局拦截器已提示
   } finally {
     loadingCategoryId.value = null;
   }
@@ -271,7 +271,7 @@ const handleToggleTrackTime = async (record: any, checked: any) => {
     } as TimeTrackerCategoryEntity);
     fetchCategories();
   } catch {
-    message.error('操作失败');
+    // 全局拦截器已提示
   } finally {
     loadingCategoryId.value = null;
   }
@@ -288,7 +288,7 @@ const handleUnhide = async (record: any) => {
     message.success('已恢复');
     fetchCategories();
   } catch {
-    message.error('恢复失败');
+    // 全局拦截器已提示
   } finally {
     loadingCategoryId.value = null;
   }
@@ -301,7 +301,7 @@ const handleDelete = async (record: any) => {
     fetchCategories();
   } catch (error) {
     console.error('Failed to delete category:', error);
-    message.error('删除失败');
+    // 全局拦截器已提示
   }
 };
 
@@ -368,7 +368,7 @@ const initSortable = () => {
           await reSortCategories(sortData);
           fetchCategories();
         } catch {
-          message.error('排序失败');
+          // 全局拦截器已提示
         }
       },
     });

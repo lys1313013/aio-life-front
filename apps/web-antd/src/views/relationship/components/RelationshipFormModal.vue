@@ -78,7 +78,7 @@ const handleRelationshipSubmit = async () => {
     emit('success');
     emit('update:open', false);
   } catch (error) {
-    message.error('保存失败');
+    // 全局拦截器已提示
     console.error(error);
   } finally {
     submitLoading.value = false;

@@ -198,8 +198,8 @@ const openDetail = async (row: any) => {
       }
     }
   } catch (error) {
+    // 全局拦截器已提示
     console.error('加载详情失败', error);
-    message.error('加载详情失败');
   } finally {
     detailLoading.value = false;
   }
@@ -223,8 +223,8 @@ const handleReply = async () => {
     // 刷新详情
     await openDetail(detail.value);
   } catch (error) {
+    // 全局拦截器已提示
     console.error('回复失败', error);
-    message.error('回复失败');
   } finally {
     replyLoading.value = false;
   }
@@ -243,8 +243,8 @@ const handleChangeStatus = async () => {
     detail.value.status = newStatus.value;
     gridApi.query();
   } catch (error) {
+    // 全局拦截器已提示
     console.error('状态更新失败', error);
-    message.error('状态更新失败');
   } finally {
     statusLoading.value = false;
   }
