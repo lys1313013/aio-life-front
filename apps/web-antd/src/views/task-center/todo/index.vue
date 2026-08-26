@@ -688,18 +688,10 @@ const vFocus = {
   border: none;
   border-radius: 10px;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
-  transition:
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
 }
 
 .kanban-task:active {
   cursor: grabbing;
-}
-
-.kanban-task:hover {
-  box-shadow: 0 6px 16px 0 rgb(0 0 0 / 8%);
-  transform: translateY(-1px);
 }
 
 .task-header {
