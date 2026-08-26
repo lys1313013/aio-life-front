@@ -576,7 +576,7 @@ const vFocus = {
 
 /* 横向滚动条 */
 .kanban-board::-webkit-scrollbar {
-  height: 8px;
+  height: 6px;
 }
 
 .kanban-board::-webkit-scrollbar-track {
@@ -595,21 +595,21 @@ const vFocus = {
 .columns-container {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+  align-items: stretch;
   width: max-content;
   min-width: 100%;
-  min-height: 100%;
+  height: 100%;
 }
 
-/* 飞书式浅灰圆角列 */
+/* 飞书式浅灰圆角列：撑满全高 */
 .kanban-column {
   display: flex;
   flex: 0 0 296px;
   flex-direction: column;
   width: 296px;
-  max-height: 100%;
+  height: 100%;
   padding: 4px 8px 8px;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .column-header {
@@ -676,20 +676,21 @@ const vFocus = {
   border-radius: 2px;
 }
 
-/* 任务卡片 */
+/* 任务卡片：无边框，轻阴影 */
 .kanban-task {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px;
+  padding: 12px 14px;
   margin-bottom: 8px;
   cursor: grab;
   background: v-bind('token.colorBgElevated');
-  border: 1px solid v-bind('token.colorBorderSecondary');
-  border-radius: 8px;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
   transition:
-    box-shadow 0.15s ease,
-    border-color 0.15s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
 .kanban-task:active {
@@ -697,8 +698,8 @@ const vFocus = {
 }
 
 .kanban-task:hover {
-  border-color: v-bind('token.colorBorder');
-  box-shadow: 0 4px 12px 0 rgb(0 0 0 / 8%);
+  box-shadow: 0 6px 16px 0 rgb(0 0 0 / 8%);
+  transform: translateY(-1px);
 }
 
 .task-header {
@@ -802,12 +803,13 @@ const vFocus = {
 }
 
 .quick-add-editor {
-  padding: 8px;
+  padding: 10px;
   margin-top: 2px;
   background: v-bind('token.colorBgElevated');
-  border: 1px solid v-bind('token.colorPrimaryBorder');
-  border-radius: 8px;
-  box-shadow: 0 2px 8px 0 rgb(0 0 0 / 6%);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1.5px v-bind('token.colorPrimaryBorder'),
+    0 4px 12px 0 rgb(0 0 0 / 8%);
 }
 
 .quick-add-input {
@@ -827,13 +829,14 @@ const vFocus = {
   flex: 0 0 296px;
   gap: 6px;
   align-items: center;
+  align-self: flex-start;
   width: 296px;
   padding: 10px 12px;
   font-size: 13px;
-  color: v-bind('token.colorTextSecondary');
+  color: v-bind('token.colorTextTertiary');
   cursor: pointer;
-  border: 1px dashed v-bind('token.colorBorder');
-  border-radius: 12px;
+  border: 1px dashed v-bind('token.colorBorderSecondary');
+  border-radius: 14px;
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -848,10 +851,11 @@ const vFocus = {
 
 .add-column-editor {
   flex: 0 0 296px;
+  align-self: flex-start;
   width: 296px;
   padding: 10px;
   background: v-bind('token.colorFillAlter');
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 /* 编辑列弹窗 */
@@ -897,7 +901,7 @@ const vFocus = {
 .todo-task-ghost {
   background: rgb(128 128 128 / 10%) !important;
   border: 1.5px dashed rgb(128 128 128 / 45%) !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
   box-shadow: none !important;
   opacity: 1 !important;
 }
@@ -908,7 +912,7 @@ const vFocus = {
 
 .todo-task-drag {
   background: var(--ant-color-bg-elevated, #fff);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: 0 12px 32px rgb(0 0 0 / 18%) !important;
   opacity: 0.96;
   transform: rotate(2.5deg);
@@ -917,7 +921,7 @@ const vFocus = {
 .todo-column-ghost {
   background: rgb(128 128 128 / 8%) !important;
   border: 1.5px dashed rgb(128 128 128 / 45%) !important;
-  border-radius: 12px !important;
+  border-radius: 14px !important;
   opacity: 1 !important;
 }
 
@@ -926,7 +930,7 @@ const vFocus = {
 }
 
 .todo-column-drag {
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 16px 40px rgb(0 0 0 / 20%) !important;
   opacity: 0.96;
   transform: rotate(1.5deg);
