@@ -10,35 +10,18 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { DeleteOutlined } from '@ant-design/icons-vue';
 import { Button, Card, message, Popconfirm } from 'ant-design-vue';
 import JSZip from 'jszip';
-import * as XLSX from 'xlsx';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { saveBatch } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
 
-interface Transaction {
-  transactionId: string;
-  merchantOrderNo: string;
-  createdTime: string;
-  expTime: string;
-  lastModifiedTime: string;
-  source: string;
-  type: string;
-  transactionType?: string; // 交易类型字段
-  counterparty: string;
-  counterpartyAcct: string; // 对方账号字段
-  expDesc: string;
-  amt: number;
-  flow: string;
-  transactionStatus: string;
-  serviceFee: number;
-  successfulRefund: number;
-  remark: string;
-  fundStatus: string;
-  expTypeId?: string; // 支出类型字段
-  transactionAmt?: number; // 交易金额字段
-  payTypeId: string; // 支付类型ID，关联字典表
-}
+import type { ParseContext, Transaction } from './importParser';
+
+import {
+  parseCSV,
+  parseMobileCSV,
+  parseWechatExcel,
+} from './importParser';
 
 // 表格行类型
 type RowType = Transaction;
@@ -160,8 +143,8 @@ const handleFile = async (file: File) => {
         // 检测文件类型并解析CSV内容
         const isMobileCSV = file.name.includes('支付宝交易明细');
         const result = isMobileCSV
-          ? parseMobileCSV(csvText)
-          : parseCSV(csvText);
+          ? parseMobileCSV(csvText, getParseContext())
+          : parseCSV(csvText, getParseContext());
         parsedTransactions = result.transactions;
         fileMinDate = result.minDate;
         fileMaxDate = result.maxDate;
@@ -172,8 +155,8 @@ const handleFile = async (file: File) => {
         // 检测文件类型并解析CSV内容
         const isMobileCSV = file.name.includes('支付宝交易明细');
         const result = isMobileCSV
-          ? parseMobileCSV(csvText)
-          : parseCSV(csvText);
+          ? parseMobileCSV(csvText, getParseContext())
+          : parseCSV(csvText, getParseContext());
         parsedTransactions = result.transactions;
         fileMinDate = result.minDate;
         fileMaxDate = result.maxDate;
@@ -190,8 +173,8 @@ const handleFile = async (file: File) => {
         // 检测文件类型并解析CSV内容
         const isMobileCSV = file.name.includes('支付宝交易明细');
         const result = isMobileCSV
-          ? parseMobileCSV(csvText)
-          : parseCSV(csvText);
+          ? parseMobileCSV(csvText, getParseContext())
+          : parseCSV(csvText, getParseContext());
         parsedTransactions = result.transactions;
         fileMinDate = result.minDate;
         fileMaxDate = result.maxDate;
@@ -202,8 +185,8 @@ const handleFile = async (file: File) => {
         // 检测文件类型并解析CSV内容
         const isMobileCSV = file.name.includes('支付宝交易明细');
         const result = isMobileCSV
-          ? parseMobileCSV(csvText)
-          : parseCSV(csvText);
+          ? parseMobileCSV(csvText, getParseContext())
+          : parseCSV(csvText, getParseContext());
         parsedTransactions = result.transactions;
         fileMinDate = result.minDate;
         fileMaxDate = result.maxDate;
@@ -214,7 +197,7 @@ const handleFile = async (file: File) => {
       // 检测是否为微信账单
       const isWechatBill = file.name.includes('微信支付账单');
       if (isWechatBill) {
-        const result = parseWechatExcel(arrayBuffer);
+        const result = parseWechatExcel(arrayBuffer, getParseContext());
         parsedTransactions = result.transactions;
         fileMinDate = result.minDate;
         fileMaxDate = result.maxDate;
@@ -273,444 +256,12 @@ const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
   });
 };
 
-interface ParseResult {
-  transactions: Transaction[];
-  minDate?: Date;
-  maxDate?: Date;
-}
-
-// 解析CSV内容
-const parseCSV = (csvText: string): ParseResult => {
-  const lines = csvText.split('\n');
-  const transactions: Transaction[] = [];
-  const validTimes: Date[] = [];
-
-  // 查找支付宝的 payTypeId
-  let alipayTypeId = '';
-  const alipayOption = payTypeOptions.value.find(
-    (o) => o.dictValue === '1' || o.label === '支付宝',
-  );
-  if (alipayOption) {
-    alipayTypeId = alipayOption.id;
-  }
-
-  // 查找数据行开始位置（跳过标题和元数据）
-  let dataStartIndex = 0;
-  for (const [i, line] of lines.entries()) {
-    if (line.includes('交易号')) {
-      dataStartIndex = i + 1;
-      break;
-    }
-  }
-
-  // 解析数据行
-  for (let i = dataStartIndex; i < lines.length; i++) {
-    const lineStr = lines[i];
-    const line = lineStr ? lineStr.trim() : '';
-
-    // 跳过空行和汇总行
-    if (
-      !line ||
-      line.startsWith('共') ||
-      line.includes('导出时间') ||
-      line.includes('----')
-    ) {
-      continue;
-    }
-
-    // 简单的CSV解析
-    const columns = line.split(',').map((col) => col.trim());
-
-    if (columns.length >= 15) {
-      // 收集所有记录的时间（包含收入和支出）
-      const createdTime = columns[2] || '';
-      const expTime = columns[3] || '';
-      const timeStr = expTime || createdTime;
-      if (timeStr) {
-        const d = new Date(timeStr);
-        if (!isNaN(d.getTime())) {
-          validTimes.push(d);
-        }
-      }
-
-      const transaction = {
-        transactionId: columns[0] || '', // 交易号
-        merchantOrderNo: columns[1] || '', // 商户订单号
-        createdTime: columns[2] || '',
-        expTime: columns[3] || '',
-        lastModifiedTime: columns[4] || '',
-        source: columns[5] || '',
-        type: columns[6] || '',
-        counterparty: columns[7] || '',
-        counterpartyAcct: '', // 电脑端CSV没有对方账号字段，设为空
-        expDesc: columns[8] || '',
-        amt: Number.parseFloat(columns[9] || '0') || 0,
-        flow: columns[10] || '', // 收支方向
-        transactionStatus: columns[11] || '',
-        serviceFee: Number.parseFloat(columns[12] || '0') || 0,
-        successfulRefund: Number.parseFloat(columns[13] || '0') || 0,
-        remark: columns[14] || '',
-        fundStatus: columns[15] ? columns[15] : '',
-        expTypeId: defaultExpTypeId.value, // 初始化支出类型字段
-        payTypeId: alipayTypeId, // 支付宝支付类型
-      };
-
-      // 只保留"支出"的数据，收入数据不处理（"不计收支"，"收入"不处理）
-      // 过滤出状态为"成功"的支出记录
-      if (
-        transaction.flow === '支出' &&
-        transaction.transactionStatus === '交易成功'
-      ) {
-        transactions.push(transaction);
-      }
-    }
-  }
-
-  let maxDate, minDate;
-  if (validTimes.length > 0) {
-    minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
-    maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
-  }
-
-  return { transactions, minDate, maxDate };
-};
-
-// 将Excel日期序列号转换为日期字符串
-const excelDateToString = (excelDate: any): string => {
-  if (typeof excelDate === 'number' && excelDate > 0) {
-    const date = XLSX.SSF.parse_date_code(excelDate);
-    if (date) {
-      const year = date.y;
-      const month = String(date.m).padStart(2, '0');
-      const day = String(date.d).padStart(2, '0');
-      const hours = String(date.H).padStart(2, '0');
-      const minutes = String(date.M).padStart(2, '0');
-      const seconds = String(date.S).padStart(2, '0');
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-    }
-  }
-  return String(excelDate || '');
-};
-
-// 解析微信账单Excel内容
-const parseWechatExcel = (arrayBuffer: ArrayBuffer): ParseResult => {
-  const transactions: Transaction[] = [];
-  const validTimes: Date[] = [];
-
-  // 查找微信的 payTypeId
-  let wechatTypeId = '';
-  const wechatOption = payTypeOptions.value.find(
-    (o) => o.dictValue === '2' || o.label === '微信',
-  );
-  if (wechatOption) {
-    wechatTypeId = wechatOption.id;
-  }
-
-  // 解析Excel文件
-  const workbook = XLSX.read(arrayBuffer);
-  if (workbook.SheetNames.length === 0) {
-    throw new Error('Excel文件中未找到工作表');
-  }
-  const firstSheetName = workbook.SheetNames[0] as string;
-  const worksheet = workbook.Sheets[firstSheetName];
-  if (!worksheet) {
-    throw new Error('Excel文件中未找到工作表数据');
-  }
-
-  // 将工作表转换为JSON数据
-  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-  // 查找数据行开始位置
-  let dataStartIndex = -1;
-  let headerRow: string[] = [];
-  for (const [i, jsonDatum] of jsonData.entries()) {
-    const row = jsonDatum as any[];
-    if (row.length > 0 && String(row[0]).includes('交易时间')) {
-      dataStartIndex = i + 1;
-      headerRow = row.map((cell) => String(cell || ''));
-      break;
-    }
-  }
-
-  if (dataStartIndex === -1) {
-    throw new Error('未找到微信账单数据行');
-  }
-
-  // 建立列索引映射，增强健壮性
-  const columnIndex = {
-    transactionTime: headerRow.findIndex((h) => h.includes('交易时间')),
-    transactionType: headerRow.findIndex((h) => h.includes('交易类型')),
-    counterparty: headerRow.findIndex((h) => h.includes('交易对方')),
-    goods: headerRow.findIndex((h) => h.includes('商品')),
-    flow: headerRow.findIndex((h) => h.includes('收/支')),
-    amount: headerRow.findIndex((h) => h.includes('金额')),
-    paymentMethod: headerRow.findIndex((h) => h.includes('支付方式')),
-    transactionStatus: headerRow.findIndex((h) => h.includes('当前状态')),
-    transactionId: headerRow.findIndex((h) => h.includes('交易单号')),
-    merchantOrderNo: headerRow.findIndex((h) => h.includes('商户单号')),
-    remark: headerRow.findIndex((h) => h.includes('备注')),
-  };
-
-  // 辅助函数：安全获取行值
-  const getRowValue = (row: any[], index: number): any => {
-    return index >= 0 && index < row.length ? row[index] : undefined;
-  };
-
-  // 解析数据行
-  for (let i = dataStartIndex; i < jsonData.length; i++) {
-    const row = jsonData[i] as any[];
-
-    // 跳过空行
-    if (!row || row.length === 0) {
-      continue;
-    }
-
-    // 跳过汇总行和说明行
-    const firstCell = String(row[0] || '');
-    if (
-      firstCell.includes('收入') ||
-      firstCell.includes('支出') ||
-      firstCell.includes('中性') ||
-      firstCell.includes('注：') ||
-      firstCell.includes('共') ||
-      firstCell.includes('----------------------') ||
-      firstCell.includes('导出时间') ||
-      firstCell.includes('微信昵称') ||
-      firstCell.includes('起始时间') ||
-      firstCell.includes('导出类型')
-    ) {
-      continue;
-    }
-
-    // 获取各字段值
-    const transactionTimeRaw = getRowValue(row, columnIndex.transactionTime);
-    const transactionTime = excelDateToString(transactionTimeRaw);
-
-    if (transactionTime) {
-      const d = new Date(transactionTime);
-      if (!isNaN(d.getTime())) {
-        validTimes.push(d);
-      }
-    }
-
-    const transactionType = String(
-      getRowValue(row, columnIndex.transactionType) || '',
-    );
-    const counterparty = String(
-      getRowValue(row, columnIndex.counterparty) || '',
-    );
-    const goods = String(getRowValue(row, columnIndex.goods) || '');
-    const flow = String(getRowValue(row, columnIndex.flow) || '');
-    const amountStr = String(getRowValue(row, columnIndex.amount) || '');
-    const paymentMethod = String(
-      getRowValue(row, columnIndex.paymentMethod) || '',
-    );
-    const transactionStatus = String(
-      getRowValue(row, columnIndex.transactionStatus) || '',
-    );
-    const transactionId = String(
-      getRowValue(row, columnIndex.transactionId) || '',
-    );
-    const merchantOrderNo = String(
-      getRowValue(row, columnIndex.merchantOrderNo) || '',
-    );
-    const remark = String(getRowValue(row, columnIndex.remark) || '');
-
-    // 处理金额，去除¥符号和其他非数字字符
-    const amount =
-      Number.parseFloat(amountStr.replaceAll(/[^0-9.-]/g, '')) || 0;
-
-    // 只处理支出记录
-    if (flow === '支出') {
-      const transaction: Transaction = {
-        transactionId: transactionId || '',
-        merchantOrderNo: merchantOrderNo || '',
-        createdTime: transactionTime || '',
-        expTime: transactionTime || '',
-        lastModifiedTime: transactionTime || '',
-        source: '微信支付',
-        type: transactionType || '',
-        transactionType: transactionType || '',
-        counterparty: counterparty || '',
-        counterpartyAcct: '',
-        expDesc: goods || '',
-        amt: amount,
-        transactionAmt: amount,
-        flow: flow || '',
-        transactionStatus: transactionStatus || '',
-        serviceFee: 0,
-        successfulRefund: 0,
-        remark: remark || '',
-        fundStatus: paymentMethod || '',
-        expTypeId: defaultExpTypeId.value, // 默认支出类型
-        payTypeId: wechatTypeId, // 微信支付类型
-      };
-
-      transactions.push(transaction);
-    }
-  }
-
-  let maxDate, minDate;
-  if (validTimes.length > 0) {
-    minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
-    maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
-  }
-
-  return { transactions, minDate, maxDate };
-};
-
-// 解析手机端CSV内容
-const parseMobileCSV = (csvText: string): ParseResult => {
-  const lines = csvText.split('\n');
-  const transactions: Transaction[] = [];
-  const validTimes: Date[] = [];
-
-  // 查找支付宝的 payTypeId
-  let alipayTypeId = '';
-  const alipayOption = payTypeOptions.value.find(
-    (o) => o.dictValue === '1' || o.label === '支付宝',
-  );
-  if (alipayOption) {
-    alipayTypeId = alipayOption.id;
-  }
-
-  // 查找数据行开始位置（跳过标题和元数据）
-  let dataStartIndex = 0;
-  let headerFound = false;
-
-  for (const [i, line] of lines.entries()) {
-    // 查找数据表头行
-    if (
-      line.includes(
-        '交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注',
-      )
-    ) {
-      dataStartIndex = i + 1;
-      headerFound = true;
-      break;
-    }
-  }
-
-  // 如果没有找到标准表头，尝试查找其他可能的表头格式
-  if (!headerFound) {
-    for (const [i, line] of lines.entries()) {
-      if (
-        line.includes('交易时间') &&
-        line.includes('交易分类') &&
-        line.includes('交易对方')
-      ) {
-        dataStartIndex = i + 1;
-        headerFound = true;
-        break;
-      }
-    }
-  }
-
-  // 解析数据行
-  for (let i = dataStartIndex; i < lines.length; i++) {
-    const lineStr = lines[i];
-    const line = lineStr ? lineStr.trim() : '';
-
-    // 跳过空行和汇总行
-    if (
-      !line ||
-      line.startsWith('共') ||
-      line.includes('导出时间') ||
-      line.includes('----') ||
-      line.includes('支付宝支付科技有限公司') ||
-      line.includes('特别提示')
-    ) {
-      continue;
-    }
-
-    // 手机端CSV解析 - 处理可能的引号包含逗号的情况
-    const columns: string[] = [];
-    let currentColumn = '';
-    let inQuotes = false;
-
-    for (const char of line) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        columns.push(currentColumn.trim());
-        currentColumn = '';
-      } else {
-        currentColumn += char;
-      }
-    }
-
-    // 添加最后一个列
-    if (currentColumn.trim()) {
-      columns.push(currentColumn.trim());
-    }
-
-    // 手机端CSV格式：交易时间,交易分类,交易对方,对方账号,商品说明,收/支,金额,收/付款方式,交易状态,交易订单号,商家订单号,备注
-    if (columns.length >= 12) {
-      // 收集所有记录的时间（包含收入和支出）
-      const timeStr = columns[0] || '';
-      if (timeStr) {
-        const d = new Date(timeStr);
-        if (!isNaN(d.getTime())) {
-          validTimes.push(d);
-        }
-      }
-
-      // 获取交易分类
-      const transactionType = columns[1] || '';
-
-      // 根据交易分类匹配dictOptions的label，获取对应的id
-      let matchedExpTypeId = defaultExpTypeId.value; // 默认值
-      if (transactionType && dictOptions.value.length > 0) {
-        const matchedOption = dictOptions.value.find(
-          (option) => option.label === transactionType,
-        );
-        if (matchedOption) {
-          matchedExpTypeId = matchedOption.id;
-        }
-      }
-
-      const transaction = {
-        transactionId: columns[9] || '', // 交易订单号
-        merchantOrderNo: columns[10] || '', // 商家订单号
-        createdTime: columns[0] || '', // 交易时间
-        expTime: columns[0] || '', // 交易时间作为支出时间
-        lastModifiedTime: columns[0] || '', // 交易时间作为最后修改时间
-        source: '支付宝手机端',
-        type: transactionType, // 交易分类
-        transactionType, // 交易分类
-        counterparty: columns[2] || '', // 交易对方
-        counterpartyAcct: columns[3] || '', // 对方账号
-        expDesc: columns[4] || '', // 商品说明
-        transactionAmt: Number.parseFloat(columns[6] || '0') || 0, // 交易金额
-        amt: Number.parseFloat(columns[6] || '0') || 0, // 金额
-        flow: columns[5] || '', // 收/支
-        transactionStatus: columns[8] || '', // 交易状态
-        serviceFee: 0, // 手机端没有服务费字段
-        successfulRefund: 0, // 手机端没有退款字段
-        remark: columns[11] || '', // 备注
-        fundStatus: columns[7] || '', // 收/付款方式作为资金状态
-        expTypeId: matchedExpTypeId, // 根据交易分类匹配的支出类型ID
-        payTypeId: alipayTypeId, // 支付宝支付类型
-      };
-
-      // 只保留"支出"且交易成功的数据，排除"交易关闭"等无效记录
-      if (
-        transaction.flow === '支出' &&
-        transaction.transactionStatus !== '交易关闭'
-      ) {
-        transactions.push(transaction);
-      }
-    }
-  }
-
-  let maxDate, minDate;
-  if (validTimes.length > 0) {
-    minDate = new Date(Math.min(...validTimes.map((d) => d.getTime())));
-    maxDate = new Date(Math.max(...validTimes.map((d) => d.getTime())));
-  }
-
-  return { transactions, minDate, maxDate };
-};
+// 组装解析上下文（解析时读取最新的字典数据）
+const getParseContext = (): ParseContext => ({
+  dictOptions: dictOptions.value,
+  payTypeOptions: payTypeOptions.value,
+  defaultExpTypeId: defaultExpTypeId.value,
+});
 
 // 计算类型统计数据
 const getCategoryStats = (transactions: Transaction[]) => {
