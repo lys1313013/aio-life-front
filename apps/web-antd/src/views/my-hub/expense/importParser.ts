@@ -71,10 +71,7 @@ function findPayTypeId(
   return option ? option.id : '';
 }
 
-function matchExpTypeId(
-  transactionType: string,
-  ctx: ParseContext,
-): string {
+function matchExpTypeId(transactionType: string, ctx: ParseContext): string {
   if (transactionType && ctx.dictOptions.length > 0) {
     const matched = ctx.dictOptions.find(
       (option) => option.label === transactionType,
@@ -112,6 +109,29 @@ function pushValidTime(timeStr: string, validTimes: Date[]): void {
  */
 function isExpenseRow(flow: string, transactionStatus: string): boolean {
   return flow === '支出' && transactionStatus !== '交易关闭';
+}
+
+/** 备注是否为空（微信账单中空备注显示为 "/"） */
+function isEmptyRemark(remark: string): boolean {
+  return !remark || remark === '/';
+}
+
+/** 部分退款时给空备注补充退款金额说明 */
+function refundRemark(successfulRefund: number): string {
+  return `退款￥${successfulRefund.toFixed(2)}`;
+}
+
+/** 判断是否为自动生成的退款备注（用于多次退款时刷新金额） */
+const AUTO_REFUND_REMARK_RE = /^退款￥[\d.]+$/;
+
+/** 退款后刷新备注：空备注/自动生成的备注 → 写入累计退款金额；用户原有备注不动 */
+function applyRefundRemark(t: Transaction): void {
+  if (
+    t.successfulRefund > 0 &&
+    (isEmptyRemark(t.remark) || AUTO_REFUND_REMARK_RE.test(t.remark))
+  ) {
+    t.remark = refundRemark(t.successfulRefund);
+  }
 }
 
 /**
@@ -156,6 +176,11 @@ function applyMobileRefunds(
       transactionAmt: -refundAmt,
       remark: refund.remark || `退款（原交易 ${originalId} 不在本账单内）`,
     });
+  }
+
+  // 统一刷新部分退款记录的备注（空备注才写，多次退款显示累计金额）
+  for (const t of transactions) {
+    applyRefundRemark(t);
   }
 }
 
@@ -237,6 +262,7 @@ export function parseCSV(csvText: string, ctx: ParseContext): ParseResult {
         transaction.flow === '支出' &&
         transaction.transactionStatus === '交易成功'
       ) {
+        applyRefundRemark(transaction);
         transactions.push(transaction);
       }
     }
@@ -412,9 +438,16 @@ export function excelDateToString(excelDate: any): string {
 
 /**
  * 解析微信支付账单 Excel。
- * 微信账单的退款体现在"当前状态"列（如"已全额退款"），金额列即实付，
- * 不像支付宝有独立的退款行，因此无需退款抵扣逻辑。
+ * 微信账单的退款体现在"当前状态"列，没有独立的退款行：
+ *  - "已全额退款" / "对方已退还"：钱已全部退回，支出不计入
+ *  - "已退款(￥18.00)" / "已退款￥11.73"（两种格式）：部分退款，从金额中扣减
  */
+
+/** 微信部分退款状态中的金额提取，兼容 已退款(￥X) 与 已退款￥X 两种格式 */
+const WECHAT_PARTIAL_REFUND_RE = /已退款[（(]?￥?([\d.]+)/;
+
+/** 微信全额退款/退回状态（支出不应计入） */
+const WECHAT_FULL_REFUND_STATUSES = new Set(['对方已退还', '已全额退款']);
 export function parseWechatExcel(
   arrayBuffer: ArrayBuffer,
   ctx: ParseContext,
@@ -535,6 +568,17 @@ export function parseWechatExcel(
 
     // 只处理支出记录
     if (flow === '支出') {
+      // 全额退款/转账退回：钱已全部退回，不计入支出
+      if (WECHAT_FULL_REFUND_STATUSES.has(transactionStatus)) {
+        continue;
+      }
+
+      // 部分退款：状态形如 已退款(￥18.00) / 已退款￥11.73，从金额中扣减
+      const refundMatch = WECHAT_PARTIAL_REFUND_RE.exec(transactionStatus);
+      const successfulRefund = refundMatch
+        ? Number.parseFloat(refundMatch[1] || '0') || 0
+        : 0;
+
       const transaction: Transaction = {
         transactionId: transactionId || '',
         merchantOrderNo: merchantOrderNo || '',
@@ -547,18 +591,19 @@ export function parseWechatExcel(
         counterparty: counterparty || '',
         counterpartyAcct: '',
         expDesc: goods || '',
-        amt: amount,
         transactionAmt: amount,
+        amt: round2(Math.max(0, amount - successfulRefund)),
         flow: flow || '',
         transactionStatus: transactionStatus || '',
         serviceFee: 0,
-        successfulRefund: 0,
+        successfulRefund,
         remark: remark || '',
         fundStatus: paymentMethod || '',
         expTypeId: ctx.defaultExpTypeId, // 默认支出类型
         payTypeId: wechatTypeId, // 微信支付类型
       };
 
+      applyRefundRemark(transaction);
       transactions.push(transaction);
     }
   }

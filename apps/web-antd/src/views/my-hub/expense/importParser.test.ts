@@ -1,8 +1,7 @@
-import * as XLSX from 'xlsx';
+import type { ParseContext } from './importParser';
 
 import { describe, expect, it } from 'vitest';
-
-import type { ParseContext } from './importParser';
+import * as XLSX from 'xlsx';
 
 import {
   parseCSV,
@@ -73,9 +72,9 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     // 餐饮 15.00 + Kimi 99.00（部分退款后 26.40），共 2 条
     expect(transactions).toHaveLength(2);
     expect(transactions.every((t) => t.flow === '支出')).toBe(true);
-    expect(
-      transactions.every((t) => t.transactionStatus !== '交易关闭'),
-    ).toBe(true);
+    expect(transactions.every((t) => t.transactionStatus !== '交易关闭')).toBe(
+      true,
+    );
   });
 
   it('部分退款：原交易仍交易成功时，记账金额 = 原金额 - 退款', () => {
@@ -87,6 +86,25 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     expect(kimi!.transactionAmt).toBe(99); // 交易金额保持原始值
     expect(kimi!.successfulRefund).toBe(72.6);
     expect(kimi!.amt).toBe(26.4); // 99 - 72.6，且不能是 26.400000000000006
+  });
+
+  it('部分退款且备注为空时，备注自动补充退款金额', () => {
+    const { transactions } = parseMobileCSV(REAL_CASE_CSV, ctx);
+    const kimi = transactions.find(
+      (t) => t.transactionId === '2026072023001421021407153653',
+    );
+    expect(kimi!.remark).toBe('退款￥72.60');
+  });
+
+  it('部分退款但原备注非空时，保留原备注', () => {
+    const csv = buildMobileCsv([
+      '2026-07-10 10:00:00,退款,某商家,a***@b.com,退款-部分,不计收支,20.00,余额宝,退款成功,2026071010001421021400000007_r1\t,m9\t,,',
+      '2026-07-09 10:00:00,购物消费,某商家,a***@b.com,商品,支出,100.00,余额宝,交易成功,2026071010001421021400000007\t,m9\t,送朋友生日礼物\t,',
+    ]);
+    const { transactions } = parseMobileCSV(csv, ctx);
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]!.amt).toBe(80);
+    expect(transactions[0]!.remark).toBe('送朋友生日礼物');
   });
 
   it('全额退款：原交易已关闭，退款行不产生任何记录', () => {
@@ -173,6 +191,16 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     expect(transactions[0]!.amt).toBe(70);
     expect(transactions[0]!.transactionAmt).toBe(100);
     expect(transactions[0]!.successfulRefund).toBe(30);
+  });
+
+  it('多次部分退款时，备注显示累计退款总额', () => {
+    const csv = buildMobileCsv([
+      '2026-07-01 10:00:00,退款,某商家,a***@b.com,退款-第一批,不计收支,10.00,余额宝,退款成功,2026070110001421021400000002_r1\t,m1\t,,',
+      '2026-07-05 10:00:00,退款,某商家,a***@b.com,退款-第二批,不计收支,20.00,余额宝,退款成功,2026070110001421021400000002_r2\t,m1\t,,',
+      '2026-07-01 09:00:00,购物消费,某商家,a***@b.com,大家电,支出,100.00,余额宝,交易成功,2026070110001421021400000002\t,m1\t,,',
+    ]);
+    const { transactions } = parseMobileCSV(csv, ctx);
+    expect(transactions[0]!.remark).toBe('退款￥30.00');
   });
 
   it('部分退款金额等于原金额时记账金额归零（不出现负数）', () => {
@@ -292,6 +320,8 @@ describe('parseCSV（支付宝电脑端）', () => {
     expect(transactions[0]!.transactionAmt).toBe(199);
     expect(transactions[0]!.successfulRefund).toBe(72.6);
     expect(transactions[0]!.amt).toBe(126.4);
+    // 备注为空时自动补充退款金额
+    expect(transactions[0]!.remark).toBe('退款￥72.60');
   });
 
   it('成功退款等于全额时记账金额归零（记录保留，不出现负数）', () => {
@@ -455,8 +485,157 @@ describe('parseWechatExcel（微信支付账单）', () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, sheet, 'Sheet1');
     const buffer = workbookToArrayBuffer(workbook);
-    expect(() => parseWechatExcel(buffer, ctx)).toThrow(
-      '未找到微信账单数据行',
-    );
+    expect(() => parseWechatExcel(buffer, ctx)).toThrow('未找到微信账单数据行');
+  });
+
+  it('全额退款（已全额退款/对方已退还）的支出不计入', () => {
+    const buffer = buildWechatExcel([
+      [
+        '2026-05-30 12:48:12',
+        '商户消费',
+        '美团',
+        '某餐厅',
+        '支出',
+        '126',
+        '某信用卡(2929)',
+        '已全额退款',
+        '4500000215202605304868491008',
+        'M2001',
+        '/',
+      ],
+      [
+        '2024-03-12 14:11:12',
+        '转账',
+        '某同事',
+        '转账备注:微信转账',
+        '支出',
+        '¥50.00',
+        '零钱',
+        '对方已退还',
+        '53010000414162202403121029144144',
+        'M2002',
+        '/',
+      ],
+      [
+        '2026-05-30 13:00:00',
+        '商户消费',
+        '某商店',
+        '午餐',
+        '支出',
+        '15',
+        '零钱',
+        '支付成功',
+        '4500000215202605304868491009',
+        'M2003',
+        '/',
+      ],
+    ]);
+    const { transactions } = parseWechatExcel(buffer, ctx);
+    // 只剩正常支付的一笔，全额退款/退还的两笔都排除
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]!.amt).toBe(15);
+  });
+
+  it('部分退款：已退款(￥X) 与 已退款￥X 两种格式都从金额中扣减', () => {
+    const buffer = buildWechatExcel([
+      [
+        '2024-12-17 20:45:37',
+        '商户消费',
+        '某餐厅',
+        '桌边付',
+        '支出',
+        '¥241.50',
+        '零钱',
+        '已退款(￥18.00)',
+        '4200002497202412176441972172',
+        'M3001',
+        '/',
+      ],
+      [
+        '2024-12-17 21:39:51',
+        '微信红包（群红包）',
+        '发出群红包',
+        '/',
+        '支出',
+        '¥25.00',
+        '零钱',
+        '已退款￥11.73',
+        '100003990124121700057311666412258117',
+        'M3002',
+        '/',
+      ],
+    ]);
+    const { transactions } = parseWechatExcel(buffer, ctx);
+    expect(transactions).toHaveLength(2);
+
+    const meal = transactions.find((t) => t.counterparty === '某餐厅');
+    expect(meal!.transactionAmt).toBe(241.5); // 交易金额保持原始值
+    expect(meal!.successfulRefund).toBe(18);
+    expect(meal!.amt).toBe(223.5); // 241.5 - 18
+    // 微信空备注为 "/"，视为空并补充退款金额
+    expect(meal!.remark).toBe('退款￥18.00');
+
+    const redpack = transactions.find((t) => t.counterparty === '发出群红包');
+    expect(redpack!.successfulRefund).toBe(11.73);
+    expect(redpack!.amt).toBe(13.27); // 25 - 11.73
+  });
+
+  it('兼容 Excel 数字序列号日期与纯数字金额（2026 年起的新导出格式）', () => {
+    const buffer = buildWechatExcel([
+      [
+        46_117.830_659_722_225, // 2026-04-05 19:56:09 的 Excel 序列号
+        '商户消费',
+        '某商店',
+        '饮料',
+        '支出',
+        10.8, // 纯数字金额，无 ¥ 前缀
+        '零钱',
+        '支付成功',
+        '4200000000000000000000000001',
+        'M4001',
+        '/',
+      ],
+    ]);
+    const { transactions, minDate, maxDate } = parseWechatExcel(buffer, ctx);
+    expect(transactions).toHaveLength(1);
+    expect(transactions[0]!.amt).toBe(10.8);
+    expect(transactions[0]!.expTime).toBe('2026-04-05 19:56:09');
+    expect(minDate).toEqual(new Date('2026-04-05 19:56:09'));
+    expect(maxDate).toEqual(new Date('2026-04-05 19:56:09'));
+  });
+
+  it('转账类支出的常见成功状态（对方已收钱/已转账）正常计入', () => {
+    const buffer = buildWechatExcel([
+      [
+        '2026-01-05 10:00:00',
+        '转账',
+        '某朋友',
+        '转账备注:新年快乐',
+        '支出',
+        '¥2000.00',
+        '零钱',
+        '对方已收钱',
+        '53010001283021202501283798724561',
+        'M5001',
+        '/',
+      ],
+      [
+        '2026-01-06 10:00:00',
+        '扫二维码付款',
+        '某商户',
+        '收款方备注:二维码收款',
+        '支出',
+        '¥198.00',
+        '零钱',
+        '已转账',
+        '53010001283021202501283798724562',
+        'M5002',
+        '/',
+      ],
+    ]);
+    const { transactions } = parseWechatExcel(buffer, ctx);
+    expect(transactions).toHaveLength(2);
+    const total = transactions.reduce((sum, t) => sum + t.amt, 0);
+    expect(total).toBe(2198);
   });
 });

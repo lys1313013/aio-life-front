@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { EchartsUIType } from '@vben/plugins/echarts';
 
+import type { ParseContext, Transaction } from './importParser';
+
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { computed, onMounted, ref } from 'vue';
@@ -15,13 +17,7 @@ import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { saveBatch } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
 
-import type { ParseContext, Transaction } from './importParser';
-
-import {
-  parseCSV,
-  parseMobileCSV,
-  parseWechatExcel,
-} from './importParser';
+import { parseCSV, parseMobileCSV, parseWechatExcel } from './importParser';
 
 // 表格行类型
 type RowType = Transaction;
