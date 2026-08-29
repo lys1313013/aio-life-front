@@ -6,7 +6,11 @@ import { onMounted, ref } from 'vue';
 
 import { IconPicker, Page } from '@vben/common-ui';
 
-import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import {
+  ColumnWidthOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -31,6 +35,7 @@ import {
   adminUpdate,
 } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import {
   CATEGORY_COLOR_PRESETS,
   extractIconSet,
@@ -284,7 +289,6 @@ const handleSave = async () => {
         <Grid>
           <!-- 表格顶部操作按钮 -->
           <template #toolbar-actions>
-            <Button type="primary" @click="handleAdd"> 添加基础值 </Button>
             <Button class="ml-auto" type="text" @click="openColumnConfig">
               <ColumnWidthOutlined />
             </Button>
@@ -361,11 +365,12 @@ const handleSave = async () => {
         </Grid>
       </div>
     </div>
+    <GlobalFloatBtn @click="handleAdd" />
     <!-- 添加/编辑基础值模态框 -->
     <Modal
       v-model:open="showEditModal"
-      :title="editingRecord ? '编辑基础值' : '添加基础值'"
       :confirm-loading="submitLoading"
+      :width="480"
       centered
       @ok="handleSave"
     >
@@ -374,7 +379,7 @@ const handleSave = async () => {
         :model="formState"
         :rules="rules"
         layout="vertical"
-        class="mt-4"
+        class="compact-form mt-2"
       >
         <Form.Item label="字典类型" name="dictType">
           <Select
@@ -386,7 +391,7 @@ const handleSave = async () => {
               :key="item.value"
               :value="item.value"
             >
-              {{ item.label }} ({{ item.value }})
+              {{ item.label }}
             </Select.Option>
           </Select>
         </Form.Item>
@@ -537,3 +542,13 @@ const handleSave = async () => {
     </Modal>
   </Page>
 </template>
+
+<style scoped>
+/* 紧凑弹窗：缩小表单项间距与标签间距 */
+.compact-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
+}
+.compact-form :deep(.ant-form-item-label) {
+  padding-bottom: 4px;
+}
+</style>
