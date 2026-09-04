@@ -147,6 +147,15 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 - 文件上传：`<ImageUpload v-model:file-ids="..." :upload-fn="uploadXxxAttachment" />`，uploadFn 签名为 `(file: File) => Promise<FileVO>`
 - 图片显示需要鉴权：用 `fetchAuthImageUrl(id)` 获取带 token 的 blob URL（`utils/file.ts`），或直接使用 `useAuthImageUrl` composable
 
+### Loading 与刷新范围
+
+- 所有后端接口调用都要提供可感知的 loading 反馈，但 loading 默认只覆盖实际受影响的最小范围，不能因为一个局部操作阻塞整个页面
+- 单个提交操作使用按钮 loading；单行操作使用该行 loading；批量或拖拽排序使用受影响行集合；卡片或局部列表请求使用对应容器 loading
+- 只有页面首屏加载、路由级初始化，或整页数据在请求完成前确实不可用时，才使用全局或整表 loading
+- 局部新增、修改、删除、排序成功后，优先让接口返回必要的最新数据并直接更新前端局部状态；不要为了同步展示而无条件重新查询整表或刷新整页
+- 请求失败且本地状态无法可靠回滚时，可以重新查询受影响的数据范围；确实无法缩小范围时才退化为整表刷新
+- 多个请求可能并发时，不要用一个页面级布尔值混合控制无关区域；按操作、记录 ID 集合或请求计数分别维护 loading 状态
+
 ### 暗色模式适配
 
 使用 Tailwind CSS 语义化颜色变量，**不可**硬编码 `#fff` / `#000`：
