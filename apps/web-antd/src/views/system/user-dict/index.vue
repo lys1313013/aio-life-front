@@ -10,6 +10,8 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
+  HolderOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -32,6 +34,7 @@ import {
   adminDelete,
   adminInsert,
   adminQuery,
+  adminReSort,
   adminUpdate,
 } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
@@ -70,9 +73,13 @@ const handleTabChange = () => {
 const showEditModal = ref(false);
 const showIconPickerModal = ref(false);
 const submitLoading = ref(false);
+const sortLoading = ref(false);
+const dragSortLoading = ref(false);
+const sortingRowIds = ref<Set<string>>(new Set());
 const editingRecord = ref<any>(null);
 const selectedIconSet = ref('lucide');
 const formRef = ref();
+let sortRequestToken = 0;
 
 const formState = ref<any>({
   dictType: '',
@@ -130,8 +137,18 @@ const gridOptions: VxeGridProps<any> = {
   checkboxConfig: {
     highlight: true,
   },
+  rowConfig: {
+    drag: true,
+    keyField: 'id',
+  },
+  rowDragConfig: {
+    animation: true,
+    disabledMethod: () => dragSortLoading.value,
+    showIcon: true,
+    trigger: 'cell',
+  },
   columns: [
-    { type: 'seq', width: 60, title: '序号', align: 'center' },
+    { dragSort: true, width: 50, title: '', align: 'center' },
     {
       title: '字典名称',
       field: 'dictLabel',
@@ -200,7 +217,13 @@ const gridOptions: VxeGridProps<any> = {
   },
 };
 
-const [Grid, gridApi] = useVbenVxeGrid({ formOptions, gridOptions } as any);
+const [Grid, gridApi] = useVbenVxeGrid({
+  formOptions,
+  gridOptions,
+  gridEvents: {
+    rowDragend: handleRowDragEnd,
+  },
+} as any);
 
 const openColumnConfig = () => {
   gridApi.grid?.openCustom();
@@ -216,6 +239,113 @@ const handleDelete = async (row: any) => {
   }
 };
 
+const queryAllDictData = async (dictType: string) => {
+  const queryParams = {
+    page: 1,
+    pageSize: 1,
+    condition: { dictType },
+  };
+  const firstPage = await adminQuery(queryParams);
+  const total = Number(firstPage.total) || 0;
+
+  if (total === 0) {
+    return [];
+  }
+
+  const allDataPage =
+    total === 1
+      ? firstPage
+      : await adminQuery({
+          ...queryParams,
+          pageSize: total,
+        });
+
+  return allDataPage.items || [];
+};
+
+const queryNextDictSort = async (dictType: string) => {
+  const dictData = await queryAllDictData(dictType);
+  const maxSort = dictData.reduce(
+    (max: number, item: any) => Math.max(max, Number(item.dictSort) || 0),
+    0,
+  );
+
+  return dictData.length > 0 ? maxSort + 1 : 1;
+};
+
+async function handleRowDragEnd({ _index, dragPos, dragRow, newRow }: any) {
+  const dictType = activeTab.value;
+  if (!dictType || dragSortLoading.value) {
+    return;
+  }
+
+  const tableData = gridApi.grid.getTableData().tableData;
+  const oldIndex = Number(_index?.oldIndex);
+  const newIndex = Number(_index?.newIndex);
+  const affectedRows =
+    Number.isInteger(oldIndex) && Number.isInteger(newIndex)
+      ? tableData.slice(
+          Math.min(oldIndex, newIndex),
+          Math.max(oldIndex, newIndex) + 1,
+        )
+      : [dragRow, newRow];
+  sortingRowIds.value = new Set(affectedRows.map((row: any) => String(row.id)));
+  dragSortLoading.value = true;
+
+  try {
+    const sortItems = await adminReSort({
+      dictType,
+      dragId: String(dragRow.id),
+      position: dragPos === 'bottom' ? 'after' : 'before',
+      targetId: String(newRow.id),
+    });
+    const sortMap = new Map(
+      sortItems.map((item) => [String(item.id), item.dictSort]),
+    );
+    for (const row of tableData) {
+      const nextSort = sortMap.get(String(row.id));
+      if (nextSort !== undefined) {
+        row.dictSort = nextSort;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to update dict sort', error);
+    await gridApi.query();
+  } finally {
+    sortingRowIds.value = new Set();
+    dragSortLoading.value = false;
+  }
+}
+
+const refreshNextDictSort = async (dictType: string) => {
+  const requestToken = ++sortRequestToken;
+
+  if (!dictType) {
+    formState.value.dictSort = 1;
+    sortLoading.value = false;
+    return;
+  }
+
+  sortLoading.value = true;
+
+  try {
+    const nextSort = await queryNextDictSort(dictType);
+    if (
+      requestToken === sortRequestToken &&
+      !editingRecord.value &&
+      formState.value.dictType === dictType
+    ) {
+      formState.value.dictSort = nextSort;
+    }
+  } catch (error) {
+    console.error('Failed to calculate next dict sort', error);
+  } finally {
+    if (requestToken === sortRequestToken) {
+      sortLoading.value = false;
+    }
+  }
+};
+
 const handleAdd = () => {
   editingRecord.value = null;
   selectedIconSet.value = 'ant-design';
@@ -224,10 +354,11 @@ const handleAdd = () => {
     dictLabel: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
-    dictSort: 0,
+    dictSort: 1,
     status: '0',
   };
   showEditModal.value = true;
+  void refreshNextDictSort(formState.value.dictType);
 };
 
 const handleEdit = (row: any) => {
@@ -235,10 +366,18 @@ const handleEdit = (row: any) => {
     message.warning('只能编辑基础值 (用户ID为0的数据)');
     return;
   }
+  sortRequestToken += 1;
+  sortLoading.value = false;
   editingRecord.value = { ...row };
   selectedIconSet.value = extractIconSet(row.icon);
   formState.value = { ...row };
   showEditModal.value = true;
+};
+
+const handleDictTypeChange = (dictType: unknown) => {
+  if (typeof dictType === 'string' && !editingRecord.value) {
+    void refreshNextDictSort(dictType);
+  }
 };
 
 const handleIconSelect = (icon: string) => {
@@ -287,6 +426,15 @@ const handleSave = async () => {
 
       <div class="flex-1 overflow-hidden bg-white">
         <Grid>
+          <template #rowDragIcon="{ row }">
+            <LoadingOutlined
+              v-if="sortingRowIds.has(String(row.id))"
+              class="text-blue-500"
+              spin
+            />
+            <HolderOutlined v-else class="text-gray-400" />
+          </template>
+
           <!-- 表格顶部操作按钮 -->
           <template #toolbar-actions>
             <Button class="ml-auto" type="text" @click="openColumnConfig">
@@ -369,7 +517,7 @@ const handleSave = async () => {
     <!-- 添加/编辑基础值模态框 -->
     <Modal
       v-model:open="showEditModal"
-      :confirm-loading="submitLoading"
+      :confirm-loading="submitLoading || sortLoading"
       :width="480"
       centered
       @ok="handleSave"
@@ -384,7 +532,9 @@ const handleSave = async () => {
         <Form.Item label="字典类型" name="dictType">
           <Select
             v-model:value="formState.dictType"
+            :loading="sortLoading"
             placeholder="请选择字典类型"
+            @change="handleDictTypeChange"
           >
             <Select.Option
               v-for="item in dictTypeOptions"
@@ -402,7 +552,11 @@ const handleSave = async () => {
           />
         </Form.Item>
         <Form.Item label="排序" name="dictSort">
-          <Input type="number" v-model:value="formState.dictSort" />
+          <Input
+            v-model:value="formState.dictSort"
+            :disabled="sortLoading"
+            type="number"
+          />
         </Form.Item>
 
         <Form.Item label="颜色" name="color">

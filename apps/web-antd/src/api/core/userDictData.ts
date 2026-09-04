@@ -42,6 +42,23 @@ export async function adminUpdate(data: any) {
   return await requestClient.put(`/userDictData/admin/${data.id}`, data);
 }
 
+export interface UserDictDataSortItem {
+  dictSort: number;
+  id: string;
+}
+
+export async function adminReSort(data: {
+  dictType: string;
+  dragId: string;
+  position: 'after' | 'before';
+  targetId: string;
+}) {
+  return await requestClient.post<UserDictDataSortItem[]>(
+    '/userDictData/admin/reSort',
+    data,
+  );
+}
+
 export async function adminDelete(id: string) {
   return await requestClient.delete(`/userDictData/admin/${id}`);
 }
