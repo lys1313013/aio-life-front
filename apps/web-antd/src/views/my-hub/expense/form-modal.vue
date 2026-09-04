@@ -16,6 +16,9 @@ const emit = defineEmits(['tableReload', 'updateSuccess']);
 // 连续录入模式开关
 const continuousMode = ref(false);
 
+// 上一次交易金额，用于判断记账金额是否为级联填充值
+const prevTransactionAmt = ref<null | string | undefined>();
+
 const tableReload = () => {
   emit('tableReload');
 };
@@ -69,6 +72,7 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'transactionAmt',
       label: '交易金额',
+      rules: 'required',
     },
     {
       component: 'Input',
@@ -77,6 +81,22 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'amt',
       label: '记账金额',
+      rules: 'required',
+      dependencies: {
+        triggerFields: ['transactionAmt'],
+        trigger(value, actions) {
+          // 记账金额为空（或仍等于上一次交易金额的级联值）时，跟随交易金额变化
+          if (
+            value.amt === '' ||
+            value.amt === null ||
+            value.amt === undefined ||
+            String(value.amt) === String(prevTransactionAmt.value ?? '')
+          ) {
+            actions.setFieldValue('amt', value.transactionAmt);
+          }
+          prevTransactionAmt.value = value.transactionAmt;
+        },
+      },
     },
     {
       component: 'Select',
@@ -90,6 +110,7 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'expTypeId',
       label: '支出类型',
+      rules: 'selectRequired',
     },
     {
       component: 'Select',
@@ -103,6 +124,7 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'payTypeId',
       label: '支付方式',
+      rules: 'selectRequired',
     },
     {
       component: 'DatePicker',
@@ -114,6 +136,7 @@ const [Form, formApi] = useVbenForm({
       },
       fieldName: 'expTime',
       label: '支出日期',
+      rules: 'required',
     },
     {
       component: 'Input',
@@ -132,7 +155,9 @@ const [Form, formApi] = useVbenForm({
 const resetForm = () => {
   formApi.setValues({
     amt: '',
+    transactionAmt: '',
   });
+  prevTransactionAmt.value = '';
 };
 
 const [Modal, modalApi] = useVbenModal({
@@ -202,6 +227,7 @@ const [Modal, modalApi] = useVbenModal({
             processedValues.expTime = `${today} 00:00:00`;
           }
           formApi.setValues(processedValues);
+          prevTransactionAmt.value = processedValues.transactionAmt;
         }
       });
     } else {
