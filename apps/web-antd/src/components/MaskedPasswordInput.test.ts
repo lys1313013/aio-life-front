@@ -48,6 +48,6 @@ describe('maskedPasswordInput', () => {
       .trigger('keydown', { key: 'Enter', keyCode: 13 });
     const events = wrapper.emitted('keydown');
     expect(events).toBeTruthy();
-    expect((events![0][0] as KeyboardEvent).key).toBe('Enter');
+    expect((events![0]![0] as KeyboardEvent).key).toBe('Enter');
   });
 });

@@ -594,7 +594,7 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         :model="formState"
         :rules="rules"
         :layout="isMobile ? 'vertical' : 'horizontal'"
-        :size="isMobile ? 'small' : 'default'"
+        :size="isMobile ? 'small' : 'middle'"
       >
         <AFormItem label="名称" name="name">
           <AInput
