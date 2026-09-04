@@ -51,7 +51,7 @@
     "dev:play": "pnpm -F @vben/playground run dev",
     "format": "vsh lint --format",
     "lint": "vsh lint",
-    "postinstall": "pnpm -r run stub --if-present && lefthook install",
+    "postinstall": "pnpm -r run stub --if-present",
     "preinstall": "npx only-allow pnpm",
     "preview": "turbo-run preview",
     "publint": "vsh publint",

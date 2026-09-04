@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+# 推送前对 web-antd 跑类型检查，拦截未声明依赖等模块解析错误
+# turbo 缓存命中时约 1 秒，未命中约 10 秒；失败则推送被拦截
+pnpm exec turbo run typecheck --filter=@vben/web-antd
