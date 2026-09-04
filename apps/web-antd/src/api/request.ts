@@ -9,12 +9,12 @@ import {
   authenticateResponseInterceptor,
   defaultResponseInterceptor,
   errorMessageResponseInterceptor,
+  isCancel,
   RequestClient,
 } from '@vben/request';
 import { useAccessStore } from '@vben/stores';
 
 import { message } from 'ant-design-vue';
-import axios from 'axios';
 
 import { useAuthStore } from '#/store';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
@@ -88,7 +88,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       if (
         !isGet ||
         !retryable ||
-        axios.isCancel(error) ||
+        isCancel(error) ||
         (config.__getRetryCount ?? 0) >= 2
       ) {
         throw error;
