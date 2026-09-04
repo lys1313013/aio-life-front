@@ -42,10 +42,7 @@ const monthChartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
-const {
-  renderEcharts: renderMonthEcharts,
-  getChartInstance: getMonthChartInstance,
-} = useEcharts(monthChartRef);
+const { renderEcharts: renderMonthEcharts } = useEcharts(monthChartRef);
 
 const { isDark, isMobile } = usePreferences();
 
@@ -593,36 +590,36 @@ const updateCharts = () => {
       },
     ],
     series: getMonthlySeriesData(),
+  }).then((monthChartInstance) => {
+    // 绑定点击事件 (给月趋势面积图)
+    // renderEcharts 内部延迟初始化实例，必须在 Promise 回调中绑定，否则首次渲染拿不到实例
+    if (monthChartInstance) {
+      monthChartInstance.off('click');
+      monthChartInstance.on('click', (params: any) => {
+        let monthIndex = -1;
+        if (params.componentType === 'xAxis') {
+          // 如果点击了 x 轴标签，我们需要通过文字去找索引
+          monthIndex = monthLabels.indexOf(params.value);
+        } else if (params.componentType === 'series') {
+          // 点击了图表区域
+          monthIndex = params.dataIndex;
+        }
+
+        if (monthIndex !== -1 && fullMonthLabels[monthIndex]) {
+          const fullMonthStr = fullMonthLabels[monthIndex] as string;
+          const [year, month] = fullMonthStr.split('-').map(Number) as [
+            number,
+            number,
+          ];
+          const lastDay = new Date(year, month, 0).getDate();
+          const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+          const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+          emit('monthSelect', { monthStr: fullMonthStr, startDate, endDate });
+        }
+      });
+    }
   });
-
-  // 绑定点击事件 (给月趋势面积图)
-  const monthChartInstance = getMonthChartInstance();
-  if (monthChartInstance) {
-    monthChartInstance.off('click');
-    monthChartInstance.on('click', (params: any) => {
-      let monthIndex = -1;
-      if (params.componentType === 'xAxis') {
-        // 如果点击了 x 轴标签，我们需要通过文字去找索引
-        monthIndex = monthLabels.indexOf(params.value);
-      } else if (params.componentType === 'series') {
-        // 点击了图表区域
-        monthIndex = params.dataIndex;
-      }
-
-      if (monthIndex !== -1 && fullMonthLabels[monthIndex]) {
-        const fullMonthStr = fullMonthLabels[monthIndex] as string;
-        const [year, month] = fullMonthStr.split('-').map(Number) as [
-          number,
-          number,
-        ];
-        const lastDay = new Date(year, month, 0).getDate();
-        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-        const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-
-        emit('monthSelect', { monthStr: fullMonthStr, startDate, endDate });
-      }
-    });
-  }
 };
 
 // 刷新数据
@@ -692,7 +689,11 @@ defineExpose({
           <div class="stat-divider"></div>
           <div class="stat-item">
             <div class="stat-label">
-              {{ selectedYear === 'all' ? new Date().getFullYear() : selectedYear }}年总{{ labelName }}
+              {{
+                selectedYear === 'all'
+                  ? new Date().getFullYear()
+                  : selectedYear
+              }}年总{{ labelName }}
             </div>
             <div class="stat-value">
               {{ formatCurrency(currentYearAmount) }}
