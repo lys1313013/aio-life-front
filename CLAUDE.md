@@ -20,6 +20,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 同一个 try 块混合本地逻辑和 API 调用时，应拆分 try/catch，避免一个 catch 承接两类异常
 - `baseRequestClient` 是未经拦截器包装的裸客户端，仅在需要原始响应时使用
 
+### GET 请求自动重试
+
+`requestClient` 内置 **GET 请求自动重试机制**（实现在 `request.ts` 响应拦截器链最前面）：
+
+- **触发条件**：仅 GET 请求，且错误为网络错误 / 超时（无响应）或 HTTP 5xx
+- **重试策略**：最多重试 2 次（共 3 次尝试），指数退避（300ms → 600ms）
+- **不重试的情况**：POST/PUT/DELETE 等非 GET 请求（避免重复提交）、4xx 客户端错误、业务错误（`rscode != '0'`）、被取消的请求
+- 重试全部失败后才会弹出全局错误提示，业务代码无需感知重试过程
+
 ### API 层编码模式
 
 所有 API 函数位于 `apps/web-antd/src/api/core/`，按业务领域拆分文件（如 `honor.ts`、`time-tracker.ts`）。模式如下：

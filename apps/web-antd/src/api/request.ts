@@ -14,6 +14,7 @@ import {
 import { useAccessStore } from '@vben/stores';
 
 import { message } from 'ant-design-vue';
+import axios from 'axios';
 
 import { useAuthStore } from '#/store';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
@@ -69,6 +70,34 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
       return config;
+    },
+  });
+
+  // GET 请求自动重试：网络错误 / 超时 / 5xx 时最多重试 2 次（共 3 次），指数退避。
+  // 必须注册在响应拦截器链最前面（axios 响应拦截器按注册顺序执行），
+  // 保证重试完成后才轮到错误提示等后续拦截器；业务错误（rscode != '0'）由
+  // defaultResponseInterceptor 在更后面的环节抛出，不会进入重试。
+  client.addResponseInterceptor({
+    fulfilled: (response) => response,
+    rejected: async (error) => {
+      const config = error?.config;
+      const status = error?.response?.status;
+      // 无响应（断网 / 超时）或服务端 5xx 才可重试；4xx、业务错误、取消请求不重试
+      const retryable = !error?.response || status >= 500;
+      const isGet = config?.method?.toUpperCase() === 'GET';
+      if (
+        !isGet ||
+        !retryable ||
+        axios.isCancel(error) ||
+        (config.__getRetryCount ?? 0) >= 2
+      ) {
+        throw error;
+      }
+      config.__getRetryCount = (config.__getRetryCount ?? 0) + 1;
+      await new Promise((resolve) =>
+        setTimeout(resolve, 300 * 2 ** (config.__getRetryCount - 1)),
+      );
+      return client.instance(config);
     },
   });
 
