@@ -11,7 +11,6 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
-  PlusOutlined,
   VerticalAlignTopOutlined,
 } from '@ant-design/icons-vue';
 import {
@@ -25,6 +24,7 @@ import {
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/sysDictType';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormModal from './form-modal.vue';
 
@@ -416,19 +416,11 @@ function handleDelete(item: RowType) {
       />
 
       <!-- 移动端悬浮按钮 -->
-      <FloatButton
-        type="primary"
-        :style="{ right: '25px', bottom: '25px' }"
-        @click="openAddFormModal"
-      >
-        <template #icon>
-          <PlusOutlined />
-        </template>
-      </FloatButton>
+      <GlobalFloatBtn @click="openAddFormModal" />
 
       <FloatButton.BackTop
         :visibility-height="400"
-        :style="{ right: '24px', bottom: '24px' }"
+        :style="{ right: '28px', bottom: '88px' }"
       >
         <template #icon>
           <VerticalAlignTopOutlined />

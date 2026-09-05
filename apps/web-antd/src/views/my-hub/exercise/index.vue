@@ -22,7 +22,6 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
-  PlusOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -37,6 +36,7 @@ import {
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/userDictType';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormDrawerDemo from './form-drawer.vue';
 
@@ -1127,20 +1127,8 @@ const tableReload = () => {
         :grid-options="gridOptions"
         :show-search-form="!isMobile"
       >
-        <template #toolbar-tools>
-          <Button
-            v-if="isMobile"
-            type="primary"
-            shape="circle"
-            @click="openAddFormModal"
-          >
-            <template #icon><PlusOutlined /></template>
-          </Button>
-          <Button v-else class="mr-2" type="primary" @click="openAddFormModal">
-            新增
-          </Button>
+        <template v-if="!isMobile" #toolbar-tools>
           <Popconfirm
-            v-if="!isMobile"
             title="确认删除选中的记录吗?"
             ok-text="确定"
             cancel-text="取消"
@@ -1148,12 +1136,7 @@ const tableReload = () => {
           >
             <Button class="mr-2" type="primary" danger> 删除 </Button>
           </Popconfirm>
-          <Button
-            v-if="!isMobile"
-            class="ml-auto"
-            type="text"
-            @click="openColumnConfig"
-          >
+          <Button class="ml-auto" type="text" @click="openColumnConfig">
             <ColumnWidthOutlined />
           </Button>
         </template>
@@ -1233,10 +1216,17 @@ const tableReload = () => {
         @close="closeFormModal"
       />
     </Modal>
+
+    <GlobalFloatBtn class="exercise-add-float-btn" @click="openAddFormModal" />
   </div>
 </template>
 
 <style scoped>
+.exercise-add-float-btn {
+  --global-float-btn-bg: #1890ff;
+  --global-float-btn-hover-bg: #40a9ff;
+}
+
 @media (max-width: 1200px) {
   .chart-container {
     grid-template-columns: 1fr;

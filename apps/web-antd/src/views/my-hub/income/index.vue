@@ -7,12 +7,17 @@ import { onMounted, ref } from 'vue';
 import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
-import { ColumnWidthOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import {
+  ColumnWidthOutlined,
+  DeleteOutlined,
+  EditOutlined,
+} from '@ant-design/icons-vue';
 import { Button, message, Popconfirm } from 'ant-design-vue';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/income';
 import { getByDictType } from '#/api/core/userDictType';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
@@ -329,5 +334,6 @@ const tableReload = async () => {
         </Popconfirm>
       </template>
     </Grid>
+    <GlobalFloatBtn @click="openAddFormModal" />
   </div>
 </template>

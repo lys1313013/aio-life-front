@@ -7,7 +7,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   MoreOutlined,
-  PlusOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -31,6 +30,7 @@ import {
   getAnniversaryRecords,
   updateAnniversaryRecord,
 } from '#/api/my-hub/anniversary';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 const anniversaries = ref<AnniversaryRecord[]>([]);
 const modalVisible = ref(false);
@@ -213,34 +213,6 @@ const selectColor = (color: string) => {
     class="min-h-screen bg-gray-50 p-4 transition-colors duration-300 md:p-8 dark:bg-gray-950"
   >
     <div class="mx-auto max-w-7xl">
-      <div class="animate-fade-in-down mb-8 flex items-end justify-between">
-        <div>
-          <h1
-            class="text-3xl font-extrabold tracking-tight text-gray-800 dark:text-gray-100"
-          >
-            <span
-              class="bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent"
-            >
-              时光
-            </span>
-            纪念册
-          </h1>
-          <p class="mt-1 text-sm text-gray-500 md:text-base dark:text-gray-400">
-            记录每一个值得铭记的瞬间
-          </p>
-        </div>
-        <Button
-          type="primary"
-          shape="round"
-          size="large"
-          class="transform border-none bg-gradient-to-r from-pink-500 to-violet-500 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-          @click="openModal()"
-        >
-          <template #icon><PlusOutlined /></template>
-          新建纪念日
-        </Button>
-      </div>
-
       <Spin :spinning="loading" size="large" tip="加载中...">
         <div
           v-if="!loading && sortedAnniversaries.length === 0"
@@ -253,12 +225,12 @@ const selectColor = (color: string) => {
 
         <div
           v-if="!loading && sortedAnniversaries.length > 0"
-          class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          class="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-6 lg:grid-cols-3 xl:grid-cols-4"
         >
           <div
             v-for="(item, index) in sortedAnniversaries"
             :key="item.id"
-            class="animate-scale-in group relative transform overflow-hidden rounded-3xl opacity-0 shadow-lg transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl"
+            class="animate-scale-in group relative transform overflow-hidden rounded-2xl opacity-0 shadow-lg transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl md:rounded-3xl"
             :style="{
               animationDelay: `${index * 0.1}s`,
               animationFillMode: 'forwards',
@@ -279,11 +251,11 @@ const selectColor = (color: string) => {
 
             <!-- 内容容器 -->
             <div
-              class="relative flex h-full flex-col justify-between p-6 text-white"
+              class="relative flex h-full flex-col justify-between p-3 text-white md:p-6"
             >
               <div class="flex items-start justify-between">
                 <div
-                  class="origin-top-left transform text-4xl drop-shadow-md filter transition-transform duration-300 group-hover:scale-110"
+                  class="origin-top-left transform text-3xl drop-shadow-md filter transition-transform duration-300 group-hover:scale-110 md:text-4xl"
                 >
                   {{ item.icon || '🎉' }}
                 </div>
@@ -311,35 +283,35 @@ const selectColor = (color: string) => {
                 </Dropdown>
               </div>
 
-              <div class="mt-6 text-center">
+              <div class="mt-4 text-center md:mt-6">
                 <div
-                  class="mb-1 text-sm font-medium uppercase tracking-wider opacity-90"
+                  class="mb-1 text-xs font-medium uppercase tracking-wider opacity-90 md:text-sm"
                 >
                   {{ getDayLabel(item.targetDate) }}
                 </div>
                 <div
-                  class="text-6xl font-black tabular-nums leading-none tracking-tighter drop-shadow-lg filter"
+                  class="text-3xl font-black tabular-nums leading-none tracking-tighter drop-shadow-lg filter sm:text-4xl md:text-6xl"
                 >
                   {{ getDayCount(item.targetDate) }}
                   <span
-                    class="ml-1 align-baseline text-lg font-normal opacity-80"
+                    class="ml-0.5 align-baseline text-sm font-normal opacity-80 md:ml-1 md:text-lg"
                     >天</span
                   >
                 </div>
               </div>
 
-              <div class="mt-8">
+              <div class="mt-5 md:mt-8">
                 <h3
-                  class="mb-1 truncate text-xl font-bold leading-tight tracking-wide"
+                  class="mb-1 truncate text-base font-bold leading-tight tracking-wide md:text-xl"
                   :title="item.title"
                 >
                   {{ item.title }}
                 </h3>
                 <div
-                  class="flex items-center justify-between text-sm opacity-80"
+                  class="flex items-center justify-between text-xs opacity-80 md:text-sm"
                 >
                   <span
-                    class="flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 font-medium backdrop-blur-sm"
+                    class="flex items-center gap-1 rounded-md bg-white/10 px-1.5 py-0.5 font-medium backdrop-blur-sm md:px-2"
                   >
                     {{ item.targetDate }}
                   </span>
@@ -490,23 +462,13 @@ const selectColor = (color: string) => {
           </div>
         </div>
       </Modal>
+
+      <GlobalFloatBtn @click="openModal()" />
     </div>
   </div>
 </template>
 
 <style scoped>
-@keyframes fade-in-down {
-  from {
-    opacity: 0;
-    transform: translate3d(0, -20px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -538,10 +500,6 @@ const selectColor = (color: string) => {
   50% {
     transform: translateY(-5px);
   }
-}
-
-.animate-fade-in-down {
-  animation: fade-in-down 0.8s ease-out;
 }
 
 .animate-fade-in {

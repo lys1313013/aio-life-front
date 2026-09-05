@@ -17,6 +17,7 @@ import { Button, message, Popconfirm } from 'ant-design-vue';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, deleteData, query } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
@@ -448,6 +449,7 @@ const handleYearChange = (_year: 'all' | number) => {
         </Popconfirm>
       </template>
     </Grid>
+    <GlobalFloatBtn @click="openAddFormModal" />
   </div>
 </template>
 
