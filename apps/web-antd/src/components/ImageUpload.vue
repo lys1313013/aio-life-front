@@ -1,21 +1,23 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { Upload, message } from 'ant-design-vue';
+
 import { LoadingOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { message, Upload } from 'ant-design-vue';
+
 import { fetchAuthImageUrl } from '#/utils/file';
 
 interface UploadResult {
-  id: string | number;
+  id: number | string;
   [key: string]: any;
 }
 
 const props = withDefaults(
   defineProps<{
-    uploadFn: (file: File) => Promise<UploadResult>;
-    fileId?: string | number | null;
-    fileIds?: (string | number)[];
-    maxCount?: number;
+    fileId?: null | number | string;
+    fileIds?: (number | string)[];
     hint?: string;
+    maxCount?: number;
+    uploadFn: (file: File) => Promise<UploadResult>;
   }>(),
   {
     maxCount: 1,
@@ -26,15 +28,17 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  'update:fileId': [value: string | number | null];
-  'update:fileIds': [value: (string | number)[]];
+  'update:fileId': [value: null | number | string];
+  'update:fileIds': [value: (number | string)[]];
 }>();
 
 const fileList = ref<any[]>([]);
 const uploading = ref(false);
+const previewLoading = ref(false);
 const isMulti = props.maxCount > 1;
+let previewRequestId = 0;
 
-const buildFileItem = async (id: string | number) => {
+const buildFileItem = async (id: number | string) => {
   const url = await fetchAuthImageUrl(id);
   return {
     uid: String(id),
@@ -45,24 +49,44 @@ const buildFileItem = async (id: string | number) => {
   };
 };
 
-const syncSingle = async (id?: string | number | null) => {
-  if (id) {
-    fileList.value = [await buildFileItem(id)];
-  } else {
+const syncExistingFiles = async (ids: (number | string)[]) => {
+  const requestId = ++previewRequestId;
+  if (ids.length === 0) {
     fileList.value = [];
+    previewLoading.value = false;
+    return;
+  }
+
+  fileList.value = [];
+  previewLoading.value = true;
+  try {
+    const items = await Promise.all(ids.map((id) => buildFileItem(id)));
+    if (requestId === previewRequestId) fileList.value = items;
+  } catch {
+    if (requestId === previewRequestId) fileList.value = [];
+  } finally {
+    if (requestId === previewRequestId) previewLoading.value = false;
   }
 };
 
-const syncMulti = async (ids?: (string | number)[]) => {
-  if (ids?.length) {
-    fileList.value = await Promise.all(ids.map(buildFileItem));
-  } else {
-    fileList.value = [];
-  }
+const syncSingle = async (id?: null | number | string) => {
+  await syncExistingFiles(id ? [id] : []);
 };
 
-watch(() => props.fileId, syncSingle, { immediate: true });
-watch(() => props.fileIds, syncMulti, { immediate: true });
+const syncMulti = async (ids?: (number | string)[]) => {
+  await syncExistingFiles(ids ?? []);
+};
+
+watch(
+  () => props.fileId,
+  (id) => !isMulti && syncSingle(id),
+  { immediate: true },
+);
+watch(
+  () => props.fileIds,
+  (ids) => isMulti && syncMulti(ids),
+  { immediate: true },
+);
 
 const emitFromFileList = (list: any[]) => {
   if (isMulti) {
@@ -148,15 +172,23 @@ onUnmounted(() => document.removeEventListener('paste', handlePaste));
       accept="image/*"
       :max-count="maxCount"
       :custom-request="customRequest"
+      :disabled="previewLoading"
       @change="handleChange"
     >
-      <div v-if="fileList.length < maxCount" class="flex h-full flex-col items-center">
+      <div
+        v-if="fileList.length < maxCount"
+        class="flex h-full flex-col items-center"
+      >
         <div class="flex flex-1 items-center justify-center">
-          <LoadingOutlined v-if="uploading" spin class="text-lg" />
+          <LoadingOutlined
+            v-if="uploading || previewLoading"
+            spin
+            class="text-lg"
+          />
           <UploadOutlined v-else class="text-lg" />
         </div>
         <div
-          v-if="fileList.length === 0 && hint"
+          v-if="fileList.length === 0 && hint && !previewLoading"
           class="pb-0.5 text-[10px] text-gray-400"
         >
           {{ hint }}
@@ -165,3 +197,25 @@ onUnmounted(() => document.removeEventListener('paste', handlePaste));
     </Upload>
   </div>
 </template>
+
+<style scoped>
+:deep(.ant-upload-list-item-thumbnail img) {
+  animation: image-preview-fade-in 0.2s ease-out;
+}
+
+@keyframes image-preview-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :deep(.ant-upload-list-item-thumbnail img) {
+    animation: none;
+  }
+}
+</style>
