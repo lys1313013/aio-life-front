@@ -17,6 +17,7 @@ import {
   Popconfirm,
   Row,
   Select,
+  Spin,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -25,7 +26,7 @@ import { add, deleteData, query, update, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
-import { fetchAuthImageUrl, getFilePreviewUrl } from '#/utils/file';
+import { fetchAuthImageUrl } from '#/utils/file';
 
 export default {
   components: {
@@ -39,6 +40,7 @@ export default {
     ADatePicker: DatePicker,
     ASelect: Select,
     ASelectOption: Select.Option,
+    ASpin: Spin,
     ACard: Card,
     ARow: Row,
     ACol: Col,
@@ -75,13 +77,21 @@ export default {
       previewVisible: false, // 图片预览弹窗
       previewImage: '', // 预览图片地址
       authImageUrls: {}, // 认证后的图片 blob URL 缓存
+      listLoading: false,
+      saving: false,
+      deletingDeviceId: null,
     };
   },
   async mounted() {
-    // 获取状态枚举值 (优先请求 device_type)
-    await this.getDeviceTypeOptions();
-    await this.query();
-    await this.getDeviceStatusOptions();
+    this.listLoading = true;
+    try {
+      // 获取状态枚举值 (优先请求 device_type)
+      await this.getDeviceTypeOptions();
+      await this.query({ showLoading: false });
+      await this.getDeviceStatusOptions();
+    } finally {
+      this.listLoading = false;
+    }
   },
   methods: {
     onImageError(fileId) {
@@ -89,49 +99,56 @@ export default {
         this.authImageUrls[fileId] = '';
       }
     },
-    async query() {
-      const res = await query({
-        page: 1,
-        pageSize: 50,
-        condition: {
-          type: this.tabKey,
-        },
-      });
-      this.electronics = res.items;
-      this.totalDailyCost = 0;
-      this.electronics.forEach((item) => {
-        item.usaDay = this.getUsageDays(item.purchaseDate, item.endDate);
-        item.dailyCost = this.calculateAvgCost(
-          item.purchasePrice,
-          item.purchaseDate,
-          item.endDate,
-        );
-        this.totalDailyCost += Number.parseFloat(item.dailyCost);
-      });
-      this.totalDailyCost = this.totalDailyCost.toFixed(2);
+    async query({ showLoading = true } = {}) {
+      if (showLoading) this.listLoading = true;
+      try {
+        const res = await query({
+          page: 1,
+          pageSize: 50,
+          condition: {
+            type: this.tabKey,
+          },
+        });
+        this.electronics = res.items;
+        this.totalDailyCost = 0;
+        this.electronics.forEach((item) => {
+          item.usaDay = this.getUsageDays(item.purchaseDate, item.endDate);
+          item.dailyCost = this.calculateAvgCost(
+            item.purchasePrice,
+            item.purchaseDate,
+            item.endDate,
+          );
+          this.totalDailyCost += Number.parseFloat(item.dailyCost);
+        });
+        this.totalDailyCost = this.totalDailyCost.toFixed(2);
 
-      this.totalAmt = res.items
-        .reduce((sum, item) => sum + item.purchasePrice, 0)
-        .toFixed(2);
-      this.totalCount = res.items.length;
-      this.statusCount = { using: 0, damaged: 0, given: 0, idle: 0 };
-      res.items.forEach((i) => {
-        const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[i.status];
-        if (key) this.statusCount[key]++;
-      });
-      // 主动触发认证图片 URL 的加载
-      res.items.forEach((item) => {
-        if (item.fileId && !(item.fileId in this.authImageUrls)) {
-          this.authImageUrls[item.fileId] = null;
-          fetchAuthImageUrl(item.fileId)
-            .then((url) => {
-              this.authImageUrls[item.fileId] = url;
-            })
-            .catch(() => {
-              this.authImageUrls[item.fileId] = '';
-            });
-        }
-      });
+        this.totalAmt = res.items
+          .reduce((sum, item) => sum + item.purchasePrice, 0)
+          .toFixed(2);
+        this.totalCount = res.items.length;
+        this.statusCount = { using: 0, damaged: 0, given: 0, idle: 0 };
+        res.items.forEach((i) => {
+          const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[
+            i.status
+          ];
+          if (key) this.statusCount[key]++;
+        });
+        // 主动触发认证图片 URL 的加载
+        res.items.forEach((item) => {
+          if (item.fileId && !(item.fileId in this.authImageUrls)) {
+            this.authImageUrls[item.fileId] = null;
+            fetchAuthImageUrl(item.fileId)
+              .then((url) => {
+                this.authImageUrls[item.fileId] = url;
+              })
+              .catch(() => {
+                this.authImageUrls[item.fileId] = '';
+              });
+          }
+        });
+      } finally {
+        if (showLoading) this.listLoading = false;
+      }
     },
 
     showModal() {
@@ -158,37 +175,43 @@ export default {
       this.visible = true;
     },
     async handleOk() {
-      let formattedPurchaseDate = null;
-      if (this.newDevice.purchaseDate) {
-        formattedPurchaseDate =
-          typeof this.newDevice.purchaseDate === 'string'
-            ? this.newDevice.purchaseDate
-            : this.newDevice.purchaseDate.format('YYYY-MM-DD');
+      if (this.saving) return;
+      this.saving = true;
+      try {
+        let formattedPurchaseDate = null;
+        if (this.newDevice.purchaseDate) {
+          formattedPurchaseDate =
+            typeof this.newDevice.purchaseDate === 'string'
+              ? this.newDevice.purchaseDate
+              : this.newDevice.purchaseDate.format('YYYY-MM-DD');
+        }
+
+        let formattedEndDate = null;
+        if (this.newDevice.endDate) {
+          formattedEndDate =
+            typeof this.newDevice.endDate === 'string'
+              ? this.newDevice.endDate
+              : this.newDevice.endDate.format('YYYY-MM-DD');
+        }
+
+        const deviceData = {
+          ...this.newDevice,
+          purchaseDate: formattedPurchaseDate,
+          endDate: formattedEndDate,
+        };
+
+        if (deviceData.id) {
+          await update(deviceData.id, deviceData);
+        } else {
+          await add(deviceData);
+        }
+
+        await this.query({ showLoading: false });
+        this.visible = false;
+        this.resetForm();
+      } finally {
+        this.saving = false;
       }
-
-      let formattedEndDate = null;
-      if (this.newDevice.endDate) {
-        formattedEndDate =
-          typeof this.newDevice.endDate === 'string'
-            ? this.newDevice.endDate
-            : this.newDevice.endDate.format('YYYY-MM-DD');
-      }
-
-      const deviceData = {
-        ...this.newDevice,
-        purchaseDate: formattedPurchaseDate,
-        endDate: formattedEndDate,
-      };
-
-      if (deviceData.id) {
-        await update(deviceData.id, deviceData);
-      } else {
-        await add(deviceData);
-      }
-
-      this.query();
-      this.visible = false;
-      this.resetForm();
     },
     handleCancel() {
       this.visible = false;
@@ -242,11 +265,12 @@ export default {
       );
     },
     // 切换页签
-    onTabChange(value, type) {
+    async onTabChange(value, type) {
+      if (this.listLoading) return;
       if (type === 'tabKey') {
         this.tabKey = value;
       }
-      this.query();
+      await this.query();
     },
     async getDeviceTypeOptions() {
       // 获取设备类型字典
@@ -279,24 +303,37 @@ export default {
       }
     },
     handlePreview(file) {
-      this.previewImage = file.url || file.response?.fileUrl || file.imageUrl || '';
+      this.previewImage =
+        file.url || file.response?.fileUrl || file.imageUrl || '';
       this.previewVisible = true;
     },
 
     async handleDelete(item) {
+      if (this.deletingDeviceId !== null) return false;
+      this.deletingDeviceId = item.id;
       try {
         await deleteData(item.id);
-        await this.query();
+        await this.query({ showLoading: false });
+        return true;
       } catch (error) {
         // 全局拦截器已提示
         console.error('删除失败:', error);
+        return false;
+      } finally {
+        this.deletingDeviceId = null;
       }
     },
     async handleDeleteFromModal() {
       if (this.newDevice.id) {
-        await this.handleDelete(this.newDevice);
-        this.visible = false;
+        const deleted = await this.handleDelete(this.newDevice);
+        if (deleted) {
+          this.visible = false;
+          this.resetForm();
+        }
       }
+    },
+    isDeleting(id) {
+      return this.deletingDeviceId === id;
     },
   },
 };
@@ -332,17 +369,35 @@ export default {
                 title="确定要删除这个设备吗？"
                 ok-text="确定"
                 cancel-text="取消"
+                :ok-button-props="{ loading: isDeleting(newDevice.id) }"
                 @confirm="handleDeleteFromModal"
               >
-                <AButton danger type="text">
+                <AButton
+                  danger
+                  type="text"
+                  :loading="isDeleting(newDevice.id)"
+                  :disabled="saving"
+                >
                   <template #icon><DeleteOutlined /></template>
                   删除
                 </AButton>
               </APopconfirm>
             </div>
             <div>
-              <AButton @click="handleCancel">取消</AButton>
-              <AButton type="primary" @click="handleOk">确定</AButton>
+              <AButton
+                :disabled="saving || isDeleting(newDevice.id)"
+                @click="handleCancel"
+              >
+                取消
+              </AButton>
+              <AButton
+                type="primary"
+                :loading="saving"
+                :disabled="isDeleting(newDevice.id)"
+                @click="handleOk"
+              >
+                确定
+              </AButton>
             </div>
           </div>
         </template>
@@ -439,6 +494,14 @@ export default {
         </div>
       </AModal>
 
+      <div
+        v-if="listLoading"
+        class="device-list-loading"
+        role="status"
+        aria-label="加载中"
+      >
+        <ASpin />
+      </div>
       <div class="stats-row">
         <div class="stat-card">
           <div class="stat-label">总资产</div>
@@ -457,16 +520,18 @@ export default {
           <div class="status-tags">
             <span class="status-tag using">使用中 {{ statusCount.using }}</span>
             <span class="status-tag idle">吃灰中 {{ statusCount.idle }}</span>
-            <span class="status-tag damaged">已损坏 {{ statusCount.damaged }}</span>
+            <span class="status-tag damaged"
+              >已损坏 {{ statusCount.damaged }}</span
+            >
             <span class="status-tag given">已送人 {{ statusCount.given }}</span>
           </div>
         </div>
       </div>
       <!-- 设备列表 -->
-      <div class="electronics-grid">
+      <div class="electronics-grid" :aria-busy="listLoading">
         <div
-          v-for="(item, index) in electronics"
-          :key="index"
+          v-for="item in electronics"
+          :key="item.id"
           class="electronics-card"
           @click="showEditModal(item)"
         >
@@ -477,7 +542,10 @@ export default {
             <!-- 图片三态：加载中骨架 / 已加载图片 / 无图或失败回退 -->
             <template v-if="item.fileId">
               <div
-                v-if="!(item.fileId in authImageUrls) || authImageUrls[item.fileId] === null"
+                v-if="
+                  !(item.fileId in authImageUrls) ||
+                  authImageUrls[item.fileId] === null
+                "
                 class="image-skeleton"
                 aria-label="loading"
               >
@@ -525,9 +593,17 @@ export default {
               title="确定要删除这个设备吗？"
               ok-text="确定"
               cancel-text="取消"
+              :ok-button-props="{ loading: isDeleting(item.id) }"
               @confirm="handleDelete(item)"
             >
-              <AButton class="delete-btn" type="text" danger @click.stop>
+              <AButton
+                class="delete-btn"
+                type="text"
+                danger
+                :loading="isDeleting(item.id)"
+                :disabled="deletingDeviceId !== null && !isDeleting(item.id)"
+                @click.stop
+              >
                 <DeleteOutlined />
               </AButton>
             </APopconfirm>
@@ -563,8 +639,21 @@ export default {
 }
 
 .electronics-container {
+  position: relative;
   padding: 10px;
   margin: 0 auto;
+}
+
+.device-list-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: start center;
+  padding-top: 120px;
+  cursor: progress;
+  background: hsl(var(--card) / 72%);
+  border-radius: 8px;
 }
 
 .electronics-grid {
@@ -944,6 +1033,13 @@ export default {
   margin-bottom: 12px;
 }
 
+@media screen and (max-width: 1024px) {
+  .electronics-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 190px));
+    justify-content: center;
+  }
+}
+
 @media screen and (max-width: 768px) {
   /* 覆盖 Ant Design Card 样式 */
   :deep(.ant-card-body) {
@@ -961,7 +1057,6 @@ export default {
   }
 
   .electronics-grid {
-    grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
 
@@ -1024,6 +1119,12 @@ export default {
 
   .delete-btn {
     display: none;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .electronics-grid {
+    grid-template-columns: repeat(2, minmax(0, 190px));
   }
 }
 </style>
