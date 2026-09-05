@@ -8,7 +8,6 @@ import { createIconifyIcon } from '@vben/icons';
 import {
   AppstoreOutlined,
   ClockCircleOutlined,
-  DeleteOutlined,
   LeftOutlined,
   RightOutlined,
 } from '@ant-design/icons-vue';
@@ -17,7 +16,6 @@ import {
   DatePicker,
   Empty,
   message,
-  Modal,
   Radio,
   Spin,
   theme,
@@ -27,7 +25,6 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 
 import {
-  deleteByDate,
   query,
   queryByDateRange,
   recommendType,
@@ -117,9 +114,6 @@ const quotes = [
   '知行合一',
   '做，才有答案；不做，全是问题。',
 ];
-
-// 确认弹窗状态
-const showDeleteConfirmModal = ref(false);
 
 // 配置
 const config = ref(defaultConfig);
@@ -535,44 +529,6 @@ const loadData = async () => {
     trendRefreshKey.value++;
     nextTick(() => syncTimelineHeight());
   }
-};
-
-// 打开删除确认弹窗
-const openDeleteConfirmModal = () => {
-  showDeleteConfirmModal.value = true;
-};
-
-// 确认删除数据
-const confirmResetData = async () => {
-  try {
-    loading.value = true;
-    const currentDate = getCurrentSelectedDate();
-
-    if (statMode.value === 'week') {
-      // 按周模式下，清除整周数据
-      const promises = weekDays.value.map((day) =>
-        deleteByDate({ date: day.date }),
-      );
-      await Promise.all(promises);
-    } else {
-      // 按天模式下，清除当天数据
-      await deleteByDate({ date: currentDate });
-    }
-
-    timeSlots.value = [];
-    message.success('数据删除成功');
-  } catch (error) {
-    console.error('删除数据失败:', error);
-    // 全局拦截器已提示
-  } finally {
-    loading.value = false;
-    showDeleteConfirmModal.value = false;
-  }
-};
-
-// 取消删除
-const cancelDelete = () => {
-  showDeleteConfirmModal.value = false;
 };
 
 // 日期处理函数
@@ -1247,15 +1203,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
       <div class="header-right">
         <!-- 按钮区 -->
         <div class="actions">
-          <Button
-            type="primary"
-            danger
-            @click="openDeleteConfirmModal"
-            :disabled="loading"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><DeleteOutlined /></template>
-          </Button>
           <CategoryFilter
             :categories="config.categories"
             :loading="loading"
@@ -1877,39 +1824,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
     <!-- 时间段编辑模态框 -->
     <TimeTrackerModal ref="timeTrackerModalRef" @success="handleModalSuccess" />
-
-    <!-- 删除确认弹窗 -->
-    <Modal
-      v-model:open="showDeleteConfirmModal"
-      title="确认删除"
-      :width="isMobile ? '95vw' : 400"
-      :mask-closable="false"
-      centered
-      @ok="confirmResetData"
-      @cancel="cancelDelete"
-    >
-      <div style="padding: 20px 0; text-align: center">
-        <p style="margin-bottom: 10px; font-size: 16px">
-          确定要删除当前数据吗？
-        </p>
-        <p style="font-size: 14px; color: #ff4d4f">
-          此操作不可恢复，请谨慎操作！
-        </p>
-      </div>
-      <template #footer>
-        <div style="text-align: center">
-          <Button @click="cancelDelete" :disabled="loading">取消</Button>
-          <Button
-            type="primary"
-            danger
-            @click="confirmResetData"
-            :loading="loading"
-          >
-            确认删除
-          </Button>
-        </div>
-      </template>
-    </Modal>
   </div>
 </template>
 
