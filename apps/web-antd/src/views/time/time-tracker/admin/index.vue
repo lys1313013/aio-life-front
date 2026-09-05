@@ -108,7 +108,7 @@ const formState = ref<TimeTrackerCategoryEntity>({
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
   description: '',
-  isTrackTime: 1,
+  isTrackTime: 0,
   isEnabled: 1,
   sort: 0,
   timeType: TimeType.REQUIRED,
@@ -126,14 +126,17 @@ const modalTitle = computed(() =>
 const handleAddCategory = () => {
   isEdit.value = false;
   selectedIconSet.value = 'lucide';
+  const nextSort =
+    Math.max(-10, ...publicCategories.value.map((item) => item.sort ?? -10)) +
+    10;
   formState.value = {
     name: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
     description: '',
-    isTrackTime: 1,
+    isTrackTime: 0,
     isEnabled: 1,
-    sort: publicCategories.value.length * 10,
+    sort: nextSort,
   };
   editModalVisible.value = true;
 };

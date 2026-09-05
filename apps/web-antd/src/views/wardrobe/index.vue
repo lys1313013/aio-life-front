@@ -8,7 +8,6 @@ import type {
 
 import { computed, onMounted, ref } from 'vue';
 
-import { PlusOutlined } from '@ant-design/icons-vue';
 import {
   Card,
   Col,
@@ -27,6 +26,7 @@ import {
   saveWardrobeItem,
   updateWardrobeItem,
 } from '#/api/wardrobe';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FilterBar from './components/FilterBar.vue';
 import ItemCard from './components/ItemCard.vue';
@@ -193,12 +193,9 @@ onMounted(() => {
           </Col>
         </Row>
       </div>
-
-      <!-- 添加按钮 -->
-      <div class="add-btn" @click="handleAdd">
-        <PlusOutlined />
-      </div>
     </Spin>
+
+    <GlobalFloatBtn @click="handleAdd" />
 
     <!-- 表单弹窗 -->
     <ItemForm
@@ -239,27 +236,5 @@ onMounted(() => {
 
 .wardrobe-grid {
   margin-bottom: 80px;
-}
-
-.add-btn {
-  position: fixed;
-  right: 32px;
-  bottom: 32px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #1890ff;
-  color: #fff;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgb(24, 144, 255, 0.4);
-  z-index: 100;
-}
-
-.add-btn:hover {
-  background: #40a9ff;
 }
 </style>

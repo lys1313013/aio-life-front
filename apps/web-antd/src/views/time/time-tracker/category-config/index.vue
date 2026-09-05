@@ -110,7 +110,7 @@ const formState = ref<TimeTrackerCategoryEntity>({
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
   description: '',
-  isTrackTime: 1,
+  isTrackTime: 0,
   isEnabled: 1,
   sort: 0,
   timeType: TimeType.REQUIRED,
@@ -193,9 +193,9 @@ const handleAddCategory = () => {
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
     description: '',
-    isTrackTime: 1,
+    isTrackTime: 0,
     isEnabled: 1,
-    sort: visibleCategories.value.length * 10,
+    timeType: TimeType.REQUIRED,
   };
   showEditModal.value = true;
 };
@@ -237,6 +237,7 @@ const handleOverride = (record: any) => {
     isTrackTime: record.isTrackTime ? 1 : 0,
     isEnabled: record.isHidden ? 0 : 1,
     sort: record.sort,
+    timeType: record.timeType ?? TimeType.REQUIRED,
   };
   isOverrideMode.value = true;
   selectedIconSet.value = extractIconSet(record.icon);
