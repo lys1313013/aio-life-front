@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'carbon:cube',
           title: '工具列表',
-          backTop: false,
         },
         name: 'mcpTools',
         path: '/mcp/tools',

@@ -18,7 +18,7 @@ import { useAccessStore } from '@vben/stores';
 import { cloneDeep, mapTree } from '@vben/utils';
 
 import { VbenAdminLayout } from '@vben-core/layout-ui';
-import { VbenBackTop, VbenLogo } from '@vben-core/shadcn-ui';
+import { VbenLogo } from '@vben-core/shadcn-ui';
 
 import { Breadcrumb, CheckUpdates, Preferences } from '../widgets';
 import { LayoutContent, LayoutContentSpinner } from './content';
@@ -53,10 +53,6 @@ const {
 } = usePreferences();
 const accessStore = useAccessStore();
 const { refresh } = useRefresh();
-
-const showBackTop = computed(() => {
-  return route.meta?.backTop !== false;
-});
 
 const sidebarTheme = computed(() => {
   const dark = isDark.value || preferences.theme.semiDarkSidebar;
@@ -410,7 +406,6 @@ const headerSlots = computed(() => {
           @clear-preferences-and-logout="clearPreferencesAndLogout"
         />
       </template>
-      <VbenBackTop v-if="showBackTop" />
     </template>
   </VbenAdminLayout>
 </template>

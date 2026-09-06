@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:monitor-dashboard',
           title: '设备墙',
-          backTop: false,
         },
         name: 'device',
         path: '/my-hub/device',

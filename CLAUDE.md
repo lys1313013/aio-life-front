@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `requestClient`（`apps/web-antd/src/api/request.ts`）已配置 `responseReturn: 'data'`，这意味着所有 API 调用返回的是 `{ rscode, data }` 中 `data` 字段的**直接值**，无需手动 `.data`。
 
 关键行为：
+
 - 请求头自动带 `Authorization: Bearer <token>` 和 `Accept-Language`
 - token 过期自动刷新，失败后触发 re-authenticate（弹窗或直接登出）
 - **全局错误拦截器自动提示**：`errorMessageResponseInterceptor` 对任何请求失败（`rscode != '0'` 或 HTTP 错误）自动 `message.error` 弹出后端错误信息（`result` 字段），无需业务代码再提示
@@ -97,7 +98,11 @@ export async function createFeedback(data: FeedbackCreateRequest) {
   return await requestClient.post<FeedbackVO>('/feedback', data);
 }
 
-export async function queryMyFeedbacks(params: { status?: string; page: number; size: number }) {
+export async function queryMyFeedbacks(params: {
+  status?: string;
+  page: number;
+  size: number;
+}) {
   return await requestClient.get<Page<FeedbackVO>>('/feedback/my', { params });
 }
 ```
@@ -107,11 +112,13 @@ export async function queryMyFeedbacks(params: { status?: string; page: number; 
 项目**没有**全局 `/file/upload` 接口。每个业务模块各自包装一个 `/<biz>/upload-attachment` 接口，内部统一调用后端 `IFileService.uploadAndSave(file, bizType, bucket, objectName, isPublic)`，文件元信息写入全局 `file` 表。
 
 **统一三步走**：
+
 1. **上传**：前端调 `/<biz>/upload-attachment` → 后端写 `file` 表，`biz_type` 按业务传（如 `honor_record`、`feedback`、`feedback_comment`），此时 `biz_id` 为空
 2. **绑定**：业务记录创建 / 更新后，后端调 `fileService.bindBizId(fileIds, bizType, bizId)` 把文件与业务记录关联
 3. **查询**：调 `fileService.getByBiz(bizType, bizId)` 反查该业务的所有文件
 
 **前端约定**：
+
 - 业务 API 文件提供 `uploadXxxAttachment(file: File): Promise<FileVO>` 函数，封装业务专属的上传接口
 - 业务 Entity / 表单入参包含 `fileIds: string[]`（提交时传给后端用于绑定）
 - 业务 Entity 响应包含 `files: FileVO[]`（查询时后端填充）
@@ -120,9 +127,9 @@ export async function queryMyFeedbacks(params: { status?: string; page: number; 
 ### 路由与权限
 
 路由文件在 `apps/web-antd/src/router/routes/modules/`，按业务模块拆分。meta 常用字段：
+
 - `keepAlive: true` — 页面缓存，离开不销毁
 - `maxIdleTime` — 配合 keepAlive，超时后销毁缓存（单位秒）
-- `backTop: false` — 禁用返回顶部按钮
 - `authority: ['admin']` — 权限控制，对应后端返回的 accessCodes
 - `order` — 菜单排序
 - `icon` — 使用 MDI 图标名（`mdi:xxx`）或 Iconify 格式
@@ -169,18 +176,19 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 
 使用 Tailwind CSS 语义化颜色变量，**不可**硬编码 `#fff` / `#000`：
 
-| 用途 | 类名 |
-|---|---|
-| 页面背景 | `bg-background/50` |
-| 卡片背景 | `bg-card` |
-| 卡片文字 | `text-card-foreground` |
+| 用途     | 类名                    |
+| -------- | ----------------------- |
+| 页面背景 | `bg-background/50`      |
+| 卡片背景 | `bg-card`               |
+| 卡片文字 | `text-card-foreground`  |
 | 次要文字 | `text-muted-foreground` |
-| 次要背景 | `bg-secondary` |
-| 边框 | `border-border` |
+| 次要背景 | `bg-secondary`          |
+| 边框     | `border-border`         |
 
 ### 移动端适配
 
 所有页面必须支持移动端。常见做法：
+
 - 使用 Tailwind 响应式断点：`grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
 - 过滤器区域用 `flex-wrap`
 - 弹窗宽度用百分比或固定 `600px`（移动端 Ant Design Vue 会自动处理）

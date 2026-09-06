@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:chart-areaspline',
           title: '概览',
-          backTop: false,
         },
         name: 'financeDashboard',
         path: '/finance-management/dashboard',
@@ -25,7 +24,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:cash-plus',
           title: '收入',
-          backTop: false,
         },
         name: 'incomeManagement',
         path: '/finance-management/income',
@@ -35,7 +33,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:cash-minus',
           title: '支出',
-          backTop: false,
         },
         name: 'expenseManagement',
         path: '/finance-management/expense',
@@ -45,7 +42,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:import',
           title: '账单导入',
-          backTop: false,
         },
         name: 'alipayImport',
         path: '/finance-management/import',

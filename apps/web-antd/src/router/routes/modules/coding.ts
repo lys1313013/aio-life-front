@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:github',
           title: 'Github',
-          backTop: false,
         },
         name: 'GithubGraph',
         path: '/coding/github',

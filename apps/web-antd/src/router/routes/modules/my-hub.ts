@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:run-fast',
           title: '运动',
-          backTop: false,
         },
         name: 'exercise',
         path: '/record/exercise',
@@ -25,7 +24,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:format-list-bulleted-type',
           title: '运动分类配置',
-          backTop: false,
         },
         name: 'exerciseCategoryConfig',
         path: '/my-hub/exercise/category-config',
@@ -36,7 +34,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:video-vintage',
           title: '视频观看',
-          backTop: false,
         },
         name: 'videoWatch',
         path: '/my-hub/videoWatch',
@@ -46,7 +43,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '闪念',
           icon: 'mdi:lightbulb-on-outline',
-          backTop: false,
         },
         name: 'think',
         path: '/record/think',
@@ -56,7 +52,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '笔记',
           icon: 'mdi:note-text-outline',
-          backTop: false,
         },
         name: 'memo',
         path: '/my-hub/memo',
@@ -66,7 +61,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:chart-line-variant',
           title: '活动',
-          backTop: false,
         },
         name: 'performance',
         path: '/my-hub/performance',
@@ -76,7 +70,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '里程碑',
           icon: 'mdi:flag-variant',
-          backTop: false,
         },
         name: 'milestone',
         path: '/my-hub/milestone',
@@ -86,7 +79,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '纪念日',
           icon: 'mdi:calendar-heart',
-          backTop: false,
         },
         name: 'anniversary',
         path: '/my-hub/anniversary',
@@ -96,7 +88,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '荣誉中心',
           icon: 'mdi:trophy-outline',
-          backTop: false,
         },
         name: 'honor',
         path: '/my-hub/honor',
@@ -106,7 +97,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           title: '阅读记录',
           icon: 'mdi:book-open-page-variant',
-          backTop: false,
         },
         name: 'readRecord',
         path: '/my-hub/read-record',

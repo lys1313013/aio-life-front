@@ -15,7 +15,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:history',
           title: '时迹',
-          backTop: false,
           keepAlive: true,
           maxIdleTime: 60,
         },
@@ -27,7 +26,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:view-dashboard-outline',
           title: '看板',
-          backTop: false,
           keepAlive: true,
         },
         name: 'TimeTrackerDashboard',
@@ -38,7 +36,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:tag-multiple-outline',
           title: '我的分类',
-          backTop: false,
         },
         name: 'CategoryConfig',
         path: '/time/my-categories',
@@ -49,7 +46,6 @@ const routes: RouteRecordRaw[] = [
         meta: {
           icon: 'mdi:shield-account-outline',
           title: '分类管理（管理员）',
-          backTop: false,
           authority: ['admin'],
         },
         name: 'TimeTrackerCategoryAdmin',
