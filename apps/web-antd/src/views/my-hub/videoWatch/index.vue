@@ -31,6 +31,7 @@ import {
   statistics,
   updateBiVideo,
 } from '#/api/core/bilibili-video';
+import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 export default {
@@ -71,34 +72,31 @@ export default {
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
-        status: 2,
+        status: PROGRESS_STATUS.IN_PROGRESS,
         notes: '',
         ownerName: '',
         watchedDuration: 0,
       },
       tabList: [
-        { key: 1, tab: '未开始' },
-        { key: 2, tab: '进行中' },
-        { key: 3, tab: '已暂停' },
-        { key: 4, tab: '部分完成' },
-        { key: 5, tab: '已完成' },
-        { key: 0, tab: '全部' },
+        { key: PROGRESS_STATUS.NOT_STARTED, tab: '未开始' },
+        { key: PROGRESS_STATUS.IN_PROGRESS, tab: '进行中' },
+        { key: PROGRESS_STATUS.ON_HOLD, tab: '已暂停' },
+        { key: PROGRESS_STATUS.COMPLETED, tab: '已完成' },
+        { key: 'all', tab: '全部' },
       ],
-      tabKey: 2,
+      tabKey: PROGRESS_STATUS.IN_PROGRESS,
       videoCounts: {
-        0: 0,
-        1: 0,
-        2: 0,
-        3: 0,
-        4: 0,
-        5: 0,
+        [PROGRESS_STATUS.NOT_STARTED]: 0,
+        [PROGRESS_STATUS.IN_PROGRESS]: 0,
+        [PROGRESS_STATUS.ON_HOLD]: 0,
+        [PROGRESS_STATUS.COMPLETED]: 0,
+        all: 0,
       },
       statusOptions: [
-        { value: 1, label: '未开始' },
-        { value: 2, label: '进行中' },
-        { value: 3, label: '已暂停' },
-        { value: 4, label: '部分完成' },
-        { value: 5, label: '已完成' },
+        { value: PROGRESS_STATUS.NOT_STARTED, label: '未开始' },
+        { value: PROGRESS_STATUS.IN_PROGRESS, label: '进行中' },
+        { value: PROGRESS_STATUS.ON_HOLD, label: '已暂停' },
+        { value: PROGRESS_STATUS.COMPLETED, label: '已完成' },
       ],
       learningStats: {
         studiedSeconds: 0,
@@ -121,7 +119,7 @@ export default {
         page: 1,
         pageSize: 50,
         condition: {
-          status: this.tabKey === 0 ? undefined : this.tabKey,
+          status: this.tabKey === 'all' ? undefined : this.tabKey,
         },
       });
       this.videos = res.items || [];
@@ -133,13 +131,12 @@ export default {
       if (res) {
         let sum = 0;
         Object.keys(this.videoCounts).forEach((key) => {
-          const numKey = Number(key);
-          this.videoCounts[numKey] = res[numKey] || 0;
-          if (numKey !== 0) {
-            sum += this.videoCounts[numKey];
+          this.videoCounts[key] = res[key] || 0;
+          if (key !== 'all') {
+            sum += this.videoCounts[key];
           }
         });
-        this.videoCounts[0] = sum;
+        this.videoCounts.all = sum;
       }
       this.calculateLearningStats();
     },
@@ -149,13 +146,12 @@ export default {
       if (res) {
         this.learningStats = {
           ...res,
-          notStartedCount: this.videoCounts[1] || 0,
-          studiedCount: this.videoCounts[5] || 0,
+          notStartedCount: this.videoCounts[PROGRESS_STATUS.NOT_STARTED] || 0,
+          studiedCount: this.videoCounts[PROGRESS_STATUS.COMPLETED] || 0,
           unstudiedCount:
-            (this.videoCounts[2] || 0) +
-            (this.videoCounts[3] || 0) +
-            (this.videoCounts[4] || 0),
-          totalCount: this.videoCounts[0] || 0,
+            (this.videoCounts[PROGRESS_STATUS.IN_PROGRESS] || 0) +
+            (this.videoCounts[PROGRESS_STATUS.ON_HOLD] || 0),
+          totalCount: this.videoCounts.all || 0,
         };
 
         if (this.learningStats.totalCount > 0) {
@@ -233,7 +229,7 @@ export default {
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
-        payStatus: 2,
+        status: PROGRESS_STATUS.IN_PROGRESS,
         notes: '',
         ownerName: '',
         watchedDuration: 0,
@@ -267,7 +263,7 @@ export default {
             pages: res.data.pages || [],
           };
           if (this.newVideo.currentEpisode === this.newVideo.episodes) {
-            this.newVideo.status = 5;
+            this.newVideo.status = PROGRESS_STATUS.COMPLETED;
           }
           message.success('解析成功');
         } else {
@@ -293,22 +289,20 @@ export default {
 
     getStatusText(status) {
       const statusMap = {
-        1: '未开始',
-        2: '进行中',
-        3: '已暂停',
-        4: '部分完成',
-        5: '已完成',
+        [PROGRESS_STATUS.NOT_STARTED]: '未开始',
+        [PROGRESS_STATUS.IN_PROGRESS]: '进行中',
+        [PROGRESS_STATUS.ON_HOLD]: '已暂停',
+        [PROGRESS_STATUS.COMPLETED]: '已完成',
       };
       return statusMap[status] || '未知';
     },
 
     getStatusBgClass(status) {
       const classMap = {
-        1: 'bg-muted text-muted-foreground',
-        2: 'bg-primary text-primary-foreground',
-        3: 'bg-warning text-warning-foreground',
-        4: 'bg-purple-500 text-white',
-        5: 'bg-success text-success-foreground',
+        [PROGRESS_STATUS.NOT_STARTED]: 'bg-muted text-muted-foreground',
+        [PROGRESS_STATUS.IN_PROGRESS]: 'bg-primary text-primary-foreground',
+        [PROGRESS_STATUS.ON_HOLD]: 'bg-warning text-warning-foreground',
+        [PROGRESS_STATUS.COMPLETED]: 'bg-success text-success-foreground',
       };
       return classMap[status] || 'bg-muted text-muted-foreground';
     },
@@ -329,9 +323,9 @@ export default {
         );
       }
       if (this.newVideo.progress >= 100) {
-        this.newVideo.status = 5;
+        this.newVideo.status = PROGRESS_STATUS.COMPLETED;
       } else if (this.newVideo.progress > 0) {
-        this.newVideo.status = 2;
+        this.newVideo.status = PROGRESS_STATUS.IN_PROGRESS;
       }
     },
 
@@ -367,7 +361,7 @@ export default {
     },
 
     handleStatusChange(newStatus) {
-      if (newStatus === 5 && this.newVideo.episodes) {
+      if (newStatus === PROGRESS_STATUS.COMPLETED && this.newVideo.episodes) {
         this.newVideo.currentEpisode = this.newVideo.episodes;
         this.newVideo.progress = 100;
       }
@@ -394,7 +388,7 @@ export default {
     },
 
     getActualProgress(video) {
-      if (video.status === 5) return 100;
+      if (video.status === PROGRESS_STATUS.COMPLETED) return 100;
       if (video.duration > 0) {
         const progress = (video.watchedDuration / video.duration) * 100;
         return Math.min(100, Math.max(0, Math.round(progress)));

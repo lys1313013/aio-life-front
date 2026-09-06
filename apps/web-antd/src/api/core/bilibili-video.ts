@@ -1,3 +1,5 @@
+import type { ProgressStatus } from './progress-status';
+
 import { requestClient } from '#/api/request';
 
 /**
@@ -13,7 +15,7 @@ export interface BilibiliVideo {
   episodes?: number; // 集数
   currentEpisode?: number; // 当前观看集数
   progress?: number; // 观看进度（百分比）
-  status: 'completed' | 'in-progress' | 'watched'; // 状态：已学完、进行中、已学过
+  status: ProgressStatus; // 状态：未开始、进行中、已暂停、已完成
   lastWatched?: string; // 最后观看时间
   addedAt?: string; // 添加时间
   notes?: string; // 学习笔记
