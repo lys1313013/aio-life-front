@@ -206,10 +206,8 @@ const handleSubmit = async () => {
   try {
     if (isEdit.value && editId.value) {
       await updatePasswordApi(editId.value, data);
-      message.success('更新成功');
     } else {
       await createPasswordApi(data);
-      message.success('添加成功');
     }
 
     visible.value = false;

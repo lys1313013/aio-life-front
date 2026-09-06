@@ -208,10 +208,8 @@ const handleSubmit = async () => {
     };
     if (formData.id) {
       await updateLLMKeyApi(submitData);
-      antMessage.success('更新成功');
     } else {
       await saveLLMKeyApi(submitData);
-      antMessage.success('保存成功');
     }
     formVisible.value = false;
     await fetchLLMKeys();

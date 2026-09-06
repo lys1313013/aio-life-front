@@ -320,7 +320,6 @@ const handleSave = async () => {
 
     if (formState.value.id) {
       await updateGoal(payload);
-      message.success('更新成功');
     } else {
       await createGoal(payload);
       message.success('创建成功');

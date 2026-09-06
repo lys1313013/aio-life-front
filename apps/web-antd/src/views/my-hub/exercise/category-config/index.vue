@@ -211,11 +211,9 @@ const handleSaveCategory = async () => {
     if (editingCategory.value?.id) {
       // 更新
       await update(payload);
-      message.success('更新成功');
     } else {
       // 新增
       await insert(payload);
-      message.success('添加成功');
     }
 
     showEditModal.value = false;

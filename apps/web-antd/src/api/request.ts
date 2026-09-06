@@ -158,7 +158,12 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       // 当前mock接口返回的错误字段是 error 或者 message
       const errorMessage = responseData?.result ?? '';
       // 如果没有错误信息，则会根据状态码进行提示
-      message.error(errorMessage || msg);
+      // 首屏通常会并发请求多个接口。服务异常时共用同一个 key，后续错误会
+      // 更新当前提示而不是继续堆叠，同时不影响业务层的成功/警告提示。
+      message.error({
+        content: errorMessage || msg,
+        key: 'global-request-error',
+      });
     }),
   );
 

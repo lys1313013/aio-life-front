@@ -293,10 +293,8 @@ const handleSave = async () => {
 
     if (formState.value.id) {
       await updateHonorRecord(payload);
-      message.success('更新成功');
     } else {
       await createHonorRecord(payload);
-      message.success('添加成功');
     }
 
     modalVisible.value = false;

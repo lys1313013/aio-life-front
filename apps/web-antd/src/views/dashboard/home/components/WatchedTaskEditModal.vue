@@ -90,7 +90,6 @@ const handleOk = async () => {
       }
     }
 
-    message.success('更新成功');
     emit('success');
     emit('update:visible', false);
   } catch (error) {

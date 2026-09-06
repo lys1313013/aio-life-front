@@ -272,10 +272,8 @@ const handleSave = async () => {
 
     if (formState.value.id) {
       await updateMembership(payload);
-      message.success('更新成功');
     } else {
       await createMembership(payload);
-      message.success('添加成功');
     }
 
     modalVisible.value = false;

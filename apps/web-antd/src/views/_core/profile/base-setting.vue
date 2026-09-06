@@ -101,7 +101,6 @@ const handleSubmit = async (values: any) => {
       values.avatar = values.avatar[0].response || values.avatar[0].url;
     }
     await updateUserInfoApi(values as UpdateUserParams);
-    message.success('更新成功');
     const data = await authStore.fetchUserInfo();
     const avatar = data.avatar;
     const fileList = avatar

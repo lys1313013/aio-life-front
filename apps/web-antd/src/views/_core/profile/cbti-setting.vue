@@ -637,10 +637,8 @@ const saveAdminPersonality = async () => {
     try {
       if (adminEditingId.value == null) {
         await createCbtiPersonalityApi(payload);
-        message.success('新增成功');
       } else {
         await updateCbtiPersonalityApi(adminEditingId.value, payload);
-        message.success('更新成功');
       }
     } catch {
       // 全局拦截器已提示
