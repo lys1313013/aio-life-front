@@ -1,27 +1,22 @@
 <script lang="ts" setup>
-defineOptions({ name: 'ReadRecord' });
-
 import { onMounted, ref } from 'vue';
-import AuthImage from '#/components/AuthImage.vue';
 
 import { usePreferences } from '@vben/preferences';
 
 import { SearchOutlined } from '@ant-design/icons-vue';
-import {
-  Button,
-  Empty,
-  Input,
-  Modal,
-  Select,
-  Spin,
-} from 'ant-design-vue';
+import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
 
 import { ReadRecordApi } from '#/api/readRecord';
+import AuthImage from '#/components/AuthImage.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
+import { loadStatusFilter, saveStatusFilter } from '../status-filter-storage';
 import FormDrawerDemo from './form-drawer.vue';
 
+defineOptions({ name: 'ReadRecord' });
+
 const { isMobile } = usePreferences();
+const STATUS_FILTER_STORAGE_KEY = 'aio-life:read-record:status-filter';
 
 const modalVisible = ref(false);
 const currentRow = ref<any>(null);
@@ -35,7 +30,7 @@ const queryForm = ref({
   size: 24, // 增加单页数据量以适应滚动加载
   title: '',
   type: undefined as number | undefined,
-  status: undefined as number | undefined,
+  statuses: loadStatusFilter(STATUS_FILTER_STORAGE_KEY),
 });
 
 // 状态映射
@@ -98,6 +93,11 @@ const handleSearch = () => {
   loadData();
 };
 
+const handleStatusChange = () => {
+  saveStatusFilter(STATUS_FILTER_STORAGE_KEY, queryForm.value.statuses);
+  handleSearch();
+};
+
 const openFormModal = (row?: any) => {
   currentRow.value = row;
   modalVisible.value = true;
@@ -141,11 +141,12 @@ const tableReload = () => {
             <Select.Option :value="2">文章/网页</Select.Option>
           </Select>
           <Select
-            v-model:value="queryForm.status"
-            placeholder="阅读状态"
+            v-model:value="queryForm.statuses"
+            placeholder="状态"
             allow-clear
-            class="w-full md:w-32"
-            @change="handleSearch"
+            class="w-full md:w-40"
+            mode="multiple"
+            @change="handleStatusChange"
           >
             <Select.Option :value="0">未开始</Select.Option>
             <Select.Option :value="1">阅读中</Select.Option>
@@ -180,7 +181,7 @@ const tableReload = () => {
           <!-- 书籍网格 -->
           <div
             v-if="records.length > 0"
-            class="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10"
+            class="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9"
           >
             <div
               v-for="item in records"
@@ -227,10 +228,7 @@ const tableReload = () => {
               </div>
 
               <!-- 日期信息 -->
-              <div
-                v-if="item.finishTime"
-                class="mt-2 w-full px-1 text-center"
-              >
+              <div v-if="item.finishTime" class="mt-2 w-full px-1 text-center">
                 <div
                   class="truncate text-[11px] text-gray-400"
                   :title="item.finishTime"

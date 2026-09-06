@@ -1,4 +1,5 @@
 import { requestClient } from '#/api/request';
+
 import { FILE_BIZ_TYPE, uploadFile } from './core/common';
 
 /**
@@ -9,6 +10,7 @@ export namespace MovieApi {
     title?: string;
     type?: number;
     status?: number;
+    statuses?: number[];
     activeOnly?: boolean;
     current?: number;
     size?: number;
