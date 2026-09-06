@@ -3,7 +3,14 @@ import { ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
-import { Button, Input, message, Popconfirm, Upload } from 'ant-design-vue';
+import {
+  Button,
+  Input,
+  message,
+  Popconfirm,
+  Tooltip,
+  Upload,
+} from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
 import { MovieApi } from '#/api/movie';
@@ -135,7 +142,7 @@ const [Form, formApi] = useVbenForm({
       component: 'Textarea',
       fieldName: 'remark',
       label: '短评/备注',
-      formItemClass: 'col-span-2 mb-0',
+      formItemClass: 'col-span-2 mb-0 md:col-span-2',
       componentProps: {
         rows: 2,
       },
@@ -151,17 +158,17 @@ watch(
   () => props.values,
   (newVal) => {
     if (newVal) {
-        formApi.setValues(newVal);
-        previewImg.value = '';
-        if (newVal.fileId) {
-          fetchAuthImageUrl(newVal.fileId).then((url) => {
-            previewImg.value = url;
-          });
-        } else {
-          previewImg.value = newVal.coverImgUrl || '';
-        }
-        doubanUrl.value = newVal.url || '';
+      formApi.setValues(newVal);
+      previewImg.value = '';
+      if (newVal.fileId) {
+        fetchAuthImageUrl(newVal.fileId).then((url) => {
+          previewImg.value = url;
+        });
       } else {
+        previewImg.value = newVal.coverImgUrl || '';
+      }
+      doubanUrl.value = newVal.url || '';
+    } else {
       formApi.resetForm();
       previewImg.value = '';
       doubanUrl.value = '';
@@ -188,14 +195,15 @@ const handleParseDouban = async () => {
       if (res.title) parsedValues.title = res.title;
       if (res.director) parsedValues.director = res.director;
       if (res.type) parsedValues.type = res.type;
-      if (res.coverImgUrl) {
-        parsedValues.coverImgUrl = res.coverImgUrl;
-      }
+      // 每次解析都覆盖封面字段，避免预览已更新但保存仍携带旧 fileId。
+      parsedValues.coverImgUrl = res.coverImgUrl || null;
+      parsedValues.fileId = res.fileId || null;
       if (res.fileId) {
-        parsedValues.fileId = res.fileId;
         previewImg.value = await fetchAuthImageUrl(res.fileId);
       } else if (res.coverImgUrl) {
         previewImg.value = res.coverImgUrl;
+      } else {
+        previewImg.value = '';
       }
       if (res.totalProgress) parsedValues.totalProgress = res.totalProgress;
 
@@ -204,7 +212,6 @@ const handleParseDouban = async () => {
 
       if (Object.keys(parsedValues).length > 0) {
         formApi.setValues(parsedValues);
-        message.success('已提取豆瓣信息并回填');
       } else {
         message.warning('未能提取到有效信息');
       }
@@ -221,10 +228,10 @@ const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
   try {
     uploadLoading.value = true;
     const res = await MovieApi.uploadCover(file as File);
-   if (res) {
-        formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
-        previewImg.value = await fetchAuthImageUrl(res.id);
-        message.success('上传海报成功');
+    if (res) {
+      formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
+      previewImg.value = await fetchAuthImageUrl(res.id);
+      message.success('上传海报成功');
       onSuccess?.(res, file);
     }
   } catch (error) {
@@ -265,10 +272,8 @@ const onSubmit = async () => {
 
     if (props.values?.id) {
       await MovieApi.update({ ...values, id: props.values.id } as any);
-      message.success('更新成功');
     } else {
       await MovieApi.save(values as any);
-      message.success('添加成功');
     }
     emit('table-reload');
     emit('close');
@@ -293,107 +298,97 @@ const handleDelete = async () => {
 </script>
 
 <template>
-  <div class="px-1 py-1" @paste="handlePaste">
-    <!-- 未上传封面时的占位提示 -->
+  <div @paste="handlePaste">
     <div
-      v-if="!previewImg"
-      class="mx-2 mb-4 flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50/30 py-6 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/20"
+      class="mb-5 rounded-xl border border-gray-200/80 bg-gray-50/70 p-3.5 dark:border-gray-700 dark:bg-gray-800/40"
     >
-      <IconifyIcon
-        icon="lucide:image-plus"
-        class="mb-2 text-2xl text-gray-400"
-      />
-      <div class="px-4 text-center text-xs leading-relaxed text-gray-400">
-        可直接
-        <span class="font-medium text-gray-500 dark:text-gray-300">Ctrl+V</span>
-        粘贴图片<br />
-        或通过豆瓣链接一键解析
-      </div>
-    </div>
-    <div
-      v-if="previewImg"
-      class="relative mb-4 flex flex-col items-center justify-center"
-    >
-      <div
-        class="group relative h-32 w-24 overflow-hidden rounded border border-gray-200 shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-700"
-      >
-        <img :src="previewImg" class="h-full w-full object-cover" />
-
-        <!-- 悬浮提示更换封面 -->
-        <div
-          class="absolute inset-0 flex flex-col items-center justify-center bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        >
+      <div class="flex flex-col gap-4 sm:flex-row">
+        <div class="flex shrink-0 justify-center sm:block">
           <Upload
             accept="image/*"
             :show-upload-list="false"
             :custom-request="handleUploadCover"
           >
-            <Button
-              size="small"
-              type="primary"
-              ghost
-              class="h-6 border-white px-2 py-0 text-xs text-white hover:border-white hover:text-white"
+            <div
+              class="group relative flex h-28 w-20 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
             >
-              更换封面
-            </Button>
+              <img
+                v-if="previewImg"
+                :src="previewImg"
+                alt="影视封面"
+                class="h-full w-full object-cover"
+              />
+              <div v-else class="flex flex-col items-center text-gray-400">
+                <IconifyIcon
+                  icon="lucide:image-plus"
+                  class="mb-1.5 text-2xl"
+                />
+                <span class="text-[11px]">上传封面</span>
+                <div class="mt-1.5 flex flex-col items-center gap-1">
+                  <kbd
+                    class="rounded border border-gray-200 bg-gray-50 px-1 py-0.5 font-sans text-[8px] leading-none text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                  >
+                    Ctrl + V
+                  </kbd>
+                  <span class="text-[9px] leading-none">粘贴封面</span>
+                </div>
+              </div>
+              <div
+                v-if="previewImg"
+                :class="[
+                  'absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[11px] text-white transition-opacity',
+                  uploadLoading
+                    ? 'opacity-100'
+                    : 'opacity-0 group-hover:opacity-100',
+                ]"
+              >
+                {{ uploadLoading ? '上传中' : '更换' }}
+              </div>
+            </div>
           </Upload>
-          <span class="mt-2 scale-90 text-[10px] font-medium text-white/90"
-            >或 Ctrl+V 粘贴</span
-          >
         </div>
-      </div>
-      <div
-        class="mt-2 text-[10px] text-gray-400 transition-opacity duration-300"
-      >
-        ( 支持 Ctrl+V 粘贴替换 )
-      </div>
-    </div>
 
-    <!-- 极简豆瓣解析提示区 -->
-    <div
-      class="mb-4 flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 p-2 dark:border-gray-800 dark:bg-gray-800/50"
-    >
-      <div class="flex items-center gap-3">
-        <IconifyIcon icon="mdi:douban" class="text-xl text-[#007722]" />
-        <div class="w-full min-w-[200px] flex-1">
-          <Input
-            v-model:value="doubanUrl"
-            placeholder="在此粘贴豆瓣链接一键解析"
-            allow-clear
-            size="small"
-            class="text-xs"
-          />
+        <div class="min-w-0 flex-1 self-center">
+          <div class="mb-2 flex items-center gap-2">
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
+              豆瓣条目链接
+            </span>
+            <Tooltip
+              title="支持 movie.douban.com/subject/... 地址，解析后自动填写名称、演职员和封面"
+            >
+              <IconifyIcon
+                icon="lucide:circle-help"
+                class="cursor-help text-sm text-gray-400"
+              />
+            </Tooltip>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <Input
+                v-model:value="doubanUrl"
+                placeholder="https://movie.douban.com/subject/..."
+                allow-clear
+                size="small"
+              />
+            </div>
+            <Button
+              type="link"
+              size="small"
+              :loading="parseLoading"
+              @click="handleParseDouban"
+            >
+              解析
+            </Button>
+          </div>
         </div>
-      </div>
-      <div class="ml-2 flex shrink-0 gap-2">
-        <Upload
-          v-if="!previewImg"
-          accept="image/*"
-          :show-upload-list="false"
-          :custom-request="handleUploadCover"
-        >
-          <Button size="small" shape="round" :loading="uploadLoading">
-            上传图片
-          </Button>
-        </Upload>
-        <Button
-          type="primary"
-          size="small"
-          shape="round"
-          class="border-none bg-[#007722] hover:bg-[#007722]/80"
-          :loading="parseLoading"
-          @click="handleParseDouban"
-        >
-          解析
-        </Button>
       </div>
     </div>
 
     <Form />
 
-    <!-- 底部操作区 -->
     <div
-      class="mt-4 flex justify-between border-t border-gray-100 pt-3 dark:border-gray-800"
+      class="mt-5 flex justify-between border-t border-gray-100 pt-4 dark:border-gray-800"
     >
       <div>
         <Popconfirm
@@ -403,17 +398,12 @@ const handleDelete = async () => {
           cancel-text="取消"
           @confirm="handleDelete"
         >
-          <Button danger shape="round">删除</Button>
+          <Button danger>删除</Button>
         </Popconfirm>
       </div>
-      <div class="flex gap-3">
-        <Button shape="round" @click="$emit('close')">取消</Button>
-        <Button
-          shape="round"
-          type="primary"
-          :loading="submitLoading"
-          @click="onSubmit"
-        >
+      <div class="flex gap-2">
+        <Button @click="$emit('close')">取消</Button>
+        <Button type="primary" :loading="submitLoading" @click="onSubmit">
           保存
         </Button>
       </div>

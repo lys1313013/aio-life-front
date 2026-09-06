@@ -7,14 +7,7 @@ import { usePreferences } from '@vben/preferences';
 import AuthImage from '#/components/AuthImage.vue';
 
 import { SearchOutlined } from '@ant-design/icons-vue';
-import {
-  Button,
-  Empty,
-  Input,
-  Modal,
-  Select,
-  Spin,
-} from 'ant-design-vue';
+import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
 
 import { MovieApi } from '#/api/movie';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
@@ -194,11 +187,11 @@ const tableReload = () => {
               <div
                 class="relative aspect-[3/4] w-full overflow-hidden rounded border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-800"
               >
-                  <AuthImage
-                    v-if="item.fileId"
-                    :file-id="item.fileId"
-                    class="h-full w-full object-cover"
-                  />
+                <AuthImage
+                  v-if="item.fileId"
+                  :file-id="item.fileId"
+                  class="h-full w-full object-cover"
+                />
                 <div
                   v-else
                   class="flex h-full w-full flex-col items-center justify-center bg-gray-50 p-4 text-center dark:bg-gray-800"
@@ -228,17 +221,13 @@ const tableReload = () => {
                 </div>
               </div>
 
-              <!-- 极简标题信息 -->
-              <div class="mt-2 w-full px-1 text-center">
+              <!-- 日期信息 -->
+              <div
+                v-if="item.finishTime"
+                class="mt-2 w-full px-1 text-center"
+              >
                 <div
-                  class="truncate text-[13px] font-medium leading-tight text-gray-800 dark:text-gray-200"
-                  :title="item.title"
-                >
-                  {{ item.title }}
-                </div>
-                <div
-                  v-if="item.finishTime"
-                  class="mt-0.5 truncate text-[11px] text-gray-400"
+                  class="truncate text-[11px] text-gray-400"
                   :title="item.finishTime"
                 >
                   {{ item.finishTime.split(' ')[0] }}
@@ -267,7 +256,7 @@ const tableReload = () => {
     <!-- 表单模态框 -->
     <Modal
       v-model:open="modalVisible"
-      :width="isMobile ? '90%' : 500"
+      :width="isMobile ? 'calc(100vw - 32px)' : 560"
       :footer="null"
       :closable="false"
       :destroy-on-close="true"

@@ -226,17 +226,13 @@ const tableReload = () => {
                 </div>
               </div>
 
-              <!-- 极简标题信息 -->
-              <div class="mt-2 w-full px-1 text-center">
+              <!-- 日期信息 -->
+              <div
+                v-if="item.finishTime"
+                class="mt-2 w-full px-1 text-center"
+              >
                 <div
-                  class="truncate text-[13px] font-medium leading-tight text-gray-800 dark:text-gray-200"
-                  :title="item.title"
-                >
-                  {{ item.title }}
-                </div>
-                <div
-                  v-if="item.finishTime"
-                  class="mt-0.5 truncate text-[11px] text-gray-400"
+                  class="truncate text-[11px] text-gray-400"
                   :title="item.finishTime"
                 >
                   {{ item.finishTime.split(' ')[0] }}
@@ -265,7 +261,7 @@ const tableReload = () => {
     <!-- 表单模态框 -->
     <Modal
       v-model:open="modalVisible"
-      :width="isMobile ? '90%' : 500"
+      :width="isMobile ? 'calc(100vw - 32px)' : 560"
       :footer="null"
       :closable="false"
       :destroy-on-close="true"
