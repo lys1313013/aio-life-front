@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { ProgressStatus } from '#/api/core/progress-status';
+
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 import { CloseOutlined, SearchOutlined } from '@ant-design/icons-vue';
@@ -13,6 +15,7 @@ import {
   theme,
 } from 'ant-design-vue';
 
+import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
 import AuthImage from '#/components/AuthImage.vue';
@@ -173,19 +176,19 @@ const handleClear = () => {
   emit('change', null);
 };
 
-const getStatusText = (status: number) => {
-  if (status === 0) return props.relateType === 2 ? '想看' : '未开始';
-  if (status === 1) return props.relateType === 2 ? '在看' : '阅读中';
-  if (status === 2) return props.relateType === 2 ? '看过' : '已完成';
-  if (status === 3) return '搁置';
+const getStatusText = (status: ProgressStatus) => {
+  if (status === PROGRESS_STATUS.NOT_STARTED) return '想看';
+  if (status === PROGRESS_STATUS.IN_PROGRESS) return '在看';
+  if (status === PROGRESS_STATUS.COMPLETED) return '看过';
+  if (status === PROGRESS_STATUS.ON_HOLD) return '搁置';
   return '未知';
 };
 
-const getStatusColor = (status: number) => {
-  if (status === 0) return 'default';
-  if (status === 1) return 'processing';
-  if (status === 2) return 'success';
-  if (status === 3) return 'warning';
+const getStatusColor = (status: ProgressStatus) => {
+  if (status === PROGRESS_STATUS.NOT_STARTED) return 'default';
+  if (status === PROGRESS_STATUS.IN_PROGRESS) return 'processing';
+  if (status === PROGRESS_STATUS.COMPLETED) return 'success';
+  if (status === PROGRESS_STATUS.ON_HOLD) return 'warning';
   return 'default';
 };
 

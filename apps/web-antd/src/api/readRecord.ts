@@ -1,3 +1,5 @@
+import type { ProgressStatus } from './core/progress-status';
+
 import { requestClient } from '#/api/request';
 
 import { FILE_BIZ_TYPE, uploadFile } from './core/common';
@@ -9,8 +11,8 @@ export namespace ReadRecordApi {
   export interface ReadRecordQuery {
     title?: string;
     type?: number;
-    status?: number;
-    statuses?: number[];
+    status?: ProgressStatus;
+    statuses?: ProgressStatus[];
     activeOnly?: boolean;
     current?: number;
     size?: number;
@@ -24,7 +26,7 @@ export namespace ReadRecordApi {
     url: string;
     fileId: string;
     coverImgUrl: string;
-    status: number;
+    status: ProgressStatus;
     totalProgress: number;
     currentProgress: number;
     startTime: string;
@@ -42,7 +44,7 @@ export namespace ReadRecordApi {
     url?: string;
     fileId?: string;
     coverImgUrl?: string;
-    status?: number;
+    status?: ProgressStatus;
     totalProgress?: number;
     currentProgress?: number;
     startTime?: string;

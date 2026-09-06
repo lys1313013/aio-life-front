@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { ProgressStatus } from '#/api/core/progress-status';
+
 import { onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
@@ -6,6 +8,7 @@ import { usePreferences } from '@vben/preferences';
 import { SearchOutlined } from '@ant-design/icons-vue';
 import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
 
+import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { ReadRecordApi } from '#/api/readRecord';
 import AuthImage from '#/components/AuthImage.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
@@ -34,11 +37,11 @@ const queryForm = ref({
 });
 
 // 状态映射
-const statusMap: Record<number, { color: string; label: string }> = {
-  0: { label: '想看', color: 'default' },
-  1: { label: '在看', color: 'processing' },
-  2: { label: '看过', color: 'success' },
-  3: { label: '搁置', color: 'warning' },
+const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
+  [PROGRESS_STATUS.NOT_STARTED]: { label: '想看', color: 'default' },
+  [PROGRESS_STATUS.IN_PROGRESS]: { label: '在看', color: 'processing' },
+  [PROGRESS_STATUS.COMPLETED]: { label: '看过', color: 'success' },
+  [PROGRESS_STATUS.ON_HOLD]: { label: '搁置', color: 'warning' },
 };
 
 const loadData = async (isLoadMore = false) => {
@@ -149,10 +152,16 @@ const tableReload = () => {
             mode="multiple"
             @change="handleStatusChange"
           >
-            <Select.Option :value="0">想看</Select.Option>
-            <Select.Option :value="1">在看</Select.Option>
-            <Select.Option :value="2">看过</Select.Option>
-            <Select.Option :value="3">搁置</Select.Option>
+            <Select.Option :value="PROGRESS_STATUS.NOT_STARTED">
+              想看
+            </Select.Option>
+            <Select.Option :value="PROGRESS_STATUS.IN_PROGRESS">
+              在看
+            </Select.Option>
+            <Select.Option :value="PROGRESS_STATUS.COMPLETED">
+              看过
+            </Select.Option>
+            <Select.Option :value="PROGRESS_STATUS.ON_HOLD">搁置</Select.Option>
           </Select>
           <Button type="primary" ghost @click="handleSearch">搜索</Button>
           <span
@@ -220,10 +229,18 @@ const tableReload = () => {
                   v-if="item.status !== undefined && item.status !== null"
                   class="absolute right-0 top-0 z-10 rounded-bl rounded-tr-md px-1.5 py-0.5 text-[9px] font-medium text-white shadow-sm"
                   :class="[
-                    item.status === 0 ? 'bg-gray-400' : '',
-                    item.status === 1 ? 'bg-blue-500' : '',
-                    item.status === 2 ? 'bg-green-500' : '',
-                    item.status === 3 ? 'bg-orange-500' : '',
+                    item.status === PROGRESS_STATUS.NOT_STARTED
+                      ? 'bg-gray-400'
+                      : '',
+                    item.status === PROGRESS_STATUS.IN_PROGRESS
+                      ? 'bg-blue-500'
+                      : '',
+                    item.status === PROGRESS_STATUS.COMPLETED
+                      ? 'bg-green-500'
+                      : '',
+                    item.status === PROGRESS_STATUS.ON_HOLD
+                      ? 'bg-orange-500'
+                      : '',
                   ]"
                 >
                   {{ statusMap[item.status]?.label || '未知' }}

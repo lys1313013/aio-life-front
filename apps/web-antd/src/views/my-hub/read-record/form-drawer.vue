@@ -13,6 +13,7 @@ import {
 } from 'ant-design-vue';
 
 import { useVbenForm } from '#/adapter/form';
+import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { ReadRecordApi } from '#/api/readRecord';
 import { fetchAuthImageUrl } from '#/utils/file';
 
@@ -28,10 +29,10 @@ const typeOptions = [
 ];
 
 const statusOptions = [
-  { label: '想看', value: 0 },
-  { label: '在看', value: 1 },
-  { label: '看过', value: 2 },
-  { label: '搁置', value: 3 },
+  { label: '想看', value: PROGRESS_STATUS.NOT_STARTED },
+  { label: '在看', value: PROGRESS_STATUS.IN_PROGRESS },
+  { label: '看过', value: PROGRESS_STATUS.COMPLETED },
+  { label: '搁置', value: PROGRESS_STATUS.ON_HOLD },
 ];
 
 const [Form, formApi] = useVbenForm({
@@ -61,7 +62,7 @@ const [Form, formApi] = useVbenForm({
       componentProps: {
         options: statusOptions,
       },
-      defaultValue: 0,
+      defaultValue: PROGRESS_STATUS.NOT_STARTED,
     },
     {
       component: 'Input',
@@ -135,7 +136,7 @@ const [Form, formApi] = useVbenForm({
         style: { width: '100%' },
       },
       dependencies: {
-        show: (values) => values.status === 2,
+        show: (values) => values.status === PROGRESS_STATUS.COMPLETED,
         triggerFields: ['status'],
       },
     },
@@ -320,10 +321,7 @@ const handleDelete = async () => {
                 referrerpolicy="no-referrer"
               />
               <div v-else class="flex flex-col items-center text-gray-400">
-                <IconifyIcon
-                  icon="lucide:image-plus"
-                  class="mb-1.5 text-2xl"
-                />
+                <IconifyIcon icon="lucide:image-plus" class="mb-1.5 text-2xl" />
                 <span class="text-[11px]">上传封面</span>
                 <div class="mt-1.5 flex flex-col items-center gap-1">
                   <kbd
@@ -336,8 +334,8 @@ const handleDelete = async () => {
               </div>
               <div
                 v-if="previewImg"
+                class="absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[11px] text-white transition-opacity"
                 :class="[
-                  'absolute inset-x-0 bottom-0 bg-black/55 py-1 text-center text-[11px] text-white transition-opacity',
                   uploadLoading
                     ? 'opacity-100'
                     : 'opacity-0 group-hover:opacity-100',

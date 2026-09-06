@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons-vue';
 import {
   Button,
+  ConfigProvider,
   DatePicker,
   Empty,
   message,
@@ -1131,7 +1132,10 @@ const handleSlotPointerDown = (
 
   // 通过 slot 的绝对定位计算点击在 slot 内的相对位置
   const timelineHeight = getTimelineHeight();
-  const { top: slotTop, height: slotHeight } = getSlotPosition(slot, timelineHeight);
+  const { top: slotTop, height: slotHeight } = getSlotPosition(
+    slot,
+    timelineHeight,
+  );
   const relativeY = y - slotTop;
 
   // 检测是否在边缘区域
@@ -1212,43 +1216,45 @@ const getDaySlots = (date: string): TimeSlot[] => {
           />
         </div>
         <!-- 日期切换区 -->
-        <div class="date-picker-container">
-          <Button
-            type="default"
-            @click="goToPreviousPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><LeftOutlined /></template>
-          </Button>
-          <div class="date-picker-wrapper">
-            <span class="date-text">{{
-              selectedDate.format('YYYY-MM-DD')
-            }}</span>
-            <DatePicker
-              class="hidden-date-picker"
-              v-model:value="selectedDate"
-              format="YYYY-MM-DD"
-              :allow-clear="false"
-              @change="handleDateChange"
-              :disabled-date="disabledDate"
+        <ConfigProvider :wave="{ disabled: true }">
+          <div class="date-picker-container">
+            <Button
+              type="default"
+              @click="goToPreviousPeriod"
               :disabled="loading"
+              class="date-nav-button"
               :size="isMobile ? 'small' : 'middle'"
             >
-              <template #suffixIcon></template>
-            </DatePicker>
+              <template #icon><LeftOutlined /></template>
+            </Button>
+            <div class="date-picker-wrapper">
+              <span class="date-text">{{
+                selectedDate.format('YYYY-MM-DD')
+              }}</span>
+              <DatePicker
+                class="hidden-date-picker"
+                v-model:value="selectedDate"
+                format="YYYY-MM-DD"
+                :allow-clear="false"
+                @change="handleDateChange"
+                :disabled-date="disabledDate"
+                :disabled="loading"
+                :size="isMobile ? 'small' : 'middle'"
+              >
+                <template #suffixIcon></template>
+              </DatePicker>
+            </div>
+            <Button
+              type="default"
+              @click="goToNextPeriod"
+              :disabled="loading"
+              class="date-nav-button"
+              :size="isMobile ? 'small' : 'middle'"
+            >
+              <template #icon><RightOutlined /></template>
+            </Button>
           </div>
-          <Button
-            type="default"
-            @click="goToNextPeriod"
-            :disabled="loading"
-            class="date-nav-button"
-            :size="isMobile ? 'small' : 'middle'"
-          >
-            <template #icon><RightOutlined /></template>
-          </Button>
-        </div>
+        </ConfigProvider>
         <!-- 日周月切换区 -->
         <Radio.Group
           v-model:value="statMode"
@@ -1913,11 +1919,19 @@ const getDaySlots = (date: string): TimeSlot[] => {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
 }
 
 .date-nav-button.ant-btn:hover {
   color: v-bind('token.colorPrimary');
   background-color: v-bind('token.controlItemBgHover') !important;
+}
+
+.date-nav-button.ant-btn:active {
+  color: v-bind('token.colorPrimaryActive');
+  background-color: v-bind('token.controlItemBgActive') !important;
 }
 
 .date-nav-button:first-child {
@@ -1961,6 +1975,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
   padding: 0 !important;
   margin: 0 !important;
   opacity: 0;
+}
+
+.hidden-date-picker,
+.hidden-date-picker :deep(input) {
+  cursor: pointer;
 }
 
 /* 覆盖之前的样式，避免冲突 */

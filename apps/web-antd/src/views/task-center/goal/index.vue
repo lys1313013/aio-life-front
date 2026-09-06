@@ -2,6 +2,7 @@
 import type { Rule } from 'ant-design-vue/es/form';
 
 import type { GoalEntity, GoalQueryParams } from '#/api/core/goal';
+import type { ProgressStatus } from '#/api/core/progress-status';
 
 import { onMounted, ref, watch } from 'vue';
 
@@ -31,6 +32,7 @@ import {
   getGoalList,
   updateGoal,
 } from '#/api/core/goal';
+import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 dayjs.extend(quarterOfYear);
@@ -39,7 +41,7 @@ interface FormState {
   id?: number;
   title: string;
   type: number;
-  status: number;
+  status: ProgressStatus;
   progress: number;
   targetValue?: number;
   currentValue?: number;
@@ -69,7 +71,7 @@ const submitLoading = ref(false);
 const formState = ref<FormState>({
   title: '',
   type: 1,
-  status: 0,
+  status: PROGRESS_STATUS.NOT_STARTED,
   progress: 0,
   targetValue: undefined,
   currentValue: undefined,
@@ -99,11 +101,11 @@ const typeMap: Record<number, { color: string; label: string }> = {
   10: { label: '终生', color: 'geekblue' },
 };
 
-const statusMap: Record<number, { color: string; label: string }> = {
-  0: { label: '待开始', color: 'default' },
-  1: { label: '进行中', color: 'processing' },
-  2: { label: '已完成', color: 'success' },
-  3: { label: '已放弃', color: 'error' },
+const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
+  [PROGRESS_STATUS.NOT_STARTED]: { label: '待开始', color: 'default' },
+  [PROGRESS_STATUS.IN_PROGRESS]: { label: '进行中', color: 'processing' },
+  [PROGRESS_STATUS.COMPLETED]: { label: '已完成', color: 'success' },
+  [PROGRESS_STATUS.ON_HOLD]: { label: '搁置', color: 'warning' },
 };
 
 const autoCalculateDates = (type: number) => {
@@ -232,7 +234,7 @@ const handleAdd = () => {
   formState.value = {
     title: '',
     type: 1,
-    status: 1,
+    status: PROGRESS_STATUS.IN_PROGRESS,
     progress: 0,
     targetValue: undefined,
     currentValue: undefined,
@@ -355,19 +357,19 @@ const parseTags = (tagsStr?: string): string[] => {
   }
 };
 
-const getStatusBadgeColor = (status: number) => {
+const getStatusBadgeColor = (status: ProgressStatus) => {
   switch (status) {
-    case 0: {
-      return 'bg-gray-400';
-    }
-    case 1: {
-      return 'bg-blue-500';
-    }
-    case 2: {
+    case PROGRESS_STATUS.COMPLETED: {
       return 'bg-green-500';
     }
-    case 3: {
-      return 'bg-red-500';
+    case PROGRESS_STATUS.IN_PROGRESS: {
+      return 'bg-blue-500';
+    }
+    case PROGRESS_STATUS.NOT_STARTED: {
+      return 'bg-gray-400';
+    }
+    case PROGRESS_STATUS.ON_HOLD: {
+      return 'bg-orange-500';
     }
     default: {
       return 'bg-gray-400';
@@ -424,10 +426,16 @@ const getStatusBadgeColor = (status: number) => {
           allow-clear
           @change="handleSearch"
         >
-          <ASelectOption :value="0">待开始</ASelectOption>
-          <ASelectOption :value="1">进行中</ASelectOption>
-          <ASelectOption :value="2">已完成</ASelectOption>
-          <ASelectOption :value="3">已放弃</ASelectOption>
+          <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
+            待开始
+          </ASelectOption>
+          <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
+            进行中
+          </ASelectOption>
+          <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
+            已完成
+          </ASelectOption>
+          <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">搁置</ASelectOption>
         </ASelect>
 
         <AButton @click="handleSearch" type="primary" ghost>查询</AButton>
@@ -526,7 +534,9 @@ const getStatusBadgeColor = (status: number) => {
               </div>
               <span
                 class="font-medium"
-                :class="{ 'text-success': item.status === 2 }"
+                :class="{
+                  'text-success': item.status === PROGRESS_STATUS.COMPLETED,
+                }"
               >
                 {{ calculateProgress(item) }}%
               </span>
@@ -536,10 +546,10 @@ const getStatusBadgeColor = (status: number) => {
               :show-info="false"
               size="small"
               :status="
-                item.status === 2
+                item.status === PROGRESS_STATUS.COMPLETED
                   ? 'success'
-                  : item.status === 3
-                    ? 'exception'
+                  : item.status === PROGRESS_STATUS.ON_HOLD
+                    ? 'normal'
                     : 'active'
               "
             />
@@ -605,28 +615,28 @@ const getStatusBadgeColor = (status: number) => {
 
           <AFormItem label="状态" name="status" class="flex-1">
             <ASelect v-model:value="formState.status" placeholder="请选择">
-              <ASelectOption :value="0">
+              <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
                 <span class="flex items-center gap-2">
                   <span class="h-2 w-2 rounded-full bg-gray-400"></span>
                   待开始
                 </span>
               </ASelectOption>
-              <ASelectOption :value="1">
+              <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
                 <span class="flex items-center gap-2">
                   <span class="h-2 w-2 rounded-full bg-blue-500"></span>
                   进行中
                 </span>
               </ASelectOption>
-              <ASelectOption :value="2">
+              <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
                 <span class="flex items-center gap-2">
                   <span class="h-2 w-2 rounded-full bg-green-500"></span>
                   已完成
                 </span>
               </ASelectOption>
-              <ASelectOption :value="3">
+              <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">
                 <span class="flex items-center gap-2">
-                  <span class="h-2 w-2 rounded-full bg-red-500"></span>
-                  已放弃
+                  <span class="h-2 w-2 rounded-full bg-orange-500"></span>
+                  搁置
                 </span>
               </ASelectOption>
             </ASelect>

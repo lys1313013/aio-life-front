@@ -1,10 +1,12 @@
+import type { ProgressStatus } from './progress-status';
+
 import { requestClient } from '#/api/request';
 
 export interface GoalEntity {
   id?: number;
   title: string;
   type: number; // 1: 年, 2: 月, 3: 日
-  status: number; // 0: 待开始, 1: 进行中, 2: 已完成, 3: 已放弃
+  status: ProgressStatus;
   progress: number;
   targetValue?: number;
   currentValue?: number;
@@ -18,7 +20,7 @@ export interface GoalEntity {
 
 export interface GoalQueryParams {
   type?: number;
-  status?: number;
+  status?: ProgressStatus;
   keyword?: string;
 }
 
