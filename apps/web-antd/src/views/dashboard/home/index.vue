@@ -648,10 +648,10 @@ function navTo(nav: { url?: string }) {
       <!-- 快捷导航 -->
       <QuickNavSection class="dashboard-section" />
 
-      <!-- 待办。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
+      <!-- 待办：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
       <div
         v-if="watchedLoading || watchedTasks.length > 0"
-        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
+        class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -786,9 +786,9 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
-      <!-- 固定闪念。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
+      <!-- 固定闪念：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
       <div
-        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
+        class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex cursor-pointer items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
@@ -886,10 +886,10 @@ function navTo(nav: { url?: string }) {
         </div>
       </div>
 
-      <!-- 运动：按天 × 运动类型向下滚动加载。注意：移动端下不要写死固定高度，使用 min-h-0 让其根据内容自适应高度，避免内容较少时出现大量留白。PC 端可使用 sm:min-h-[xxx] 等固定高度。 -->
+      <!-- 运动：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
       <div
         v-if="exerciseLoading || !exerciseEmpty"
-        class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
+        class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
       >
         <div
           class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
