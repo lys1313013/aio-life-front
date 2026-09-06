@@ -157,10 +157,12 @@ const tableReload = () => {
             <Select.Option :value="3">搁置</Select.Option>
           </Select>
           <Button type="primary" ghost @click="handleSearch">搜索</Button>
-
-          <div class="ml-auto flex items-center text-sm text-gray-500">
-            共 {{ total }} 条记录
-          </div>
+          <span
+            class="self-center text-xs text-gray-400"
+            :title="`共 ${total} 条记录`"
+          >
+            {{ total }} 条
+          </span>
         </div>
       </div>
 
