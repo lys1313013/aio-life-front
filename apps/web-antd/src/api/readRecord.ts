@@ -91,7 +91,7 @@ export namespace ReadRecordApi {
   }
 
   /**
-   * 获取未开始和进行中的数据
+   * 获取想看和在看的数据
    */
   export function listActive() {
     return requestClient.get<ReadRecordVO[]>('/read-record/active');

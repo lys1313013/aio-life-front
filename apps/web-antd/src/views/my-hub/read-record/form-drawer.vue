@@ -28,9 +28,9 @@ const typeOptions = [
 ];
 
 const statusOptions = [
-  { label: '未开始', value: 0 },
-  { label: '阅读中', value: 1 },
-  { label: '已完成', value: 2 },
+  { label: '想看', value: 0 },
+  { label: '在看', value: 1 },
+  { label: '看过', value: 2 },
   { label: '搁置', value: 3 },
 ];
 

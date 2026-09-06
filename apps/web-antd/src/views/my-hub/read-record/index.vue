@@ -35,9 +35,9 @@ const queryForm = ref({
 
 // 状态映射
 const statusMap: Record<number, { color: string; label: string }> = {
-  0: { label: '未开始', color: 'default' },
-  1: { label: '阅读中', color: 'processing' },
-  2: { label: '已完成', color: 'success' },
+  0: { label: '想看', color: 'default' },
+  1: { label: '在看', color: 'processing' },
+  2: { label: '看过', color: 'success' },
   3: { label: '搁置', color: 'warning' },
 };
 
@@ -149,16 +149,18 @@ const tableReload = () => {
             mode="multiple"
             @change="handleStatusChange"
           >
-            <Select.Option :value="0">未开始</Select.Option>
-            <Select.Option :value="1">阅读中</Select.Option>
-            <Select.Option :value="2">已完成</Select.Option>
+            <Select.Option :value="0">想看</Select.Option>
+            <Select.Option :value="1">在看</Select.Option>
+            <Select.Option :value="2">看过</Select.Option>
             <Select.Option :value="3">搁置</Select.Option>
           </Select>
           <Button type="primary" ghost @click="handleSearch">搜索</Button>
-
-          <div class="ml-auto flex items-center text-sm text-gray-500">
-            共 {{ total }} 条记录
-          </div>
+          <span
+            class="self-center text-xs text-gray-400"
+            :title="`共 ${total} 条记录`"
+          >
+            {{ total }} 条
+          </span>
         </div>
       </div>
 
