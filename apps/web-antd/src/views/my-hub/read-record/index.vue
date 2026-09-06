@@ -118,7 +118,7 @@ const tableReload = () => {
     <div class="mx-auto max-w-7xl">
       <!-- 搜索过滤 -->
       <div class="mb-6 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div class="flex flex-wrap gap-4">
+        <div class="flex flex-wrap items-start gap-4">
           <Input
             v-model:value="queryForm.title"
             placeholder="搜索标题或作者"
@@ -144,7 +144,8 @@ const tableReload = () => {
             v-model:value="queryForm.statuses"
             placeholder="状态"
             allow-clear
-            class="w-full md:w-40"
+            class="status-filter w-full md:w-48"
+            max-tag-count="responsive"
             mode="multiple"
             @change="handleStatusChange"
           >
@@ -275,7 +276,18 @@ const tableReload = () => {
 </template>
 
 <style scoped>
-/* 可以在此添加需要的样式调整 */
+.status-filter :deep(.ant-select-selection-item) {
+  padding-inline-start: 2px;
+  color: inherit;
+  background: transparent;
+  border-color: transparent;
+}
+
+.status-filter :deep(.ant-select-selection-item-remove) {
+  color: currentcolor;
+  opacity: 0.45;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
