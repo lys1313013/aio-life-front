@@ -431,8 +431,7 @@ onMounted(() => {
 
 <template>
   <div class="p-4">
-    <div class="mb-3 flex items-center justify-between">
-      <div class="text-lg font-bold">权限菜单</div>
+    <div class="mb-3 flex items-center justify-end">
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
           <span class="text-sm text-stone-500">拖拽排序</span>
@@ -451,6 +450,7 @@ onMounted(() => {
 
     <Spin :spinning="loading">
       <Table
+        class="menu-table"
         size="small"
         :data-source="list"
         :columns="columns"
@@ -477,7 +477,7 @@ onMounted(() => {
               <VbenIcon
                 v-if="record.meta?.icon"
                 :icon="record.meta.icon"
-                class="size-5 flex-shrink-0 text-stone-500"
+                class="size-4 flex-shrink-0 text-foreground"
               />
               <div>
                 <div class="font-medium">
@@ -584,10 +584,24 @@ onMounted(() => {
           </Form.Item>
           <div class="grid grid-cols-2 gap-x-4">
             <Form.Item label="菜单图标">
-              <Input
-                v-model:value="metaIcon"
-                placeholder="例如 mdi:clock-outline"
-              />
+              <div class="flex items-center gap-2">
+                <div
+                  class="flex size-8 shrink-0 items-center justify-center rounded-md border border-stone-200 text-lg text-stone-600 dark:border-stone-700 dark:text-stone-300"
+                  title="图标预览"
+                >
+                  <VbenIcon
+                    v-if="metaIcon.trim()"
+                    :icon="metaIcon.trim()"
+                    class="size-5"
+                    data-testid="menu-icon-preview"
+                  />
+                </div>
+                <Input
+                  v-model:value="metaIcon"
+                  class="min-w-0 flex-1"
+                  placeholder="例如 mdi:clock-outline"
+                />
+              </div>
             </Form.Item>
             <Form.Item label="Roles（空=所有人可见）">
               <Select
@@ -643,3 +657,22 @@ onMounted(() => {
     </Modal>
   </div>
 </template>
+
+<style scoped>
+.menu-table :deep(table) {
+  border-collapse: collapse;
+}
+
+.menu-table :deep(.ant-table-cell),
+.menu-table :deep(.ant-table-container),
+.menu-table :deep(.ant-table-tbody),
+.menu-table :deep(.ant-table-thead),
+.menu-table :deep(.ant-table-tbody > tr),
+.menu-table :deep(.ant-table-thead > tr) {
+  border: 0 !important;
+}
+
+.menu-table :deep(.ant-table-thead > tr > th::before) {
+  display: none !important;
+}
+</style>
