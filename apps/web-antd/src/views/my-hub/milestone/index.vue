@@ -5,11 +5,7 @@ import type { MilestoneEntity } from '#/api/core/milestone';
 
 import { computed, onMounted, ref } from 'vue';
 
-import {
-  DeleteOutlined,
-  EditOutlined,
-  SearchOutlined,
-} from '@ant-design/icons-vue';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
   DatePicker as ADatePicker,
@@ -63,7 +59,6 @@ const loading = ref(false);
 
 // Filters
 const filters = ref({
-  keyword: '',
   type: undefined as string | undefined,
   tag: undefined as string | undefined,
   dateRange: undefined as [Dayjs, Dayjs] | undefined,
@@ -100,15 +95,6 @@ const allTags = computed(() => {
 const filteredMilestones = computed(() => {
   return milestones.value
     .filter((item) => {
-      // Keyword
-      if (filters.value.keyword) {
-        const kw = filters.value.keyword.toLowerCase();
-        const matchTitle = item.title.toLowerCase().includes(kw);
-        const matchDesc = item.description.toLowerCase().includes(kw);
-        const matchTags = item.tags.some((t) => t.toLowerCase().includes(kw));
-        if (!matchTitle && !matchDesc && !matchTags) return false;
-      }
-
       // Type
       if (filters.value.type && item.type !== filters.value.type) return false;
 
@@ -269,7 +255,6 @@ const handleSave = async () => {
 
 const clearFilters = () => {
   filters.value = {
-    keyword: '',
     type: undefined,
     tag: undefined,
     dateRange: undefined,
@@ -323,54 +308,34 @@ const getTypeLabel = (type: string) => {
 
 <template>
   <div class="min-h-full p-2 md:p-4">
-    <!-- Header -->
-    <div class="mb-3 flex items-end justify-between">
-      <div>
-        <p class="mt-1 text-sm text-gray-500">记录人生旅途中的关键节点与成就</p>
-      </div>
-    </div>
-
     <!-- Filters -->
-    <div
-      class="mb-4 rounded-lg border border-gray-100 bg-white p-3 shadow-sm dark:border-gray-800 dark:bg-[#151515]"
-    >
-      <div class="flex flex-wrap items-center gap-3">
-        <AInput
-          v-model:value="filters.keyword"
-          placeholder="搜索标题、描述、标签..."
-          class="w-48 md:w-64"
-          allow-clear
-        >
-          <template #prefix><SearchOutlined class="text-gray-400" /></template>
-        </AInput>
+    <div class="mb-6 flex flex-wrap items-center gap-3">
+      <ASelect
+        v-model:value="filters.type"
+        placeholder="类型"
+        class="w-28"
+        allow-clear
+      >
+        <ASelectOption value="work">工作</ASelectOption>
+        <ASelectOption value="study">学业</ASelectOption>
+        <ASelectOption value="life">生活</ASelectOption>
+        <ASelectOption value="other">其他</ASelectOption>
+      </ASelect>
 
-        <ASelect
-          v-model:value="filters.type"
-          placeholder="事件类型"
-          class="w-28"
-          allow-clear
-        >
-          <ASelectOption value="work">工作</ASelectOption>
-          <ASelectOption value="study">学业</ASelectOption>
-          <ASelectOption value="life">生活</ASelectOption>
-          <ASelectOption value="other">其他</ASelectOption>
-        </ASelect>
+      <ASelect
+        v-model:value="filters.tag"
+        placeholder="标签"
+        class="w-28"
+        allow-clear
+      >
+        <ASelectOption v-for="tag in allTags" :key="tag" :value="tag">
+          {{ tag }}
+        </ASelectOption>
+      </ASelect>
 
-        <ASelect
-          v-model:value="filters.tag"
-          placeholder="标签筛选"
-          class="w-28"
-          allow-clear
-        >
-          <ASelectOption v-for="tag in allTags" :key="tag" :value="tag">
-            {{ tag }}
-          </ASelectOption>
-        </ASelect>
+      <ARangePicker v-model:value="filters.dateRange" class="w-56" />
 
-        <ARangePicker v-model:value="filters.dateRange" class="w-56 md:w-64" />
-
-        <AButton @click="clearFilters">清除筛选</AButton>
-      </div>
+      <AButton type="text" @click="clearFilters">重置</AButton>
     </div>
 
     <!-- Timeline -->

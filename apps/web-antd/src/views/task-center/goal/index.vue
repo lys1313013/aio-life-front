@@ -380,66 +380,59 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
 
 <template>
   <div class="min-h-full bg-background/50 p-4">
-    <!-- Header -->
-    <div class="mb-6">
-      <div>
-        <p class="text-gray-500">规划与追踪你的目标</p>
-      </div>
-    </div>
-
     <!-- Filters -->
-    <div class="mb-8 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div class="flex flex-wrap items-center gap-4">
-        <AInput
-          v-model:value="filters.keyword"
-          placeholder="搜索标题、描述、标签..."
-          class="w-64"
-          allow-clear
-          @press-enter="handleSearch"
-        >
-          <template #prefix><SearchOutlined class="text-gray-400" /></template>
-        </AInput>
+    <div class="mb-6 flex flex-wrap items-center gap-3">
+      <AInput
+        v-model:value="filters.keyword"
+        placeholder="搜索标题、描述、标签..."
+        class="min-w-48 flex-1 sm:max-w-96"
+        allow-clear
+        @press-enter="handleSearch"
+      >
+        <template #prefix><SearchOutlined class="text-gray-400" /></template>
+      </AInput>
 
-        <ASelect
-          v-model:value="filters.type"
-          placeholder="目标类型"
-          class="w-32"
-          allow-clear
-          @change="handleSearch"
-        >
-          <ASelectOption :value="1">日</ASelectOption>
-          <ASelectOption :value="2">周</ASelectOption>
-          <ASelectOption :value="3">月</ASelectOption>
-          <ASelectOption :value="4">季度</ASelectOption>
-          <ASelectOption :value="5">半年</ASelectOption>
-          <ASelectOption :value="6">年度</ASelectOption>
-          <ASelectOption :value="7">三年</ASelectOption>
-          <ASelectOption :value="8">五年</ASelectOption>
-          <ASelectOption :value="9">十年</ASelectOption>
-          <ASelectOption :value="10">终生</ASelectOption>
-        </ASelect>
+      <ASelect
+        v-model:value="filters.type"
+        placeholder="类型"
+        class="w-28"
+        allow-clear
+        @change="handleSearch"
+      >
+        <ASelectOption :value="1">日</ASelectOption>
+        <ASelectOption :value="2">周</ASelectOption>
+        <ASelectOption :value="3">月</ASelectOption>
+        <ASelectOption :value="4">季度</ASelectOption>
+        <ASelectOption :value="5">半年</ASelectOption>
+        <ASelectOption :value="6">年度</ASelectOption>
+        <ASelectOption :value="7">三年</ASelectOption>
+        <ASelectOption :value="8">五年</ASelectOption>
+        <ASelectOption :value="9">十年</ASelectOption>
+        <ASelectOption :value="10">终生</ASelectOption>
+      </ASelect>
 
-        <ASelect
-          v-model:value="filters.status"
-          placeholder="目标状态"
-          class="w-32"
-          allow-clear
-          @change="handleSearch"
-        >
-          <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
-            待开始
-          </ASelectOption>
-          <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
-            进行中
-          </ASelectOption>
-          <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
-            已完成
-          </ASelectOption>
-          <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">搁置</ASelectOption>
-        </ASelect>
+      <ASelect
+        v-model:value="filters.status"
+        placeholder="状态"
+        class="w-28"
+        allow-clear
+        @change="handleSearch"
+      >
+        <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
+          待开始
+        </ASelectOption>
+        <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
+          进行中
+        </ASelectOption>
+        <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
+          已完成
+        </ASelectOption>
+        <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">搁置</ASelectOption>
+      </ASelect>
 
-        <AButton @click="handleSearch" type="primary" ghost>查询</AButton>
-        <AButton @click="clearFilters">重置</AButton>
+      <div class="flex items-center gap-2">
+        <AButton type="primary" @click="handleSearch">搜索</AButton>
+        <AButton type="text" @click="clearFilters">重置</AButton>
       </div>
     </div>
 

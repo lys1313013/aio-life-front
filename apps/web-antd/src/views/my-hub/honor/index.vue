@@ -24,7 +24,6 @@ import {
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 
-import { fetchAuthImageUrl } from '#/utils/file';
 import {
   createHonorRecord,
   deleteHonorRecords,
@@ -35,6 +34,7 @@ import {
 } from '#/api/core/honor';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
+import { fetchAuthImageUrl } from '#/utils/file';
 
 // Types
 interface Honor {
@@ -180,7 +180,8 @@ const loadData = async () => {
 
       if (item.files) {
         fileIds = item.files.map((f: any) => String(f.id));
-        attachments = allFileIds[i]?.map(() => authUrls[urlIdx++] as string) || [];
+        attachments =
+          allFileIds[i]?.map(() => authUrls[urlIdx++] as string) || [];
       }
 
       // 获取分类名称
@@ -347,57 +348,44 @@ const getLevelLabel = (level: string) => {
 
 <template>
   <div class="min-h-full bg-background/50 p-4">
-    <!-- Header -->
-    <div class="mb-6">
-      <div>
-        <p class="text-gray-500">记录世俗标准下的荣誉与成就</p>
-      </div>
-    </div>
-
     <!-- Filters -->
-    <div class="mb-8 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div class="flex flex-wrap items-center gap-4">
-        <AInput
-          v-model:value="filters.keyword"
-          placeholder="搜索标题、描述、机构..."
-          class="w-64"
-          allow-clear
-        >
-          <template #prefix><SearchOutlined class="text-gray-400" /></template>
-        </AInput>
+    <div class="mb-6 flex flex-wrap items-center gap-3">
+      <AInput
+        v-model:value="filters.keyword"
+        placeholder="搜索标题、描述、机构..."
+        class="min-w-48 flex-1 sm:max-w-96"
+        allow-clear
+      >
+        <template #prefix><SearchOutlined class="text-gray-400" /></template>
+      </AInput>
 
-        <ASelect
-          v-model:value="filters.categoryId"
-          placeholder="分类筛选"
-          class="w-40"
-          allow-clear
-        >
-          <ASelectOption
-            v-for="cat in categories"
-            :key="cat.id"
-            :value="cat.id"
-          >
-            {{ cat.icon }} {{ cat.name }}
-          </ASelectOption>
-        </ASelect>
+      <ASelect
+        v-model:value="filters.categoryId"
+        placeholder="分类"
+        class="w-32"
+        allow-clear
+      >
+        <ASelectOption v-for="cat in categories" :key="cat.id" :value="cat.id">
+          {{ cat.icon }} {{ cat.name }}
+        </ASelectOption>
+      </ASelect>
 
-        <ASelect
-          v-model:value="filters.level"
-          placeholder="级别筛选"
-          class="w-32"
-          allow-clear
-        >
-          <ASelectOption value="school">校级</ASelectOption>
-          <ASelectOption value="district">区级</ASelectOption>
-          <ASelectOption value="city">市级</ASelectOption>
-          <ASelectOption value="province">省级</ASelectOption>
-          <ASelectOption value="national">国家级</ASelectOption>
-          <ASelectOption value="international">国际级</ASelectOption>
-          <ASelectOption value="other">其他</ASelectOption>
-        </ASelect>
+      <ASelect
+        v-model:value="filters.level"
+        placeholder="级别"
+        class="w-28"
+        allow-clear
+      >
+        <ASelectOption value="school">校级</ASelectOption>
+        <ASelectOption value="district">区级</ASelectOption>
+        <ASelectOption value="city">市级</ASelectOption>
+        <ASelectOption value="province">省级</ASelectOption>
+        <ASelectOption value="national">国家级</ASelectOption>
+        <ASelectOption value="international">国际级</ASelectOption>
+        <ASelectOption value="other">其他</ASelectOption>
+      </ASelect>
 
-        <AButton @click="clearFilters">重置</AButton>
-      </div>
+      <AButton type="text" @click="clearFilters">重置</AButton>
     </div>
 
     <!-- Card Grid -->

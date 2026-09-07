@@ -119,60 +119,58 @@ const tableReload = () => {
   <div class="min-h-screen p-4 transition-colors duration-300 md:p-8">
     <div class="mx-auto max-w-7xl">
       <!-- 搜索过滤 -->
-      <div class="mb-6 rounded-xl bg-white p-4 shadow-sm dark:bg-gray-800">
-        <div class="flex flex-wrap items-start gap-4">
-          <Input
-            v-model:value="queryForm.title"
-            placeholder="搜索影视名称或导演"
-            allow-clear
-            class="w-full md:w-64"
-            @press-enter="handleSearch"
-          >
-            <template #prefix>
-              <SearchOutlined class="text-gray-400" />
-            </template>
-          </Input>
-          <Select
-            v-model:value="queryForm.type"
-            placeholder="内容类型"
-            allow-clear
-            class="w-full md:w-32"
-            @change="handleSearch"
-          >
-            <Select.Option :value="1">电影</Select.Option>
-            <Select.Option :value="2">剧集</Select.Option>
-            <Select.Option :value="3">动漫</Select.Option>
-            <Select.Option :value="4">纪录片</Select.Option>
-            <Select.Option :value="5">其他</Select.Option>
-          </Select>
-          <Select
-            v-model:value="queryForm.statuses"
-            placeholder="状态"
-            allow-clear
-            class="status-filter w-full md:w-48"
-            max-tag-count="responsive"
-            mode="multiple"
-            @change="handleStatusChange"
-          >
-            <Select.Option :value="PROGRESS_STATUS.NOT_STARTED">
-              想看
-            </Select.Option>
-            <Select.Option :value="PROGRESS_STATUS.IN_PROGRESS">
-              在看
-            </Select.Option>
-            <Select.Option :value="PROGRESS_STATUS.COMPLETED">
-              看过
-            </Select.Option>
-            <Select.Option :value="PROGRESS_STATUS.ON_HOLD">搁置</Select.Option>
-          </Select>
-          <Button type="primary" ghost @click="handleSearch">搜索</Button>
-          <span
-            class="self-center text-xs text-gray-400"
-            :title="`共 ${total} 条记录`"
-          >
-            {{ total }} 条
-          </span>
-        </div>
+      <div class="mb-6 flex flex-wrap items-center gap-3">
+        <Input
+          v-model:value="queryForm.title"
+          placeholder="搜索影视名称或导演"
+          allow-clear
+          class="min-w-40 flex-1 sm:max-w-96"
+          @press-enter="handleSearch"
+        >
+          <template #prefix>
+            <SearchOutlined class="text-gray-400" />
+          </template>
+        </Input>
+        <Select
+          v-model:value="queryForm.type"
+          placeholder="类型"
+          allow-clear
+          class="w-28"
+          @change="handleSearch"
+        >
+          <Select.Option :value="1">电影</Select.Option>
+          <Select.Option :value="2">剧集</Select.Option>
+          <Select.Option :value="3">动漫</Select.Option>
+          <Select.Option :value="4">纪录片</Select.Option>
+          <Select.Option :value="5">其他</Select.Option>
+        </Select>
+        <Select
+          v-model:value="queryForm.statuses"
+          placeholder="状态"
+          allow-clear
+          class="status-filter w-32"
+          max-tag-count="responsive"
+          mode="multiple"
+          @change="handleStatusChange"
+        >
+          <Select.Option :value="PROGRESS_STATUS.NOT_STARTED">
+            想看
+          </Select.Option>
+          <Select.Option :value="PROGRESS_STATUS.IN_PROGRESS">
+            在看
+          </Select.Option>
+          <Select.Option :value="PROGRESS_STATUS.COMPLETED">
+            看过
+          </Select.Option>
+          <Select.Option :value="PROGRESS_STATUS.ON_HOLD">搁置</Select.Option>
+        </Select>
+        <Button type="primary" @click="handleSearch">搜索</Button>
+        <span
+          class="self-center text-xs text-gray-400"
+          :title="`共 ${total} 条记录`"
+        >
+          {{ total }} 条
+        </span>
       </div>
 
       <!-- 影视网格 -->
@@ -182,6 +180,7 @@ const tableReload = () => {
       >
         <Spin
           :spinning="loading && records.length === 0"
+          :class="{ 'initial-loading-area': loading && records.length === 0 }"
           size="large"
           tip="加载中..."
         >
@@ -198,9 +197,13 @@ const tableReload = () => {
             class="grid grid-cols-3 gap-x-4 gap-y-8 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-5 xl:grid-cols-7 2xl:grid-cols-9"
           >
             <div
-              v-for="item in records"
+              v-for="(item, index) in records"
               :key="item.id"
-              class="group relative flex cursor-pointer flex-col items-center"
+              class="movie-card-enter group relative flex cursor-pointer flex-col items-center opacity-0"
+              :style="{
+                animationDelay: `${Math.min(index * 0.06, 0.72)}s`,
+                animationFillMode: 'forwards',
+              }"
               @click="openFormModal(item)"
             >
               <!-- 封面图部分 -->
@@ -297,6 +300,38 @@ const tableReload = () => {
 </template>
 
 <style scoped>
+@keyframes movie-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.025);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.movie-card-enter {
+  animation: movie-card-enter 0.52s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.initial-loading-area {
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .movie-card-enter {
+    opacity: 1;
+    animation: none;
+  }
+}
+
 .status-filter :deep(.ant-select-selection-item) {
   padding-inline-start: 2px;
   color: inherit;
