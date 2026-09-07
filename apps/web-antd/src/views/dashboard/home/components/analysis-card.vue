@@ -90,49 +90,53 @@ function handleTitleClick(e: MouseEvent) {
       <div class="analysis-card-progress-bar"></div>
     </div>
 
-    <div class="p-2.5 sm:p-3">
-      <div
-        :class="{
-          'cursor-pointer transition-colors hover:text-primary':
-            !!titleClickUrl,
-        }"
-        class="mb-1.5 text-xs font-medium sm:mb-2 sm:text-sm sm:font-semibold"
-        @click="handleTitleClick"
-      >
-        {{ title }}
-      </div>
-      <div class="flex items-center justify-between">
-        <div class="flex min-h-[20px] items-center">
+    <div class="flex min-h-[80px] flex-col p-2.5 sm:min-h-[92px] sm:p-3">
+      <div class="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+        <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <span
-            :style="{ color: valueColor }"
-            class="analysis-card-value text-xs font-bold sm:text-lg"
+            v-if="icon"
+            :class="{
+              'cursor-pointer hover:bg-primary/15 hover:text-primary':
+                !!iconClickUrl,
+            }"
+            class="analysis-card-icon inline-flex size-5 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors sm:size-6"
+            @click="handleIconClick"
           >
-            {{ loading && !value ? '—' : value }}
+            <VbenIcon :icon="icon" class="size-3.5 sm:size-4" />
+          </span>
+          <span
+            :class="{
+              'cursor-pointer transition-colors hover:text-primary':
+                !!titleClickUrl,
+            }"
+            class="truncate text-xs font-medium sm:text-sm sm:font-semibold"
+            @click="handleTitleClick"
+          >
+            {{ title }}
           </span>
         </div>
-        <div
-          v-if="diffValue"
-          :style="{ color: diffColor }"
-          class="flex items-center text-[10px] font-normal"
+        <span
+          :style="{ color: valueColor }"
+          class="analysis-card-value max-w-[55%] flex-shrink-0 truncate text-xs font-bold leading-5 sm:text-base"
         >
-          {{ diffValue }}
-        </div>
-        <VbenIcon
-          v-else-if="icon"
-          :class="{ 'cursor-pointer hover:opacity-80': !!iconClickUrl }"
-          :icon="icon"
-          class="size-5 flex-shrink-0 sm:size-6"
-          @click="handleIconClick"
-        />
+          {{ loading && !value ? '—' : value }}
+        </span>
       </div>
       <div
-        v-if="totalTitle || isUpdating"
-        class="mt-1.5 flex justify-between text-[10px] text-gray-500 sm:mt-2 sm:text-xs"
+        v-if="totalTitle || diffValue || isUpdating"
+        class="mt-auto flex min-w-0 items-end justify-between gap-2 pt-2 text-[10px] text-muted-foreground sm:text-xs"
       >
-        <span>{{ totalTitle || '—' }}</span>
-        <div class="flex min-h-[16px] items-center">
-          <span>{{ loading && !totalValue ? '—' : totalValue }}</span>
-        </div>
+        <span class="truncate">{{ totalTitle || '—' }}</span>
+        <span
+          v-if="diffValue"
+          :style="{ color: diffColor }"
+          class="flex-shrink-0 font-medium tabular-nums"
+        >
+          {{ diffValue }}
+        </span>
+        <span v-else class="flex-shrink-0 font-medium tabular-nums">
+          {{ loading && !totalValue ? '—' : totalValue }}
+        </span>
       </div>
     </div>
   </Card>
@@ -144,15 +148,12 @@ function handleTitleClick(e: MouseEvent) {
   position: relative;
   overflow: hidden;
 
-  /* 高度兜底：保证首屏/无 totalTitle 的卡片与正常态等高
-     mobile ~ 12+18+6+18+6+15+12 = 87px  → 88px
-     sm+   ~ 12+21+8+27+8+18+12 = 106px → 108px */
-  min-height: 88px;
+  min-height: 80px;
 }
 
 @media (min-width: 640px) {
   .analysis-card {
-    min-height: 108px;
+    min-height: 92px;
   }
 }
 
