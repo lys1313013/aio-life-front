@@ -140,6 +140,15 @@ const [Form, formApi] = useVbenForm({
       },
     },
     {
+      component: 'Rate',
+      fieldName: 'rating',
+      label: '个人评分',
+      componentProps: {
+        allowClear: true,
+        count: 5,
+      },
+    },
+    {
       component: 'Textarea',
       fieldName: 'remark',
       label: '短评/备注',

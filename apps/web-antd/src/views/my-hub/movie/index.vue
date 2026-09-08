@@ -5,7 +5,7 @@ import { onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import { SearchOutlined } from '@ant-design/icons-vue';
+import { SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
@@ -15,6 +15,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import { loadStatusFilter, saveStatusFilter } from '../status-filter-storage';
 import FormDrawerDemo from './form-drawer.vue';
+import ImportModal from './import-modal.vue';
 
 defineOptions({ name: 'Movie' });
 
@@ -22,6 +23,7 @@ const { isMobile } = usePreferences();
 const STATUS_FILTER_STORAGE_KEY = 'aio-life:movie:status-filter';
 
 const modalVisible = ref(false);
+const importVisible = ref(false);
 const currentRow = ref<any>(null);
 const loading = ref(false);
 const hasMore = ref(true);
@@ -165,6 +167,10 @@ const tableReload = () => {
           <Select.Option :value="PROGRESS_STATUS.ON_HOLD">搁置</Select.Option>
         </Select>
         <Button type="primary" @click="handleSearch">搜索</Button>
+        <Button @click="importVisible = true">
+          <template #icon><UploadOutlined /></template>
+          导入豆瓣
+        </Button>
         <span
           class="self-center text-xs text-gray-400"
           :title="`共 ${total} 条记录`"
@@ -294,6 +300,17 @@ const tableReload = () => {
         @table-reload="tableReload"
         @close="closeFormModal"
       />
+    </Modal>
+
+    <Modal
+      v-model:open="importVisible"
+      title="导入豆瓣观影记录"
+      :width="isMobile ? 'calc(100vw - 32px)' : 820"
+      :footer="null"
+      :destroy-on-close="true"
+      centered
+    >
+      <ImportModal @close="importVisible = false" @imported="loadData()" />
     </Modal>
   </div>
 </template>

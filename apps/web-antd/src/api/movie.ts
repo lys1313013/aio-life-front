@@ -31,6 +31,7 @@ export namespace MovieApi {
     currentProgress: number;
     startTime: string;
     finishTime: string;
+    rating?: number;
     remark: string;
     createTime: string;
     updateTime: string;
@@ -49,7 +50,58 @@ export namespace MovieApi {
     currentProgress?: number;
     startTime?: string;
     finishTime?: string;
+    rating?: number;
     remark?: string;
+  }
+
+  export type DoubanMovieType =
+    | 'animation'
+    | 'documentary'
+    | 'movie'
+    | 'other'
+    | 'series';
+
+  export interface DoubanImportRecord {
+    rowNumber: number;
+    doubanSubjectId: string;
+    title: string;
+    type: DoubanMovieType;
+    director?: string;
+    url: string;
+    status: ProgressStatus;
+    markedDate?: string;
+    rating?: number;
+    remark?: string;
+  }
+
+  export interface DoubanImportRequest {
+    format: string;
+    version: number;
+    source: string;
+    doubanUserId: string;
+    duplicatePolicy?: 'overwrite' | 'skip';
+    records: DoubanImportRecord[];
+  }
+
+  export interface DoubanImportPreview {
+    total: number;
+    newCount: number;
+    duplicateCount: number;
+    errorCount: number;
+    duplicates: Array<{
+      doubanSubjectId: string;
+      existingId: string;
+      existingTitle: string;
+      rowNumber: number;
+      title: string;
+    }>;
+    errors: Array<{ message: string; rowNumber: number }>;
+  }
+
+  export interface DoubanImportResult {
+    createdCount: number;
+    updatedCount: number;
+    skippedCount: number;
   }
 
   /**
@@ -90,6 +142,17 @@ export namespace MovieApi {
     return requestClient.get<MovieReq>('/movie/parse-douban', {
       params: { url },
     });
+  }
+
+  export function previewDoubanImport(data: DoubanImportRequest) {
+    return requestClient.post<DoubanImportPreview>(
+      '/movie/import/douban/preview',
+      data,
+    );
+  }
+
+  export function importDouban(data: DoubanImportRequest) {
+    return requestClient.post<DoubanImportResult>('/movie/import/douban', data);
   }
 
   /**
