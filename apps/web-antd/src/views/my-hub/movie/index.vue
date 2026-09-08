@@ -4,9 +4,9 @@ import type { ProgressStatus } from '#/api/core/progress-status';
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
-import { useResizeObserver } from '@vueuse/core';
 
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
+import { useResizeObserver } from '@vueuse/core';
 import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
@@ -62,7 +62,10 @@ const calculatePageSize = () => {
   const cardWidth =
     (container.clientWidth - horizontalGap * (columns - 1)) / columns;
   const rowHeight = (cardWidth * 4) / 3 + dateHeight + verticalGap;
-  const visibleRows = Math.max(1, Math.ceil(container.clientHeight / rowHeight));
+  const visibleRows = Math.max(
+    1,
+    Math.ceil(container.clientHeight / rowHeight),
+  );
 
   // 多取一行作为滚动缓冲，避免首屏刚填满就立即触发下一页请求。
   return columns * (visibleRows + 1);
