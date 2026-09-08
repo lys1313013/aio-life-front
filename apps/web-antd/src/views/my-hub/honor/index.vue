@@ -16,7 +16,6 @@ import {
   Modal as AModal,
   Select as ASelect,
   SelectOption as ASelectOption,
-  Spin as ASpin,
   Switch as ASwitch,
   Tag as ATag,
   Textarea as ATextarea,
@@ -32,6 +31,7 @@ import {
   updateHonorRecord,
   uploadHonorAttachment,
 } from '#/api/core/honor';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -389,7 +389,8 @@ const getLevelLabel = (level: string) => {
     </div>
 
     <!-- Card Grid -->
-    <ASpin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 200px)" />
+    <template v-else>
       <div
         v-if="filteredHonors.length === 0 && !loading"
         class="py-20 text-center text-gray-400"
@@ -485,7 +486,7 @@ const getLevelLabel = (level: string) => {
           </div>
         </div>
       </div>
-    </ASpin>
+    </template>
 
     <!-- Add/Edit Modal -->
     <AModal

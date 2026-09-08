@@ -7,20 +7,12 @@ import {
   PlusOutlined,
   PushpinFilled,
 } from '@ant-design/icons-vue';
-import {
-  Button,
-  Card,
-  Empty,
-  message,
-  Spin,
-  Tooltip,
-} from 'ant-design-vue';
+import { Button, Card, Empty, message, Tooltip } from 'ant-design-vue';
 
-import {
-  query as queryThink,
-  update as updateThink,
-} from '#/api/core/think';
+import { query as queryThink, update as updateThink } from '#/api/core/think';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+
 import ThinkModal from './ThinkModal.vue';
 
 interface Event {
@@ -59,7 +51,9 @@ function onThoughtSaved(thought: any) {
   if (editingThoughtId.value === null) {
     thoughts.value.unshift(thought);
   } else {
-    const idx = thoughts.value.findIndex((t) => t.id === editingThoughtId.value);
+    const idx = thoughts.value.findIndex(
+      (t) => t.id === editingThoughtId.value,
+    );
     if (idx !== -1) thoughts.value[idx] = thought;
   }
 }
@@ -158,7 +152,8 @@ onUnmounted(() => {
 
 <template>
   <div class="think-page">
-    <Spin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 120px)" />
+    <template v-else>
       <template v-if="thoughts.length === 0 && !loading">
         <div class="empty-wrap">
           <Empty description="还没有任何思考记录，点击右下角或下方按钮添加">
@@ -235,7 +230,7 @@ onUnmounted(() => {
           </Card>
         </div>
       </div>
-    </Spin>
+    </template>
 
     <GlobalFloatBtn @click="openAddModal" />
 
@@ -364,5 +359,4 @@ onUnmounted(() => {
   background: var(--ant-color-primary-bg, #e6f4ff);
   border-radius: 50%;
 }
-
 </style>

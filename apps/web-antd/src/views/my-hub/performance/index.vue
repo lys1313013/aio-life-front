@@ -6,11 +6,12 @@ import {
   EnvironmentOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
-import { Empty, Modal, Spin } from 'ant-design-vue';
+import { Empty, Modal } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
 import { queryPerformances } from '#/api/core/performance';
 import AuthImage from '#/components/AuthImage.vue';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormDrawerDemo from './form-drawer-demo.vue';
@@ -86,7 +87,8 @@ const tableReload = () => {
 
 <template>
   <div class="vp-raw min-h-full w-full bg-background/50 p-0 sm:p-4">
-    <Spin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 160px)" />
+    <template v-else>
       <div class="px-2 py-4 sm:px-0">
         <div
           v-if="dataSource.length === 0 && !loading"
@@ -175,7 +177,7 @@ const tableReload = () => {
           </div>
         </div>
       </div>
-    </Spin>
+    </template>
 
     <GlobalFloatBtn @click="openFormDrawer()" />
 

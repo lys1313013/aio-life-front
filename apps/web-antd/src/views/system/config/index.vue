@@ -8,7 +8,6 @@ import {
   Card as ACard,
   Input as AInput,
   Select as ASelect,
-  Spin as ASpin,
   Switch as ASwitch,
   Tag as ATag,
   Textarea as ATextarea,
@@ -20,6 +19,7 @@ import {
   querySystemConfigs,
   updateSystemConfig,
 } from '#/api/system/system-config';
+import ContentLoading from '#/components/ContentLoading.vue';
 
 const loading = ref(false);
 const configs = ref<SystemConfigVO[]>([]);
@@ -112,7 +112,8 @@ const getUserLabel = (userId: string) => {
       <p class="text-muted-foreground">管理系统级配置项</p>
     </div>
 
-    <ASpin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 180px)" />
+    <template v-else>
       <div class="space-y-4">
         <ACard
           v-for="cfg in configs"
@@ -220,6 +221,6 @@ const getUserLabel = (userId: string) => {
           暂无配置项
         </div>
       </div>
-    </ASpin>
+    </template>
   </div>
 </template>

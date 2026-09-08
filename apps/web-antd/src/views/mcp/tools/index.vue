@@ -4,7 +4,11 @@ import type { McpToolInfo } from '#/api/core/mcp';
 import { h, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { CaretRightOutlined, CopyOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import {
+  CaretRightOutlined,
+  CopyOutlined,
+  SearchOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button,
   Card,
@@ -16,14 +20,14 @@ import {
   message,
   Modal,
   Select,
-  Spin,
   Switch,
   Tag,
   Tooltip,
 } from 'ant-design-vue';
 
-import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
 import { generateApiKeyApi } from '#/api/core/api-key';
+import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
+import ContentLoading from '#/components/ContentLoading.vue';
 
 const tools = ref<McpToolInfo[]>([]);
 const loading = ref(true);
@@ -42,6 +46,7 @@ const modalIsError = ref(false);
 // MCP 配置信息
 const router = useRouter();
 const mcpUrl = `${window.location.origin}/api/mcp`;
+const mcpAuthPlaceholder = 'Bearer <your-api-key>';
 
 const copyUrl = async () => {
   try {
@@ -230,7 +235,9 @@ onMounted(() => {
     <div class="page-header">
       <div class="header-info">
         <h2>MCP 工具</h2>
-        <span class="tool-count text-gray-400">共 {{ filteredTools.length }} 个工具</span>
+        <span class="tool-count text-gray-400"
+          >共 {{ filteredTools.length }} 个工具</span
+        >
       </div>
       <Input
         v-model:value="searchText"
@@ -247,12 +254,7 @@ onMounted(() => {
     </div>
 
     <!-- 配置指南 -->
-    <Card
-      v-if="showGuide"
-      class="guide-card"
-      size="small"
-      :bordered="true"
-    >
+    <Card v-if="showGuide" class="guide-card" size="small" :bordered="true">
       <template #title>
         <div class="guide-title-row">
           <span class="guide-title">配置指南</span>
@@ -260,7 +262,9 @@ onMounted(() => {
         </div>
       </template>
       <template #extra>
-        <Button type="link" size="small" @click="showGuide = false">收起</Button>
+        <Button type="link" size="small" @click="showGuide = false">
+          收起
+        </Button>
       </template>
 
       <div class="guide-body">
@@ -269,9 +273,16 @@ onMounted(() => {
           <div class="guide-item">
             <span class="guide-label text-gray-500">服务地址</span>
             <div class="guide-url">
-              <code class="guide-code bg-gray-100 dark:bg-gray-800">{{ mcpUrl }}</code>
+              <code class="guide-code bg-gray-100 dark:bg-gray-800">{{
+                mcpUrl
+              }}</code>
               <Tooltip title="复制地址">
-                <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyUrl" />
+                <Button
+                  type="link"
+                  size="small"
+                  :icon="h(CopyOutlined)"
+                  @click="copyUrl"
+                />
               </Tooltip>
             </div>
           </div>
@@ -282,12 +293,27 @@ onMounted(() => {
           <div class="guide-item">
             <span class="guide-label text-gray-500">认证方式</span>
             <div class="guide-auth">
-              <code class="guide-code bg-gray-100 dark:bg-gray-800">Authorization: Bearer &lt;API Key&gt;</code>
+              <code class="guide-code bg-gray-100 dark:bg-gray-800"
+                >Authorization: Bearer &lt;API Key&gt;</code
+              >
               <div class="guide-hint text-gray-400">
-                <Button type="link" size="small" class="guide-generate-btn" @click="openApiKeyModal">
+                <Button
+                  type="link"
+                  size="small"
+                  class="guide-generate-btn"
+                  @click="openApiKeyModal"
+                >
                   生成密钥
                 </Button>
-                <span>或前往 <span class="guide-link text-blue-600 dark:text-blue-400" @click="router.push('/profile')">个人中心</span> 管理</span>
+                <span
+                  >或前往
+                  <span
+                    class="guide-link text-blue-600 dark:text-blue-400"
+                    @click="router.push('/profile')"
+                    >个人中心</span
+                  >
+                  管理</span
+                >
               </div>
             </div>
           </div>
@@ -295,39 +321,47 @@ onMounted(() => {
 
         <!-- 客户端配置示例 -->
         <div class="guide-section">
-          <div class="guide-section-title text-gray-800 dark:text-gray-200">客户端配置</div>
-          <pre class="guide-config-json border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">{{
-            JSON.stringify(
-              {
-                mcpServers: {
-                  'aio-life': {
-                    type: 'streamable-http',
-                    url: mcpUrl,
-                    headers: {
-                      Authorization: 'Bearer <your-api-key>',
+          <div class="guide-section-title text-gray-800 dark:text-gray-200">
+            客户端配置
+          </div>
+          <pre
+            class="guide-config-json border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+            >{{
+              JSON.stringify(
+                {
+                  mcpServers: {
+                    'aio-life': {
+                      type: 'streamable-http',
+                      url: mcpUrl,
+                      headers: {
+                        Authorization: mcpAuthPlaceholder,
+                      },
                     },
                   },
                 },
-              },
-              null,
-              2,
-            )
-          }}</pre>
+                null,
+                2,
+              )
+            }}</pre
+          >
         </div>
       </div>
     </Card>
 
     <div
       v-if="!showGuide"
-      class="guide-collapsed bg-gray-50 text-gray-500 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
+      class="guide-collapsed bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
       @click="showGuide = true"
     >
       <span>配置指南</span>
       <Tag color="green" size="small">MCP 服务端</Tag>
-      <span class="guide-expand-link text-blue-600 dark:text-blue-400">展开</span>
+      <span class="guide-expand-link text-blue-600 dark:text-blue-400"
+        >展开</span
+      >
     </div>
 
-    <Spin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="360px" />
+    <template v-else>
       <Empty
         v-if="!loading && filteredTools.length === 0"
         description="暂无 MCP 工具"
@@ -343,7 +377,10 @@ onMounted(() => {
         >
           <template #title>
             <div class="tool-title">
-              <code class="tool-name bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{{ tool.name }}</code>
+              <code
+                class="tool-name bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                >{{ tool.name }}</code
+              >
             </div>
           </template>
           <template #extra>
@@ -366,7 +403,9 @@ onMounted(() => {
                   class="param-item bg-gray-50 dark:bg-gray-800"
                 >
                   <div class="param-row">
-                    <code class="param-name text-gray-800 dark:text-gray-200">{{ param.name }}</code>
+                    <code class="param-name text-gray-800 dark:text-gray-200">{{
+                      param.name
+                    }}</code>
                     <Tag :color="getTypeColor(param.type)" size="small">
                       {{ param.type }}
                     </Tag>
@@ -388,16 +427,23 @@ onMounted(() => {
             </Collapse.Panel>
           </Collapse>
 
-          <div v-else class="no-params text-gray-300 dark:text-gray-600">该工具无需输入参数</div>
+          <div v-else class="no-params text-gray-300 dark:text-gray-600">
+            该工具无需输入参数
+          </div>
 
-          <div class="card-footer border-t border-gray-100 dark:border-gray-700">
-            <a class="action-btn primary text-blue-600 dark:text-blue-400" @click.stop="openCallModal(tool)">
+          <div
+            class="card-footer border-t border-gray-100 dark:border-gray-700"
+          >
+            <a
+              class="action-btn primary text-blue-600 dark:text-blue-400"
+              @click.stop="openCallModal(tool)"
+            >
               <CaretRightOutlined /> 调用
             </a>
           </div>
         </Card>
       </div>
-    </Spin>
+    </template>
 
     <!-- 模拟调用弹窗 -->
     <Modal
@@ -408,11 +454,22 @@ onMounted(() => {
       destroy-on-close
     >
       <div v-if="modalTool" class="modal-call">
-        <p v-if="modalTool.description" class="modal-tool-desc text-gray-500">{{ modalTool.description }}</p>
+        <p v-if="modalTool.description" class="modal-tool-desc text-gray-500">
+          {{ modalTool.description }}
+        </p>
 
         <div class="modal-actions">
-          <span class="modal-label text-gray-800 dark:text-gray-200">参数配置</span>
-          <Button type="primary" size="small" :loading="modalCalling" @click="callTool">调用</Button>
+          <span class="modal-label text-gray-800 dark:text-gray-200"
+            >参数配置</span
+          >
+          <Button
+            type="primary"
+            size="small"
+            :loading="modalCalling"
+            @click="callTool"
+          >
+            调用
+          </Button>
         </div>
 
         <Form
@@ -455,18 +512,23 @@ onMounted(() => {
             />
           </Form.Item>
         </Form>
-        <div v-else class="no-params text-gray-300 dark:text-gray-600">该工具无需输入参数</div>
+        <div v-else class="no-params text-gray-300 dark:text-gray-600">
+          该工具无需输入参数
+        </div>
 
         <div v-if="modalResult" class="modal-result">
-          <div class="result-label text-gray-800 dark:text-gray-200">返回结果</div>
+          <div class="result-label text-gray-800 dark:text-gray-200">
+            返回结果
+          </div>
           <pre
             class="result-content border"
-            :class="modalIsError
-              ? 'text-red-500 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-900/30 dark:border-red-800'
-              : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700'"
-          >{{
-            modalResult
-          }}</pre>
+            :class="
+              modalIsError
+                ? 'border-red-200 bg-red-50 text-red-500 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400'
+                : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+            "
+            >{{ modalResult }}</pre
+          >
         </div>
       </div>
     </Modal>
@@ -512,31 +574,45 @@ onMounted(() => {
         <p class="api-key-result-tip text-gray-400">
           请复制并妥善保管您的 API Key，关闭后将无法再次查看完整密钥。
         </p>
-        <div class="api-key-result-value border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <code class="text-blue-600 dark:text-blue-400">{{ generatedApiKey }}</code>
+        <div
+          class="api-key-result-value border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <code class="text-blue-600 dark:text-blue-400">{{
+            generatedApiKey
+          }}</code>
           <Tooltip title="复制">
-            <Button type="link" size="small" :icon="h(CopyOutlined)" @click="copyApiKey" />
+            <Button
+              type="link"
+              size="small"
+              :icon="h(CopyOutlined)"
+              @click="copyApiKey"
+            />
           </Tooltip>
         </div>
         <div class="api-key-result-usage">
-          <div class="guide-section-title text-gray-800 dark:text-gray-200">使用方法</div>
-          <pre class="guide-config-json border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">{{
-            JSON.stringify(
-              {
-                mcpServers: {
-                  'aio-life': {
-                    type: 'streamable-http',
-                    url: mcpUrl,
-                    headers: {
-                      Authorization: `Bearer ${generatedApiKey}`,
+          <div class="guide-section-title text-gray-800 dark:text-gray-200">
+            使用方法
+          </div>
+          <pre
+            class="guide-config-json border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+            >{{
+              JSON.stringify(
+                {
+                  mcpServers: {
+                    'aio-life': {
+                      type: 'streamable-http',
+                      url: mcpUrl,
+                      headers: {
+                        Authorization: `Bearer ${generatedApiKey}`,
+                      },
                     },
                   },
                 },
-              },
-              null,
-              2,
-            )
-          }}</pre>
+                null,
+                2,
+              )
+            }}</pre
+          >
         </div>
       </div>
     </Modal>

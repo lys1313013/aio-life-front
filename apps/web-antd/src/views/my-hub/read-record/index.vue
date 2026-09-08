@@ -180,7 +180,6 @@ const tableReload = () => {
           :spinning="loading && records.length === 0"
           :class="{ 'initial-loading-area': loading && records.length === 0 }"
           size="large"
-          tip="加载中..."
         >
           <div
             v-if="!loading && records.length === 0"
@@ -320,7 +319,12 @@ const tableReload = () => {
 }
 
 .initial-loading-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   height: 100%;
+  max-height: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

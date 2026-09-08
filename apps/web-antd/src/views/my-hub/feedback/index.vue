@@ -37,6 +37,7 @@ import {
   uploadFeedbackAttachment,
   uploadFeedbackCommentAttachment,
 } from '#/api/core/feedback';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -278,7 +279,8 @@ const getImageUrl = (fileId: number | string) => {
     </div>
 
     <!-- List -->
-    <ASpin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 260px)" />
+    <template v-else>
       <div v-if="feedbacks.length === 0 && !loading" class="py-20">
         <AEmpty description="暂无反馈记录">
           <AButton type="primary" @click="handleAdd">提交反馈</AButton>
@@ -330,7 +332,7 @@ const getImageUrl = (fileId: number | string) => {
           </div>
         </div>
       </div>
-    </ASpin>
+    </template>
 
     <!-- 创建弹窗 -->
     <AModal

@@ -21,7 +21,6 @@ import {
   message,
   Modal,
   Popconfirm,
-  Spin,
   Tooltip,
 } from 'ant-design-vue';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,6 +32,7 @@ import {
   getMemoListApi,
   updateMemoApi,
 } from '#/api/core/memo';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 const memos = ref<Memo[]>([]);
@@ -294,7 +294,8 @@ onUnmounted(() => {
 
 <template>
   <div class="memo-page">
-    <Spin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 120px)" />
+    <template v-else>
       <template v-if="memos.length === 0 && !loading">
         <div class="empty-wrap">
           <Empty description="暂无笔记，点击右下角或下方按钮添加">
@@ -380,7 +381,7 @@ onUnmounted(() => {
           </Card>
         </div>
       </div>
-    </Spin>
+    </template>
 
     <Modal
       v-model:open="modalOpen"

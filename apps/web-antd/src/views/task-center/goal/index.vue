@@ -18,7 +18,6 @@ import {
   Progress as AProgress,
   Select as ASelect,
   SelectOption as ASelectOption,
-  Spin as ASpin,
   Tag as ATag,
   message,
   Modal,
@@ -33,6 +32,7 @@ import {
   updateGoal,
 } from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 dayjs.extend(quarterOfYear);
@@ -437,7 +437,8 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
     </div>
 
     <!-- Card Grid -->
-    <ASpin :spinning="loading">
+    <ContentLoading v-if="loading" min-height="calc(100vh - 200px)" />
+    <template v-else>
       <div
         v-if="goals.length === 0 && !loading"
         class="py-20 text-center text-gray-400"
@@ -549,7 +550,7 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
           </div>
         </div>
       </div>
-    </ASpin>
+    </template>
 
     <!-- Add/Edit Modal -->
     <Modal

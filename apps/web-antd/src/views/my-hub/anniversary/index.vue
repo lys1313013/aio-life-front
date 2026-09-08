@@ -20,7 +20,6 @@ import {
   MenuItem,
   message,
   Modal,
-  Spin,
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -30,6 +29,7 @@ import {
   getAnniversaryRecords,
   updateAnniversaryRecord,
 } from '#/api/my-hub/anniversary';
+import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 const anniversaries = ref<AnniversaryRecord[]>([]);
@@ -213,7 +213,8 @@ const selectColor = (color: string) => {
     class="min-h-screen bg-gray-50 p-4 transition-colors duration-300 md:p-8 dark:bg-gray-950"
   >
     <div class="mx-auto max-w-7xl">
-      <Spin :spinning="loading" size="large" tip="加载中...">
+      <ContentLoading v-if="loading" min-height="calc(100vh - 160px)" />
+      <template v-else>
         <div
           v-if="!loading && sortedAnniversaries.length === 0"
           class="animate-fade-in mt-32 flex flex-col items-center justify-center opacity-0"
@@ -327,7 +328,7 @@ const selectColor = (color: string) => {
             </div>
           </div>
         </div>
-      </Spin>
+      </template>
 
       <Modal
         v-model:open="modalVisible"
