@@ -11,6 +11,12 @@ export interface UserBindEntity {
   updateTime?: string;
 }
 
+export interface DoubanAccountVerifyResult {
+  accountId: string;
+  homepageUrl: string;
+  nickname: string;
+}
+
 export const getUserBindListApi = (includeToken?: boolean) => {
   return requestClient.get<UserBindEntity[]>('/userbinds/list', {
     params: { includeToken },
@@ -27,4 +33,13 @@ export const updateUserBindApi = (data: UserBindEntity) => {
 
 export const deleteUserBindApi = (id: number) => {
   return requestClient.delete<boolean>(`/userbinds/${id}`);
+};
+
+export const verifyDoubanAccountApi = (accountId: string) => {
+  return requestClient.get<DoubanAccountVerifyResult>(
+    '/userbinds/douban/verify',
+    {
+      params: { accountId },
+    },
+  );
 };
