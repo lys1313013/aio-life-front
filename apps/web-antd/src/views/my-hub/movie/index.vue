@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { ProgressStatus } from '#/api/core/progress-status';
 
-import { onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
+import { useResizeObserver } from '@vueuse/core';
 
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
@@ -29,14 +30,43 @@ const loading = ref(false);
 const hasMore = ref(true);
 const records = ref<MovieApi.MovieVO[]>([]);
 const total = ref(0);
+const gridScrollRef = ref<HTMLElement>();
+let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const queryForm = ref({
   current: 1,
-  size: 24, // 增加单页数据量以适应滚动加载
+  size: 24,
   title: '',
   type: undefined as number | undefined,
   statuses: loadStatusFilter(STATUS_FILTER_STORAGE_KEY),
 });
+
+const getGridColumnCount = () => {
+  const viewportWidth = window.innerWidth;
+
+  if (viewportWidth >= 1536) return 9;
+  if (viewportWidth >= 1280) return 7;
+  if (viewportWidth >= 768) return 5;
+  if (viewportWidth >= 640) return 4;
+  return 3;
+};
+
+const calculatePageSize = () => {
+  const container = gridScrollRef.value;
+  if (!container) return queryForm.value.size;
+
+  const columns = getGridColumnCount();
+  const horizontalGap = 16;
+  const verticalGap = 32;
+  const dateHeight = 24;
+  const cardWidth =
+    (container.clientWidth - horizontalGap * (columns - 1)) / columns;
+  const rowHeight = (cardWidth * 4) / 3 + dateHeight + verticalGap;
+  const visibleRows = Math.max(1, Math.ceil(container.clientHeight / rowHeight));
+
+  // 多取一行作为滚动缓冲，避免首屏刚填满就立即触发下一页请求。
+  return columns * (visibleRows + 1);
+};
 
 // 状态映射
 const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
@@ -89,8 +119,25 @@ const handleScroll = (e: Event) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
+  queryForm.value.size = calculatePageSize();
   loadData();
+});
+
+useResizeObserver(gridScrollRef, () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const nextPageSize = calculatePageSize();
+    if (nextPageSize !== queryForm.value.size) {
+      queryForm.value.size = nextPageSize;
+      loadData();
+    }
+  }, 200);
+});
+
+onBeforeUnmount(() => {
+  clearTimeout(resizeTimer);
 });
 
 const handleSearch = () => {
@@ -181,6 +228,7 @@ const tableReload = () => {
 
       <!-- 影视网格 -->
       <div
+        ref="gridScrollRef"
         class="flex h-[calc(100vh-200px)] flex-col overflow-y-auto pb-10"
         @scroll="handleScroll"
       >
