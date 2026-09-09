@@ -13,6 +13,7 @@ import { getAccessCodesApi, loginApi, logoutApi } from '#/api/core/auth';
 import { getUserInfoApi } from '#/api/core/user';
 import { $t } from '#/locales';
 import { router } from '#/router';
+import { clearImageCache } from '#/utils/file';
 
 export const useAuthStore = defineStore('auth', () => {
   const accessStore = useAccessStore();
@@ -83,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       // 不做任何处理
     }
+    clearImageCache();
     try {
       resetAllStores();
     } catch (error_) {

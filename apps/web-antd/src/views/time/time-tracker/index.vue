@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import type { DragOperation, TimeSlot } from './types';
 
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 
@@ -444,9 +452,15 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopCurrentTimeUpdater();
+  removeTrackPointerListeners();
   window.removeEventListener('resize', updateIsMobile);
   window.removeEventListener('resize', updateMobileTimelineHeight);
   window.removeEventListener('resize', syncTimelineHeight);
+});
+
+onDeactivated(() => {
+  removeTrackPointerListeners();
+  dragOperation.value = null;
 });
 
 // 数据管理
@@ -1035,12 +1049,15 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   }
 };
 
-const handleTrackPointerUp = async () => {
-  // 移除全局事件监听
+function removeTrackPointerListeners() {
   window.removeEventListener('mousemove', handleTrackPointerMove);
   window.removeEventListener('mouseup', handleTrackPointerUp);
   window.removeEventListener('touchmove', handleTrackPointerMove);
   window.removeEventListener('touchend', handleTrackPointerUp);
+}
+
+const handleTrackPointerUp = async () => {
+  removeTrackPointerListeners();
 
   if (!dragOperation.value) {
     dragOperation.value = null;

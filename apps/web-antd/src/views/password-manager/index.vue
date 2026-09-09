@@ -364,6 +364,7 @@ const formatTime = (time: string) => {
 
 // Activity tracking for auto-lock
 let activityCheckInterval: number;
+const handleActivity = () => store.updateActivity();
 
 onMounted(() => {
   fetchPasswords();
@@ -387,13 +388,14 @@ onMounted(() => {
   }, 60_000);
 
   // Track user activity
-  const handleActivity = () => store.updateActivity();
   document.addEventListener('click', handleActivity);
   document.addEventListener('keypress', handleActivity);
 });
 
 onUnmounted(() => {
   clearInterval(activityCheckInterval);
+  document.removeEventListener('click', handleActivity);
+  document.removeEventListener('keypress', handleActivity);
 });
 </script>
 
