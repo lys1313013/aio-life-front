@@ -318,13 +318,13 @@ defineExpose({
         <EchartsUI ref="chartRef" height="100%" width="100%" />
       </div>
 
-      <!-- 最新记录列表 (同步限制最大高度，防止撑破父容器) -->
+      <!-- 最新记录列表：与图表等高，充分利用上下空间 -->
       <div
-        class="flex max-h-[160px] w-[35%] flex-col overflow-y-auto py-1 sm:max-h-[180px] sm:w-[30%]"
+        class="flex h-[160px] w-[35%] flex-col overflow-y-auto py-1 sm:h-[180px] sm:w-[30%]"
       >
         <div
           v-if="recentRecords.length > 0"
-          class="flex flex-col gap-1.5 sm:gap-2"
+          class="flex h-full flex-col justify-between"
         >
           <div
             v-for="record in recentRecords"
