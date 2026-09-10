@@ -521,8 +521,8 @@ function handleTitleClick(url: string) {
   }
 }
 
-// 时迹记录可携带运动明细 / 关联阅读，波及这两张卡片
-const TIME_TRACKER_RELATED_CARDS = ['EXERCISE', 'READ'];
+// 时迹记录可携带运动明细，需要同步刷新运动卡片；阅读卡片由微信读书独立刷新
+const TIME_TRACKER_RELATED_CARDS = ['EXERCISE'];
 
 function refreshCardsByTypes(types: string[]) {
   const typeSet = new Set(types);

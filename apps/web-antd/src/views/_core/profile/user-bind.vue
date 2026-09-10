@@ -57,6 +57,7 @@ const platformOptions = [
   { label: 'CSDN', value: 'csdn' },
   { label: '扇贝单词', value: 'shanbay' },
   { label: '豆瓣', value: 'douban' },
+  { label: '微信读书', value: 'weread' },
 ];
 
 // 与首页 index.vue 共用：GitHub 绑定变更后清除本地决策缓存，回首页即时重新判断
@@ -146,6 +147,14 @@ const handleDelete = async (id: number) => {
 };
 
 const handleOk = async () => {
+  if (
+    formState.value.platform === 'weread' &&
+    !formState.value.id &&
+    !formState.value.accessToken?.trim()
+  ) {
+    message.warning('请填写微信读书 API Key');
+    return;
+  }
   modalLoading.value = true;
   try {
     await (formState.value.id
@@ -203,6 +212,13 @@ onMounted(() => {
             record.platform
           }}
         </template>
+        <template
+          v-else-if="
+            column.key === 'platformUsername' && record.platform === 'weread'
+          "
+        >
+          已配置 API Key
+        </template>
         <template v-else>
           {{ text }}
         </template>
@@ -225,6 +241,7 @@ onMounted(() => {
           />
         </Form.Item>
         <Form.Item
+          v-if="formState.platform !== 'weread'"
           :label="
             formState.platform === 'douban' ? '豆瓣账号 ID' : '账号/用户名'
           "
@@ -314,13 +331,26 @@ onMounted(() => {
             </span>
           </template>
         </Form.Item>
-        <Form.Item v-if="formState.platform === 'github'" label="Access Token">
+        <Form.Item
+          v-if="['github', 'weread'].includes(formState.platform)"
+          :label="formState.platform === 'weread' ? 'API Key' : 'Access Token'"
+          :required="formState.platform === 'weread' && !formState.id"
+        >
           <Input.Password
             v-model:value="formState.accessToken"
-            placeholder="若不修改请留空"
+            :placeholder="
+              formState.platform === 'weread'
+                ? formState.id
+                  ? '若不修改请留空'
+                  : 'wrk-xxxxxxxx'
+                : '若不修改请留空'
+            "
           />
           <template #extra>
-            <span class="text-xs text-gray-500">
+            <span
+              v-if="formState.platform === 'github'"
+              class="text-xs text-gray-500"
+            >
               注：只需读取公开仓库的权限 (public_repo)。
               <a
                 class="text-blue-500"
@@ -330,6 +360,18 @@ onMounted(() => {
               >
                 生成token
               </a>
+            </span>
+            <span v-else class="text-xs text-gray-500">
+              在
+              <a
+                class="text-blue-500"
+                href="https://weread.qq.com/r/weread-skills"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                微信读书官方授权页
+              </a>
+              获取。密钥仅由服务端用于查询你的阅读统计。
             </span>
           </template>
         </Form.Item>
