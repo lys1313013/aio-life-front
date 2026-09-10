@@ -21,6 +21,7 @@ const chartRef = ref<EchartsUIType>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 const loading = ref(false);
+const RECENT_RECORD_LIMIT = 7;
 
 interface RecentRecord {
   id: string;
@@ -66,32 +67,35 @@ const loadData = async () => {
     const sortedRecords = [...records].sort(
       (a, b) => b.startTime - a.startTime,
     );
-    recentRecords.value = sortedRecords.slice(0, 5).map((record) => {
-      const category = categories.find((c) => c.id === record.categoryId);
-      const duration = record.endTime - record.startTime;
-      const d = duration <= 0 ? 1 : duration;
-      const h = Math.floor(d / 60);
-      const m = d % 60;
-      let durationStr = '';
-      if (h > 0 && m > 0) {
-        durationStr = `${h}h${m}m`;
-      } else if (h > 0) {
-        durationStr = `${h}h`;
-      } else {
-        durationStr = `${m}m`;
-      }
+    recentRecords.value = sortedRecords
+      .slice(0, RECENT_RECORD_LIMIT)
+      .map((record) => {
+        const category = categories.find((c) => c.id === record.categoryId);
+        const duration = record.endTime - record.startTime;
+        const d = duration <= 0 ? 1 : duration;
+        const h = Math.floor(d / 60);
+        const m = d % 60;
+        let durationStr = '';
+        if (h > 0 && m > 0) {
+          durationStr = `${h}h${m}m`;
+        } else if (h > 0) {
+          durationStr = `${h}h`;
+        } else {
+          durationStr = `${m}m`;
+        }
 
-      return {
-        id: record.id || Math.random().toString(),
-        categoryName: category?.name || '未知',
-        categoryColor: category?.color || '#ccc',
-        timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
-        originalRecord: record as TimeSlot,
-      };
-    });
+        return {
+          id: record.id || Math.random().toString(),
+          categoryName: category?.name || '未知',
+          categoryColor: category?.color || '#ccc',
+          timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
+          originalRecord: record as TimeSlot,
+        };
+      });
 
     // 发送最后一条记录的结束时间（用于父组件计算"距离上次记录已过去多久"）
-    const lastEndTime = sortedRecords.length > 0 ? sortedRecords[0]!.endTime : 0;
+    const lastEndTime =
+      sortedRecords.length > 0 ? sortedRecords[0]!.endTime : 0;
     emit('update:last-end', lastEndTime);
 
     // 处理时间轴区块 (改为竖向，自上而下 00:00 - 24:00)
@@ -268,7 +272,13 @@ defineExpose({
 </script>
 
 <template>
-  <div v-loading="loading" class="flex h-full w-full flex-row p-2 sm:p-4">
+  <div
+    v-loading="{
+      spinning: loading,
+      class: '!bg-transparent dark:!bg-transparent',
+    }"
+    class="flex h-full w-full flex-row p-2 sm:p-4"
+  >
     <!-- 最左侧竖向时间轴 (固定宽度，绝不被挤压) -->
     <div
       class="flex w-6 shrink-0 flex-col items-center justify-between pr-1 sm:w-8 sm:pr-2"
@@ -314,12 +324,12 @@ defineExpose({
       >
         <div
           v-if="recentRecords.length > 0"
-          class="flex flex-col gap-2.5 sm:gap-3.5"
+          class="flex flex-col gap-1.5 sm:gap-2"
         >
           <div
             v-for="record in recentRecords"
             :key="record.id"
-            class="flex cursor-pointer items-center justify-end gap-1.5 font-mono text-[10px] transition-opacity hover:opacity-70 sm:gap-2 sm:text-[11px]"
+            class="flex cursor-pointer items-center justify-end gap-1.5 font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 sm:gap-2 sm:text-[11px]"
             :style="{ color: record.categoryColor }"
             @click="handleEditRecord(record.originalRecord)"
           >
