@@ -10,6 +10,7 @@ import { Card } from 'ant-design-vue';
 
 interface Props {
   icon?: Component | string;
+  iconColor?: string;
   iconClickUrl?: string;
   loading?: boolean;
   refreshing?: boolean;
@@ -29,6 +30,7 @@ defineOptions({
 
 const props = withDefaults(defineProps<Props>(), {
   icon: '',
+  iconColor: '',
   iconClickUrl: '',
   loading: false,
   refreshing: false,
@@ -96,13 +98,16 @@ function handleTitleClick(e: MouseEvent) {
           <span
             v-if="icon"
             :class="{
-              'cursor-pointer hover:bg-primary/15 hover:text-primary':
-                !!iconClickUrl,
+              'cursor-pointer hover:text-primary': !!iconClickUrl,
             }"
-            class="analysis-card-icon inline-flex size-5 flex-shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground transition-colors sm:size-6"
+            class="analysis-card-icon inline-flex size-5 flex-shrink-0 items-center justify-center text-muted-foreground transition-colors sm:size-6"
             @click="handleIconClick"
           >
-            <VbenIcon :icon="icon" class="size-3.5 sm:size-4" />
+            <VbenIcon
+              :icon="icon"
+              :style="{ color: iconColor || undefined }"
+              class="size-4 sm:size-5"
+            />
           </span>
           <span
             :class="{

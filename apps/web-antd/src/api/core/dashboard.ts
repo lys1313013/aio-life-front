@@ -14,6 +14,7 @@ export interface WatchedTaskDetail {
 
 export interface DashboardCard {
   icon: string;
+  iconColor?: string;
   iconClickUrl?: string;
   title: string;
   titleClickUrl?: string;
@@ -29,6 +30,7 @@ export interface DashboardTaskItem {
   title: string;
   totalTitle: string;
   icon: string;
+  iconColor?: string;
 }
 
 /**

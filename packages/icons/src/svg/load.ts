@@ -57,7 +57,7 @@ function parseSvg(svgData: string): IconifyIconStructure {
  * <Icon icon="svg:avatar"></Icon>
  */
 async function loadSvgIcons() {
-  const svgEagers = import.meta.glob('./icons/**', {
+  const svgEagers = import.meta.glob('./icons/*.svg', {
     eager: true,
     query: '?raw',
   });

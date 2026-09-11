@@ -37,6 +37,7 @@ import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 
 interface OverviewItem {
   icon: Component | string;
+  iconColor?: string;
   iconClickUrl?: string;
   title: string;
   titleClickUrl?: string;
@@ -442,6 +443,7 @@ onMounted(async () => {
         type: task.type,
         loading: true,
         icon: task.icon,
+        iconColor: task.iconColor,
         totalTitle: task.totalTitle,
         totalValue: '',
         value: '',
@@ -586,6 +588,7 @@ function navTo(nav: { url?: string }) {
             :loading="item.loading"
             :refreshing="item.refreshing"
             :icon="item.icon"
+            :icon-color="item.iconColor"
             :icon-click-url="item.iconClickUrl"
             :title="item.title"
             :title-click-url="item.titleClickUrl"
