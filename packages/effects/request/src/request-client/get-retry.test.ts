@@ -28,15 +28,23 @@ describe('gET 传输重试', () => {
     expect(unwrap).toHaveBeenCalledTimes(1);
   });
 
-  it('最多三次尝试且最终错误只处理一次', async () => {
+  it('依次等待 300、600、1200ms，最多四次尝试且最终错误只处理一次', async () => {
     const adapter = vi.fn().mockRejectedValue(new AxiosError('Network Error'));
     const client = axios.create({ adapter: withGetRetry(adapter) });
     const handleError = vi.fn((error) => Promise.reject(error));
     client.interceptors.response.use(undefined, handleError);
     const result = client.get('/query').catch((error) => error);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(adapter).toHaveBeenCalledTimes(1);
+    for (const [index, delay] of [300, 600, 1200].entries()) {
+      await vi.advanceTimersByTimeAsync(delay - 1);
+      expect(adapter).toHaveBeenCalledTimes(index + 1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(adapter).toHaveBeenCalledTimes(index + 2);
+    }
     await vi.runAllTimersAsync();
     expect(await result).toBeInstanceOf(AxiosError);
-    expect(adapter).toHaveBeenCalledTimes(3);
+    expect(adapter).toHaveBeenCalledTimes(4);
     expect(handleError).toHaveBeenCalledTimes(1);
   });
 

@@ -16,7 +16,7 @@ export function withGetRetry(adapter: AxiosAdapter): AxiosAdapter {
         if (
           config.method?.toUpperCase() !== 'GET' ||
           isCancel(error) ||
-          attempt >= 2 ||
+          attempt >= 3 ||
           (error?.response && error.response.status < 500)
         ) {
           throw error;
