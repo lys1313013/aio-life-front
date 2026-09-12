@@ -67,7 +67,9 @@ export async function update(data: Partial<TimeRecordEntity>): Promise<void> {
 /**
  * 保存数据
  */
-export async function save(data: Partial<TimeRecordEntity>): Promise<boolean> {
+export async function save(
+  data: Omit<Partial<TimeRecordEntity>, 'id'>,
+): Promise<string> {
   return await requestClient.post('/timeRecord', data);
 }
 

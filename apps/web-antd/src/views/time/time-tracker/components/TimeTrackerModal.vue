@@ -17,7 +17,7 @@ import {
 import { listCategories } from '#/api/core/time-tracker-category';
 
 import { defaultConfig } from '../config';
-import { generateId, hasOverlap, isValidSlot } from '../utils';
+import { hasOverlap, isValidSlot } from '../utils';
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
 
 const emit = defineEmits(['success']);
@@ -98,7 +98,7 @@ const open = async (
     }
 
     editingSlot.value = {
-      id: generateId(),
+      id: '',
       startTime: 0,
       endTime: 30,
       categoryId: initialCategoryId,
@@ -152,7 +152,6 @@ const open = async (
           if (result && result.recommend && editingSlot.value) {
             editingSlot.value = {
               ...editingSlot.value,
-              id: result.recommend.id || editingSlot.value.id,
               startTime: result.recommend.startTime,
               endTime: result.recommend.endTime,
               categoryId: result.recommend.categoryId,
@@ -180,7 +179,7 @@ const handleSave = async (formData: TimeSlotFormData) => {
   const targetDate = editingSlot.value?.date || dayjs().format('YYYY-MM-DD');
 
   const newSlot: TimeSlot = {
-    id: formData.id || generateId(),
+    id: isEditMode.value ? editingSlot.value!.id : '',
     startTime: formData.startTime,
     endTime: formData.endTime,
     categoryId: formData.categoryId,
@@ -205,7 +204,8 @@ const handleSave = async (formData: TimeSlotFormData) => {
         visible.value = false;
         emit('success', { action: 'update', slot: newSlot });
       } else {
-        await save(newSlot as any);
+        const { id: _id, ...payload } = newSlot;
+        newSlot.id = await save(payload);
         visible.value = false;
         emit('success', { action: 'add', slot: newSlot });
       }

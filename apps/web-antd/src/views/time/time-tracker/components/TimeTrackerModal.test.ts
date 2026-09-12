@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +6,8 @@ import TimeSlotEditForm from './TimeSlotEditForm.vue';
 import TimeTrackerModal from './TimeTrackerModal.vue';
 
 const mocks = vi.hoisted(() => ({
+  save: vi.fn(),
+  update: vi.fn(),
   recommendNext: vi.fn(),
   query: vi.fn(),
   getById: vi.fn(),
@@ -19,8 +21,8 @@ vi.mock('#/api/core/time-tracker', () => ({
   query: mocks.query,
   getById: mocks.getById,
   deleteData: vi.fn(),
-  save: vi.fn(),
-  update: vi.fn(),
+  save: mocks.save,
+  update: mocks.update,
 }));
 
 vi.mock('#/api/core/time-tracker-category', () => ({
@@ -156,5 +158,48 @@ describe('新增时迹前检查当天剩余时间', () => {
     expect(mocks.recommendNext).not.toHaveBeenCalled();
     expect(mocks.info).not.toHaveBeenCalled();
     wrapper.unmount();
+  });
+});
+
+describe('时迹服务端 ID', () => {
+  it('新增不发送临时 ID，成功事件使用后端返回的 ID', async () => {
+    mocks.query.mockResolvedValue({ items: [], total: 0 });
+    mocks.recommendNext.mockResolvedValue({
+      recommend: recommendation(540, 569),
+    });
+    mocks.save.mockResolvedValue('2099999999999999999');
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(undefined, '2026-09-12', []);
+    const editor = wrapper.findComponent(TimeSlotEditForm);
+    expect(editor.props('slot').id).toBe('');
+    editor.vm.$emit('save', {
+      ...recommendation(540, 569),
+      id: 'client-id',
+      title: '',
+    });
+    await flushPromises();
+    expect(mocks.save.mock.calls.at(-1)?.[0]).not.toHaveProperty('id');
+    expect(wrapper.emitted('success')?.[0]?.[0]).toMatchObject({
+      action: 'add',
+      slot: { id: '2099999999999999999' },
+    });
+    wrapper.unmount();
+  });
+  it('编辑保留历史 ID，保存失败不发出成功事件', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const record = { ...recommendation(540, 569), id: 'legacy-id' };
+    mocks.getById.mockResolvedValue(record);
+    mocks.update.mockRejectedValueOnce(new Error('network'));
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(record, undefined, [record]);
+    wrapper
+      .findComponent(TimeSlotEditForm)
+      .vm.$emit('save', { ...record, title: '' });
+    await flushPromises();
+    expect(mocks.update.mock.calls.at(-1)?.[0].id).toBe('legacy-id');
+    expect(wrapper.emitted('success')).toBeUndefined();
+    expect(wrapper.find('[data-test="modal"]').exists()).toBe(true);
+    wrapper.unmount();
+    vi.restoreAllMocks();
   });
 });

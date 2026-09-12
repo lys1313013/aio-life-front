@@ -56,7 +56,6 @@ import { defaultConfig } from './config';
 import {
   formatDuration,
   formatSlotTime,
-  generateId,
   getSlotDuration,
   getSlotPosition,
   getTimeFromPosition,
@@ -90,6 +89,7 @@ const timeTrackerModalRef = ref();
 const currentTime = ref(0);
 const selectedDate = ref(dayjs());
 const loading = ref(false);
+const creatingSlot = ref(false);
 const statMode = ref<'day' | 'month' | 'week'>('day');
 const selectedWeekDayIndex = ref(0);
 const selectedMonthDayIndex = ref(0);
@@ -818,6 +818,7 @@ const getClientY = (event: MouseEvent | TouchEvent) => {
 };
 
 const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
+  if (creatingSlot.value) return;
   if (isMobile.value) return;
   if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
@@ -982,7 +983,7 @@ const handleTrackPointerUp = async () => {
       }
 
       const newSlot: TimeSlot = {
-        id: generateId(),
+        id: '',
         startTime,
         endTime,
         categoryId: recommendedCategoryId,
@@ -994,8 +995,18 @@ const handleTrackPointerUp = async () => {
       if (hasOverlap(daySlots, newSlot)) {
         message.warning('时间段重叠，无法创建');
       } else {
-        timeSlots.value.push(newSlot);
-        save(newSlot as any);
+        creatingSlot.value = true;
+        const hideLoading = message.loading('保存中', 0);
+        try {
+          const { id: _id, ...payload } = newSlot;
+          newSlot.id = await save(payload);
+          timeSlots.value.push(newSlot);
+        } catch (error) {
+          console.error('创建时间段失败', error);
+        } finally {
+          hideLoading();
+          creatingSlot.value = false;
+        }
       }
     }
   } else if (

@@ -22,7 +22,7 @@ const chartRef = ref<EchartsUIType>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 const loading = ref(false);
-const RECENT_RECORD_LIMIT = 7;
+const RECENT_RECORD_LIMIT = 6;
 
 interface RecentRecord {
   id: string;

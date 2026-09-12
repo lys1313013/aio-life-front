@@ -184,11 +184,6 @@ export function snapToGrid(time: number, gridSize: number = 15): number {
   return Math.round(time / gridSize) * gridSize;
 }
 
-// 生成唯一ID
-export function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
 // 格式化时间段显示
 export function formatSlotTime(slot: TimeSlot): string {
   return `${minutesToTime(slot.startTime)} - ${minutesToTime(slot.endTime)}`;
