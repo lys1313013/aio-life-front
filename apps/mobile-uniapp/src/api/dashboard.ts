@@ -1,4 +1,5 @@
-import { get, post } from "../utils/request";
+import { getQuery } from '@/utils/query';
+import { get } from "../utils/request";
 
 export interface WatchedTaskDetail {
   id: string;
@@ -147,7 +148,7 @@ export async function getPinnedThoughts() {
  * 获取时迹
  */
 export async function queryTimeTracker(date: string) {
-  return await post<any>("/timeRecord/query", { condition: { date } });
+  return await getQuery<any>("/timeRecord/query", { condition: { date } });
 }
 
 /**

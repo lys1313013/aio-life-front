@@ -1,7 +1,8 @@
+import { getQuery } from '@/utils/query';
 import { post } from '../utils/request';
 
 export function query(data: any = {}) {
-  return post('/income/query', data);
+  return getQuery('/income/query', data);
 }
 
 export function insertOrUpdate(data: any) {
@@ -13,9 +14,9 @@ export function deleteData(data: any) {
 }
 
 export function statisticsByYear(data: any) {
-  return post('/income/statisticsByYear', data);
+  return getQuery('/income/statisticsByYear', data);
 }
 
 export function statisticsByMonth(data: any) {
-  return post('/income/statisticsByMonth', data);
+  return getQuery('/income/statisticsByMonth', data);
 }

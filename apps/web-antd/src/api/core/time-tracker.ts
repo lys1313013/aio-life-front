@@ -1,3 +1,4 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 export interface ExerciseDetail {
@@ -39,14 +40,14 @@ export interface QueryResponse {
  * 查询数据
  */
 export async function query(data: any): Promise<QueryResponse> {
-  return await requestClient.post('/timeRecord/query', data);
+  return await getQuery('/timeRecord/query', data);
 }
 
 /**
  * 查询数据
  */
 export async function queryByDateRange(data: any): Promise<TimeRecordEntity[]> {
-  return await requestClient.post('/timeRecord/queryByDateRange', data);
+  return await getQuery('/timeRecord/queryByDateRange', data);
 }
 
 /**

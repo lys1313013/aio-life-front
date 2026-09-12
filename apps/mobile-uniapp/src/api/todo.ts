@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { get, post, request } from '../utils/request';
 
 export interface TaskColumn {
@@ -35,7 +36,7 @@ export interface TaskListResult {
 }
 
 export function getTaskColumnList(data: any = {}) {
-  return post('/taskColumn/query', data);
+  return getQuery('/taskColumn/query', data);
 }
 
 export function getTaskList(data: any = {}) {

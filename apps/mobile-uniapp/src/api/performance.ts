@@ -1,7 +1,8 @@
+import { getQuery } from '@/utils/query';
 import { post } from "../utils/request";
 
 export async function query(data: any) {
-  return await post('/performance/query', data);
+  return await getQuery('/performance', data);
 }
 
 export async function insertOrUpdate(data: any) {

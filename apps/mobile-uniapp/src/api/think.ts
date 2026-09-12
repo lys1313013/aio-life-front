@@ -1,7 +1,8 @@
+import { getQuery } from '@/utils/query';
 import { get, post } from "../utils/request";
 
 export function queryThoughts(data: any) {
-  return post<any>('/thought/query', data);
+  return getQuery<any>('/thought/query', data);
 }
 
 export function saveThought(data: any) {

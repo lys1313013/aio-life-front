@@ -1,7 +1,8 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 export async function query(data: any) {
-  return await requestClient.post('/thought/query', data);
+  return await getQuery('/thought/query', data);
 }
 
 export async function save(data: any) {

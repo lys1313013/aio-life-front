@@ -1,10 +1,11 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
  * 获取用户列表
  */
 export async function getUserListApi(params: any) {
-  return requestClient.post('/user-center/list', params);
+  return getQuery('/user-center/list', params);
 }
 
 /**

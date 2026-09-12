@@ -1,24 +1,25 @@
-import { get, post, request } from '../utils/request';
+import { getQuery } from '@/utils/query';
+import { get, post } from '../utils/request';
 
 /**
  * 查询运动记录列表
  */
 export async function query(data: any) {
-  return await post('/exerciseRecord/query', data);
+  return await getQuery('/exerciseRecord/query', data);
 }
 
 /**
  * 获取运动记录统计数据，用于统计图表
  */
 export async function getStatistics(data: any) {
-  return await post('/exerciseRecord/statistics', data);
+  return await getQuery('/exerciseRecord/statistics', data);
 }
 
 /**
  * 获取轻量级运动记录统计数据，用于统计图表
  */
 export async function getLightStatistics(data: any) {
-  return await post('/exerciseRecord/statistics/light', data);
+  return await getQuery('/exerciseRecord/statistics/light', data);
 }
 
 /**

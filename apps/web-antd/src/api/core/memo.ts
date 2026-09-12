@@ -1,3 +1,4 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 export interface Memo {
@@ -11,7 +12,7 @@ export interface Memo {
 
 export async function getMemoListApi() {
   // pageSize set to 1000 to retrieve all memos for now, as pagination is not yet implemented in UI
-  const res = await requestClient.post('/memo/query', {
+  const res = await getQuery('/memo/query', {
     page: 1,
     pageSize: 1000,
   });

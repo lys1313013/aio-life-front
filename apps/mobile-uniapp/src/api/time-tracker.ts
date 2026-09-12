@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { get, post } from "../utils/request";
 
 export interface ExerciseDetail {
@@ -22,7 +23,7 @@ export interface TimeRecordEntity {
 }
 
 export async function queryTimeTrackerByDate(date: string) {
-  return await post<any>("/timeRecord/query", { condition: { date } });
+  return await getQuery<any>("/timeRecord/query", { condition: { date } });
 }
 
 export async function saveTimeRecord(data: Partial<TimeRecordEntity>) {

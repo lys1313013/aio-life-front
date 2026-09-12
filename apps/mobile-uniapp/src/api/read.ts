@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { get, post, request } from "../utils/request";
 
 export interface ReadRecordVO {
@@ -34,7 +35,7 @@ export interface ReadRecordReq {
 }
 
 export function getReadListApi(data: any) {
-  return post<any>('/read-record/page', data);
+  return getQuery<any>('/read-record/page', data);
 }
 
 export function saveReadApi(data: any) {

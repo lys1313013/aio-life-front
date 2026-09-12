@@ -58,16 +58,14 @@ export async function registerApi(data: AuthApi.RegisterParams) {
  * 发送邮箱验证码
  */
 export async function sendEmailCodeApi(email: string) {
-  return requestClient.get('/auth/sendEmailCode', { params: { email } });
+  return requestClient.post('/auth/sendEmailCode', { email });
 }
 
 /**
  * 发送重置密码验证码
  */
 export async function sendResetPasswordCodeApi(email: string) {
-  return requestClient.get('/auth/sendResetPasswordCode', {
-    params: { email },
-  });
+  return requestClient.post('/auth/sendResetPasswordCode', { email });
 }
 
 /**

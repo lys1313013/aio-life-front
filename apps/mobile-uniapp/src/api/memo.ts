@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { post } from "../utils/request";
 
 export interface Memo {
@@ -10,7 +11,7 @@ export interface Memo {
 }
 
 export function getMemoListApi() {
-  return post<any>("/memo/query", {
+  return getQuery<any>("/memo/query", {
     page: 1,
     pageSize: 1000,
   }).then(res => res.items || []);

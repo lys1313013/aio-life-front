@@ -1,10 +1,11 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
  * 查询
  */
 export async function query(data: any) {
-  return await requestClient.post('/sysDictType/query', data);
+  return await getQuery('/sysDictType/query', data);
 }
 
 /**

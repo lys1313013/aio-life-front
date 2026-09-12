@@ -1,7 +1,8 @@
+import { getQuery } from '@/utils/query';
 import { request, post } from '../utils/request';
 
 export function query(data: any = {}) {
-  return post('/device/query', data);
+  return getQuery('/device/query', data);
 }
 
 export function insertOrUpdate(data: any) {

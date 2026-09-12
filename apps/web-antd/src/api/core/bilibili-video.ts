@@ -1,5 +1,6 @@
 import type { ProgressStatus } from './progress-status';
 
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
@@ -60,7 +61,7 @@ export interface BilibiliVideo {
  * 查询学习视频列表
  */
 export async function query(data: any) {
-  return await requestClient.post('/b-video/query', data);
+  return await getQuery('/b-video/query', data);
 }
 
 /**

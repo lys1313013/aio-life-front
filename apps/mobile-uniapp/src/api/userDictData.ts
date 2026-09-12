@@ -1,7 +1,8 @@
+import { getQuery } from '@/utils/query';
 import { post } from '@/utils/request';
 
 export async function query(data: any) {
-  return await post('/userDictData/query', data);
+  return await getQuery('/userDictData/query', data);
 }
 
 export async function insertOrUpdate(data: any) {

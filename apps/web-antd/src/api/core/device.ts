@@ -1,3 +1,4 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 import { FILE_BIZ_TYPE, uploadFile } from './common';
@@ -6,7 +7,7 @@ import { FILE_BIZ_TYPE, uploadFile } from './common';
  * 查询
  */
 export async function query(data: any) {
-  return await requestClient.post('/device/query', data);
+  return await getQuery('/device/query', data);
 }
 
 /**

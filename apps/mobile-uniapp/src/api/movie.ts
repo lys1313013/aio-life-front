@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { get, post, put, del } from "../utils/request";
 
 export namespace MovieApi {
@@ -43,7 +44,7 @@ export namespace MovieApi {
   }
 
   export function pageList(data: MovieQuery) {
-    return post<any>('/movie/page', data);
+    return getQuery<any>('/movie/page', data);
   }
 
   export function save(data: MovieReq) {

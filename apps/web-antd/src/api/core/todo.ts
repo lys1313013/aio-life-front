@@ -1,7 +1,8 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 export async function getTaskColumnList(data: any) {
-  return await requestClient.post('/taskColumn/query', data);
+  return await getQuery('/taskColumn/query', data);
 }
 
 export async function saveColumn(data: any) {

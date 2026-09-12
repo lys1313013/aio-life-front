@@ -1,5 +1,6 @@
 import type { ProgressStatus } from './core/progress-status';
 
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 import { FILE_BIZ_TYPE, uploadFile } from './core/common';
@@ -56,7 +57,7 @@ export namespace ReadRecordApi {
    * 分页查询
    */
   export function pageList(data: ReadRecordQuery) {
-    return requestClient.post<{ records: ReadRecordVO[]; total: number }>(
+    return getQuery<{ records: ReadRecordVO[]; total: number }>(
       '/read-record/page',
       data,
     );

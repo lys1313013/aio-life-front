@@ -1,10 +1,11 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
  * 查询
  */
 export async function query(data: any) {
-  return await requestClient.post('/userDictData/query', data);
+  return await getQuery('/userDictData/query', data);
 }
 
 /**
@@ -31,7 +32,7 @@ export async function deleteData(id: string) {
 // ================= 管理员 API =================
 
 export async function adminQuery(data: any) {
-  return await requestClient.post('/userDictData/admin/query', data);
+  return await getQuery('/userDictData/admin/query', data);
 }
 
 export async function adminInsert(data: any) {

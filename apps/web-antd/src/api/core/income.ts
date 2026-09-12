@@ -1,10 +1,11 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
  * 查询
  */
 export async function query(data: any) {
-  return await requestClient.post('/income/query', data);
+  return await getQuery('/income/query', data);
 }
 
 /**
@@ -32,9 +33,9 @@ export async function deleteData(data: any) {
  * 统计
  */
 export async function statisticsByYear(data: any) {
-  return await requestClient.post('/income/statisticsByYear', data);
+  return await getQuery('/income/statisticsByYear', data);
 }
 
 export async function statisticsByMonth(data: any) {
-  return await requestClient.post('/income/statisticsByMonth', data);
+  return await getQuery('/income/statisticsByMonth', data);
 }

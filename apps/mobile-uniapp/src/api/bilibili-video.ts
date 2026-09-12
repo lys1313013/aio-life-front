@@ -1,3 +1,4 @@
+import { getQuery } from '@/utils/query';
 import { get, post, put, del } from "../utils/request";
 
 export interface BilibiliVideo {
@@ -50,7 +51,7 @@ export interface BilibiliVideo {
 }
 
 export async function query(data: any) {
-  return await post('/b-video/query', data);
+  return await getQuery('/b-video/query', data);
 }
 
 export async function getStatusCount(data?: any) {

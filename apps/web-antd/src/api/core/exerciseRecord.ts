@@ -1,24 +1,25 @@
+import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 /**
  * 查询运动记录列表
  */
 export async function query(data: any) {
-  return await requestClient.post('/exerciseRecord/query', data);
+  return await getQuery('/exerciseRecord/query', data);
 }
 
 /**
  * 获取运动记录统计数据，用于统计图表
  */
 export async function getStatistics(data: any) {
-  return await requestClient.post('/exerciseRecord/statistics', data);
+  return await getQuery('/exerciseRecord/statistics', data);
 }
 
 /**
  * 获取轻量级运动记录统计数据，用于统计图表
  */
 export async function getLightStatistics(data: any) {
-  return await requestClient.post('/exerciseRecord/statistics/light', data);
+  return await getQuery('/exerciseRecord/statistics/light', data);
 }
 
 /**
@@ -27,7 +28,7 @@ export async function getLightStatistics(data: any) {
  */
 export async function getAll(data: any) {
   console.warn('getAll 方法已废弃，请使用 getStatistics 或 getLightStatistics');
-  return await requestClient.post('/exerciseRecord/getAll', data);
+  return await getStatistics(data);
 }
 
 /**
