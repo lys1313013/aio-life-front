@@ -275,8 +275,8 @@ const drawGraph = () => {
     const midY = (startY + endY) / 2;
     ctx.font = '11px sans-serif';
     ctx.fillStyle = edgeColor;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.setTextAlign('center');
+    ctx.setTextBaseline('middle');
     ctx.fillText(edge.relationType, midX, midY - 10);
   }
 
@@ -291,8 +291,8 @@ const drawGraph = () => {
     // 画名字
     ctx.font = `bold ${Math.max(12, node.radius * 0.6)}px sans-serif`;
     ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.setTextAlign('center');
+    ctx.setTextBaseline('middle');
     ctx.fillText(node.name, node.x, node.y);
   }
 

@@ -38,7 +38,7 @@
           />
           <view class="switch-row">
             <text class="switch-label">隐藏内容</text>
-            <switch :checked="formData.hiddenContent" @change="formData.hiddenContent = $event.detail.value" />
+            <switch :checked="formData.hiddenContent" @change="formData.hiddenContent = ($event as CustomEvent<{ value: boolean }>).detail.value" />
           </view>
         </view>
         <view class="popup-footer">

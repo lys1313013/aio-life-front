@@ -44,7 +44,7 @@
           />
           <view class="switch-row">
             <text class="switch-label">固定在首页</text>
-            <switch :checked="formData.isPinned === 1" @change="formData.isPinned = $event.detail.value ? 1 : 0" />
+            <switch :checked="formData.isPinned === 1" @change="formData.isPinned = ($event as CustomEvent<{ value: boolean }>).detail.value ? 1 : 0" />
           </view>
         </view>
         <view class="popup-footer">

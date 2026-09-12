@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { createPerson, updatePerson, type PersonReq } from '../../../api/relationship';
+import { createPerson, updatePerson, type PersonReq } from '@/api/relationship';
 
 const isEdit = ref(false);
 const editId = ref('');

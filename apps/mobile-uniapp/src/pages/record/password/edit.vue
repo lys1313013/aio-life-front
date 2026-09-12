@@ -27,7 +27,7 @@
       </view>
       <view class="switch-row">
         <text class="switch-label">收藏</text>
-        <switch :checked="formData.favorite" @change="formData.favorite = $event.detail.value" />
+        <switch :checked="formData.favorite" @change="formData.favorite = ($event as CustomEvent<{ value: boolean }>).detail.value" />
       </view>
     </view>
     <view class="bottom-btn">
