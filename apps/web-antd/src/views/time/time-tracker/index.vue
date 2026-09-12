@@ -57,11 +57,13 @@ import {
   formatDuration,
   formatSlotTime,
   generateId,
-  getAboveSlotEndTime,
-  getBelowSlotStartTime,
+  getSlotDuration,
   getSlotPosition,
   getTimeFromPosition,
   hasOverlap,
+  isValidSlot,
+  moveSlot,
+  resizeSlot,
   snapToGrid,
 } from './utils';
 
@@ -214,7 +216,7 @@ const groupedCardTimeSlots = computed(() => {
 
 const totalDuration = computed(() => {
   return filteredTimeSlots.value.reduce(
-    (total, slot) => total + (slot.endTime - slot.startTime + 1),
+    (total, slot) => total + getSlotDuration(slot),
     0,
   );
 });
@@ -240,7 +242,7 @@ const trackTimeComparisons = computed(() => {
   const calcDuration = (slots: TimeSlot[], categoryId: string) => {
     return slots
       .filter((slot) => slot.categoryId === categoryId)
-      .reduce((total, slot) => total + (slot.endTime - slot.startTime), 0);
+      .reduce((total, slot) => total + getSlotDuration(slot), 0);
   };
 
   return trackedCategories.map((cat) => {
@@ -282,7 +284,7 @@ const freeTimeCardStyle = computed(() => {
   // 1. 计算每个分类的总时长
   const categoryDurations = new Map<string, number>();
   filteredTimeSlots.value.forEach((slot) => {
-    const duration = slot.endTime - slot.startTime;
+    const duration = getSlotDuration(slot);
     const current = categoryDurations.get(slot.categoryId) || 0;
     categoryDurations.set(slot.categoryId, current + duration);
   });
@@ -787,7 +789,7 @@ const getDragPreviewStyle = () => {
     dragOperation.value.startTime,
     dragOperation.value.currentTime,
   );
-  const duration = endTime - startTime;
+  const duration = getSlotDuration({ startTime, endTime });
 
   if (duration < 5) return {}; // 允许显示较短的时间段预览，但至少保留5分钟高度以可见
 
@@ -820,9 +822,12 @@ const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
   if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
-  const startTime = Math.min(
-    1439,
-    snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+  const startTime = Math.max(
+    0,
+    Math.min(
+      1439,
+      snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+    ),
   );
   dragOperation.value = {
     type: 'create',
@@ -844,9 +849,12 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
   if (!dragOperation.value || !timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
-  dragOperation.value.currentTime = Math.min(
-    1439,
-    snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+  dragOperation.value.currentTime = Math.max(
+    0,
+    Math.min(
+      1439,
+      snapToGrid(getTimeFromPosition(y, timelineRef.value.offsetHeight)),
+    ),
   );
 
   // 处理创建时的碰撞检测
@@ -904,148 +912,26 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
     );
     if (!slot) return;
 
-    if (dragOperation.value.type === 'move') {
-      // 移动时间段
-      const newStartTime = Math.max(
-        0,
-        Math.min(
-          1439 - (slot.endTime - slot.startTime),
-          dragOperation.value.startTime + deltaTime,
-        ),
-      );
-      const newEndTime = newStartTime + (slot.endTime - slot.startTime);
-
-      // 检查下方时间段限制
-      const movedSlot = {
-        ...slot,
-        startTime: newStartTime,
-        endTime: newEndTime,
-      };
-      const belowSlotStartTime = getBelowSlotStartTime(
-        timeSlots.value,
-        movedSlot,
-        slot.id,
-      );
-
-      // 检查上方时间段限制：必须比上方结束时间大1分钟
-      const aboveSlotEndTime = getAboveSlotEndTime(
-        timeSlots.value,
-        movedSlot,
-        slot.id,
-      );
-      if (
-        aboveSlotEndTime !== null &&
-        movedSlot.startTime <= aboveSlotEndTime
-      ) {
-        const duration = slot.endTime - slot.startTime;
-        const minStartTime = aboveSlotEndTime + 1;
-        movedSlot.startTime = Math.max(minStartTime, movedSlot.startTime);
-        movedSlot.endTime = movedSlot.startTime + duration;
-      }
-
-      // 如果下方有时间段，确保当前时间段不会与下方时间段重叠
-      if (
-        belowSlotStartTime !== null &&
-        movedSlot.endTime > belowSlotStartTime
-      ) {
-        // 限制当前时间段的结束时间不能超过下方时间段的开始时间
-        const maxEndTime = belowSlotStartTime;
-        const maxStartTime = maxEndTime - (slot.endTime - slot.startTime);
-
-        // 如果新的开始时间会导致重叠，则调整到最大允许位置
-        if (movedSlot.startTime > maxStartTime) {
-          movedSlot.startTime = maxStartTime;
-          movedSlot.endTime = maxEndTime;
-        }
-      }
-
-      // 检查是否重叠（排除自身）
-      const otherSlots = timeSlots.value.filter((s) => s.id !== slot.id);
-      if (!hasOverlap(otherSlots, movedSlot)) {
-        slot.startTime = movedSlot.startTime;
-        slot.endTime = movedSlot.endTime;
-        if (dragOperation.value) {
-          dragOperation.value.changed =
-            dragOperation.value.originalStart !== slot.startTime ||
-            dragOperation.value.originalEnd !== slot.endTime;
-        }
-      }
-    } else if (dragOperation.value.type === 'resize') {
-      const newTime = Math.max(
-        0,
-        Math.min(1439, dragOperation.value.startTime + deltaTime),
-      );
-
-      if (dragOperation.value.slotId) {
-        const resizeSlot = timeSlots.value.find(
-          (s) => s.id === dragOperation.value?.slotId,
-        );
-        if (!resizeSlot) return;
-
-        const originalStart = resizeSlot.startTime;
-        const originalEnd = resizeSlot.endTime;
-
-        if (dragOperation.value.direction === 'top') {
-          const newStartTime = Math.min(
-            newTime,
-            originalEnd - config.value.minSlotDuration,
-          );
-          resizeSlot.startTime = Math.max(0, newStartTime);
-          const aboveSlots = timeSlots.value
-            .filter(
-              (s) =>
-                s.id !== resizeSlot.id &&
-                s.date === resizeSlot.date &&
-                s.endTime <= originalStart,
-            )
-            .sort((a, b) => b.endTime - a.endTime);
-          if (
-            aboveSlots.length > 0 &&
-            aboveSlots[0] &&
-            resizeSlot.startTime <= aboveSlots[0].endTime
-          ) {
-            resizeSlot.startTime = aboveSlots[0].endTime + 1;
-          }
-        } else {
-          const newEndTime = Math.max(
-            newTime,
-            originalStart + config.value.minSlotDuration,
-          );
-          resizeSlot.endTime = Math.min(1439, newEndTime);
-        }
-
-        if (dragOperation.value.direction === 'bottom') {
-          const belowSlotStartTime = getBelowSlotStartTime(
+    const nextSlot =
+      dragOperation.value.type === 'move'
+        ? moveSlot(
             timeSlots.value,
-            resizeSlot,
-            resizeSlot.id,
+            slot,
+            dragOperation.value.startTime + deltaTime,
+          )
+        : resizeSlot(
+            timeSlots.value,
+            slot,
+            dragOperation.value.direction || 'bottom',
+            dragOperation.value.startTime + deltaTime,
+            config.value.minSlotDuration,
           );
-          if (
-            belowSlotStartTime !== null &&
-            resizeSlot.endTime > belowSlotStartTime
-          ) {
-            resizeSlot.endTime = belowSlotStartTime;
-          }
-        }
 
-        const otherSlots = timeSlots.value.filter(
-          (s) => s.id !== resizeSlot.id,
-        );
-        if (hasOverlap(otherSlots, resizeSlot)) {
-          resizeSlot.startTime = originalStart;
-          resizeSlot.endTime = originalEnd;
-          if (dragOperation.value) {
-            dragOperation.value.changed = false;
-          }
-        }
-        if (dragOperation.value) {
-          dragOperation.value.changed =
-            dragOperation.value.changed ||
-            dragOperation.value.originalStart !== resizeSlot.startTime ||
-            dragOperation.value.originalEnd !== resizeSlot.endTime;
-        }
-      }
-    }
+    slot.startTime = nextSlot.startTime;
+    slot.endTime = nextSlot.endTime;
+    dragOperation.value.changed =
+      dragOperation.value.originalStart !== slot.startTime ||
+      dragOperation.value.originalEnd !== slot.endTime;
   }
 };
 
@@ -1074,9 +960,12 @@ const handleTrackPointerUp = async () => {
       dragOperation.value.startTime,
       dragOperation.value.currentTime,
     );
-    const duration = endTime - startTime;
+    const duration = getSlotDuration({ startTime, endTime });
 
-    if (duration >= config.value.minSlotDuration) {
+    if (
+      isValidSlot({ startTime, endTime }) &&
+      duration >= config.value.minSlotDuration
+    ) {
       let recommendedCategoryId = config.value.defaultCategoryId;
 
       try {
@@ -1352,7 +1241,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                     </div>
                     <div class="time-card-footer">
                       <span class="time-card-duration">
-                        {{ formatDuration(slot.endTime - slot.startTime) }}
+                        {{ formatDuration(getSlotDuration(slot)) }}
                       </span>
                       <span
                         v-if="slot.title"
@@ -1412,7 +1301,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                         </div>
                         <div class="time-card-footer">
                           <span class="time-card-duration">
-                            {{ formatDuration(slot.endTime - slot.startTime) }}
+                            {{ formatDuration(getSlotDuration(slot)) }}
                           </span>
                           <span
                             v-if="slot.title"
@@ -1513,9 +1402,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                                   : { fontSize: '11px' }
                               "
                             >
-                              {{
-                                formatDuration(slot.endTime - slot.startTime)
-                              }}
+                              {{ formatDuration(getSlotDuration(slot)) }}
                             </span>
                           </div>
                         </div>
@@ -1601,13 +1488,11 @@ const getDaySlots = (date: string): TimeSlot[] => {
                               getSlotTitle(slot)
                             }}</span>
                             <span
-                              v-if="slot.endTime - slot.startTime > 60"
+                              v-if="getSlotDuration(slot) > 60"
                               class="slot-time"
                               style="font-size: 10px"
                             >
-                              {{
-                                formatDuration(slot.endTime - slot.startTime)
-                              }}
+                              {{ formatDuration(getSlotDuration(slot)) }}
                             </span>
                           </div>
                         </div>
@@ -1686,9 +1571,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                           <span class="slot-time">
                             {{ formatSlotTime(slot) }}
                             <span style="margin-left: 4px; opacity: 0.8">
-                              {{
-                                formatDuration(slot.endTime - slot.startTime)
-                              }}
+                              {{ formatDuration(getSlotDuration(slot)) }}
                             </span>
                           </span>
                         </div>

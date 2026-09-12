@@ -10,6 +10,8 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { getSlotDuration } from '../utils';
+
 interface Props {
   timeSlots: TimeSlot[];
   categories: TimeSlotCategory[];
@@ -58,8 +60,7 @@ const dailyStatsData = computed(() => {
     }
 
     if (data[slot.date] !== undefined) {
-      data[slot.date] =
-        (data[slot.date] || 0) + (slot.endTime - slot.startTime + 1);
+      data[slot.date] = (data[slot.date] || 0) + getSlotDuration(slot);
     }
   });
 

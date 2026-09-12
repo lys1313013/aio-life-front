@@ -13,10 +13,9 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 
 import { queryByDateRange } from '#/api/core/time-tracker';
-import { getCategoryColor, getCategoryName } from '../config';
 
-dayjs.extend(weekOfYear);
-dayjs.extend(isoWeek);
+import { getCategoryColor, getCategoryName } from '../config';
+import { getSlotDuration } from '../utils';
 
 interface Props {
   categories: (MergedCategory | TimeSlotCategory)[];
@@ -27,6 +26,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
@@ -93,7 +95,7 @@ const chartData = computed(() => {
       filteredCategories.forEach((cat) => {
         const duration = trendData.value
           .filter((s) => s.date === dateStr && s.categoryId === cat.id)
-          .reduce((sum, s) => sum + (s.endTime - s.startTime + 1), 0);
+          .reduce((sum, s) => sum + getSlotDuration(s), 0);
         seriesData[cat.id]!.push(duration);
       });
     }
@@ -112,10 +114,8 @@ const chartData = computed(() => {
           .filter((s) => {
             const d = dayjs(s.date);
             return (
-              (d.isAfter(weekStart, 'day') ||
-                d.isSame(weekStart, 'day')) &&
-              (d.isBefore(weekEnd, 'day') ||
-                d.isSame(weekEnd, 'day'))
+              (d.isAfter(weekStart, 'day') || d.isSame(weekStart, 'day')) &&
+              (d.isBefore(weekEnd, 'day') || d.isSame(weekEnd, 'day'))
             );
           })
           .map((s) => s.date),
@@ -134,7 +134,7 @@ const chartData = computed(() => {
                 slotDate.isSame(weekEnd, 'day'))
             );
           })
-          .reduce((sum, s) => sum + (s.endTime - s.startTime + 1), 0);
+          .reduce((sum, s) => sum + getSlotDuration(s), 0);
         seriesData[cat.id]!.push(Math.round(total / activeDays));
       });
     }
@@ -153,10 +153,8 @@ const chartData = computed(() => {
           .filter((s) => {
             const d = dayjs(s.date);
             return (
-              (d.isAfter(monthStart, 'day') ||
-                d.isSame(monthStart, 'day')) &&
-              (d.isBefore(monthEnd, 'day') ||
-                d.isSame(monthEnd, 'day'))
+              (d.isAfter(monthStart, 'day') || d.isSame(monthStart, 'day')) &&
+              (d.isBefore(monthEnd, 'day') || d.isSame(monthEnd, 'day'))
             );
           })
           .map((s) => s.date),
@@ -175,7 +173,7 @@ const chartData = computed(() => {
                 slotDate.isSame(monthEnd, 'day'))
             );
           })
-          .reduce((sum, s) => sum + (s.endTime - s.startTime + 1), 0);
+          .reduce((sum, s) => sum + getSlotDuration(s), 0);
         seriesData[cat.id]!.push(Math.round(total / activeDays));
       });
     }
@@ -287,7 +285,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <Card class="chart-card overflow-hidden shadow-sm" :body-style="{ padding: '12px' }">
+  <Card
+    class="chart-card overflow-hidden shadow-sm"
+    :body-style="{ padding: '12px' }"
+  >
     <div class="chart-container">
       <EchartsUI ref="chartRef" />
     </div>

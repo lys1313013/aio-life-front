@@ -9,6 +9,7 @@ import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getCategoryColor, getCategoryName } from '../config';
+import { getSlotDuration } from '../utils';
 
 interface Props {
   timeSlots: TimeSlot[];
@@ -69,13 +70,16 @@ const chartData = computed(() => {
       // 精确分割：如果跨越小时，分配给对应的小时
       for (let h = startHour; h <= endHour; h++) {
         const hourStart = h * 60;
-        const hourEnd = (h + 1) * 60;
+        const hourEnd = (h + 1) * 60 - 1;
 
         const overlapStart = Math.max(hourStart, slot.startTime);
         const overlapEnd = Math.min(hourEnd, slot.endTime);
 
-        if (overlapEnd > overlapStart) {
-          const duration = overlapEnd - overlapStart;
+        if (overlapEnd >= overlapStart) {
+          const duration = getSlotDuration({
+            startTime: overlapStart,
+            endTime: overlapEnd,
+          });
           const arr = seriesData[slot.categoryId];
           if (arr && arr[h] !== undefined) {
             arr[h] = (arr[h] || 0) + duration;
@@ -137,7 +141,7 @@ const chartData = computed(() => {
       });
 
       daySlots.forEach((slot) => {
-        const duration = slot.endTime - slot.startTime + 1;
+        const duration = getSlotDuration(slot);
         const arr = seriesData[slot.categoryId];
         if (arr && arr[i] !== undefined) {
           arr[i] = (arr[i] || 0) + duration;

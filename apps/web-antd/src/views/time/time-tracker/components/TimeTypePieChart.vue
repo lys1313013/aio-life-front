@@ -11,6 +11,7 @@ import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { TIME_TYPE_CONFIG, TimeType } from '../types';
+import { getSlotDuration } from '../utils';
 
 interface Props {
   timeSlots: TimeSlot[];
@@ -50,7 +51,7 @@ const timeTypeDurations = computed(() => {
     const timeType = category?.timeType;
 
     if (timeType && durations[timeType as TimeType] !== undefined) {
-      durations[timeType as TimeType] += slot.endTime - slot.startTime + 1;
+      durations[timeType as TimeType] += getSlotDuration(slot);
     }
   });
 

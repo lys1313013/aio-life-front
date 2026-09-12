@@ -12,6 +12,7 @@ import dayjs from 'dayjs';
 import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
+import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
 const emit = defineEmits<{
   'update:last-end': [value: number];
@@ -71,10 +72,9 @@ const loadData = async () => {
       .slice(0, RECENT_RECORD_LIMIT)
       .map((record) => {
         const category = categories.find((c) => c.id === record.categoryId);
-        const duration = record.endTime - record.startTime;
-        const d = duration <= 0 ? 1 : duration;
-        const h = Math.floor(d / 60);
-        const m = d % 60;
+        const duration = getSlotDuration(record);
+        const h = Math.floor(duration / 60);
+        const m = duration % 60;
         let durationStr = '';
         if (h > 0 && m > 0) {
           durationStr = `${h}h${m}m`;
@@ -93,9 +93,9 @@ const loadData = async () => {
         };
       });
 
-    // 发送最后一条记录的结束时间（用于父组件计算"距离上次记录已过去多久"）
+    // 闭区间末分钟结束后的边界，用于计算距离上次记录已过去多久；0 表示无记录
     const lastEndTime =
-      sortedRecords.length > 0 ? sortedRecords[0]!.endTime : 0;
+      sortedRecords.length > 0 ? sortedRecords[0]!.endTime + 1 : 0;
     emit('update:last-end', lastEndTime);
 
     // 处理时间轴区块 (改为竖向，自上而下 00:00 - 24:00)
@@ -103,8 +103,7 @@ const loadData = async () => {
     timelineBlocks.value = records.map((record) => {
       const category = categories.find((c) => c.id === record.categoryId);
       const startPercent = (record.startTime / totalMinutes) * 100;
-      const heightPercent =
-        ((record.endTime - record.startTime) / totalMinutes) * 100;
+      const heightPercent = (getSlotDuration(record) / totalMinutes) * 100;
       return {
         id: record.id || Math.random().toString(),
         top: `${startPercent}%`,
@@ -115,7 +114,7 @@ const loadData = async () => {
 
     const categoryDurations: Record<string, number> = {};
     records.forEach((slot) => {
-      const duration = slot.endTime - slot.startTime + 1;
+      const duration = getSlotDuration(slot);
       categoryDurations[slot.categoryId] =
         (categoryDurations[slot.categoryId] || 0) + duration;
     });

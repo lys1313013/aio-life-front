@@ -24,6 +24,7 @@ const emit = defineEmits(['success']);
 
 const visible = ref(false);
 const loading = ref(false);
+const opening = ref(false);
 const editingSlot = ref<null | TimeSlot>(null);
 const existingSlots = ref<TimeSlot[]>([]);
 const isMobile = ref(window.innerWidth < 1024);
@@ -79,96 +80,81 @@ const open = async (
   date?: string,
   contextExistingSlots?: TimeSlot[],
 ) => {
-  visible.value = true;
+  if (opening.value) return;
+  opening.value = true;
   loading.value = true;
   isEditMode.value = !!slot;
 
   const targetDate = slot?.date || date || dayjs().format('YYYY-MM-DD');
+  // 新增先检查可用区间，等待期间只显示加载提示，不先弹出表单。
+  const hideLoading = slot ? undefined : message.loading('加载中', 0);
 
-  // 同步初始化 editingSlot，让页面能立即撑开
-  if (isEditMode.value && slot) {
-    editingSlot.value = { ...slot };
-  } else {
-    let initialCategoryId = defaultConfig.defaultCategoryId;
-    if (
-      categories.value.length > 0 &&
-      !categories.value.find((c) => c.id === initialCategoryId)
-    ) {
-      initialCategoryId = categories.value[0]?.id || initialCategoryId;
+  try {
+    if (slot) {
+      editingSlot.value = { ...slot };
+      visible.value = true;
+    } else {
+      visible.value = false;
+      editingSlot.value = null;
+      const result = await recommendNext({ date: targetDate });
+      if (!result.recommend) {
+        hideLoading?.();
+        message.info('当天已记满，没有可添加的时间段');
+        return;
+      }
+
+      const initialCategoryId = categories.value.some(
+        (category) => category.id === defaultConfig.defaultCategoryId,
+      )
+        ? defaultConfig.defaultCategoryId
+        : categories.value[0]?.id || defaultConfig.defaultCategoryId;
+      editingSlot.value = {
+        id: result.recommend.id || generateId(),
+        startTime: result.recommend.startTime,
+        endTime: result.recommend.endTime,
+        categoryId: result.recommend.categoryId || initialCategoryId,
+        title: '',
+        description: '',
+        date: result.recommend.date || targetDate,
+        exercises: [],
+      };
     }
 
-    editingSlot.value = {
-      id: generateId(),
-      startTime: 0,
-      endTime: 30,
-      categoryId: initialCategoryId,
-      title: '',
-      description: '',
-      date: targetDate,
-      exercises: [],
-    };
-  }
-
-  // 异步加载数据
-  const promises: Promise<void>[] = [];
-
-  if (contextExistingSlots) {
-    existingSlots.value = contextExistingSlots;
-  } else {
-    promises.push(
-      query({ condition: { date: targetDate } })
-        .then((res) => {
+    const promises: Promise<void>[] = [];
+    if (contextExistingSlots) {
+      existingSlots.value = contextExistingSlots;
+    } else {
+      promises.push(
+        query({ condition: { date: targetDate } }).then((res) => {
           existingSlots.value = Array.isArray(res) ? res : res.items || [];
-        })
-        .catch((error) => {
-          console.error('获取已有记录失败:', error);
-          existingSlots.value = [];
         }),
-    );
-  }
+      );
+    }
 
-  if (isEditMode.value && slot) {
-    // 编辑模式：获取详情
-    promises.push(
-      getById(slot.id)
-        .then((detail) => {
-          if (detail && editingSlot.value && editingSlot.value.id === slot.id) {
+    if (slot) {
+      promises.push(
+        getById(slot.id).then((detail) => {
+          if (detail && editingSlot.value?.id === slot.id) {
             editingSlot.value = {
               ...editingSlot.value,
               ...detail,
               exercises: detail.exercises || [],
             };
           }
-        })
-        .catch((error) => {
-          console.error('获取详情失败', error);
         }),
-    );
-  } else {
-    // 新增模式：获取推荐
-    promises.push(
-      recommendNext({ date: targetDate })
-        .then((result) => {
-          if (result && result.recommend && editingSlot.value) {
-            editingSlot.value = {
-              ...editingSlot.value,
-              id: result.recommend.id || editingSlot.value.id,
-              startTime: result.recommend.startTime,
-              endTime: result.recommend.endTime,
-              categoryId: result.recommend.categoryId,
-              title: '',
-              date: result.recommend.date || targetDate,
-            };
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to initialize modal:', error);
-        }),
-    );
-  }
+      );
+    }
 
-  await Promise.all(promises);
-  loading.value = false;
+    await Promise.all(promises);
+    if (!slot) visible.value = true;
+  } catch (error) {
+    console.error('加载时间段失败:', error);
+    // 请求失败由全局拦截器提示；新增时保持弹窗关闭。
+  } finally {
+    hideLoading?.();
+    loading.value = false;
+    opening.value = false;
+  }
 };
 
 const handleCancel = () => {
@@ -252,7 +238,7 @@ defineExpose({ open });
       <template #default>
         <TimeSlotEditForm
           v-if="editingSlot"
-          :slot="editingSlot"
+          v-bind="{ slot: editingSlot }"
           :categories="categories"
           :existing-slots="existingSlots"
           @save="handleSave"

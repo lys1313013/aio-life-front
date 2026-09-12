@@ -99,7 +99,7 @@ export async function recommendType(params: {
  * 获取推荐分类
  */
 export async function recommendNext(params: { date: string }): Promise<{
-  recommend: TimeRecordEntity;
+  recommend: null | TimeRecordEntity;
   records: TimeRecordEntity[];
 }> {
   return await requestClient.get('/timeRecord/recommendNext', { params });

@@ -9,6 +9,7 @@ import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getCategoryColor, getCategoryName } from '../config';
+import { getSlotDuration } from '../utils';
 
 interface Props {
   timeSlots: TimeSlot[];
@@ -75,7 +76,7 @@ const dailyCategoryData = computed(() => {
 
       const arr = seriesData[slot.categoryId];
       if (arr && arr[i] !== undefined) {
-        arr[i] = (arr[i] as number) + (slot.endTime - slot.startTime);
+        arr[i] = (arr[i] as number) + getSlotDuration(slot);
       }
     });
   }

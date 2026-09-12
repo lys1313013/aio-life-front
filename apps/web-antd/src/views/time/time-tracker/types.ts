@@ -15,8 +15,8 @@ export const TIME_TYPE_CONFIG = {
 // 时间段类型定义
 export interface TimeSlot {
   id: string;
-  startTime: number; // 开始时间（分钟，0-1440）
-  endTime: number; // 结束时间（分钟，0-1440）
+  startTime: number; // 开始分钟（0-1439，包含）
+  endTime: number; // 结束分钟（0-1439，包含）；时长 = endTime - startTime + 1
   categoryId: string; // 分类ID
   title?: string; // 标题
   description?: string; // 描述

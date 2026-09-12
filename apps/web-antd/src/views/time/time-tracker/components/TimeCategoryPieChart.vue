@@ -11,6 +11,7 @@ import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getCategoryColor, getCategoryName } from '../config';
+import { getSlotDuration } from '../utils';
 
 interface Props {
   timeSlots: TimeSlot[];
@@ -37,7 +38,7 @@ const categoryDurations = computed(() => {
     ) {
       return;
     }
-    const duration = slot.endTime - slot.startTime + 1;
+    const duration = getSlotDuration(slot);
     durations[slot.categoryId] =
       durations[slot.categoryId] === undefined
         ? duration

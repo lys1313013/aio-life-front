@@ -12,7 +12,7 @@ import { listCategories } from '#/api/core/time-tracker-category';
 import AnalysisCard from '../../dashboard/home/components/analysis-card.vue';
 import CategoryFilter from '../time-tracker/components/CategoryFilter.vue';
 import { defaultConfig } from '../time-tracker/config';
-import { formatDuration } from '../time-tracker/utils';
+import { formatDuration, getSlotDuration } from '../time-tracker/utils';
 
 dayjs.extend(isoWeek);
 
@@ -45,19 +45,11 @@ const trackedCards = computed(() => {
     .map((cat) => {
       const duration = timeSlots.value
         .filter((slot) => slot.categoryId === cat.id)
-        .reduce(
-          (total, slot) =>
-            total + (slot.duration || slot.endTime - slot.startTime + 1),
-          0,
-        );
+        .reduce((total, slot) => total + getSlotDuration(slot), 0);
 
       const prevDuration = previousPeriodTimeSlots.value
         .filter((slot) => slot.categoryId === cat.id)
-        .reduce(
-          (total, slot) =>
-            total + (slot.duration || slot.endTime - slot.startTime + 1),
-          0,
-        );
+        .reduce((total, slot) => total + getSlotDuration(slot), 0);
 
       const diff = duration - prevDuration;
       const absDiff = Math.abs(diff);

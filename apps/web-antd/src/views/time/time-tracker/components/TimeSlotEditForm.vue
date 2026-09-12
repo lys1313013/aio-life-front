@@ -43,8 +43,11 @@ import {
   getCategoryName,
 } from '../config';
 import {
+  endTimeFromDuration,
   getAboveSlotEndTime,
   getBelowSlotStartTime,
+  getSlotDuration,
+  isValidSlot,
   minutesToTime,
   timeToMinutes,
 } from '../utils';
@@ -258,7 +261,10 @@ const duration = computed(() => {
   const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
   const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
 
-  return Math.max(0, endMinutes - startMinutes + 1);
+  return Math.max(
+    0,
+    getSlotDuration({ startTime: startMinutes, endTime: endMinutes }),
+  );
 });
 
 // 更新时长逻辑
@@ -266,7 +272,10 @@ const updateDuration = (val: number) => {
   if (!formState.value.startTime) return;
 
   const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  const proposedEndMinutes = startMinutes + val;
+  const proposedEndMinutes = endTimeFromDuration(
+    startMinutes,
+    Math.max(1, val),
+  );
 
   let maxMinutes = 1439;
 
@@ -288,9 +297,11 @@ const updateDuration = (val: number) => {
     }
   }
 
-  // 确保结束时间不小于开始时间+1分钟，且不超过最大限制
+  if (maxMinutes < startMinutes) return;
+
+  // 闭区间允许开始与结束相同，表示 1 分钟。
   const finalEndMinutes = Math.max(
-    startMinutes + 1,
+    startMinutes,
     Math.min(maxMinutes, proposedEndMinutes),
   );
 
@@ -337,12 +348,8 @@ const rules: any = {
           formState.value.endTime.format('HH:mm'),
         );
 
-        if (endMinutes < startMinutes) {
+        if (!isValidSlot({ startTime: startMinutes, endTime: endMinutes })) {
           return Promise.reject(new Error('结束时间必须大于等于开始时间'));
-        }
-
-        if (endMinutes - startMinutes < 0) {
-          return Promise.reject(new Error('时间段不能少于1分钟'));
         }
 
         return Promise.resolve();
@@ -532,7 +539,7 @@ const adjustStartTime = (minutes: number) => {
       startTime: currentMinutes,
       endTime: formState.value.endTime
         ? timeToMinutes(formState.value.endTime.format('HH:mm'))
-        : currentMinutes + 30,
+        : Math.min(1439, endTimeFromDuration(currentMinutes, 30)),
     };
 
     // 获取上方最近的时间段结束时间
@@ -548,11 +555,10 @@ const adjustStartTime = (minutes: number) => {
     }
   }
 
-  // 如果有结束时间，开始时间必须小于结束时间
+  // 闭区间允许开始时间等于结束时间。
   if (formState.value.endTime) {
     const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-    // 限制最大值为结束时间 - 1
-    maxMinutes = Math.min(maxMinutes, endMinutes - 1);
+    maxMinutes = Math.min(maxMinutes, endMinutes);
   }
 
   // 如果范围无效（min > max），则不调整
@@ -602,6 +608,8 @@ const adjustEndTime = (minutes: number) => {
     }
   }
 
+  if (minMinutes > maxMinutes) return;
+
   const newMinutes = Math.max(
     minMinutes,
     Math.min(maxMinutes, proposedMinutes),
@@ -634,8 +642,7 @@ const openExerciseTypeModal = (index: number) => {
 // 选择运动类型
 const handleExerciseTypeSelect = (option: ExerciseTypeOption) => {
   const index = currentEditingExerciseIndex.value;
-  const exercise =
-    index >= 0 ? formState.value.exercises[index] : undefined;
+  const exercise = index >= 0 ? formState.value.exercises[index] : undefined;
   if (exercise) {
     exercise.exerciseTypeId = option.value;
     handleExerciseTypeChange(option.value, index);

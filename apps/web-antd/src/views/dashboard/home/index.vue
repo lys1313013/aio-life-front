@@ -60,7 +60,7 @@ const thoughtsLoading = ref(true);
 const thinkModalVisible = ref(false);
 const editingThoughtId = ref<null | number | string>(null);
 const timeTrackerModalRef = ref();
-// 上次时迹记录的结束时间（分钟数，0 表示今日无记录）
+// 上次时迹记录末分钟结束后的边界（分钟数，0 表示今日无记录）
 const timeTrackerLastEnd = ref(0);
 // 当前时间（分钟数），每分钟更新，用于计算"距离上次记录已过去多久"
 const nowMinutes = ref(new Date().getHours() * 60 + new Date().getMinutes());
