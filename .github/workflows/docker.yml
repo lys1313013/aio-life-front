@@ -31,6 +31,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-${{ runner.arch }}-node22-turbo-v1-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-node22-turbo-v1-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm run build --filter=@vben/web-antd
+        env:
+          TZ: Asia/Shanghai
+
+      # 只发送静态产物，避免上传 node_modules 和导出庞大的构建中间层。
+      - name: Prepare Docker context
+        run: |
+          mkdir -p "$RUNNER_TEMP/frontend-image"
+          cp -R apps/web-antd/dist "$RUNNER_TEMP/frontend-image/dist"
+          cp scripts/deploy/nginx.conf "$RUNNER_TEMP/frontend-image/nginx.conf"
+          cp scripts/deploy/Dockerfile.runtime "$RUNNER_TEMP/frontend-image/Dockerfile"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -63,8 +97,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
+          context: ${{ runner.temp }}/frontend-image
+          file: ${{ runner.temp }}/frontend-image/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ steps.meta.outputs.tags }}
@@ -76,5 +110,5 @@ jobs:
           # 报 unknown manifest class
           provenance: false
           sbom: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=frontend-runtime
+          cache-to: type=gha,scope=frontend-runtime,mode=min
