@@ -71,9 +71,8 @@ async function loadSvgIcons() {
       const end = key.lastIndexOf('.');
       const iconName = key.slice(start, end);
 
-      return addIcon(`svg:${iconName}`, {
-        ...parseSvg(typeof body === 'object' ? body.default : body),
-      });
+      const icon = parseSvg(typeof body === 'object' ? body.default : body);
+      return addIcon(`svg:${iconName}`, icon);
     }),
   );
 }

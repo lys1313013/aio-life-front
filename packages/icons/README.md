@@ -17,3 +17,21 @@ pnpm add @vben/icons
 ```ts
 import { X } from '@vben/icons';
 ```
+
+# 自定义运动图标
+
+健腹轮图标：`svg:ab-wheel`。SVG 使用 `currentColor`，可随文字颜色适配主题。
+
+在运动分类的图标配置中填写 `svg:ab-wheel`，或在 Vue 中使用：
+
+```vue
+<script setup lang="ts">
+import { SvgAbWheelIcon } from '@vben/icons';
+</script>
+
+<template>
+  <SvgAbWheelIcon class="size-6" />
+</template>
+```
+
+也可以通过 `createIconifyIcon('svg:ab-wheel')` 创建组件。

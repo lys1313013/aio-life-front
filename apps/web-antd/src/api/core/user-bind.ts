@@ -1,8 +1,8 @@
 import { requestClient } from '#/api/request';
 
 export interface UserBindEntity {
-  id?: number;
-  userId?: number;
+  id?: string;
+  userId?: string;
   platform: string;
   platformUsername?: string;
   accessToken?: string;
@@ -31,7 +31,7 @@ export const updateUserBindApi = (data: UserBindEntity) => {
   return requestClient.put<boolean>('/userbinds', data);
 };
 
-export const deleteUserBindApi = (id: number) => {
+export const deleteUserBindApi = (id: string) => {
   return requestClient.delete<boolean>(`/userbinds/${id}`);
 };
 

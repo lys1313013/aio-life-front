@@ -29,12 +29,12 @@ import {
 
 import { deleteData, insert, query, update } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
+import { getDictIconPresets } from '#/constants/dict-icon-presets';
 
 import {
   CATEGORY_COLOR_PRESETS,
   extractIconSet,
   getCategoryIcon,
-  PRESET_ICONS,
 } from './config';
 
 // 状态
@@ -86,6 +86,10 @@ const formState = ref<any>({
   dictSort: 0,
   status: '0',
 });
+
+const presetIcons = computed(() =>
+  getDictIconPresets(formState.value.dictType || activeTab.value),
+);
 
 const rules = {
   dictLabel: [{ required: true, message: '请输入分类名称' }],
@@ -418,6 +422,70 @@ onMounted(async () => {
           />
         </Form.Item>
 
+        <Form.Item label="图标" name="icon">
+          <div class="space-y-3">
+            <div
+              class="rounded-lg border border-border bg-muted p-3 text-foreground"
+              v-if="formState.isReadonly !== 'Y'"
+            >
+              <div class="mb-2 text-xs text-muted-foreground">常用图标</div>
+              <div
+                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
+              >
+                <div
+                  v-for="item in presetIcons"
+                  :key="item.icon"
+                  :title="item.label"
+                  :aria-label="item.label"
+                  class="flex cursor-pointer flex-col items-center justify-center rounded p-2 transition-all hover:bg-background hover:shadow-sm"
+                  :class="{
+                    'bg-primary/10 text-primary ring-2 ring-primary':
+                      formState.icon === item.icon,
+                  }"
+                  @click="formState.icon = item.icon"
+                >
+                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="link"
+              size="small"
+              v-if="formState.isReadonly !== 'Y'"
+              @click="showIconPickerModal = true"
+            >
+              📋 选择更多图标...
+            </Button>
+
+            <div
+              v-if="formState.icon"
+              class="flex items-center gap-2 rounded bg-muted p-2 text-foreground"
+            >
+              <component
+                :is="getCategoryIcon(formState.icon)"
+                class="size-6 shrink-0"
+              />
+              <Input
+                v-model:value="formState.icon"
+                placeholder="输入图标名称，如 lucide:run"
+                class="flex-1"
+                size="small"
+                :disabled="formState.isReadonly === 'Y'"
+              />
+              <Button
+                type="link"
+                size="small"
+                danger
+                v-if="formState.isReadonly !== 'Y'"
+                @click="formState.icon = ''"
+              >
+                清除
+              </Button>
+            </div>
+          </div>
+        </Form.Item>
+
         <Form.Item label="颜色" name="color">
           <div class="flex items-center gap-2">
             <Input
@@ -448,72 +516,10 @@ onMounted(async () => {
             <div
               v-for="color in CATEGORY_COLOR_PRESETS"
               :key="color"
-              class="h-6 w-6 cursor-pointer rounded border border-gray-200 transition-transform hover:scale-110"
+              class="h-6 w-6 cursor-pointer rounded border border-border transition-transform hover:scale-110"
               :style="{ backgroundColor: color }"
               @click="formState.color = color"
             ></div>
-          </div>
-        </Form.Item>
-
-        <Form.Item label="图标" name="icon">
-          <div class="space-y-3">
-            <div
-              class="rounded-lg border border-gray-200 bg-gray-50 p-3"
-              v-if="formState.isReadonly !== 'Y'"
-            >
-              <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
-              <div
-                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
-              >
-                <div
-                  v-for="item in PRESET_ICONS"
-                  :key="item.icon"
-                  class="flex cursor-pointer flex-col items-center justify-center rounded p-2 transition-all hover:bg-white hover:shadow-sm"
-                  :class="{
-                    'bg-blue-50 ring-2 ring-blue-500':
-                      formState.icon === item.icon,
-                  }"
-                  @click="formState.icon = item.icon"
-                >
-                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="link"
-              size="small"
-              v-if="formState.isReadonly !== 'Y'"
-              @click="showIconPickerModal = true"
-            >
-              📋 选择更多图标...
-            </Button>
-
-            <div
-              v-if="formState.icon"
-              class="flex items-center gap-2 rounded bg-gray-50 p-2"
-            >
-              <component
-                :is="getCategoryIcon(formState.icon)"
-                class="size-6 shrink-0"
-              />
-              <Input
-                v-model:value="formState.icon"
-                placeholder="输入图标名称，如 lucide:run"
-                class="flex-1"
-                size="small"
-                :disabled="formState.isReadonly === 'Y'"
-              />
-              <Button
-                type="link"
-                size="small"
-                danger
-                v-if="formState.isReadonly !== 'Y'"
-                @click="formState.icon = ''"
-              >
-                清除
-              </Button>
-            </div>
           </div>
         </Form.Item>
 
@@ -550,7 +556,7 @@ onMounted(async () => {
           </Select.Option>
           <Select.Option value="noto-color">Noto Emoji（彩色）</Select.Option>
         </Select>
-        <IconPicker :prefix="selectedIconSet" @select="handleIconSelect" />
+        <IconPicker :prefix="selectedIconSet" @change="handleIconSelect" />
       </div>
     </Modal>
   </Page>

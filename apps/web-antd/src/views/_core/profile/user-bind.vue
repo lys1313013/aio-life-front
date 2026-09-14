@@ -4,18 +4,21 @@ import type {
   UserBindEntity,
 } from '#/api/core/user-bind';
 
-import { h, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons-vue';
+import { VbenIcon } from '@vben/common-ui';
+
 import {
   Button,
+  Empty,
   Form,
   Input,
   message,
   Modal,
   Popconfirm,
   Select,
-  Table,
+  Skeleton,
+  Tooltip,
 } from 'ant-design-vue';
 
 import {
@@ -25,19 +28,11 @@ import {
   updateUserBindApi,
   verifyDoubanAccountApi,
 } from '#/api/core/user-bind';
-
-const columns = [
-  { title: '平台', dataIndex: 'platform', key: 'platform' },
-  {
-    title: '账号/用户名',
-    dataIndex: 'platformUsername',
-    key: 'platformUsername',
-  },
-  { title: '操作', key: 'action', width: 100 },
-];
+import csdnIcon from '#/assets/platforms/csdn.png';
 
 const data = ref<UserBindEntity[]>([]);
-const loading = ref(false);
+const loading = ref(true);
+const deletingIds = ref(new Set<UserBindEntity['id']>());
 const modalVisible = ref(false);
 const modalLoading = ref(false);
 const doubanVerifying = ref(false);
@@ -52,13 +47,44 @@ const formState = ref<UserBindEntity>({
 });
 
 const platformOptions = [
-  { label: 'GitHub', value: 'github' },
-  { label: 'LeetCode', value: 'leetcode' },
-  { label: 'CSDN', value: 'csdn' },
-  { label: '扇贝单词', value: 'shanbay' },
-  { label: '豆瓣', value: 'douban' },
-  { label: '微信读书', value: 'weread' },
+  { label: 'GitHub', value: 'github', icon: 'simple-icons:github', color: '' },
+  {
+    label: 'LeetCode',
+    value: 'leetcode',
+    icon: 'devicon:leetcode',
+    color: '',
+  },
+  { label: 'CSDN', value: 'csdn', icon: '', color: '' },
+  {
+    label: '扇贝单词',
+    value: 'shanbay',
+    icon: 'svg:shanbay',
+    color: '#28b78d',
+  },
+  {
+    label: '豆瓣',
+    value: 'douban',
+    icon: 'simple-icons:douban',
+    color: '',
+  },
+  {
+    label: '微信读书',
+    value: 'weread',
+    icon: 'simple-icons:weread',
+    color: '#37a7ff',
+  },
 ];
+
+function getPlatform(platform: string) {
+  return (
+    platformOptions.find((item) => item.value === platform) ?? {
+      label: platform,
+      value: platform,
+      icon: 'lucide:link',
+      color: '',
+    }
+  );
+}
 
 // 与首页 index.vue 共用：GitHub 绑定变更后清除本地决策缓存，回首页即时重新判断
 const GITHUB_BIND_CACHE_KEY = 'aio-life:github-bind';
@@ -126,23 +152,27 @@ const handleAdd = () => {
   modalVisible.value = true;
 };
 
-const handleEdit = (record: any) => {
+const handleEdit = (record: UserBindEntity) => {
   formState.value = { ...record, accessToken: '' }; // 编辑时不回显Token
   resetDoubanVerifyResult();
   modalVisible.value = true;
 };
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: UserBindEntity['id']) => {
+  if (!id || deletingIds.value.has(id)) return;
+  deletingIds.value.add(id);
   try {
     const record = data.value.find((item) => item.id === id);
     await deleteUserBindApi(id);
     if (record?.platform === 'github') {
       clearGithubBindCache();
     }
-    message.success('删除成功');
-    fetchList();
+    message.success('已解除绑定');
+    data.value = data.value.filter((item) => item.id !== id);
   } catch {
     // error handled by request interceptor usually
+  } finally {
+    deletingIds.value.delete(id);
   }
 };
 
@@ -177,53 +207,117 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4">
-    <div class="mb-4 flex justify-end">
-      <Button type="primary" @click="handleAdd">新增绑定</Button>
+  <div class="p-2 sm:p-4">
+    <div class="mb-3 flex justify-end">
+      <Tooltip title="新增绑定">
+        <Button
+          type="text"
+          shape="circle"
+          aria-label="新增绑定"
+          @click="handleAdd"
+        >
+          <template #icon>
+            <VbenIcon icon="lucide:plus" class="size-5" />
+          </template>
+        </Button>
+      </Tooltip>
     </div>
 
-    <Table
-      :columns="columns"
-      :data-source="data"
-      :loading="loading"
-      :scroll="{ x: 'max-content' }"
-      row-key="id"
+    <div
+      v-if="loading"
+      class="grid gap-3 md:grid-cols-2"
+      aria-label="加载中"
+      aria-busy="true"
     >
-      <template #bodyCell="{ column, record, text }">
-        <template v-if="column.key === 'action'">
-          <Button
-            type="link"
-            size="small"
-            @click="handleEdit(record)"
-            :icon="h(EditOutlined)"
-          />
+      <div
+        v-for="index in 4"
+        :key="index"
+        class="rounded-xl border border-border p-5"
+      >
+        <Skeleton active :title="{ width: '40%' }" :paragraph="{ rows: 1 }" />
+      </div>
+    </div>
+    <div v-else-if="data.length > 0" class="grid gap-2 md:grid-cols-2">
+      <article
+        v-for="record in data"
+        :key="record.id"
+        class="flex min-w-0 items-center gap-3 rounded-xl bg-muted/40 px-3 py-4 transition-colors hover:bg-muted/70"
+        :aria-label="`${getPlatform(record.platform).label}账号绑定`"
+      >
+        <Tooltip :title="getPlatform(record.platform).label">
+          <span class="flex size-9 shrink-0 items-center justify-center">
+            <img
+              v-if="record.platform === 'csdn'"
+              :src="csdnIcon"
+              alt=""
+              class="size-7 rounded-md"
+            />
+            <VbenIcon
+              v-else
+              :icon="getPlatform(record.platform).icon"
+              :style="{
+                color: getPlatform(record.platform).color || undefined,
+              }"
+              :class="{
+                'weread-icon': record.platform === 'weread',
+                'douban-icon': record.platform === 'douban',
+                'leetcode-icon': record.platform === 'leetcode',
+              }"
+              class="size-7"
+            />
+          </span>
+        </Tooltip>
+        <span
+          class="min-w-0 flex-1 truncate text-sm"
+          :title="record.platformUsername"
+        >
+          {{
+            record.platform === 'weread'
+              ? '微信读书'
+              : record.platformUsername || getPlatform(record.platform).label
+          }}
+        </span>
+        <div class="flex shrink-0 items-center gap-1 text-muted-foreground">
+          <Tooltip title="编辑">
+            <Button
+              type="text"
+              shape="circle"
+              :disabled="deletingIds.has(record.id)"
+              :aria-label="`编辑${getPlatform(record.platform).label}绑定`"
+              @click="handleEdit(record)"
+            >
+              <template #icon>
+                <VbenIcon icon="lucide:pencil" class="size-4" />
+              </template>
+            </Button>
+          </Tooltip>
           <Popconfirm
-            title="确定要删除此绑定吗？"
-            ok-text="确定"
+            title="确定解除此账号绑定吗？"
+            ok-text="解除绑定"
             cancel-text="取消"
+            :ok-button-props="{ danger: true }"
             @confirm="handleDelete(record.id)"
           >
-            <Button type="link" danger size="small" :icon="h(DeleteOutlined)" />
+            <Tooltip title="解除绑定">
+              <Button
+                type="text"
+                shape="circle"
+                :loading="deletingIds.has(record.id)"
+                :disabled="deletingIds.has(record.id)"
+                :aria-label="`解除${getPlatform(record.platform).label}绑定`"
+              >
+                <template #icon>
+                  <VbenIcon icon="lucide:unlink" class="size-4" />
+                </template>
+              </Button>
+            </Tooltip>
           </Popconfirm>
-        </template>
-        <template v-else-if="column.key === 'platform'">
-          {{
-            platformOptions.find((p) => p.value === record.platform)?.label ||
-            record.platform
-          }}
-        </template>
-        <template
-          v-else-if="
-            column.key === 'platformUsername' && record.platform === 'weread'
-          "
-        >
-          已配置 API Key
-        </template>
-        <template v-else>
-          {{ text }}
-        </template>
-      </template>
-    </Table>
+        </div>
+      </article>
+    </div>
+    <Empty v-else description="还没有绑定账号" class="py-12">
+      <Button type="primary" @click="handleAdd">绑定第一个账号</Button>
+    </Empty>
 
     <Modal
       v-model:open="modalVisible"
@@ -236,9 +330,35 @@ onMounted(() => {
         <Form.Item label="平台" required>
           <Select
             v-model:value="formState.platform"
-            :options="platformOptions"
             @change="handlePlatformChange"
-          />
+          >
+            <Select.Option
+              v-for="platform in platformOptions"
+              :key="platform.value"
+              :value="platform.value"
+            >
+              <span class="inline-flex items-center gap-2">
+                <img
+                  v-if="platform.value === 'csdn'"
+                  :src="csdnIcon"
+                  alt=""
+                  class="size-4 rounded-sm"
+                />
+                <VbenIcon
+                  v-else
+                  :icon="platform.icon"
+                  :style="{ color: platform.color || undefined }"
+                  :class="{
+                    'weread-icon': platform.value === 'weread',
+                    'douban-icon': platform.value === 'douban',
+                    'leetcode-icon': platform.value === 'leetcode',
+                  }"
+                  class="size-4"
+                />
+                {{ platform.label }}
+              </span>
+            </Select.Option>
+          </Select>
         </Form.Item>
         <Form.Item
           v-if="formState.platform !== 'weread'"
@@ -379,3 +499,24 @@ onMounted(() => {
     </Modal>
   </div>
 </template>
+
+<style scoped>
+/* 保留品牌图标的白色镂空，不随页面主题变化。 */
+.weread-icon {
+  background-color: #fff;
+  border-radius: 21.3333%;
+}
+
+/* 只让黑色笔画跟随主题，保留 LeetCode 的金色和灰色。 */
+.leetcode-icon :deep(path[fill='#070706']) {
+  fill: currentColor;
+}
+
+/* 豆瓣使用绿底白字的应用图标样式，保留矢量字形。 */
+.douban-icon {
+  padding: 4px;
+  color: #fff;
+  background-color: #00b51d;
+  border-radius: 20%;
+}
+</style>

@@ -2,7 +2,7 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { IconPicker, Page } from '@vben/common-ui';
 
@@ -12,6 +12,7 @@ import {
   EditOutlined,
   HolderOutlined,
   LoadingOutlined,
+  QuestionCircleOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -39,11 +40,11 @@ import {
 } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import { getDictIconPresets } from '#/constants/dict-icon-presets';
 import {
   CATEGORY_COLOR_PRESETS,
   extractIconSet,
   getCategoryIcon,
-  PRESET_ICONS,
 } from '#/views/my-hub/exercise/category-config/config';
 
 // 枚举数据
@@ -90,6 +91,10 @@ const formState = ref<any>({
   status: '0',
   isReadonly: 'N',
 });
+
+const presetIcons = computed(() =>
+  getDictIconPresets(formState.value.dictType),
+);
 
 const rules = {
   dictType: [{ required: true, message: '请输入字典类型' }],
@@ -424,7 +429,7 @@ const handleSave = async () => {
         </Tabs>
       </Card>
 
-      <div class="flex-1 overflow-hidden bg-white">
+      <div class="flex-1 overflow-hidden bg-background">
         <Grid>
           <template #rowDragIcon="{ row }">
             <LoadingOutlined
@@ -551,6 +556,66 @@ const handleSave = async () => {
             placeholder="请输入分类名称"
           />
         </Form.Item>
+        <Form.Item label="图标" name="icon">
+          <div class="space-y-3">
+            <div
+              class="rounded-lg border border-border bg-muted p-3 text-foreground"
+            >
+              <div class="mb-2 text-xs text-muted-foreground">常用图标</div>
+              <div
+                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
+              >
+                <div
+                  v-for="item in presetIcons"
+                  :key="item.icon"
+                  :title="item.label"
+                  :aria-label="item.label"
+                  class="flex cursor-pointer flex-col items-center justify-center rounded p-2 transition-all hover:bg-background hover:shadow-sm"
+                  :class="{
+                    'bg-primary/10 text-primary ring-2 ring-primary':
+                      formState.icon === item.icon,
+                  }"
+                  @click="formState.icon = item.icon"
+                >
+                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
+                </div>
+              </div>
+            </div>
+
+            <Button
+              type="link"
+              size="small"
+              @click="showIconPickerModal = true"
+            >
+              📋 选择更多图标...
+            </Button>
+
+            <div
+              v-if="formState.icon"
+              class="flex items-center gap-2 rounded bg-muted p-2 text-foreground"
+            >
+              <component
+                :is="getCategoryIcon(formState.icon)"
+                class="size-6 shrink-0"
+              />
+              <Input
+                v-model:value="formState.icon"
+                placeholder="输入图标名称，如 lucide:run"
+                class="flex-1"
+                size="small"
+              />
+              <Button
+                type="link"
+                size="small"
+                danger
+                @click="formState.icon = ''"
+              >
+                清除
+              </Button>
+            </div>
+          </div>
+        </Form.Item>
+
         <Form.Item label="排序" name="dictSort">
           <Input
             v-model:value="formState.dictSort"
@@ -581,90 +646,47 @@ const handleSave = async () => {
             <div
               v-for="color in CATEGORY_COLOR_PRESETS"
               :key="color"
-              class="h-6 w-6 cursor-pointer rounded border border-gray-200 transition-transform hover:scale-110"
+              class="h-6 w-6 cursor-pointer rounded border border-border transition-transform hover:scale-110"
               :style="{ backgroundColor: color }"
               @click="formState.color = color"
             ></div>
           </div>
         </Form.Item>
 
-        <Form.Item label="图标" name="icon">
-          <div class="space-y-3">
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
-              <div
-                class="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10"
-              >
-                <div
-                  v-for="item in PRESET_ICONS"
-                  :key="item.icon"
-                  class="flex cursor-pointer flex-col items-center justify-center rounded p-2 transition-all hover:bg-white hover:shadow-sm"
-                  :class="{
-                    'bg-blue-50 ring-2 ring-blue-500':
-                      formState.icon === item.icon,
-                  }"
-                  @click="formState.icon = item.icon"
+        <div class="grid grid-cols-2 gap-4">
+          <Form.Item label="状态" name="status">
+            <Switch
+              v-model:checked="formState.status"
+              checked-value="0"
+              un-checked-value="1"
+              checked-children="启用"
+              un-checked-children="停用"
+            />
+          </Form.Item>
+          <Form.Item name="isReadonly">
+            <template #label>
+              <span class="inline-flex items-center gap-1">
+                是否只读
+                <Tooltip
+                  title="开启只读后，普通用户无法修改该分类的名称、颜色和图标，只能修改启用状态。"
                 >
-                  <component :is="getCategoryIcon(item.icon)" class="size-6" />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              type="link"
-              size="small"
-              @click="showIconPickerModal = true"
-            >
-              📋 选择更多图标...
-            </Button>
-
-            <div
-              v-if="formState.icon"
-              class="flex items-center gap-2 rounded bg-gray-50 p-2"
-            >
-              <component
-                :is="getCategoryIcon(formState.icon)"
-                class="size-6 shrink-0"
-              />
-              <Input
-                v-model:value="formState.icon"
-                placeholder="输入图标名称，如 lucide:run"
-                class="flex-1"
-                size="small"
-              />
-              <Button
-                type="link"
-                size="small"
-                danger
-                @click="formState.icon = ''"
-              >
-                清除
-              </Button>
-            </div>
-          </div>
-        </Form.Item>
-
-        <Form.Item label="状态" name="status">
-          <Switch
-            v-model:checked="formState.status"
-            checked-value="0"
-            un-checked-value="1"
-            checked-children="启用"
-            un-checked-children="停用"
-          />
-        </Form.Item>
-        <Form.Item label="是否只读" name="isReadonly">
-          <Switch
-            v-model:checked="formState.isReadonly"
-            checked-value="Y"
-            un-checked-value="N"
-            checked-children="是"
-            un-checked-children="否"
-          />
-          <div class="mt-1 text-xs text-gray-400">
-            开启后，普通用户无法修改该分类的名称、颜色和图标，只能修改启用状态。
-          </div>
-        </Form.Item>
+                  <QuestionCircleOutlined
+                    class="cursor-help text-muted-foreground"
+                    tabindex="0"
+                    aria-label="只读说明"
+                  />
+                </Tooltip>
+              </span>
+            </template>
+            <Switch
+              v-model:checked="formState.isReadonly"
+              checked-value="Y"
+              un-checked-value="N"
+              checked-children="是"
+              un-checked-children="否"
+            />
+          </Form.Item>
+        </div>
       </Form>
     </Modal>
 
@@ -691,7 +713,7 @@ const handleSave = async () => {
           </Select.Option>
           <Select.Option value="noto-color">Noto Emoji（彩色）</Select.Option>
         </Select>
-        <IconPicker :prefix="selectedIconSet" @select="handleIconSelect" />
+        <IconPicker :prefix="selectedIconSet" @change="handleIconSelect" />
       </div>
     </Modal>
   </Page>
