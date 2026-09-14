@@ -15,6 +15,7 @@ import {
   message,
   Modal,
   Popconfirm,
+  Popover,
   Select,
   Spin,
   Switch,
@@ -31,6 +32,7 @@ import {
   updateMenuSortApi,
   updateMenuStatusApi,
 } from '#/api/core/menu';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import { resetRoutes, router } from '#/router';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
@@ -78,11 +80,32 @@ const selectableRoleOptions = computed(() => roleOptions.value);
 
 const selectedRoles = ref<string[]>([]);
 
+const columnHelp: Record<string, string> = {
+  path: '页面访问地址，如 /record/weread。',
+  component: '对应的前端页面组件；BasicLayout 表示布局容器。',
+  roles: '可访问此菜单的角色；留空表示不限制角色。',
+};
+
 const columns: any[] = [
   { title: '标题', key: 'title', width: 220 },
-  { title: 'Path', dataIndex: 'path', key: 'path', width: 260 },
-  { title: 'Component', dataIndex: 'component', key: 'component', width: 220 },
-  { title: 'Roles', dataIndex: 'roles', key: 'roles', width: 160 },
+  {
+    title: '路径',
+    dataIndex: 'path',
+    key: 'path',
+    width: 260,
+  },
+  {
+    title: '组件',
+    dataIndex: 'component',
+    key: 'component',
+    width: 220,
+  },
+  {
+    title: '角色',
+    dataIndex: 'roles',
+    key: 'roles',
+    width: 160,
+  },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 90 },
   { title: '启用', dataIndex: 'status', key: 'status', width: 90 },
   { title: '操作', key: 'action', width: 120 },
@@ -431,22 +454,62 @@ onMounted(() => {
 
 <template>
   <div class="p-4">
-    <div class="mb-3 flex items-center justify-end">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-stone-500">拖拽排序</span>
-          <Switch
-            :checked="isDragSortEnabled"
-            @change="(checked: any) => handleDragSortToggle(checked)"
-          />
-        </div>
-        <Button @click="toggleExpandAll">
-          {{ isAllExpanded ? '全部折叠' : '全部展开' }}
-        </Button>
-        <Button @click="load">刷新</Button>
-        <Button type="primary" @click="openCreate">新增</Button>
-      </div>
+    <div class="mb-3 flex items-center justify-end gap-1">
+      <Button
+        :type="isDragSortEnabled ? 'primary' : 'text'"
+        shape="circle"
+        :aria-pressed="isDragSortEnabled"
+        aria-label="拖拽排序"
+        :title="isDragSortEnabled ? '关闭拖拽排序' : '开启拖拽排序'"
+        :disabled="loading"
+        @click="handleDragSortToggle(!isDragSortEnabled)"
+      >
+        <template #icon>
+          <VbenIcon icon="lucide:grip-vertical" class="size-4" />
+        </template>
+      </Button>
+      <Button
+        type="text"
+        shape="circle"
+        :aria-label="isAllExpanded ? '全部折叠' : '全部展开'"
+        :title="isAllExpanded ? '全部折叠' : '全部展开'"
+        :disabled="loading"
+        @click="toggleExpandAll"
+      >
+        <template #icon>
+          <svg
+            class="size-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <template v-if="isAllExpanded">
+              <path
+                d="M4 2h16M4 22h16M12 4v6m-3-3 3 3 3-3M12 20v-6m-3 3 3-3 3 3"
+              />
+            </template>
+            <template v-else>
+              <path
+                d="M4 10h16M4 14h16M12 8V2m-3 3 3-3 3 3M12 16v6m-3-3 3 3 3-3"
+              />
+            </template>
+          </svg>
+        </template>
+      </Button>
     </div>
+
+    <GlobalFloatBtn
+      role="button"
+      tabindex="0"
+      aria-label="新增菜单"
+      @click="openCreate"
+      @keydown.enter.prevent="openCreate"
+      @keydown.space.prevent="openCreate"
+    />
 
     <Spin :spinning="loading">
       <Table
@@ -471,6 +534,24 @@ onMounted(() => {
         "
         :custom-row="(record: any) => ({ 'data-id': String(record.id) }) as any"
       >
+        <template #headerCell="{ column }">
+          <span class="inline-flex items-center gap-1">
+            {{ column.title }}
+            <Popover
+              v-if="columnHelp[String(column.key)]"
+              :content="columnHelp[String(column.key)]"
+              :trigger="['hover', 'focus', 'click']"
+            >
+              <button
+                type="button"
+                class="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                :aria-label="`${column.title}说明`"
+              >
+                <VbenIcon icon="lucide:circle-help" class="size-3.5" />
+              </button>
+            </Popover>
+          </span>
+        </template>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'title'">
             <div class="flex items-center gap-2">

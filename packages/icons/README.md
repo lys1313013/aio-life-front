@@ -35,3 +35,7 @@ import { SvgAbWheelIcon } from '@vben/icons';
 ```
 
 也可以通过 `createIconifyIcon('svg:ab-wheel')` 创建组件。
+
+## 微信读书品牌图标
+
+菜单图标填写 `svg:weread`，显示固定蓝底白色细节，不随菜单文字或主题变色。图形沿用 Simple Icons 的 WeRead 图标。

@@ -2,6 +2,8 @@ import type { IconifyIconStructure } from '@vben-core/icons';
 
 import { addIcon } from '@vben-core/icons';
 
+import wereadSvg from './icons/weread.svg?raw';
+
 let loaded = false;
 if (!loaded) {
   loadSvgIcons();
@@ -57,6 +59,9 @@ function parseSvg(svgData: string): IconifyIconStructure {
  * <Icon icon="svg:avatar"></Icon>
  */
 async function loadSvgIcons() {
+  // 显式依赖保证新增品牌图标在开发服务器的 glob 缓存中也能加载。
+  addIcon('svg:weread', parseSvg(wereadSvg));
+
   const svgEagers = import.meta.glob('./icons/*.svg', {
     eager: true,
     query: '?raw',
