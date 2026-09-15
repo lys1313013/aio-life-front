@@ -6,6 +6,7 @@ import type { WatchedTaskDetail } from '#/api/core/dashboard';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
+import { VbenIcon } from '@vben/common-ui';
 import { openWindow } from '@vben/utils';
 
 import { Skeleton } from 'ant-design-vue';
@@ -899,19 +900,7 @@ function navTo(nav: { url?: string }) {
         >
           <div class="flex items-center gap-2">
             <span class="inline-flex text-foreground">
-              <svg
-                class="size-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
-                <path d="M4 22h16" />
-                <path d="M5 17l4-6 3 4 4-7 4 6" />
-              </svg>
+              <VbenIcon icon="mdi:run" class="size-4" />
             </span>
             <span
               class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
