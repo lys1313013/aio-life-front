@@ -1177,7 +1177,7 @@ onUnmounted(() => {
       :closable="false"
       :centered="true"
       :footer="null"
-      :width="isMobile ? '95vw' : 500"
+      width="min(95vw, 500px)"
       :destroy-on-close="true"
     >
       <div class="category-grid">
@@ -1213,7 +1213,7 @@ onUnmounted(() => {
       :closable="false"
       :centered="true"
       :footer="null"
-      :width="isMobile ? '95vw' : 500"
+      width="min(95vw, 500px)"
       :destroy-on-close="true"
     >
       <div class="category-grid">
