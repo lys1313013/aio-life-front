@@ -30,7 +30,7 @@ vi.mock('#/api/core/time-tracker-category', () => ({
 }));
 
 vi.mock('ant-design-vue', () => ({
-  message: { info: mocks.info, loading: mocks.loading },
+  message: { info: mocks.info, open: mocks.loading },
   Modal: {
     props: ['open'],
     template: '<div v-if="open" data-test="modal"><slot /></div>',
@@ -88,7 +88,9 @@ describe('新增时迹前检查当天剩余时间', () => {
     resolve(result);
     await opening;
     await wrapper.vm.$nextTick();
-    expect(mocks.info).toHaveBeenCalledWith('当天已记满，没有可添加的时间段');
+    expect(mocks.info).toHaveBeenCalledWith(
+      expect.objectContaining({ content: '该天已录入完毕' }),
+    );
     expect(mocks.hideLoading).toHaveBeenCalled();
     expect(mocks.query).not.toHaveBeenCalled();
     expect(wrapper.findComponent(TimeSlotEditForm).exists()).toBe(false);
@@ -162,6 +164,11 @@ describe('新增时迹前检查当天剩余时间', () => {
 });
 
 describe('时迹服务端 ID', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.loading.mockReturnValue(mocks.hideLoading);
+  });
+
   it('新增不发送临时 ID，成功事件使用后端返回的 ID', async () => {
     mocks.query.mockResolvedValue({ items: [], total: 0 });
     mocks.recommendNext.mockResolvedValue({

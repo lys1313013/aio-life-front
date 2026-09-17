@@ -29,6 +29,14 @@ const existingSlots = ref<TimeSlot[]>([]);
 const isMobile = ref(window.innerWidth < 1024);
 const categories = ref(defaultConfig.categories);
 const isEditMode = ref(false);
+const centeredMessageStyle = {
+  position: 'fixed' as const,
+  // message 容器位于视口顶部 8px，且 transform 会建立定位包含块。
+  top: 'calc(50dvh - 8px)',
+  left: 0,
+  width: '100%',
+  transform: 'translateY(-50%)',
+};
 
 // 加载分类配置
 const loadCategories = async () => {
@@ -79,35 +87,58 @@ const open = async (
   date?: string,
   contextExistingSlots?: TimeSlot[],
 ) => {
-  visible.value = true;
+  if (loading.value) return;
+
   loading.value = true;
   isEditMode.value = !!slot;
 
   const targetDate = slot?.date || date || dayjs().format('YYYY-MM-DD');
 
-  // 同步初始化 editingSlot，让页面能立即撑开
-  if (isEditMode.value && slot) {
-    editingSlot.value = { ...slot };
-  } else {
-    let initialCategoryId = defaultConfig.defaultCategoryId;
-    if (
-      categories.value.length > 0 &&
-      !categories.value.find((c) => c.id === initialCategoryId)
-    ) {
-      initialCategoryId = categories.value[0]?.id || initialCategoryId;
-    }
+  // 新增先检查剩余时间，避免全天已满或请求失败时展示默认表单。
+  if (!slot) {
+    visible.value = false;
+    editingSlot.value = null;
+    const hideLoading = message.open({
+      type: 'loading',
+      content: '',
+      duration: 0,
+      style: centeredMessageStyle,
+    });
+    try {
+      const result = await recommendNext({ date: targetDate });
+      if (!result.recommend) {
+        message.info({
+          content: '该天已录入完毕',
+          style: centeredMessageStyle,
+        });
+        return;
+      }
 
-    editingSlot.value = {
-      id: '',
-      startTime: 0,
-      endTime: 30,
-      categoryId: initialCategoryId,
-      title: '',
-      description: '',
-      date: targetDate,
-      exercises: [],
-    };
+      existingSlots.value = result.records
+        ? result.records.map((record) => ({ ...record, date: targetDate }))
+        : contextExistingSlots || [];
+      editingSlot.value = {
+        id: '',
+        startTime: result.recommend.startTime,
+        endTime: result.recommend.endTime,
+        categoryId: result.recommend.categoryId,
+        title: '',
+        description: '',
+        date: result.recommend.date || targetDate,
+        exercises: [],
+      };
+      visible.value = true;
+    } catch (error) {
+      console.error('Failed to initialize modal:', error);
+    } finally {
+      hideLoading();
+      loading.value = false;
+    }
+    return;
   }
+
+  visible.value = true;
+  editingSlot.value = { ...slot };
 
   // 异步加载数据
   const promises: Promise<void>[] = [];
@@ -142,26 +173,6 @@ const open = async (
         })
         .catch((error) => {
           console.error('获取详情失败', error);
-        }),
-    );
-  } else {
-    // 新增模式：获取推荐
-    promises.push(
-      recommendNext({ date: targetDate })
-        .then((result) => {
-          if (result && result.recommend && editingSlot.value) {
-            editingSlot.value = {
-              ...editingSlot.value,
-              startTime: result.recommend.startTime,
-              endTime: result.recommend.endTime,
-              categoryId: result.recommend.categoryId,
-              title: '',
-              date: result.recommend.date || targetDate,
-            };
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to initialize modal:', error);
         }),
     );
   }

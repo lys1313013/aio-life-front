@@ -15,6 +15,7 @@ import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerMo
 import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
 const emit = defineEmits<{
+  success: [];
   'update:last-end': [value: number];
 }>();
 
@@ -258,7 +259,7 @@ const handleEditRecord = (record: TimeSlot) => {
 };
 
 const handleModalSuccess = () => {
-  loadData();
+  emit('success');
 };
 
 onMounted(() => {

@@ -644,6 +644,7 @@ function navTo(nav: { url?: string }) {
         <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
           <AnalyticsTimeTracker
             ref="timeTrackerCardRef"
+            @success="handleTimeTrackerSuccess"
             @update:last-end="(v) => (timeTrackerLastEnd = v)"
           />
         </div>
