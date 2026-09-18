@@ -764,9 +764,11 @@ const getSlotStyle = (slot: TimeSlot) => {
       : `2px solid ${token.value.colorPrimary}`;
     style.boxShadow = `0 0 8px ${token.value.colorPrimary}80`; // Simple alpha approximation
   } else {
-    // 普通记录沿用背景色细边框，分隔连续时间段且不改变时间轴比例。
-    style.border = isFuture ? '2px dashed #fff' : undefined;
-    style.boxShadow = 'none';
+    style.border = isFuture ? '2px dashed #fff' : 'none';
+    // 只在底部画分隔线，避免相邻卡片边框叠成 2px，且不占用内容高度。
+    style.boxShadow = isFuture
+      ? 'none'
+      : `inset 0 -1px 0 ${token.value.colorBgContainer}`;
   }
 
   if (isFuture) {
