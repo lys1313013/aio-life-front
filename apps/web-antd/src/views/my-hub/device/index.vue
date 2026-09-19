@@ -350,7 +350,8 @@ export default {
       <!-- 维护设备弹窗 -->
       <AModal
         v-model:open="visible"
-        :title="newDevice.id ? '编辑设备' : '新增设备'"
+        :closable="false"
+        centered
         @ok="handleOk"
         @cancel="handleCancel"
       >
