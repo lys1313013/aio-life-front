@@ -415,12 +415,18 @@ watch(
           formState.value.title = newSlot.title;
         }
         // 同步更新时间字段
-        if (newSlot.startTime !== oldSlot.startTime) {
+        if (
+          newSlot.date !== oldSlot.date ||
+          newSlot.startTime !== oldSlot.startTime
+        ) {
           formState.value.startTime = minutesToTimePickerValue(
             newSlot.startTime,
           );
         }
-        if (newSlot.endTime !== oldSlot.endTime) {
+        if (
+          newSlot.date !== oldSlot.date ||
+          newSlot.endTime !== oldSlot.endTime
+        ) {
           formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
         }
         // 同步更新关联记录

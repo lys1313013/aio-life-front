@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { TimeSlot, TimeSlotFormData } from '../types';
 
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, useId } from 'vue';
 
-import { message, Modal, Spin } from 'ant-design-vue';
+import { DatePicker, message, Modal, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import {
@@ -21,6 +21,7 @@ import { hasOverlap, isValidSlot } from '../utils';
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
 
 const emit = defineEmits(['success']);
+const dateInputId = useId();
 
 const visible = ref(false);
 const loading = ref(false);
@@ -92,7 +93,8 @@ const open = async (
   loading.value = true;
   isEditMode.value = !!slot;
 
-  const targetDate = slot?.date || date || dayjs().format('YYYY-MM-DD');
+  const today = dayjs();
+  let targetDate = slot?.date || date || today.format('YYYY-MM-DD');
 
   // 新增先检查剩余时间，避免全天已满或请求失败时展示默认表单。
   if (!slot) {
@@ -105,7 +107,22 @@ const open = async (
       style: centeredMessageStyle,
     });
     try {
-      const result = await recommendNext({ date: targetDate });
+      let result;
+      if (!date) {
+        const yesterday = today.subtract(1, 'day').format('YYYY-MM-DD');
+        const previousDay = await recommendNext({ date: yesterday });
+        // 时间记录使用闭区间：22:59 结束时仅剩 60 分钟，不满足超过一小时。
+        if (
+          previousDay.records.length > 0 &&
+          previousDay.recommend &&
+          Math.max(...previousDay.records.map((record) => record.endTime)) <
+            1439 - 60
+        ) {
+          targetDate = yesterday;
+          result = previousDay;
+        }
+      }
+      result ??= await recommendNext({ date: targetDate });
       if (!result.recommend) {
         message.info({
           content: '该天已录入完毕',
@@ -181,12 +198,46 @@ const open = async (
   loading.value = false;
 };
 
+const handleDateChange = async (value: unknown) => {
+  if (loading.value || isEditMode.value || !editingSlot.value || !value) return;
+  const targetDate = String(value);
+  if (targetDate === editingSlot.value.date) return;
+
+  loading.value = true;
+  try {
+    const result = await recommendNext({ date: targetDate });
+    if (!result.recommend) {
+      message.info({
+        content: '该天已录入完毕',
+        style: centeredMessageStyle,
+      });
+      return;
+    }
+    existingSlots.value = result.records.map((record) => ({
+      ...record,
+      date: targetDate,
+    }));
+    editingSlot.value = {
+      ...editingSlot.value,
+      date: targetDate,
+      startTime: result.recommend.startTime,
+      endTime: result.recommend.endTime,
+    };
+  } catch (error) {
+    console.error('切换录入日期失败:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
 const handleCancel = () => {
+  if (loading.value) return;
   visible.value = false;
   editingSlot.value = null;
 };
 
 const handleSave = async (formData: TimeSlotFormData) => {
+  if (loading.value) return;
   const targetDate = editingSlot.value?.date || dayjs().format('YYYY-MM-DD');
 
   const newSlot: TimeSlot = {
@@ -253,7 +304,9 @@ defineExpose({ open });
   <Modal
     v-model:open="visible"
     :title="title"
-    :width="isMobile ? '95vw' : 600"
+    width="min(95vw, 600px)"
+    :keyboard="!loading"
+    :mask-closable="!loading"
     :closable="false"
     :footer="null"
     centered
@@ -261,6 +314,25 @@ defineExpose({ open });
   >
     <Spin :spinning="loading">
       <template #default>
+        <label
+          v-if="editingSlot && !isEditMode"
+          :for="dateInputId"
+          class="sr-only"
+        >
+          录入日期
+        </label>
+        <DatePicker
+          :id="dateInputId"
+          v-if="editingSlot && !isEditMode"
+          :value="editingSlot.date"
+          value-format="YYYY-MM-DD"
+          format="YYYY-MM-DD"
+          :allow-clear="false"
+          :disabled="loading"
+          :input-read-only="isMobile"
+          class="mb-4 w-full"
+          @change="handleDateChange"
+        />
         <TimeSlotEditForm
           v-if="editingSlot"
           v-bind="{ slot: editingSlot }"

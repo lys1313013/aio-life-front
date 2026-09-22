@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils';
 
+import { DatePicker } from 'ant-design-vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
@@ -12,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   getById: vi.fn(),
   info: vi.fn(),
+  error: vi.fn(),
   loading: vi.fn(),
   hideLoading: vi.fn(),
 }));
@@ -30,7 +32,12 @@ vi.mock('#/api/core/time-tracker-category', () => ({
 }));
 
 vi.mock('ant-design-vue', () => ({
-  message: { info: mocks.info, open: mocks.loading },
+  message: { info: mocks.info, open: mocks.loading, error: mocks.error },
+  DatePicker: {
+    props: ['value', 'disabled'],
+    emits: ['change'],
+    template: '<input data-test="date" :value="value" :disabled="disabled" />',
+  },
   Modal: {
     props: ['open'],
     template: '<div v-if="open" data-test="modal"><slot /></div>',
@@ -208,5 +215,116 @@ describe('时迹服务端 ID', () => {
     expect(wrapper.find('[data-test="modal"]').exists()).toBe(true);
     wrapper.unmount();
     vi.restoreAllMocks();
+  });
+});
+
+describe('录入日期选择', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 8, 22, 9));
+    mocks.loading.mockReturnValue(mocks.hideLoading);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  const dayResult = (date: string, endTime?: number) => ({
+    recommend: { ...recommendation(600, 629), date },
+    records: endTime === undefined ? [] : [{ startTime: 0, endTime }],
+  });
+
+  it('昨天末尾剩余 61 分钟时优先补昨天，无需查询今天', async () => {
+    mocks.recommendNext.mockResolvedValue(dayResult('2026-09-21', 1378));
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open();
+    expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({
+      date: '2026-09-21',
+    });
+    expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
+      '2026-09-21',
+    );
+    wrapper.unmount();
+  });
+
+  it.each([undefined, 1379, 1380, 1439])(
+    '昨天结束于 %s 时默认今天',
+    async (endTime) => {
+      mocks.recommendNext
+        .mockResolvedValueOnce(dayResult('2026-09-21', endTime))
+        .mockResolvedValueOnce(dayResult('2026-09-22'));
+      const wrapper = mount(TimeTrackerModal);
+      await wrapper.vm.open();
+      expect(mocks.recommendNext).toHaveBeenNthCalledWith(2, {
+        date: '2026-09-22',
+      });
+      expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
+        '2026-09-22',
+      );
+      wrapper.unmount();
+    },
+  );
+
+  it('明确指定日期时不自动切到昨天', async () => {
+    mocks.recommendNext.mockResolvedValue(dayResult('2026-09-22'));
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(undefined, '2026-09-22');
+    expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({
+      date: '2026-09-22',
+    });
+    wrapper.unmount();
+  });
+
+  it('切换日期后使用新日期的推荐、冲突记录和保存日期', async () => {
+    mocks.recommendNext
+      .mockResolvedValueOnce(dayResult('2026-09-22'))
+      .mockResolvedValueOnce({
+        recommend: { ...recommendation(120, 149), date: '2026-09-20' },
+        records: [{ startTime: 0, endTime: 119 }],
+      });
+    mocks.save.mockResolvedValue('saved-id');
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(undefined, '2026-09-22');
+    wrapper.findComponent(DatePicker).vm.$emit('change', '2026-09-20');
+    await flushPromises();
+    const editor = wrapper.findComponent(TimeSlotEditForm);
+    expect(editor.props('slot')).toMatchObject({
+      date: '2026-09-20',
+      startTime: 120,
+      endTime: 149,
+    });
+    editor.vm.$emit('save', { ...recommendation(60, 89), title: '冲突' });
+    await flushPromises();
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledWith('时间段无效或重叠');
+    editor.vm.$emit('save', { ...recommendation(120, 149), title: '阅读' });
+    await flushPromises();
+    expect(mocks.save).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-09-20', title: '阅读' }),
+    );
+    wrapper.unmount();
+  });
+
+  it.each(['full', 'error'])('切换到 %s 日期时保留原表单', async (state) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.recommendNext.mockResolvedValueOnce(dayResult('2026-09-22'));
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(undefined, '2026-09-22');
+    if (state === 'full')
+      mocks.recommendNext.mockResolvedValueOnce({
+        recommend: null,
+        records: [],
+      });
+    else mocks.recommendNext.mockRejectedValueOnce(new Error('network'));
+    wrapper.findComponent(DatePicker).vm.$emit('change', '2026-09-20');
+    await flushPromises();
+    expect(wrapper.findComponent(DatePicker).props('value')).toBe('2026-09-22');
+    expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
+      '2026-09-22',
+    );
+    expect(wrapper.findComponent(DatePicker).props('disabled')).toBe(false);
+    wrapper.unmount();
   });
 });

@@ -66,6 +66,20 @@ describe('时迹编辑器的闭区间输入', () => {
     wrapper.unmount();
   });
 
+  it('切换日期时重置手动修改的时间，即使两天推荐时间相同', async () => {
+    const wrapper = mountForm(540, 569);
+    wrapper
+      .findAllComponents(TimePicker)[1]!
+      .vm.$emit('update:value', dayjs('2026-09-12T11:00:00'));
+    await wrapper.vm.$nextTick();
+    expect(getEndTimeValue(wrapper)).toBe('11:00');
+    await wrapper.setProps({
+      slot: { ...wrapper.props('slot'), date: '2026-09-13' },
+    });
+    expect(getEndTimeValue(wrapper)).toBe('09:29');
+    wrapper.unmount();
+  });
+
   it('23:59 的记录保持 1 分钟，校验允许开始等于结束', async () => {
     const wrapper = mountForm(1439, 1439);
     const minutes = wrapper.findAllComponents(InputNumber)[1]!;
