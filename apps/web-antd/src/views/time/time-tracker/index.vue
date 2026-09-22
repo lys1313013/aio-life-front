@@ -970,12 +970,15 @@ const handleTrackPointerUp = async () => {
       isValidSlot({ startTime, endTime }) &&
       duration >= config.value.minSlotDuration
     ) {
+      const slotDate = selectedDate.value.format('YYYY-MM-DD');
+      creatingSlot.value = true;
+      const hideRecommendLoading = message.loading('处理中', 0);
       let recommendedCategoryId = config.value.defaultCategoryId;
 
       try {
         const middleTime = Math.floor((startTime + endTime) / 2);
         const result = await recommendType({
-          date: selectedDate.value.format('YYYY-MM-DD'),
+          date: slotDate,
           time: middleTime,
         });
         if (result) {
@@ -983,6 +986,9 @@ const handleTrackPointerUp = async () => {
         }
       } catch (error) {
         console.error('获取推荐分类失败', error);
+      } finally {
+        hideRecommendLoading();
+        creatingSlot.value = false;
       }
 
       const newSlot: TimeSlot = {
@@ -991,7 +997,7 @@ const handleTrackPointerUp = async () => {
         endTime,
         categoryId: recommendedCategoryId,
         title: '',
-        date: selectedDate.value.format('YYYY-MM-DD'),
+        date: slotDate,
       };
       // 检查是否重叠
       const daySlots = timeSlots.value.filter((s) => s.date === newSlot.date);
