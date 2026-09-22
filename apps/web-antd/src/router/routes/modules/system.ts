@@ -14,6 +14,26 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:clipboard-text-clock-outline',
+          title: '操作日志',
+          authority: ['admin'],
+        },
+        name: 'OperationLog',
+        path: '/system/operation-log',
+        component: () => import('#/views/system/operation-log/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'mdi:login-variant',
+          title: '访问日志',
+          authority: ['admin'],
+        },
+        name: 'AccessLog',
+        path: '/system/access-log',
+        component: () => import('#/views/system/access-log/index.vue'),
+      },
+      {
+        meta: {
           icon: 'mdi:account-group-outline',
           title: '用户中心',
         },

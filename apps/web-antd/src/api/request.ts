@@ -75,6 +75,8 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
 
       config.headers.Authorization = formatToken(accessStore.accessToken);
       config.headers['Accept-Language'] = preferences.app.locale;
+      // 仅用于日志关联页面名称，不携带查询参数，也不参与鉴权。
+      config.headers['X-Page-Path'] = window.location.pathname;
       return config;
     },
   });
