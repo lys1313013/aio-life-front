@@ -1,14 +1,16 @@
 <script setup lang="ts">
+import type { TreeProps } from 'ant-design-vue';
+
 import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
 
-import { computed, nextTick, onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
-import { useSortable } from '@vben/hooks';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import {
   Button,
+  Empty,
   Form,
   Input,
   InputNumber,
@@ -20,6 +22,7 @@ import {
   Spin,
   Switch,
   Table,
+  Tree,
   TreeSelect,
 } from 'ant-design-vue';
 
@@ -32,7 +35,6 @@ import {
   updateMenuSortApi,
   updateMenuStatusApi,
 } from '#/api/core/menu';
-import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import { resetRoutes, router } from '#/router';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';
@@ -43,7 +45,87 @@ const list = ref<SysMenuAdminItem[]>([]);
 
 const isDragSortEnabled = ref(false);
 const expandedRowKeys = ref<string[]>([]);
-const isAllExpanded = ref(false);
+const expandedTreeKeys = ref<string[]>([]);
+const selectedId = ref<null | string>(null);
+const sortingIds = ref<string[]>([]);
+const deletingIds = ref<string[]>([]);
+
+const findMenu = (
+  id: null | string,
+  nodes = list.value,
+): SysMenuAdminItem | undefined => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    const child = findMenu(id, node.children ?? []);
+    if (child) return child;
+  }
+};
+
+const selectedMenu = computed(() => findMenu(selectedId.value));
+const detailRows = computed(() =>
+  selectedMenu.value ? [selectedMenu.value] : [],
+);
+const treeData = computed(() => {
+  const build = (
+    nodes: SysMenuAdminItem[],
+  ): NonNullable<TreeProps['treeData']> =>
+    nodes.map((node) => ({
+      key: node.id,
+      title: node.meta?.title || node.name,
+      iconName: node.meta?.icon,
+      inactive: node.status !== 1,
+      children: node.children?.length ? build(node.children) : undefined,
+    }));
+  return build(list.value);
+});
+const selectMenu = (id: string) => {
+  selectedId.value = id;
+  if (!expandedRowKeys.value.includes(id)) expandedRowKeys.value.push(id);
+};
+const handleSelect: TreeProps['onSelect'] = (_keys, { node }) => {
+  selectMenu(String(node.key));
+};
+const isBusy = (id: string) =>
+  statusChanging.value[id] === true ||
+  deletingIds.value.includes(id) ||
+  sortingIds.value.includes(id);
+
+const sortMenus = (nodes: SysMenuAdminItem[]) => {
+  nodes.sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+};
+const removeMenu = (
+  id: string,
+  nodes = list.value,
+): SysMenuAdminItem | undefined => {
+  const index = nodes.findIndex((node) => node.id === id);
+  if (index !== -1) return nodes.splice(index, 1)[0];
+  for (const node of nodes) {
+    const removed = removeMenu(id, node.children ?? []);
+    if (removed) {
+      if (!node.children?.length) delete node.children;
+      return removed;
+    }
+  }
+};
+const applyMenu = (saved: SysMenuAdminItem) => {
+  const previous = findMenu(saved.id);
+  // Single-menu responses do not include descendants.
+  const updated = { ...previous, ...saved, children: previous?.children };
+  const parent =
+    updated.parentId === '0' ? undefined : findMenu(updated.parentId);
+  if (previous?.parentId === updated.parentId) {
+    Object.assign(previous, updated);
+  } else {
+    removeMenu(updated.id);
+    (parent ? (parent.children ??= []) : list.value).push(updated);
+  }
+  sortMenus(parent?.children ?? list.value);
+};
+const pruneExpandedKeys = () => {
+  const ids = new Set(extractAllRowKeys(list.value));
+  expandedTreeKeys.value = expandedTreeKeys.value.filter((id) => ids.has(id));
+  expandedRowKeys.value = expandedRowKeys.value.filter((id) => ids.has(id));
+};
 
 const editVisible = ref(false);
 const saving = ref(false);
@@ -87,28 +169,36 @@ const columnHelp: Record<string, string> = {
 };
 
 const columns: any[] = [
-  { title: '标题', key: 'title', width: 220 },
+  { title: '标题', key: 'title', width: 180 },
   {
     title: '路径',
     dataIndex: 'path',
     key: 'path',
-    width: 260,
+    width: 200,
+    ellipsis: true,
   },
   {
     title: '组件',
     dataIndex: 'component',
     key: 'component',
-    width: 220,
+    ellipsis: true,
   },
   {
     title: '角色',
     dataIndex: 'roles',
     key: 'roles',
-    width: 160,
+    width: 88,
+    ellipsis: true,
   },
-  { title: '排序', dataIndex: 'sort', key: 'sort', width: 90 },
-  { title: '启用', dataIndex: 'status', key: 'status', width: 90 },
-  { title: '操作', key: 'action', width: 120 },
+  { title: '排序', dataIndex: 'sort', key: 'sort', width: 64, align: 'center' },
+  {
+    title: '启用',
+    dataIndex: 'status',
+    key: 'status',
+    width: 68,
+    align: 'center',
+  },
+  { title: '操作', key: 'action', width: 88, align: 'center' },
 ];
 
 const parseRoles = (raw?: string) => {
@@ -130,12 +220,14 @@ type ParentTreeNode = {
 
 const parentTreeOptions = computed<ParentTreeNode[]>(() => {
   const build = (nodes: SysMenuAdminItem[]): ParentTreeNode[] =>
-    nodes.map((x) => ({
-      key: String(x.id),
-      title: x.meta?.title ?? x.name,
-      value: String(x.id),
-      children: x.children?.length ? build(x.children) : undefined,
-    }));
+    nodes
+      .filter((x) => x.id !== editingId.value)
+      .map((x) => ({
+        key: String(x.id),
+        title: x.meta?.title ?? x.name,
+        value: String(x.id),
+        children: x.children?.length ? build(x.children) : undefined,
+      }));
   return [
     {
       key: '0',
@@ -150,9 +242,8 @@ const load = async () => {
   loading.value = true;
   try {
     list.value = await getMenuAdminTreeApi();
-    if (isAllExpanded.value) {
-      expandAll();
-    }
+    pruneExpandedKeys();
+    if (selectedId.value && !selectedMenu.value) selectedId.value = null;
   } catch {
     // 全局拦截器已提示
   } finally {
@@ -171,22 +262,17 @@ const extractAllRowKeys = (nodes: SysMenuAdminItem[]): string[] => {
   return keys;
 };
 
-const expandAll = () => {
-  expandedRowKeys.value = extractAllRowKeys(list.value);
-  isAllExpanded.value = true;
-};
-
-const collapseAll = () => {
-  expandedRowKeys.value = [];
-  isAllExpanded.value = false;
-};
+const isAllExpanded = computed(() => {
+  const keys = extractAllRowKeys(list.value);
+  return (
+    keys.length > 0 && keys.every((id) => expandedTreeKeys.value.includes(id))
+  );
+});
 
 const toggleExpandAll = () => {
-  if (isAllExpanded.value) {
-    collapseAll();
-  } else {
-    expandAll();
-  }
+  expandedTreeKeys.value = isAllExpanded.value
+    ? []
+    : extractAllRowKeys(list.value);
 };
 
 const loadRoleOptions = async () => {
@@ -220,12 +306,12 @@ const refreshAccessibleMenus = async () => {
   accessStore.setIsAccessChecked(true);
 };
 
-const openCreate = () => {
+const openCreate = (parentId = '0') => {
   editingId.value = null;
   form.value = {
     name: '',
     path: '',
-    parentId: '0',
+    parentId,
     status: 1,
     sort: 0,
     roles: '',
@@ -306,13 +392,25 @@ const save = async () => {
       message.error('name/path 不能为空');
       return;
     }
+    const saved =
+      editingId.value == null
+        ? await createMenuApi(payload)
+        : await updateMenuApi(editingId.value, payload);
+    applyMenu(saved);
+    pruneExpandedKeys();
     if (editingId.value == null) {
-      await createMenuApi(payload);
-    } else {
-      await updateMenuApi(editingId.value, payload);
+      selectMenu(saved.id);
+    }
+    // Reveal the selected node after creation or a parent change.
+    let ancestor = findMenu(selectedId.value)?.parentId;
+    while (ancestor && ancestor !== '0') {
+      if (!expandedTreeKeys.value.includes(ancestor))
+        expandedTreeKeys.value.push(ancestor);
+      if (!expandedRowKeys.value.includes(ancestor))
+        expandedRowKeys.value.push(ancestor);
+      ancestor = findMenu(ancestor)?.parentId;
     }
     editVisible.value = false;
-    await load();
     await refreshAccessibleMenus();
   } catch {
     // 全局拦截器已提示
@@ -325,9 +423,9 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
   const id = String(row.id);
   statusChanging.value = { ...statusChanging.value, [id]: true };
   try {
-    await updateMenuStatusApi(id, status);
+    const saved = await updateMenuStatusApi(id, status);
+    applyMenu(saved);
     message.success(status === 1 ? '已启用' : '已禁用');
-    await load();
     await refreshAccessibleMenus();
   } catch {
     // 全局拦截器已提示
@@ -337,112 +435,94 @@ const toggleStatus = async (row: Record<string, any>, status: number) => {
   }
 };
 
-const handleDragSortToggle = (checked: boolean) => {
-  isDragSortEnabled.value = checked;
-  if (checked) {
-    nextTick(() => {
-      setTimeout(initSortable, 100);
-    });
-  }
+const allowDrop: TreeProps['allowDrop'] = ({
+  dragNode,
+  dropNode,
+  dropPosition,
+}) => {
+  const source = findMenu(String(dragNode.key));
+  const target = findMenu(String(dropNode.key));
+  return (
+    sortingIds.value.length === 0 &&
+    dropPosition !== 0 &&
+    !!source &&
+    !!target &&
+    source.id !== target.id &&
+    source.parentId === target.parentId
+  );
 };
 
-const initSortable = () => {
-  const tables = document.querySelectorAll('.ant-table-tbody');
-  if (tables.length > 0) {
-    const { initializeSortable } = useSortable(tables[0] as HTMLElement, {
-      handle: '.drag-handle',
-      animation: 150,
-      onEnd: async (evt: any) => {
-        const itemEl = evt.item as HTMLElement;
-        const draggedId = itemEl.dataset.id;
-        if (!draggedId) return;
-
-        let siblings: null | SysMenuAdminItem[] = null;
-
-        const findSiblings = (nodes: SysMenuAdminItem[]) => {
-          if (nodes.some((n) => String(n.id) === draggedId)) {
-            siblings = nodes;
-            return true;
-          }
-          for (const node of nodes) {
-            if (node.children && findSiblings(node.children)) {
-              return true;
-            }
-          }
-          return false;
-        };
-
-        findSiblings(list.value);
-        if (!siblings) {
-          if (isDragSortEnabled.value) {
-            nextTick(() => setTimeout(initSortable, 100));
-          }
-          return;
-        }
-
-        const tbody = itemEl.parentElement;
-        if (!tbody) return;
-
-        const domIds = Array.from(tbody.querySelectorAll('tr[data-id]'))
-          .map((tr) => (tr as HTMLElement).dataset.id)
-          .filter(Boolean) as string[];
-
-        const validSiblings = siblings as SysMenuAdminItem[];
-        const siblingIdsInNewOrder = domIds.filter((id) =>
-          validSiblings.some((s) => String(s.id) === id),
-        );
-
-        const existingSorts = validSiblings
-          .map((s) => s.sort ?? 0)
-          .sort((a, b) => a - b);
-
-        const updates: Promise<any>[] = [];
-        let changed = false;
-
-        siblingIdsInNewOrder.forEach((id, index) => {
-          const node = validSiblings.find((s) => String(s.id) === id);
-          const newSort =
-            existingSorts[index] === undefined ? index : existingSorts[index];
-          if (node && node.sort !== newSort) {
-            changed = true;
-            updates.push(updateMenuSortApi(id, newSort));
-          }
-        });
-
-        if (changed) {
-          try {
-            loading.value = true;
-            await Promise.all(updates);
-            await load();
-            await refreshAccessibleMenus();
-          } catch {
-            // 全局拦截器已提示
-            await load();
-          } finally {
-            loading.value = false;
-          }
-        } else {
-          // If no changes were made to backend, we still want Vue to re-render to revert the drag
-          list.value = [...list.value];
-        }
-
-        if (isDragSortEnabled.value) {
-          nextTick(() => setTimeout(initSortable, 100));
-        }
-      },
-    });
-    initializeSortable();
-  }
-};
-
-const handleDelete = async (row: Record<string, any>) => {
+const handleDrop: TreeProps['onDrop'] = async ({
+  dragNode,
+  node,
+  dropPosition,
+  dropToGap,
+}) => {
+  const source = findMenu(String(dragNode.key));
+  const target = findMenu(String(node.key));
+  if (
+    !dropToGap ||
+    !node.pos ||
+    !source ||
+    !target ||
+    source.id === target.id ||
+    source.parentId !== target.parentId ||
+    sortingIds.value.length > 0
+  )
+    return;
+  const siblings =
+    source.parentId === '0' ? list.value : findMenu(source.parentId)?.children;
+  if (!siblings || siblings.some((item) => isBusy(item.id))) return;
+  const ordered = siblings.filter((item) => item.id !== source.id);
+  const targetIndex = ordered.findIndex((item) => item.id === target.id);
+  const position = dropPosition - Number(node.pos?.split('-').at(-1));
+  ordered.splice(targetIndex + (position > 0 ? 1 : 0), 0, source);
+  if (ordered.every((item, index) => item.id === siblings[index]?.id)) return;
+  const firstSort = Math.min(...siblings.map((item) => item.sort ?? 0));
+  const changes = ordered
+    .map((item, index) => ({ item, sort: firstSort + index }))
+    .filter(({ item, sort }) => item.sort !== sort);
+  sortingIds.value = siblings.map((item) => item.id);
   try {
-    await deleteMenuApi(String(row.id));
-    message.success('删除成功');
-    await load();
+    // Wait for every request before recovering from a partially failed reorder.
+    const results = await Promise.allSettled(
+      changes.map(({ item, sort }) => updateMenuSortApi(item.id, sort)),
+    );
+    if (results.some((result) => result.status === 'rejected')) {
+      await load();
+    } else {
+      changes.forEach(({ item, sort }) => {
+        item.sort = sort;
+      });
+      siblings.splice(0, siblings.length, ...ordered);
+    }
     await refreshAccessibleMenus();
   } catch {
     // 全局拦截器已提示
+  } finally {
+    sortingIds.value = [];
+  }
+};
+
+const handleDelete = async (id: string) => {
+  const row = findMenu(id);
+  if (!row) return;
+  deletingIds.value.push(row.id);
+  try {
+    await deleteMenuApi(row.id);
+    const removedSelection = !!findMenu(selectedId.value, [row]);
+    removeMenu(row.id);
+    pruneExpandedKeys();
+    if (removedSelection) {
+      selectedId.value = null;
+      if (findMenu(row.parentId)) selectMenu(row.parentId);
+    }
+    message.success('删除成功');
+    await refreshAccessibleMenus();
+  } catch {
+    // 全局拦截器已提示
+  } finally {
+    deletingIds.value = deletingIds.value.filter((id) => id !== row.id);
   }
 };
 
@@ -453,171 +533,224 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4">
-    <div class="mb-3 flex items-center justify-end gap-1">
-      <Button
-        :type="isDragSortEnabled ? 'primary' : 'text'"
-        shape="circle"
-        :aria-pressed="isDragSortEnabled"
-        aria-label="拖拽排序"
-        :title="isDragSortEnabled ? '关闭拖拽排序' : '开启拖拽排序'"
-        :disabled="loading"
-        @click="handleDragSortToggle(!isDragSortEnabled)"
-      >
-        <template #icon>
-          <VbenIcon icon="lucide:grip-vertical" class="size-4" />
-        </template>
-      </Button>
-      <Button
-        type="text"
-        shape="circle"
-        :aria-label="isAllExpanded ? '全部折叠' : '全部展开'"
-        :title="isAllExpanded ? '全部折叠' : '全部展开'"
-        :disabled="loading"
-        @click="toggleExpandAll"
-      >
-        <template #icon>
-          <svg
-            class="size-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <template v-if="isAllExpanded">
-              <path
-                d="M4 2h16M4 22h16M12 4v6m-3-3 3 3 3-3M12 20v-6m-3 3 3-3 3 3"
-              />
-            </template>
-            <template v-else>
-              <path
-                d="M4 10h16M4 14h16M12 8V2m-3 3 3-3 3 3M12 16v6m-3-3 3 3 3-3"
-              />
-            </template>
-          </svg>
-        </template>
-      </Button>
-    </div>
-
-    <GlobalFloatBtn
-      role="button"
-      tabindex="0"
-      aria-label="新增菜单"
-      @click="openCreate"
-      @keydown.enter.prevent="openCreate"
-      @keydown.space.prevent="openCreate"
-    />
-
+  <div class="menu-page p-3 md:p-4">
     <Spin :spinning="loading">
-      <Table
-        class="menu-table"
-        size="small"
-        :data-source="list"
-        :columns="columns"
-        :pagination="false"
-        row-key="id"
-        v-model:expanded-row-keys="expandedRowKeys"
-        @expand="
-          (expanded: boolean, record: any) => {
-            if (expanded) {
-              expandedRowKeys.push(String(record.id));
-            } else {
-              expandedRowKeys = expandedRowKeys.filter(
-                (k) => k !== String(record.id),
-              );
-              isAllExpanded = false;
-            }
-          }
-        "
-        :custom-row="(record: any) => ({ 'data-id': String(record.id) }) as any"
-      >
-        <template #headerCell="{ column }">
-          <span class="inline-flex items-center gap-1">
-            {{ column.title }}
-            <Popover
-              v-if="columnHelp[String(column.key)]"
-              :content="columnHelp[String(column.key)]"
-              :trigger="['hover', 'focus', 'click']"
+      <div class="menu-layout rounded-xl bg-background">
+        <aside class="menu-sidebar min-w-0" aria-label="菜单导航">
+          <div class="menu-toolbar justify-start">
+            <Button
+              :type="isDragSortEnabled ? 'primary' : 'text'"
+              shape="circle"
+              :aria-pressed="isDragSortEnabled"
+              aria-label="拖拽排序"
+              :title="isDragSortEnabled ? '关闭拖拽排序' : '开启拖拽排序'"
+              :disabled="loading || sortingIds.length > 0"
+              @click="isDragSortEnabled = !isDragSortEnabled"
             >
-              <button
-                type="button"
-                class="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                :aria-label="`${column.title}说明`"
-              >
-                <VbenIcon icon="lucide:circle-help" class="size-3.5" />
-              </button>
-            </Popover>
-          </span>
-        </template>
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'title'">
-            <div class="flex items-center gap-2">
-              <VbenIcon
-                v-if="record.meta?.icon"
-                :icon="record.meta.icon"
-                class="size-4 flex-shrink-0 text-foreground"
-              />
-              <div>
-                <div class="font-medium">
-                  {{ record.meta?.title ?? record.name }}
-                </div>
-              </div>
-            </div>
-          </template>
-          <template v-else-if="column.key === 'status'">
-            <Switch
-              :checked="record.status === 1"
-              :disabled="
-                isProtectedMenu(record) || statusChanging[record.id] === true
-              "
-              @change="toggleStatus(record, $event ? 1 : 0)"
-            />
-          </template>
-          <template v-else-if="column.key === 'sort'">
-            <div class="flex items-center gap-2">
-              <VbenIcon
-                v-if="isDragSortEnabled"
-                icon="lucide:grip-vertical"
-                class="drag-handle cursor-move text-stone-400 hover:text-blue-500"
-              />
-              <span>{{ record.sort }}</span>
-            </div>
-          </template>
-          <template v-else-if="column.key === 'action'">
-            <div class="flex items-center gap-2">
-              <Button
-                size="small"
-                type="link"
-                @click="openEdit(record)"
-                title="编辑"
-              >
-                <template #icon>
-                  <VbenIcon icon="lucide:edit" class="size-4" />
-                </template>
-              </Button>
-              <Popconfirm
-                title="确定要删除该菜单吗？"
-                @confirm="handleDelete(record)"
-              >
-                <Button
-                  danger
-                  size="small"
-                  type="link"
-                  :disabled="isProtectedMenu(record)"
-                  title="删除"
+              <template #icon>
+                <VbenIcon icon="lucide:grip-vertical" class="size-4" />
+              </template>
+            </Button>
+            <Button
+              type="text"
+              shape="circle"
+              :aria-label="isAllExpanded ? '全部折叠' : '全部展开'"
+              :title="isAllExpanded ? '全部折叠' : '全部展开'"
+              :disabled="loading"
+              @click="toggleExpandAll"
+            >
+              <template #icon>
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
                 >
-                  <template #icon>
-                    <VbenIcon icon="lucide:trash-2" class="size-4" />
+                  <template v-if="isAllExpanded">
+                    <path
+                      d="M4 2h16M4 22h16M12 4v6m-3-3 3 3 3-3M12 20v-6m-3 3 3-3 3 3"
+                    />
                   </template>
-                </Button>
-              </Popconfirm>
-            </div>
-          </template>
-        </template>
-      </Table>
+                  <template v-else>
+                    <path
+                      d="M4 10h16M4 14h16M12 8V2m-3 3 3-3 3 3M12 16v6m-3-3 3 3 3-3"
+                    />
+                  </template>
+                </svg>
+              </template>
+            </Button>
+          </div>
+
+          <div class="menu-tree-scroll">
+            <Tree
+              v-if="treeData.length > 0"
+              class="menu-tree"
+              :tree-data="treeData"
+              :selected-keys="selectedId ? [selectedId] : []"
+              v-model:expanded-keys="expandedTreeKeys"
+              :draggable="isDragSortEnabled && sortingIds.length === 0"
+              :allow-drop="allowDrop"
+              block-node
+              @select="handleSelect"
+              @drop="handleDrop"
+            >
+              <template #title="{ key, title, iconName, inactive }">
+                <span
+                  class="inline-flex max-w-full items-center gap-2"
+                  :class="{ 'text-muted-foreground': inactive }"
+                >
+                  <Spin v-if="isBusy(String(key))" size="small" />
+                  <VbenIcon
+                    v-else-if="iconName"
+                    :icon="iconName"
+                    class="size-4 shrink-0"
+                  />
+                  <span class="truncate" :title="title">{{ title }}</span>
+                </span>
+              </template>
+            </Tree>
+            <Empty
+              v-else-if="!loading"
+              :image="Empty.PRESENTED_IMAGE_SIMPLE"
+              description="暂无菜单"
+            />
+          </div>
+        </aside>
+        <section class="menu-detail min-w-0" aria-label="菜单明细">
+          <div class="menu-toolbar justify-end">
+            <Button
+              type="text"
+              shape="circle"
+              aria-label="新增子菜单"
+              title="新增子菜单"
+              :disabled="!selectedMenu || isBusy(selectedMenu.id)"
+              @click="selectedMenu && openCreate(selectedMenu.id)"
+            >
+              <template #icon>
+                <VbenIcon icon="lucide:folder-plus" class="size-4" />
+              </template>
+            </Button>
+            <Button
+              type="text"
+              shape="circle"
+              aria-label="新增菜单"
+              title="新增菜单"
+              @click="openCreate()"
+            >
+              <template #icon>
+                <VbenIcon icon="lucide:plus" class="size-4" />
+              </template>
+            </Button>
+          </div>
+          <Table
+            class="menu-table"
+            size="small"
+            :data-source="detailRows"
+            :columns="columns"
+            :pagination="false"
+            row-key="id"
+            v-model:expanded-row-keys="expandedRowKeys"
+            table-layout="fixed"
+            :scroll="{ x: 920 }"
+            :row-class-name="
+              (record: SysMenuAdminItem) =>
+                record.id === selectedId ? 'menu-selected-row' : ''
+            "
+          >
+            <template #emptyText>
+              <Empty
+                :image="Empty.PRESENTED_IMAGE_SIMPLE"
+                :description="
+                  loading ? false : list.length > 0 ? '请选择菜单' : '暂无菜单'
+                "
+              />
+            </template>
+            <template #headerCell="{ column }">
+              <span class="inline-flex items-center gap-1">
+                {{ column.title }}
+                <Popover
+                  v-if="columnHelp[String(column.key)]"
+                  :content="columnHelp[String(column.key)]"
+                  :trigger="['hover', 'focus', 'click']"
+                >
+                  <button
+                    type="button"
+                    class="inline-flex size-6 items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                    :aria-label="`${column.title}说明`"
+                  >
+                    <VbenIcon icon="lucide:circle-help" class="size-3.5" />
+                  </button>
+                </Popover>
+              </span>
+            </template>
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'title'">
+                <div class="flex items-center gap-2">
+                  <VbenIcon
+                    v-if="record.meta?.icon"
+                    :icon="record.meta.icon"
+                    class="size-4 flex-shrink-0 text-foreground"
+                  />
+                  <div>
+                    <div class="font-medium">
+                      {{ record.meta?.title ?? record.name }}
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template v-else-if="column.key === 'status'">
+                <Switch
+                  :checked="record.status === 1"
+                  :loading="statusChanging[record.id] === true"
+                  :disabled="isProtectedMenu(record) || isBusy(record.id)"
+                  @change="toggleStatus(record, $event ? 1 : 0)"
+                />
+              </template>
+              <template v-else-if="column.key === 'sort'">
+                <span class="tabular-nums">{{ record.sort }}</span>
+              </template>
+              <template v-else-if="column.key === 'action'">
+                <div class="flex items-center justify-center gap-1">
+                  <Button
+                    size="small"
+                    type="link"
+                    :disabled="isBusy(record.id)"
+                    @click="openEdit(record)"
+                    aria-label="编辑菜单"
+                    title="编辑"
+                  >
+                    <template #icon>
+                      <VbenIcon icon="lucide:edit" class="size-4" />
+                    </template>
+                  </Button>
+                  <Popconfirm
+                    :title="`确定要删除「${record.meta?.title || record.name}」吗？`"
+                    @confirm="handleDelete(record.id)"
+                  >
+                    <Button
+                      danger
+                      size="small"
+                      type="link"
+                      :loading="deletingIds.includes(record.id)"
+                      :disabled="isProtectedMenu(record) || isBusy(record.id)"
+                      aria-label="删除菜单"
+                      title="删除"
+                    >
+                      <template #icon>
+                        <VbenIcon icon="lucide:trash-2" class="size-4" />
+                      </template>
+                    </Button>
+                  </Popconfirm>
+                </div>
+              </template>
+            </template>
+          </Table>
+        </section>
+      </div>
     </Spin>
 
     <Modal
@@ -625,11 +758,12 @@ onMounted(() => {
       :title="editingId == null ? '新增菜单' : '编辑菜单'"
       :confirm-loading="saving"
       :width="820"
+      centered
       @ok="save"
     >
       <Form layout="vertical">
-        <div class="mb-3 rounded-md border border-stone-200 p-3">
-          <div class="grid grid-cols-2 gap-x-4">
+        <div class="mb-3 rounded-md bg-muted/30 p-3">
+          <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
             <Form.Item label="菜单名称">
               <Input v-model:value="metaTitle" placeholder="例如 时间管理" />
             </Form.Item>
@@ -640,7 +774,7 @@ onMounted(() => {
               />
             </Form.Item>
           </div>
-          <div class="grid grid-cols-2 gap-x-4">
+          <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
             <Form.Item label="父节点">
               <TreeSelect
                 v-model:value="form.parentId"
@@ -663,7 +797,7 @@ onMounted(() => {
               placeholder="例如 BasicLayout 或 system/menu/index"
             />
           </Form.Item>
-          <div class="grid grid-cols-2 gap-x-4">
+          <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
             <Form.Item label="菜单图标">
               <div class="flex items-center gap-2">
                 <div
@@ -698,7 +832,7 @@ onMounted(() => {
               </div>
             </Form.Item>
           </div>
-          <div class="grid grid-cols-2 gap-x-4">
+          <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
             <Form.Item label="排序 sort">
               <InputNumber
                 v-model:value="form.sort"
@@ -720,7 +854,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="rounded-md border border-stone-200 p-3">
+        <div class="rounded-md bg-muted/30 p-3">
           <div class="mb-2 text-sm font-semibold">Meta 配置（JSON）</div>
           <div class="mb-2 text-xs text-stone-400">
             其他高级字段：order / hideInMenu / keepAlive / link
@@ -740,6 +874,97 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.menu-page {
+  max-width: 1600px;
+  margin-inline: auto;
+}
+
+.menu-layout {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 24px;
+  padding: 12px;
+}
+
+.menu-toolbar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 36px;
+  margin-bottom: 8px;
+  gap: 4px;
+}
+
+.menu-sidebar {
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  max-height: calc(100dvh - 180px);
+}
+
+.menu-tree-scroll {
+  min-height: 0;
+  overflow: auto;
+}
+
+.menu-tree {
+  background: transparent;
+}
+
+.menu-tree :deep(.ant-tree-node-content-wrapper) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.menu-tree :deep(.ant-tree-title) {
+  display: block;
+}
+
+.menu-tree :deep(.ant-tree-treenode) {
+  padding-bottom: 4px;
+}
+
+.menu-table :deep(.ant-table) {
+  border-radius: 8px;
+}
+
+.menu-table :deep(.ant-table-thead > tr > th) {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  background: hsl(var(--muted) / 55%);
+}
+
+.menu-table :deep(.menu-selected-row > td) {
+  background: hsl(var(--primary) / 4%);
+}
+
+.menu-table :deep(.ant-table-placeholder .ant-empty) {
+  margin-block: 64px;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .menu-layout {
+    grid-template-columns: 176px minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .menu-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .menu-sidebar {
+    position: static;
+    max-height: 240px;
+  }
+}
+
 .menu-table :deep(table) {
   border-collapse: collapse;
 }
