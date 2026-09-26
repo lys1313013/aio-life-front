@@ -43,6 +43,7 @@ import {
 import { listCategories } from '#/api/core/time-tracker-category';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
+import { categoryMatches, categoryPath } from './category-tree';
 import CategoryFilter from './components/CategoryFilter.vue';
 import CategoryTrendLineChart from './components/CategoryTrendLineChart.vue';
 import DailyCategoryBarChart from './components/DailyCategoryBarChart.vue';
@@ -132,13 +133,14 @@ const config = ref(defaultConfig);
 // 加载分类配置
 const loadCategories = async () => {
   try {
-    const data = await listCategories();
+    const data = await listCategories(true);
     if (data) {
       config.value.categories = data.map((item) => {
         const isPublic = Number(item.userId) === 0;
         const isOverride = !!item.templateId;
         return {
           id: item.id as string,
+          parentId: item.parentId,
           realId: item.id as string,
           name: item.name,
           color: item.color,
@@ -148,7 +150,7 @@ const loadCategories = async () => {
           timeType: item.timeType as 1 | 2 | 3 | undefined,
           categoryType: isPublic ? 'public' : isOverride ? 'public' : 'private',
           isOverridden: isOverride,
-          isHidden: false,
+          isHidden: item.isEnabled === 0,
           originalId: item.templateId?.toString() || item.id,
           sort: item.sort,
         };
@@ -158,10 +160,11 @@ const loadCategories = async () => {
       if (
         config.value.categories.length > 0 &&
         !config.value.categories.find(
-          (cat) => cat.id === config.value.defaultCategoryId,
+          (cat) => cat.id === config.value.defaultCategoryId && !cat.isHidden,
         )
       ) {
-        config.value.defaultCategoryId = config.value.categories[0]?.id || '';
+        config.value.defaultCategoryId =
+          config.value.categories.find((cat) => !cat.isHidden)?.id || '';
       }
     }
   } catch (error) {
@@ -176,7 +179,11 @@ const filteredTimeSlots = computed(() => {
     return timeSlots.value;
   }
   return timeSlots.value.filter((slot) =>
-    selectedFilterCategoryIds.value.includes(slot.categoryId),
+    categoryMatches(
+      slot.categoryId,
+      selectedFilterCategoryIds.value,
+      config.value.categories,
+    ),
   );
 });
 
@@ -236,12 +243,14 @@ const averageDuration = computed(() => {
 
 const trackTimeComparisons = computed(() => {
   const trackedCategories = config.value.categories.filter(
-    (cat) => cat.isTrackTime,
+    (cat) => cat.isTrackTime && !cat.isHidden,
   );
 
   const calcDuration = (slots: TimeSlot[], categoryId: string) => {
     return slots
-      .filter((slot) => slot.categoryId === categoryId)
+      .filter((slot) =>
+        categoryMatches(slot.categoryId, [categoryId], config.value.categories),
+      )
       .reduce((total, slot) => total + getSlotDuration(slot), 0);
   };
 
@@ -255,7 +264,7 @@ const trackTimeComparisons = computed(() => {
     const diff = currentDuration - previousDuration;
     return {
       id: cat.id,
-      name: cat.name,
+      name: categoryPath(cat.id, config.value.categories),
       diff,
       direction: diff >= 0 ? '上升' : '下降',
       absDiff: Math.abs(diff),
@@ -740,7 +749,11 @@ const getSlotStyle = (slot: TimeSlot) => {
   // 高亮显示选中的分类
   const isHighlighted =
     selectedFilterCategoryIds.value.length > 0
-      ? selectedFilterCategoryIds.value.includes(slot.categoryId)
+      ? categoryMatches(
+          slot.categoryId,
+          selectedFilterCategoryIds.value,
+          config.value.categories,
+        )
       : false;
 
   // 判断是否是未来的时间段
@@ -1235,10 +1248,18 @@ const getDaySlots = (date: string): TimeSlot[] => {
                       'is-future': isSlotFuture(slot),
                       'is-highlighted':
                         selectedFilterCategoryIds.length > 0 &&
-                        selectedFilterCategoryIds.includes(slot.categoryId),
+                        categoryMatches(
+                          slot.categoryId,
+                          selectedFilterCategoryIds,
+                          config.categories,
+                        ),
                       'is-dimmed':
                         selectedFilterCategoryIds.length > 0 &&
-                        !selectedFilterCategoryIds.includes(slot.categoryId),
+                        !categoryMatches(
+                          slot.categoryId,
+                          selectedFilterCategoryIds,
+                          config.categories,
+                        ),
                     }"
                     :style="{
                       borderLeftColor:
@@ -1253,7 +1274,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                         class="time-card-icon"
                       />
                       <span class="time-card-category">{{
-                        getSlotCategory(slot)?.name || '未知分类'
+                        categoryPath(slot.categoryId, config.categories)
                       }}</span>
                     </div>
                     <div class="time-card-time">
@@ -1293,11 +1314,17 @@ const getDaySlots = (date: string): TimeSlot[] => {
                           'is-future': isSlotFuture(slot),
                           'is-highlighted':
                             selectedFilterCategoryIds.length > 0 &&
-                            selectedFilterCategoryIds.includes(slot.categoryId),
+                            categoryMatches(
+                              slot.categoryId,
+                              selectedFilterCategoryIds,
+                              config.categories,
+                            ),
                           'is-dimmed':
                             selectedFilterCategoryIds.length > 0 &&
-                            !selectedFilterCategoryIds.includes(
+                            !categoryMatches(
                               slot.categoryId,
+                              selectedFilterCategoryIds,
+                              config.categories,
                             ),
                         }"
                         :style="{
@@ -1313,7 +1340,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
                             class="time-card-icon"
                           />
                           <span class="time-card-category">{{
-                            getSlotCategory(slot)?.name || '未知分类'
+                            categoryPath(slot.categoryId, config.categories)
                           }}</span>
                         </div>
                         <div class="time-card-time">

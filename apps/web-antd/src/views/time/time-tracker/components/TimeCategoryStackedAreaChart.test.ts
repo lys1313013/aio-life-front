@@ -73,3 +73,46 @@ describe('timeCategoryStackedAreaChart hourly durations', () => {
     );
   });
 });
+
+describe('两级分类图表统计', () => {
+  it('日模式按一级汇总子分类，选择一级后展示各子级且不漏数据', () => {
+    const props = {
+      categories: [
+        { id: 'work', name: '工作', color: '#1890ff', parentId: '0' },
+        { id: 'code', name: '开发', color: '#2890ff', parentId: 'work' },
+      ],
+      selectedDate: dayjs('2026-09-12'),
+      statMode: 'day' as const,
+      timeSlots: [
+        {
+          id: '1',
+          categoryId: 'work',
+          date: '2026-09-12',
+          startTime: 600,
+          endTime: 629,
+        },
+        {
+          id: '2',
+          categoryId: 'code',
+          date: '2026-09-12',
+          startTime: 630,
+          endTime: 659,
+        },
+      ],
+    };
+    const summary = mount(TimeCategoryStackedAreaChart, { props });
+    expect(renderEcharts.mock.lastCall?.[0].series).toHaveLength(1);
+    expect(renderEcharts.mock.lastCall?.[0].series[0].data[10]).toBe(60);
+    summary.unmount();
+    const detail = mount(TimeCategoryStackedAreaChart, {
+      props: { ...props, selectedFilterCategoryIds: ['work'] },
+    });
+    expect(renderEcharts.mock.lastCall?.[0].series).toHaveLength(2);
+    expect(
+      renderEcharts.mock.lastCall?.[0].series.map(
+        (s: { data: number[] }) => s.data[10],
+      ),
+    ).toEqual([30, 30]);
+    detail.unmount();
+  });
+});

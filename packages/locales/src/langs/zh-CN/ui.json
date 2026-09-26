@@ -45,7 +45,10 @@
   },
   "iconPicker": {
     "placeholder": "选择一个图标",
-    "search": "搜索图标..."
+    "search": "搜索图标...",
+    "loading": "加载中",
+    "loadFailed": "加载失败",
+    "retry": "重试"
   },
   "jsonViewer": {
     "copy": "复制",

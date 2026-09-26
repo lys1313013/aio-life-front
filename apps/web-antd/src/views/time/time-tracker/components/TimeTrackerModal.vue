@@ -42,13 +42,14 @@ const centeredMessageStyle = {
 // 加载分类配置
 const loadCategories = async () => {
   try {
-    const data = await listCategories();
+    const data = await listCategories(true);
     if (data) {
       categories.value = data.map((cat) => {
         const isPublic = Number(cat.userId) === 0;
         const isOverride = !!cat.templateId;
         return {
           id: cat.id as string,
+          parentId: cat.parentId,
           realId: cat.id as string,
           name: cat.name,
           color: cat.color,
@@ -57,7 +58,7 @@ const loadCategories = async () => {
           isTrackTime: cat.isTrackTime === 1,
           categoryType: isPublic ? 'public' : isOverride ? 'public' : 'private',
           isOverridden: isOverride,
-          isHidden: false,
+          isHidden: cat.isEnabled === 0,
           originalId: cat.templateId?.toString() || cat.id,
           sort: cat.sort,
         };

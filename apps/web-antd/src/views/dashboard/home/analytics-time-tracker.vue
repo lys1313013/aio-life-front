@@ -11,6 +11,10 @@ import dayjs from 'dayjs';
 
 import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
+import {
+  categoryPath,
+  categoryStatistics,
+} from '#/views/time/time-tracker/category-tree';
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
 import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
@@ -57,7 +61,7 @@ const loadData = async () => {
   try {
     const today = dayjs().format('YYYY-MM-DD');
     const [categoriesRes, recordsRes] = await Promise.all([
-      listCategories(),
+      listCategories(true),
       query({ condition: { date: today } }),
     ]);
 
@@ -87,7 +91,7 @@ const loadData = async () => {
 
         return {
           id: record.id || Math.random().toString(),
-          categoryName: category?.name || '未知',
+          categoryName: categoryPath(record.categoryId, categories),
           categoryColor: category?.color || '#ccc',
           timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
           originalRecord: record as TimeSlot,
@@ -113,14 +117,22 @@ const loadData = async () => {
       };
     });
 
+    const statistics = categoryStatistics(
+      categories.map((c) => ({
+        ...c,
+        id: c.id!,
+        isTrackTime: c.isTrackTime === 1,
+      })),
+      records,
+    );
     const categoryDurations: Record<string, number> = {};
-    records.forEach((slot) => {
+    statistics.timeSlots.forEach((slot) => {
       const duration = getSlotDuration(slot);
       categoryDurations[slot.categoryId] =
         (categoryDurations[slot.categoryId] || 0) + duration;
     });
 
-    const pieData = categories
+    const pieData = statistics.categories
       .map((category) => {
         const duration = categoryDurations[category.id || ''] || 0;
         const isSmall = duration < 30;
@@ -318,13 +330,13 @@ defineExpose({
         <EchartsUI ref="chartRef" height="100%" width="100%" />
       </div>
 
-      <!-- 最新记录列表：与图表等高，充分利用上下空间 -->
+      <!-- 最新记录列表：整体居中、固定行距，避免少量记录被拉开 -->
       <div
         class="flex h-[160px] w-[35%] flex-col overflow-y-auto py-1 sm:h-[180px] sm:w-[30%]"
       >
         <div
           v-if="recentRecords.length > 0"
-          class="flex h-full flex-col justify-between"
+          class="flex h-full flex-col justify-center gap-3 sm:gap-4"
         >
           <div
             v-for="record in recentRecords"

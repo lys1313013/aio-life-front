@@ -6,7 +6,8 @@ import { computed, ref } from 'vue';
 import { CheckOutlined, FilterOutlined } from '@ant-design/icons-vue';
 import { Button, Popover } from 'ant-design-vue';
 
-import { getCategoryColor, getCategoryName } from '../config';
+import { categoryPath, orderCategoryTree } from '../category-tree';
+import { getCategoryColor } from '../config';
 
 interface Props {
   categories: (MergedCategory | TimeSlotCategory)[];
@@ -31,7 +32,7 @@ const selectedFilterCategoryIds = ref<string[]>([]);
 
 // 分类计算属性
 const visibleCategories = computed(() => {
-  return props.categories.filter((c) => !('isHidden' in c && c.isHidden));
+  return orderCategoryTree(props.categories);
 });
 
 // 获取显示颜色
@@ -41,7 +42,7 @@ const getDisplayColor = (category: MergedCategory | TimeSlotCategory) => {
 
 // 获取显示名称
 const getDisplayName = (category: MergedCategory | TimeSlotCategory) => {
-  return getCategoryName(category.id, props.categories);
+  return categoryPath(category.id, props.categories);
 };
 
 const isSelected = (categoryId: string) => {

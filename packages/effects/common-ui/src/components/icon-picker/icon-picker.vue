@@ -4,7 +4,13 @@ import type { VNode } from 'vue';
 import { computed, ref, useAttrs, watch, watchEffect } from 'vue';
 
 import { usePagination } from '@vben/hooks';
-import { EmptyIcon, Grip, listIcons } from '@vben/icons';
+import {
+  EmptyIcon,
+  Grip,
+  listIcons,
+  LoaderCircle,
+  RotateCw,
+} from '@vben/icons';
 import { $t } from '@vben/locales';
 
 import {
@@ -24,7 +30,7 @@ import {
 } from '@vben-core/shadcn-ui';
 import { isFunction } from '@vben-core/shared/utils';
 
-import { objectOmit, refDebounced, watchDebounced } from '@vueuse/core';
+import { objectOmit, refDebounced } from '@vueuse/core';
 
 import { fetchIconsData } from './icons';
 
@@ -74,19 +80,48 @@ const currentSelect = ref('');
 const keyword = ref('');
 const keywordDebounce = refDebounced(keyword, 300);
 const innerIcons = ref<string[]>([]);
-
-watchDebounced(
-  () => props.prefix,
-  async (prefix) => {
-    if (prefix && prefix !== 'svg' && props.autoFetchApi) {
-      innerIcons.value = await fetchIconsData(prefix);
-    }
-  },
-  { immediate: true, debounce: 500, maxWait: 1000 },
+const loading = ref(false);
+const loadFailed = ref(false);
+let requestVersion = 0;
+const needsFetch = computed(() =>
+  Boolean(
+    props.prefix &&
+    props.prefix !== 'svg' &&
+    props.autoFetchApi &&
+    props.icons.length === 0,
+  ),
 );
+
+async function loadIcons() {
+  if (!needsFetch.value || loading.value) return;
+  const version = ++requestVersion;
+  loading.value = true;
+  loadFailed.value = false;
+  try {
+    const icons = await fetchIconsData(props.prefix);
+    if (version === requestVersion) innerIcons.value = icons;
+  } catch {
+    if (version === requestVersion) loadFailed.value = true;
+  } finally {
+    if (version === requestVersion) loading.value = false;
+  }
+}
+
+watch([() => props.prefix, needsFetch], () => {
+  requestVersion++;
+  innerIcons.value = [];
+  loading.value = false;
+  loadFailed.value = false;
+  if (visible.value) void loadIcons();
+});
+
+watch(visible, (opened) => {
+  if (opened && innerIcons.value.length === 0) void loadIcons();
+});
 
 const currentList = computed(() => {
   try {
+    if (props.icons.length > 0) return props.icons;
     if (props.prefix) {
       if (
         props.prefix !== 'svg' &&
@@ -245,7 +280,30 @@ defineExpose({ toggleOpenState, open, close });
       />
     </div>
 
-    <template v-if="paginationList.length > 0">
+    <div
+      v-if="loading"
+      class="flex-center min-h-[150px] w-full"
+      role="status"
+      :aria-label="$t('ui.iconPicker.loading')"
+    >
+      <LoaderCircle class="size-5 animate-spin" />
+    </div>
+    <div
+      v-else-if="loadFailed"
+      class="flex-col-center text-muted-foreground min-h-[150px] w-full gap-2"
+    >
+      <span class="text-sm" role="alert">{{
+        $t('ui.iconPicker.loadFailed')
+      }}</span>
+      <VbenIconButton
+        :aria-label="$t('ui.iconPicker.retry')"
+        :tooltip="$t('ui.iconPicker.retry')"
+        @click="loadIcons"
+      >
+        <RotateCw class="size-4" />
+      </VbenIconButton>
+    </div>
+    <template v-else-if="paginationList.length > 0">
       <div class="grid max-h-[360px] w-full grid-cols-6 justify-items-center">
         <VbenIconButton
           v-for="(item, index) in paginationList"

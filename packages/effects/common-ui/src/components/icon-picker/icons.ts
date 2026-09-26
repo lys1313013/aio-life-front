@@ -1,56 +1,75 @@
-import type { Recordable } from '@vben/types';
+import { hasLocalIconCollection, loadLocalIconCollection } from '@vben/icons';
 
-/**
- * 一个缓存对象，在不刷新页面时，无需重复请求远程接口
- */
-export const ICONS_MAP: Recordable<string[]> = {};
+/** Only validated successful results live for the lifetime of the page. */
+export const ICONS_MAP: Record<string, string[]> = Object.create(null);
+const pendingRequests = new Map<string, Promise<string[]>>();
 
 interface IconifyResponse {
   prefix: string;
-  total: number;
-  title: string;
   uncategorized?: string[];
-  categories?: Recordable<string[]>;
-  aliases?: Recordable<string>;
+  categories?: Record<string, string[]>;
 }
 
-const PENDING_REQUESTS: Recordable<Promise<string[]>> = {};
+function parseCollection(data: IconifyResponse, prefix: string): string[] {
+  if (!data || data.prefix !== prefix)
+    throw new Error('Invalid icon collection');
+  if (
+    data.categories !== undefined &&
+    (typeof data.categories !== 'object' ||
+      data.categories === null ||
+      Array.isArray(data.categories))
+  ) {
+    throw new Error('Invalid icon categories');
+  }
+  const groups = [
+    data.uncategorized ?? [],
+    ...Object.values(data.categories ?? {}),
+  ];
+  if (
+    groups.some(
+      (group) =>
+        !Array.isArray(group) ||
+        group.some(
+          (name) =>
+            typeof name !== 'string' ||
+            !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name),
+        ),
+    )
+  ) {
+    throw new Error('Invalid icon names');
+  }
+  const names = [...new Set(groups.flat())];
+  if (names.length === 0) throw new Error('Empty icon collection');
+  return names.map((name) => `${prefix}:${name}`);
+}
 
-/**
- * 通过Iconify接口获取图标集数据。
- * 同一时间多个图标选择器同时请求同一个图标集时，实际上只会发起一次请求（所有请求共享同一份结果）。
- * 请求结果会被缓存，刷新页面前同一个图标集不会再次请求
- * @param prefix 图标集名称
- * @returns 图标集中包含的所有图标名称
- */
 export async function fetchIconsData(prefix: string): Promise<string[]> {
-  if (Reflect.has(ICONS_MAP, prefix) && ICONS_MAP[prefix]) {
-    return ICONS_MAP[prefix];
-  }
-  if (Reflect.has(PENDING_REQUESTS, prefix) && PENDING_REQUESTS[prefix]) {
-    return PENDING_REQUESTS[prefix];
-  }
-  PENDING_REQUESTS[prefix] = (async () => {
+  if (ICONS_MAP[prefix]) return ICONS_MAP[prefix];
+  const pending = pendingRequests.get(prefix);
+  if (pending) return pending;
+
+  const request = (async () => {
+    if (hasLocalIconCollection(prefix)) return loadLocalIconCollection(prefix);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1000 * 10);
-      const response: IconifyResponse = await fetch(
-        `https://api.iconify.design/collection?prefix=${prefix}`,
+      const response = await fetch(
+        `https://api.iconify.design/collection?prefix=${encodeURIComponent(prefix)}`,
         { signal: controller.signal },
-      ).then((res) => res.json());
+      );
+      if (!response.ok)
+        throw new Error(`Icon collection HTTP ${response.status}`);
+      return parseCollection(await response.json(), prefix);
+    } finally {
       clearTimeout(timeoutId);
-      const list = response.uncategorized || [];
-      if (response.categories) {
-        for (const category in response.categories) {
-          list.push(...(response.categories[category] || []));
-        }
-      }
-      ICONS_MAP[prefix] = list.map((v) => `${prefix}:${v}`);
-    } catch (error) {
-      console.error(`Failed to fetch icons for prefix ${prefix}:`, error);
-      return [] as string[];
     }
-    return ICONS_MAP[prefix];
-  })();
-  return PENDING_REQUESTS[prefix];
+  })()
+    .then((names) => {
+      ICONS_MAP[prefix] = names;
+      return names;
+    })
+    .finally(() => pendingRequests.delete(prefix));
+
+  pendingRequests.set(prefix, request);
+  return request;
 }

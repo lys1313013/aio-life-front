@@ -20,6 +20,9 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   /** 待解锁后跳转的目标路径 */
   const pendingTargetPath = ref<string | null>(null);
 
+  /** 路由守卫触发时跳转；接口触发时保留当前页面。 */
+  const navigateAfterUnlock = ref(true);
+
   /** 是否显示解锁弹窗 */
   const showModal = ref(false);
 
@@ -55,7 +58,9 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     showModal.value = false;
   }
 
-  function triggerUnlock(targetPath: string) {
+  function triggerUnlock(targetPath: string, navigate = true) {
+    if (showModal.value) return;
+    navigateAfterUnlock.value = navigate;
     pendingTargetPath.value = targetPath;
     showModal.value = true;
   }
@@ -69,6 +74,7 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     lockedMenuIds.value = new Set();
     loaded.value = false;
     unlockedPaths.value = new Set();
+    navigateAfterUnlock.value = true;
     pendingTargetPath.value = null;
     showModal.value = false;
   }
@@ -82,6 +88,7 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     lockedMenuIds,
     loaded,
     pendingTargetPath,
+    navigateAfterUnlock,
     saveLockedMenus,
     showModal,
     triggerUnlock,

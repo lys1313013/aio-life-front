@@ -111,7 +111,7 @@ const loadData = async (loadMore = false) => {
     };
     const response =
       props.relateType === 1
-        ? await ReadRecordApi.pageList(query)
+        ? await ReadRecordApi.pageList({ ...query, inProgressFirst: true })
         : await MovieApi.pageList(query);
 
     if (currentRequest !== requestSerial) return;

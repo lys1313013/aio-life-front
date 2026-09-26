@@ -8,6 +8,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { categoryStatistics } from '../category-tree';
 import { getCategoryColor, getCategoryName } from '../config';
 import { getSlotDuration } from '../utils';
 
@@ -20,6 +21,13 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const statistics = computed(() =>
+  categoryStatistics(
+    props.categories,
+    props.timeSlots,
+    props.selectedFilterCategoryIds,
+  ),
+);
 const chartRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 
@@ -29,13 +37,7 @@ const chartData = computed(() => {
   const seriesData: Record<string, number[]> = {};
 
   // 过滤分类列表，如果设置了过滤，只保留对应的分类
-  const filteredCategories =
-    props.selectedFilterCategoryIds &&
-    props.selectedFilterCategoryIds.length > 0
-      ? props.categories.filter((c) =>
-          props.selectedFilterCategoryIds?.includes(c.id),
-        )
-      : props.categories;
+  const filteredCategories = statistics.value.categories;
 
   // 初始化系列数据容器
   filteredCategories.forEach((cat) => {
@@ -54,15 +56,8 @@ const chartData = computed(() => {
     });
 
     // 填充数据
-    props.timeSlots.forEach((slot) => {
+    statistics.value.timeSlots.forEach((slot) => {
       // 检查分类过滤
-      if (
-        props.selectedFilterCategoryIds &&
-        props.selectedFilterCategoryIds.length > 0 &&
-        !props.selectedFilterCategoryIds.includes(slot.categoryId)
-      ) {
-        return;
-      }
 
       const startHour = Math.floor(slot.startTime / 60);
       const endHour = Math.floor(slot.endTime / 60);
@@ -131,14 +126,9 @@ const chartData = computed(() => {
       });
 
       // 统计当天数据
-      const daySlots = props.timeSlots.filter((slot) => {
-        const matchesDate = slot.date === dateStr;
-        const matchesCategory =
-          !props.selectedFilterCategoryIds ||
-          props.selectedFilterCategoryIds.length === 0 ||
-          props.selectedFilterCategoryIds.includes(slot.categoryId);
-        return matchesDate && matchesCategory;
-      });
+      const daySlots = statistics.value.timeSlots.filter(
+        (slot) => slot.date === dateStr,
+      );
 
       daySlots.forEach((slot) => {
         const duration = getSlotDuration(slot);
@@ -165,7 +155,7 @@ const renderChart = () => {
   const series = filteredCategories
     .map((category) => {
       return {
-        name: getCategoryName(category.id, props.categories),
+        name: getCategoryName(category.id, statistics.value.categories),
         type: 'line',
         stack: 'Total',
         areaStyle: {},
@@ -174,7 +164,7 @@ const renderChart = () => {
         },
         data: seriesData[category.id] || [],
         itemStyle: {
-          color: getCategoryColor(category.id, props.categories),
+          color: getCategoryColor(category.id, statistics.value.categories),
         },
         showSymbol: false,
         smooth: 0.25,
@@ -256,7 +246,7 @@ const renderChart = () => {
 
 watch(
   [
-    () => props.timeSlots,
+    () => statistics.value.timeSlots,
     () => props.statMode,
     () => props.selectedDate,
     () => props.selectedFilterCategoryIds,

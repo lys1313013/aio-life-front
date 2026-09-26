@@ -10,6 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { categoryMatches } from '../category-tree';
 import { TIME_TYPE_CONFIG, TimeType } from '../types';
 import { getSlotDuration } from '../utils';
 
@@ -42,7 +43,11 @@ const timeTypeDurations = computed(() => {
     if (
       props.selectedFilterCategoryIds &&
       props.selectedFilterCategoryIds.length > 0 &&
-      !props.selectedFilterCategoryIds.includes(slot.categoryId)
+      !categoryMatches(
+        slot.categoryId,
+        props.selectedFilterCategoryIds,
+        props.categories,
+      )
     ) {
       return;
     }

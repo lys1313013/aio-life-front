@@ -48,6 +48,7 @@ interface OverviewItem {
   valueColor?: string;
   loading?: boolean;
   refreshing?: boolean;
+  error?: boolean;
   type?: string;
   refreshInterval?: number;
 }
@@ -377,9 +378,9 @@ function clearAllSectionTimers() {
 
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') {
-    // 切换回前台时，刷新所有有刷新间隔的卡片
+    // 首次失败时尚未拿到刷新间隔，回到前台也需要允许重试。
     overviewItems.value.forEach((item) => {
-      if (item.refreshInterval && item.refreshInterval > 0) {
+      if (item.error || (item.refreshInterval && item.refreshInterval > 0)) {
         refreshCard(item);
       }
     });
@@ -454,27 +455,9 @@ onMounted(async () => {
     overviewItems.value = items;
     loading.value = false;
 
-    // 3. 并发获取详情
-
-    // Dashboard Cards
-    tasks.forEach(async (task) => {
-      try {
-        const res = await getDashboardCardDetail(task.type);
-        const index = overviewItems.value.findIndex(
-          (i) => i.type === task.type,
-        );
-        if (index !== -1) {
-          overviewItems.value[index] = {
-            ...overviewItems.value[index],
-            ...res,
-            loading: false,
-            refreshing: false,
-          };
-          setupCardRefresh(overviewItems.value[index]);
-        }
-      } catch (error) {
-        console.error(`Failed to fetch card ${task.type}`, error);
-      }
+    // 3. 首次加载与后续刷新共用状态收尾，单张卡片失败不影响其他卡片。
+    overviewItems.value.forEach((item) => {
+      loadCard(item);
     });
   } catch (error) {
     console.error('获取仪表盘数据失败:', error);
@@ -490,20 +473,24 @@ async function refreshCard(item: OverviewItem) {
 
   // 静默刷新：保留旧数据 + 顶部进度条，不替换为 skeleton 以避免高度抖动
   item.refreshing = true;
+  await loadCard(item);
+}
+
+async function loadCard(item: OverviewItem) {
   try {
-    const res = await getDashboardCardDetail(item.type);
-    // 仅在数据真正变化时刷新（避免无意义重渲染）
-    const hasChanged =
-      item.value !== res.value || item.totalValue !== res.totalValue;
-    if (hasChanged) {
-      Object.assign(item, res, { refreshing: false });
-    } else {
-      item.refreshing = false;
+    const res = await getDashboardCardDetail(item.type!);
+    if (!res) {
+      throw new Error('卡片数据为空');
     }
-    setupCardRefresh(item);
+    Object.assign(item, res);
+    item.error = false;
   } catch (error) {
-    console.error(`Failed to refresh card ${item.title}`, error);
+    console.error(`Failed to fetch card ${item.title}`, error);
+    item.error = true;
+  } finally {
+    item.loading = false;
     item.refreshing = false;
+    setupCardRefresh(item);
   }
 }
 
@@ -582,12 +569,14 @@ function navTo(nav: { url?: string }) {
           <AnalysisCard
             v-if="
               item.loading ||
+              item.error ||
               (item.value !== undefined &&
                 item.value !== null &&
                 item.value !== '')
             "
             :loading="item.loading"
             :refreshing="item.refreshing"
+            :error="item.error"
             :icon="item.icon"
             :icon-color="item.iconColor"
             :icon-click-url="item.iconClickUrl"
@@ -599,6 +588,7 @@ function navTo(nav: { url?: string }) {
             :value-color="item.valueColor"
             class="min-w-0 cursor-pointer"
             @click="handleCardClick(item)"
+            @retry="refreshCard(item)"
             @mousedown="startLongPress(item)"
             @touchstart="startLongPress(item)"
             @mouseup="endLongPress"

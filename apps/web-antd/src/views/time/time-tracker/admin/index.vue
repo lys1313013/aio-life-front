@@ -4,12 +4,15 @@ import type { TimeTrackerCategoryEntity } from '#/api/core/time-tracker-category
 import { computed, onMounted, ref } from 'vue';
 
 import { IconPicker, Page } from '@vben/common-ui';
+import { iconCollectionOptions } from '@vben/icons';
 
 import {
   DeleteOutlined,
+  DownOutlined,
   EditOutlined,
   InfoCircleOutlined,
   PlusOutlined,
+  RightOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -35,6 +38,7 @@ import {
   adminUpdateCategory,
 } from '#/api/core/time-tracker-category';
 
+import { isRootCategory, orderCategoryTree } from '../category-tree';
 import {
   CATEGORY_COLOR_PRESETS,
   getCategoryIcon,
@@ -47,6 +51,20 @@ const submitting = ref(false);
 const loadingCategoryId = ref<null | string>(null);
 const publicCategories = ref<TimeTrackerCategoryEntity[]>([]);
 
+const collapsedParents = ref<string[]>([]);
+const hasChildren = (id: string) =>
+  publicCategories.value.some((c) => c.parentId === id);
+const toggleChildren = (id: string) => {
+  collapsedParents.value = collapsedParents.value.includes(id)
+    ? collapsedParents.value.filter((item) => item !== id)
+    : [...collapsedParents.value, id];
+};
+
+const visibleCategories = computed(() =>
+  orderCategoryTree(publicCategories.value).filter(
+    (c) => !c.parentId || !collapsedParents.value.includes(c.parentId),
+  ),
+);
 const columns = [
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
   { title: '图标', dataIndex: 'icon', key: 'icon', width: 80, align: 'center' },
@@ -54,8 +72,8 @@ const columns = [
     title: '名称',
     dataIndex: 'name',
     key: 'name',
-    width: 140,
-    align: 'center',
+    width: 160,
+    align: 'left',
   },
   { title: '时间类型', key: 'timeType', width: 100, align: 'center' },
   {
@@ -79,7 +97,7 @@ const fetchCategories = async () => {
   loading.value = true;
   try {
     const list = await adminListCategories();
-    publicCategories.value = list;
+    publicCategories.value = orderCategoryTree(list);
   } catch (error) {
     console.error('Failed to fetch categories:', error);
     // 全局拦截器已提示
@@ -104,6 +122,7 @@ const handleIconSelect = (icon: string) => {
 };
 
 const formState = ref<TimeTrackerCategoryEntity>({
+  parentId: '0',
   name: '',
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
@@ -112,6 +131,26 @@ const formState = ref<TimeTrackerCategoryEntity>({
   isEnabled: 1,
   sort: 0,
   timeType: TimeType.REQUIRED,
+});
+
+const parentOptions = computed(() => {
+  const id = formState.value.id;
+  const hasChildren = publicCategories.value.some((c) => c.parentId === id);
+  return [
+    { label: '无（一级分类）', value: '0' },
+    ...(hasChildren
+      ? []
+      : publicCategories.value
+          .filter((c) => isRootCategory(c) && c.id !== id)
+          .map((c) => ({ label: c.name, value: c.id! }))),
+  ];
+});
+const parentValue = computed({
+  get: () => formState.value.parentId ?? '0',
+  set: (value: string) => {
+    formState.value.parentId = value;
+    formState.value.sort = undefined;
+  },
 });
 
 const rules = {
@@ -123,13 +162,18 @@ const modalTitle = computed(() =>
   isEdit.value ? '编辑公共分类' : '新增公共分类',
 );
 
-const handleAddCategory = () => {
+const handleAddCategory = (parentId = '0') => {
   isEdit.value = false;
   selectedIconSet.value = 'lucide';
   const nextSort =
-    Math.max(-10, ...publicCategories.value.map((item) => item.sort ?? -10)) +
-    10;
+    Math.max(
+      -10,
+      ...publicCategories.value
+        .filter((item) => (item.parentId ?? '0') === parentId)
+        .map((item) => item.sort ?? -10),
+    ) + 10;
   formState.value = {
+    parentId,
     name: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
@@ -149,7 +193,7 @@ const handleEditCategory = (record: any) => {
   } else {
     selectedIconSet.value = 'lucide';
   }
-  formState.value = { ...record };
+  formState.value = { ...record, parentId: record.parentId ?? '0' };
   editModalVisible.value = true;
 };
 
@@ -224,14 +268,14 @@ const handleSubmitCategory = async () => {
     <div class="space-y-4">
       <Card title="公共分类列表" :bordered="false">
         <template #extra>
-          <Button type="primary" @click="handleAddCategory">
+          <Button type="primary" @click="handleAddCategory()">
             <template #icon><PlusOutlined /></template>
             新增公共分类
           </Button>
         </template>
 
         <Table
-          :data-source="publicCategories"
+          :data-source="visibleCategories"
           :columns="columns as any"
           :loading="loading"
           :pagination="false"
@@ -262,8 +306,26 @@ const handleSubmitCategory = async () => {
               </div>
             </template>
             <template v-else-if="column.key === 'name'">
+              <Button
+                v-if="hasChildren(record.id)"
+                type="text"
+                size="small"
+                :aria-label="
+                  collapsedParents.includes(record.id)
+                    ? '展开子分类'
+                    : '收起子分类'
+                "
+                @click="toggleChildren(record.id)"
+              >
+                <template #icon>
+                  <RightOutlined
+                    v-if="collapsedParents.includes(record.id)"
+                  /><DownOutlined v-else />
+                </template>
+              </Button>
               <div
                 class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
+                :class="{ 'ml-6': !isRootCategory(record) }"
                 :style="{
                   backgroundColor: `${record.color}10`,
                   color: record.color,
@@ -272,7 +334,7 @@ const handleSubmitCategory = async () => {
                   borderColor: `${record.color}20`,
                 }"
               >
-                {{ record.name }}
+                {{ isRootCategory(record) ? '' : '↳ ' }}{{ record.name }}
               </div>
             </template>
             <template v-else-if="column.key === 'timeType'">
@@ -309,6 +371,15 @@ const handleSubmitCategory = async () => {
             </template>
             <template v-else-if="column.key === 'action'">
               <div class="flex justify-center gap-2">
+                <Button
+                  v-if="isRootCategory(record)"
+                  type="link"
+                  size="small"
+                  aria-label="新增子分类"
+                  @click="handleAddCategory(record.id)"
+                >
+                  <template #icon><PlusOutlined /></template>
+                </Button>
                 <Tooltip title="编辑">
                   <Button
                     type="link"
@@ -338,6 +409,8 @@ const handleSubmitCategory = async () => {
     <!-- 分类编辑模态框 -->
     <Modal
       v-model:open="editModalVisible"
+      width="min(520px, calc(100vw - 32px))"
+      :body-style="{ maxHeight: 'min(70dvh, 640px)', overflowY: 'auto' }"
       :title="modalTitle"
       :confirm-loading="submitting"
       centered
@@ -350,6 +423,14 @@ const handleSubmitCategory = async () => {
         layout="vertical"
         class="mt-4"
       >
+        <Form.Item label="上级分类" name="parentId">
+          <Select
+            v-model:value="parentValue"
+            :options="parentOptions"
+            show-search
+            option-filter-prop="label"
+          />
+        </Form.Item>
         <Form.Item label="分类名称" name="name">
           <Input v-model:value="formState.name" placeholder="请输入分类名称" />
         </Form.Item>
@@ -385,15 +466,44 @@ const handleSubmitCategory = async () => {
 
         <Form.Item label="图标" name="icon">
           <div class="space-y-3">
-            <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-              <div class="mb-2 text-xs text-gray-500">常用图标（点击选择）</div>
-              <div class="grid grid-cols-8 gap-1">
-                <div
+            <div class="flex items-center gap-2 rounded bg-muted p-2">
+              <component
+                v-if="formState.icon"
+                :is="getCategoryIcon(formState.icon)"
+                class="size-6 shrink-0 text-foreground"
+                aria-label="当前分类图标"
+              />
+              <Input
+                v-model:value="formState.icon"
+                placeholder="选择或输入图标，如 lucide:code"
+                aria-label="分类图标"
+                class="flex-1"
+                size="small"
+              />
+              <Button
+                v-if="formState.icon"
+                type="link"
+                size="small"
+                danger
+                @click="formState.icon = ''"
+              >
+                清除
+              </Button>
+            </div>
+            <div class="rounded-lg bg-muted p-3 text-foreground">
+              <div class="mb-2 text-xs text-muted-foreground">
+                常用图标（点击选择）
+              </div>
+              <div class="grid grid-cols-4 gap-1 sm:grid-cols-6 md:grid-cols-8">
+                <button
                   v-for="item in PRESET_ICONS"
                   :key="item.icon"
-                  class="flex cursor-pointer flex-col items-center justify-center rounded p-2 transition-all hover:bg-white hover:shadow-sm"
+                  type="button"
+                  :aria-label="`选择${item.label}图标`"
+                  :aria-pressed="formState.icon === item.icon"
+                  class="flex min-w-0 cursor-pointer flex-col items-center justify-center rounded p-2 text-foreground transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                   :class="{
-                    'bg-blue-50 ring-2 ring-blue-500':
+                    'bg-accent ring-2 ring-primary':
                       formState.icon === item.icon,
                   }"
                   @click="formState.icon = item.icon"
@@ -403,10 +513,10 @@ const handleSubmitCategory = async () => {
                     class="mb-1 size-5"
                   />
                   <span
-                    class="w-full truncate text-center text-xs text-gray-600"
+                    class="w-full truncate text-center text-xs text-current"
                     >{{ item.label }}</span
                   >
-                </div>
+                </button>
               </div>
             </div>
 
@@ -417,30 +527,6 @@ const handleSubmitCategory = async () => {
             >
               📋 选择更多图标...
             </Button>
-
-            <div
-              v-if="formState.icon"
-              class="flex items-center gap-2 rounded bg-gray-50 p-2"
-            >
-              <component
-                :is="getCategoryIcon(formState.icon)"
-                class="size-6 shrink-0"
-              />
-              <Input
-                v-model:value="formState.icon"
-                placeholder="输入图标名称，如 lucide:code"
-                class="flex-1"
-                size="small"
-              />
-              <Button
-                type="link"
-                size="small"
-                danger
-                @click="formState.icon = ''"
-              >
-                清除
-              </Button>
-            </div>
           </div>
         </Form.Item>
 
@@ -500,15 +586,19 @@ const handleSubmitCategory = async () => {
           style="width: 200px"
           placeholder="选择图标集"
         >
-          <Select.Option value="lucide">Lucide Icons</Select.Option>
-          <Select.Option value="ant-design">Ant Design Icons</Select.Option>
-          <Select.Option value="mdi">Material Design Icons</Select.Option>
-          <Select.Option value="fluent-emoji">
-            Fluent Emoji（彩色）
+          <Select.Option
+            v-for="option in iconCollectionOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
           </Select.Option>
-          <Select.Option value="noto-color">Noto Emoji（彩色）</Select.Option>
         </Select>
-        <IconPicker :prefix="selectedIconSet" @select="handleIconSelect" />
+        <IconPicker
+          v-model="formState.icon"
+          :prefix="selectedIconSet"
+          @update:model-value="handleIconSelect"
+        />
       </div>
     </Modal>
   </Page>

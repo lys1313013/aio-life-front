@@ -35,6 +35,9 @@ export interface ExerciseDetail {
 // 时间段分类
 export interface TimeSlotCategory {
   id: string;
+  parentId?: null | string;
+  isHidden?: boolean;
+  sort?: number;
   name: string;
   color: string;
   icon?: string; // 图标名称(Iconify格式)

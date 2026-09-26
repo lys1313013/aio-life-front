@@ -37,11 +37,8 @@ import dayjs from 'dayjs';
 import { getRelateTypes } from '#/api/core/time-tracker';
 import { getByDictType } from '#/api/core/userDictType';
 
-import {
-  getCategoryColor,
-  getCategoryIconById,
-  getCategoryName,
-} from '../config';
+import { categoryPath, orderCategoryTree } from '../category-tree';
+import { getCategoryColor, getCategoryIconById } from '../config';
 import {
   endTimeFromDuration,
   getAboveSlotEndTime,
@@ -72,8 +69,14 @@ const { useToken } = theme;
 const { token } = useToken();
 
 // 分类计算属性
+const categorySearch = ref('');
 const visibleCategories = computed(() => {
-  return props.categories.filter((c) => !('isHidden' in c && c.isHidden));
+  return orderCategoryTree(props.categories.filter((c) => !c.isHidden)).filter(
+    (c) =>
+      categoryPath(c.id, props.categories)
+        .toLowerCase()
+        .includes(categorySearch.value.toLowerCase()),
+  );
 });
 
 const selectedCategory = computed(() => {
@@ -97,7 +100,7 @@ const getDisplayColor = (category: MergedCategory | TimeSlotCategory) => {
 
 // 获取显示名称
 const getDisplayName = (category: MergedCategory | TimeSlotCategory) => {
-  return getCategoryName(category.id, props.categories);
+  return categoryPath(category.id, props.categories);
 };
 
 // 获取显示图标
@@ -179,7 +182,12 @@ const isExerciseCategory = computed(() => {
   const categoryId = formState.value.categoryId;
   if (!categoryId) return false;
   const category = props.categories.find((c) => c.id === categoryId);
-  return category?.name === '运动' || categoryId === 'exercise';
+  const parent = props.categories.find((c) => c.id === category?.parentId);
+  return (
+    category?.name === '运动' ||
+    parent?.name === '运动' ||
+    categoryId === 'exercise'
+  );
 });
 
 // 判断是否为已有时间段
@@ -198,7 +206,7 @@ const currentRelateType = computed(() => {
   const category = props.categories.find((c) => c.id === categoryId);
   if (!category) return undefined;
   const matchedEnum = relateTypeList.value.find((e) =>
-    category.name.includes(e.label),
+    categoryPath(category.id, props.categories).includes(e.label),
   );
   return matchedEnum ? Number(matchedEnum.value) : undefined;
 });
@@ -379,7 +387,9 @@ const initializeForm = (slot: TimeSlot) => {
   // Ensure at least one empty row if category is exercise
   const isExercise =
     slot.categoryId === 'exercise' ||
-    props.categories.find((c) => c.id === slot.categoryId)?.name === '运动';
+    categoryPath(slot.categoryId, props.categories)
+      .split(' / ')
+      .includes('运动');
 
   if (isExercise && exercises.length === 0) {
     exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
@@ -1186,8 +1196,15 @@ onUnmounted(() => {
       width="min(95vw, 500px)"
       :destroy-on-close="true"
     >
-      <div class="category-grid">
-        <div
+      <Input
+        v-model:value="categorySearch"
+        allow-clear
+        placeholder="搜索分类"
+        class="mb-3"
+      />
+      <div class="category-grid category-tree-grid">
+        <button
+          type="button"
           v-for="category in visibleCategories"
           :key="category.id"
           class="category-grid-item"
@@ -1210,7 +1227,7 @@ onUnmounted(() => {
           <span class="category-name-large">{{
             getDisplayName(category)
           }}</span>
-        </div>
+        </button>
       </div>
     </Modal>
 
@@ -1326,6 +1343,15 @@ onUnmounted(() => {
   max-height: 60vh;
   padding: 4px;
   overflow-y: auto;
+}
+
+.category-tree-grid {
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+.category-tree-grid .category-name-large {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 
 .category-grid::-webkit-scrollbar {

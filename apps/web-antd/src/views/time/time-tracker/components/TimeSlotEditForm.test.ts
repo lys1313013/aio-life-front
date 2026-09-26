@@ -116,3 +116,25 @@ describe('时迹编辑器的闭区间输入', () => {
     wrapper.unmount();
   });
 });
+
+describe('二级运动分类', () => {
+  it('选择跑步子分类时保留运动明细录入', async () => {
+    const wrapper = mountForm(540, 569);
+    await wrapper.setProps({
+      slot: {
+        id: 'current',
+        date: '2026-09-12',
+        categoryId: 'running',
+        startTime: 540,
+        endTime: 569,
+      },
+      categories: [
+        { id: 'sports', name: '运动', color: '#52c41a', parentId: '0' },
+        { id: 'running', name: '跑步', color: '#52c41a', parentId: 'sports' },
+      ],
+    });
+    expect(wrapper.text()).toContain('运动明细');
+    expect(wrapper.text()).toContain('运动 / 跑步');
+    wrapper.unmount();
+  });
+});

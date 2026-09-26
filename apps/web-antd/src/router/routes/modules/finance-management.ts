@@ -12,6 +12,12 @@ const routes: RouteRecordRaw[] = [
     path: '/finance-management',
     children: [
       {
+        meta: { icon: 'lucide:credit-card', title: '银行卡', keepAlive: false },
+        name: 'bankCards',
+        path: '/finance-management/bank-cards',
+        component: () => import('#/views/bank-card/index.vue'),
+      },
+      {
         meta: {
           icon: 'mdi:chart-areaspline',
           title: '概览',

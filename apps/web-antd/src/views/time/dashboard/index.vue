@@ -10,6 +10,7 @@ import { query, queryByDateRange } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
 
 import AnalysisCard from '../../dashboard/home/components/analysis-card.vue';
+import { categoryMatches, categoryPath } from '../time-tracker/category-tree';
 import CategoryFilter from '../time-tracker/components/CategoryFilter.vue';
 import { defaultConfig } from '../time-tracker/config';
 import { formatDuration, getSlotDuration } from '../time-tracker/utils';
@@ -41,14 +42,27 @@ const dateDisplay = computed(() => {
 
 const trackedCards = computed(() => {
   return categories.value
-    .filter((cat) => cat.isTrackTime)
+    .filter(
+      (cat) =>
+        cat.isTrackTime &&
+        !cat.isHidden &&
+        categoryMatches(
+          cat.id,
+          selectedFilterCategoryIds.value,
+          categories.value,
+        ),
+    )
     .map((cat) => {
       const duration = timeSlots.value
-        .filter((slot) => slot.categoryId === cat.id)
+        .filter((slot) =>
+          categoryMatches(slot.categoryId, [cat.id], categories.value),
+        )
         .reduce((total, slot) => total + getSlotDuration(slot), 0);
 
       const prevDuration = previousPeriodTimeSlots.value
-        .filter((slot) => slot.categoryId === cat.id)
+        .filter((slot) =>
+          categoryMatches(slot.categoryId, [cat.id], categories.value),
+        )
         .reduce((total, slot) => total + getSlotDuration(slot), 0);
 
       const diff = duration - prevDuration;
@@ -56,7 +70,7 @@ const trackedCards = computed(() => {
 
       return {
         id: cat.id,
-        name: cat.name,
+        name: categoryPath(cat.id, categories.value),
         duration: formatDuration(duration),
         diffValue:
           diff === 0
@@ -78,13 +92,15 @@ const handleFilterChange = (categoryIds: null | string[]) => {
 
 const loadCategories = async () => {
   try {
-    const data = await listCategories();
+    const data = await listCategories(true);
     if (data) {
       categories.value = data.map((cat) => {
         const isPublic = Number(cat.userId) === 0;
         const isOverride = !!cat.templateId;
         return {
           id: cat.id || '',
+          parentId: cat.parentId,
+          isHidden: cat.isEnabled === 0,
           name: cat.name,
           color: cat.color,
           description: cat.description || '',

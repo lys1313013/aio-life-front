@@ -8,6 +8,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { categoryStatistics } from '../category-tree';
 import { getCategoryColor, getCategoryName } from '../config';
 import { getSlotDuration } from '../utils';
 
@@ -20,6 +21,13 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const statistics = computed(() =>
+  categoryStatistics(
+    props.categories,
+    props.timeSlots,
+    props.selectedFilterCategoryIds,
+  ),
+);
 
 const chartRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
@@ -30,13 +38,7 @@ const dailyCategoryData = computed(() => {
   const seriesData: Record<string, number[]> = {};
 
   // 过滤分类列表
-  const filteredCategories =
-    props.selectedFilterCategoryIds &&
-    props.selectedFilterCategoryIds.length > 0
-      ? props.categories.filter((c) =>
-          props.selectedFilterCategoryIds?.includes(c.id),
-        )
-      : props.categories;
+  const filteredCategories = statistics.value.categories;
 
   // 初始化系列数据
   filteredCategories.forEach((cat) => {
@@ -71,7 +73,7 @@ const dailyCategoryData = computed(() => {
     });
 
     // 统计当天每个分类的时长
-    props.timeSlots.forEach((slot) => {
+    statistics.value.timeSlots.forEach((slot) => {
       if (slot.date !== date) return;
 
       const arr = seriesData[slot.categoryId];
@@ -103,11 +105,13 @@ const renderChart = () => {
 
   const series = filteredCategories
     .map((cat) => ({
-      name: getCategoryName(cat.id, props.categories),
+      name: getCategoryName(cat.id, statistics.value.categories),
       type: 'bar',
       stack: 'total',
       data: seriesData[cat.id],
-      itemStyle: { color: getCategoryColor(cat.id, props.categories) },
+      itemStyle: {
+        color: getCategoryColor(cat.id, statistics.value.categories),
+      },
       label: {
         show: true,
         position: 'inside',

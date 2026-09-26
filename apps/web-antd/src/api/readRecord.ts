@@ -15,6 +15,7 @@ export namespace ReadRecordApi {
     status?: ProgressStatus;
     statuses?: ProgressStatus[];
     activeOnly?: boolean;
+    inProgressFirst?: boolean;
     current?: number;
     size?: number;
   }

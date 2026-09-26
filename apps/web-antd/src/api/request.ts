@@ -108,11 +108,15 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       const responseData = error?.response?.data ?? {};
       if (responseData?.rscode === '2001') {
         const requestUrl = error?.config?.url ?? '';
-        const menuPath = requestUrl.startsWith('/')
-          ? requestUrl
-          : `/${requestUrl}`;
+        const lockedMenuPath = responseData?.data?.menuPath;
+        const menuPath =
+          typeof lockedMenuPath === 'string' && lockedMenuPath.startsWith('/')
+            ? lockedMenuPath
+            : requestUrl.startsWith('/')
+              ? requestUrl
+              : `/${requestUrl}`;
         const secondaryLockStore = useSecondaryLockStore();
-        secondaryLockStore.triggerUnlock(menuPath);
+        secondaryLockStore.triggerUnlock(menuPath, false);
         return Promise.reject(error);
       }
       return Promise.reject(error);

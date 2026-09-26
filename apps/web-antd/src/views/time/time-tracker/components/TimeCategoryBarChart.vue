@@ -10,6 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { categoryStatistics } from '../category-tree';
 import { getCategoryColor, getCategoryName } from '../config';
 import { getSlotDuration } from '../utils';
 
@@ -21,21 +22,22 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const statistics = computed(() =>
+  categoryStatistics(
+    props.categories,
+    props.timeSlots,
+    props.selectedFilterCategoryIds,
+  ),
+);
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
 
 const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
-  props.timeSlots.forEach((slot) => {
+  statistics.value.timeSlots.forEach((slot) => {
     // 如果有分类过滤，且当前 slot 不属于过滤分类，则跳过
-    if (
-      props.selectedFilterCategoryIds &&
-      props.selectedFilterCategoryIds.length > 0 &&
-      !props.selectedFilterCategoryIds.includes(slot.categoryId)
-    ) {
-      return;
-    }
+
     const duration = getSlotDuration(slot);
     durations[slot.categoryId] = (durations[slot.categoryId] || 0) + duration;
   });
@@ -55,15 +57,17 @@ const activeDaysCount = computed(() => {
 
 const barChartData = computed(() => {
   const divisor = Math.max(activeDaysCount.value, 1);
-  const items = props.categories
+  const items = statistics.value.categories
     .map((category) => {
       const total = categoryDurations.value[category.id] || 0;
       const avg = Math.round(total / divisor);
       return {
-        name: getCategoryName(category.id, props.categories),
+        name: getCategoryName(category.id, statistics.value.categories),
         value: avg,
         total,
-        itemStyle: { color: getCategoryColor(category.id, props.categories) },
+        itemStyle: {
+          color: getCategoryColor(category.id, statistics.value.categories),
+        },
       };
     })
     .filter((item) => item.total > 0)

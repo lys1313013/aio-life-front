@@ -45,7 +45,10 @@
   },
   "iconPicker": {
     "placeholder": "Select an icon",
-    "search": "Search icon..."
+    "search": "Search icon...",
+    "loading": "Loading",
+    "loadFailed": "Failed to load icons",
+    "retry": "Retry"
   },
   "jsonViewer": {
     "copy": "Copy",

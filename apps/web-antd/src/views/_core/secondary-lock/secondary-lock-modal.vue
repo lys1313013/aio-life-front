@@ -33,7 +33,9 @@ async function handleSubmit() {
     await secondaryVerifyApi({ password: password.value, menuPath });
     store.unlock(menuPath);
     message.success('验证成功');
-    await router.push(menuPath);
+    if (store.navigateAfterUnlock) {
+      await router.push(menuPath);
+    }
   } catch (error: any) {
     message.error(error?.message || '二级密码错误');
   } finally {

@@ -12,9 +12,11 @@ import {
 } from '@vben/stores';
 import { startProgress, stopProgress } from '@vben/utils';
 
+import { getMenuPreferencesApi } from '#/api/core/menu';
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
+import { filterVisibleMenus } from '#/utils/menu-visibility';
 
 import { generateAccess } from './access';
 
@@ -119,12 +121,18 @@ function setupAccessGuard(router: Router) {
     const userRoles = userInfo.roles ?? [];
 
     // 生成菜单和路由
-    const { accessibleMenus, accessibleRoutes } = await generateAccess({
-      roles: userRoles,
-      router,
-      // 则会在菜单中显示，但是访问会被重定向到403
-      routes: accessRoutes,
-    });
+    const [{ accessibleMenus, accessibleRoutes }, menuPreferences] =
+      await Promise.all([
+        generateAccess({
+          roles: userRoles,
+          router,
+          // 则会在菜单中显示，但是访问会被重定向到403
+          routes: accessRoutes,
+        }),
+        // 显示偏好不可用时保留系统默认导航，不能阻断登录和页面访问。
+        // 请求层仍会提示错误；设置页加载失败时禁止覆盖原设置。
+        getMenuPreferencesApi().catch(() => ({ hiddenMenuIds: [] })),
+      ]);
 
     // 加载用户锁定的菜单 ID 并补丁菜单树（给对应菜单打上 secondaryLock 标记）
     const secondaryLockStore = useSecondaryLockStore();
@@ -132,7 +140,9 @@ function setupAccessGuard(router: Router) {
     patchMenuSecondaryLock(accessibleMenus, secondaryLockStore);
 
     // 保存菜单信息和路由信息
-    accessStore.setAccessMenus(accessibleMenus);
+    accessStore.setAccessMenus(
+      filterVisibleMenus(accessibleMenus, menuPreferences.hiddenMenuIds),
+    );
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
     const redirectPath = (from.query.redirect ??

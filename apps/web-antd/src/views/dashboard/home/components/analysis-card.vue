@@ -8,7 +8,10 @@ import { VbenIcon } from '@vben/common-ui';
 
 import { Card } from 'ant-design-vue';
 
+import RefreshButton from './RefreshButton.vue';
+
 interface Props {
+  error?: boolean;
   icon?: Component | string;
   iconColor?: string;
   iconClickUrl?: string;
@@ -29,6 +32,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
+  error: false,
   icon: '',
   iconColor: '',
   iconClickUrl: '',
@@ -45,6 +49,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
+  (e: 'retry'): void;
   (e: 'title-click', url: string): void;
 }>();
 
@@ -123,12 +128,24 @@ function handleTitleClick(e: MouseEvent) {
             {{ title }}
           </span>
         </div>
-        <span
-          :style="{ color: valueColor }"
-          class="analysis-card-value max-w-[55%] flex-shrink-0 truncate text-xs font-bold leading-5 sm:text-base"
-        >
-          {{ loading && !value ? '—' : value }}
-        </span>
+        <div class="flex min-w-0 max-w-[55%] items-center gap-1">
+          <span
+            :style="{ color: valueColor }"
+            class="analysis-card-value truncate text-xs font-bold leading-5 sm:text-base"
+          >
+            {{ (loading && !value) || (error && value === '') ? '—' : value }}
+          </span>
+          <RefreshButton
+            v-if="error"
+            :disabled="isUpdating"
+            :aria-label="`${title}加载失败，重试`"
+            title="加载失败，点击重试"
+            class="shrink-0 disabled:cursor-wait"
+            @mousedown.stop
+            @touchstart.stop
+            @click.stop="emit('retry')"
+          />
+        </div>
       </div>
       <div
         v-if="totalTitle || diffValue || isUpdating"
@@ -143,7 +160,11 @@ function handleTitleClick(e: MouseEvent) {
           {{ diffValue }}
         </span>
         <span v-else class="flex-shrink-0 font-medium tabular-nums">
-          {{ loading && !totalValue ? '—' : totalValue }}
+          {{
+            (loading && !totalValue) || (error && totalValue === '')
+              ? '—'
+              : totalValue
+          }}
         </span>
       </div>
     </div>

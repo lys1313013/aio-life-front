@@ -10,6 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { Card } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { categoryStatistics } from '../category-tree';
 import { getCategoryColor, getCategoryName } from '../config';
 import { getSlotDuration } from '../utils';
 
@@ -21,6 +22,13 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const statistics = computed(() =>
+  categoryStatistics(
+    props.categories,
+    props.timeSlots,
+    props.selectedFilterCategoryIds,
+  ),
+);
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
@@ -29,15 +37,9 @@ const { renderEcharts } = useEcharts(chartRef);
 const categoryDurations = computed(() => {
   const durations: Record<string, number> = {};
 
-  props.timeSlots.forEach((slot) => {
+  statistics.value.timeSlots.forEach((slot) => {
     // 如果有分类过滤，且当前 slot 不属于过滤分类，则跳过
-    if (
-      props.selectedFilterCategoryIds &&
-      props.selectedFilterCategoryIds.length > 0 &&
-      !props.selectedFilterCategoryIds.includes(slot.categoryId)
-    ) {
-      return;
-    }
+
     const duration = getSlotDuration(slot);
     durations[slot.categoryId] =
       durations[slot.categoryId] === undefined
@@ -50,14 +52,14 @@ const categoryDurations = computed(() => {
 
 // 生成饼图数据
 const pieChartData = computed(() => {
-  const data = props.categories
+  const data = statistics.value.categories
     .map((category) => {
       const duration = categoryDurations.value[category.id] || 0;
       return {
-        name: getCategoryName(category.id, props.categories),
+        name: getCategoryName(category.id, statistics.value.categories),
         value: duration,
         itemStyle: {
-          color: getCategoryColor(category.id, props.categories),
+          color: getCategoryColor(category.id, statistics.value.categories),
         },
       };
     })

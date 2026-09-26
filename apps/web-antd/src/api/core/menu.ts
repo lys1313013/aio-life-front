@@ -9,6 +9,31 @@ export async function getAllMenusApi() {
   return requestClient.get<RouteRecordStringComponent[]>('/menu/all');
 }
 
+export interface UserMenuOption {
+  children: UserMenuOption[];
+  id: string;
+  title: string;
+}
+
+export interface UserMenuPreference {
+  hiddenMenuIds: string[];
+  menus: UserMenuOption[];
+}
+
+export async function getMenuPreferencesApi() {
+  return requestClient.get<UserMenuPreference>('/menu/preferences');
+}
+
+export async function saveMenuPreferencesApi(menuIds: string[]) {
+  return requestClient.put<UserMenuPreference>('/menu/preferences', {
+    menuIds,
+  });
+}
+
+export async function resetMenuPreferencesApi() {
+  return requestClient.delete<UserMenuPreference>('/menu/preferences');
+}
+
 export interface SysMenuAdminItem {
   children?: SysMenuAdminItem[];
   component?: string;

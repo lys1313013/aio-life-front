@@ -3,6 +3,7 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 
 import { IconPicker, Page } from '@vben/common-ui';
 import { useSortable } from '@vben/hooks';
+import { iconCollectionOptions } from '@vben/icons';
 
 import {
   DeleteOutlined,
@@ -548,13 +549,13 @@ onMounted(async () => {
           class="w-full sm:w-[200px]"
           placeholder="选择图标集"
         >
-          <Select.Option value="lucide">Lucide Icons</Select.Option>
-          <Select.Option value="ant-design">Ant Design Icons</Select.Option>
-          <Select.Option value="mdi">Material Design Icons</Select.Option>
-          <Select.Option value="fluent-emoji">
-            Fluent Emoji（彩色）
+          <Select.Option
+            v-for="option in iconCollectionOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
           </Select.Option>
-          <Select.Option value="noto-color">Noto Emoji（彩色）</Select.Option>
         </Select>
         <IconPicker :prefix="selectedIconSet" @change="handleIconSelect" />
       </div>

@@ -14,6 +14,7 @@ import weekOfYear from 'dayjs/plugin/weekOfYear';
 
 import { queryByDateRange } from '#/api/core/time-tracker';
 
+import { categoryStatistics } from '../category-tree';
 import { getCategoryColor, getCategoryName } from '../config';
 import { getSlotDuration } from '../utils';
 
@@ -70,17 +71,18 @@ const fetchTrendData = async () => {
   }
 };
 
+const statistics = computed(() =>
+  categoryStatistics(
+    props.categories,
+    trendData.value,
+    props.selectedFilterCategoryIds,
+  ),
+);
 const chartData = computed(() => {
   const xAxisData: string[] = [];
   const seriesData: Record<string, number[]> = {};
 
-  const filteredCategories =
-    props.selectedFilterCategoryIds &&
-    props.selectedFilterCategoryIds.length > 0
-      ? props.categories.filter((c) =>
-          props.selectedFilterCategoryIds?.includes(c.id),
-        )
-      : props.categories;
+  const filteredCategories = statistics.value.categories;
 
   filteredCategories.forEach((cat) => {
     seriesData[cat.id] = [];
@@ -93,7 +95,7 @@ const chartData = computed(() => {
       const dateStr = date.format('YYYY-MM-DD');
 
       filteredCategories.forEach((cat) => {
-        const duration = trendData.value
+        const duration = statistics.value.timeSlots
           .filter((s) => s.date === dateStr && s.categoryId === cat.id)
           .reduce((sum, s) => sum + getSlotDuration(s), 0);
         seriesData[cat.id]!.push(duration);
@@ -123,7 +125,7 @@ const chartData = computed(() => {
       const activeDays = weekDates.size || 1;
 
       filteredCategories.forEach((cat) => {
-        const total = trendData.value
+        const total = statistics.value.timeSlots
           .filter((s) => {
             const slotDate = dayjs(s.date);
             return (
@@ -162,7 +164,7 @@ const chartData = computed(() => {
       const activeDays = monthDates.size || 1;
 
       filteredCategories.forEach((cat) => {
-        const total = trendData.value
+        const total = statistics.value.timeSlots
           .filter((s) => {
             const slotDate = dayjs(s.date);
             return (
@@ -200,7 +202,7 @@ const renderChart = async () => {
       const rawData = seriesData[cat.id] || [];
       const maxVal = Math.max(...rawData, 0);
       return {
-        name: getCategoryName(cat.id, props.categories),
+        name: getCategoryName(cat.id, statistics.value.categories),
         type: 'line',
         data: rawData.map((v) => ({
           value: v,
@@ -208,11 +210,13 @@ const renderChart = async () => {
             show: v === maxVal && v > 0,
             position: 'top',
             fontSize: 10,
-            color: getCategoryColor(cat.id, props.categories),
+            color: getCategoryColor(cat.id, statistics.value.categories),
             formatter: () => formatLabel(v),
           },
         })),
-        itemStyle: { color: getCategoryColor(cat.id, props.categories) },
+        itemStyle: {
+          color: getCategoryColor(cat.id, statistics.value.categories),
+        },
         showSymbol: true,
         symbol: 'circle',
         symbolSize: 4,
@@ -277,7 +281,7 @@ watch(
   { immediate: true },
 );
 
-watch(trendData, () => renderChart(), { immediate: true });
+watch(chartData, () => renderChart(), { immediate: true });
 
 onMounted(() => {
   renderChart();

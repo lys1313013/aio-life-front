@@ -7,6 +7,7 @@ export interface TimeTrackerCategoryEntity {
   id?: string;
   userId?: string;
   templateId?: null | string;
+  parentId?: null | string;
   name: string;
   color: string;
   icon?: string;
@@ -25,8 +26,12 @@ export interface TimeTrackerCategoryEntity {
 /**
  * 获取所有分类（含合并的公共分类）
  */
-export async function listCategories(): Promise<TimeTrackerCategoryEntity[]> {
-  return await requestClient.get('/timeTrackerCategory/list');
+export async function listCategories(
+  includeHidden = false,
+): Promise<TimeTrackerCategoryEntity[]> {
+  return await requestClient.get(
+    includeHidden ? '/timeTrackerCategory/all' : '/timeTrackerCategory/list',
+  );
 }
 
 /**

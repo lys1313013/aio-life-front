@@ -10,6 +10,7 @@ import ProfileBase from './base-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
 import LLMSetting from './llm-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
+import MenuDisplaySetting from './menu-display-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import SecondaryPasswordSetting from './secondary-password-setting.vue';
@@ -41,6 +42,10 @@ const tabs = ref([
   {
     label: '修改密码',
     value: 'password',
+  },
+  {
+    label: '菜单显示',
+    value: 'menu-display',
   },
   {
     label: '菜单锁',
@@ -84,6 +89,7 @@ const tabs = ref([
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
+      <MenuDisplaySetting v-if="tabsValue === 'menu-display'" />
       <ApiKeySetting v-if="tabsValue === 'api-key'" />
       <LLMSetting v-if="tabsValue === 'llm'" />
       <MbtiSetting v-if="tabsValue === 'mbti'" />
