@@ -62,6 +62,11 @@ export async function get(data: any) {
 /**
  * 首页运动（按天 × 运动类型聚合），游标分页
  */
+export interface ExerciseDashboardTrendPointVO {
+  date: string;
+  count: number;
+}
+
 export interface ExerciseDashboardItemVO {
   exerciseTypeId?: string;
   typeLabel?: string;
@@ -72,6 +77,8 @@ export interface ExerciseDashboardItemVO {
   prevCount?: number;
   deltaCount?: number;
   deltaPercent?: number;
+  /** 截至本日最近 5 个运动日的同类型合计，按日期升序。 */
+  trend?: ExerciseDashboardTrendPointVO[];
 }
 
 export interface ExerciseDashboardDayVO {

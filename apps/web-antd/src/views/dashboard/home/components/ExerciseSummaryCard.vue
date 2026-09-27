@@ -4,7 +4,7 @@ import type {
   ExerciseDashboardItemVO,
 } from '#/api/core/exerciseRecord';
 
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
 
@@ -12,6 +12,8 @@ import { Skeleton } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getDashboardSummaryApi } from '#/api/core/exerciseRecord';
+
+import ExerciseTrend from './ExerciseTrend.vue';
 
 const emit = defineEmits<{
   loaded: [isEmpty: boolean];
@@ -23,11 +25,34 @@ const days = ref<ExerciseDashboardDayVO[]>([]);
 const loading = ref(true);
 const loadingMore = ref(false);
 const loaded = ref(false);
+const failed = ref(false);
+const loadMoreFailed = ref(false);
 const finished = ref(false);
 const cursor = ref<string | undefined>(undefined);
 const scrollRoot = ref<HTMLElement | null>(null);
 const sentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
+
+const rows = computed(() =>
+  days.value.flatMap((day) =>
+    (day.items || []).map((item, index) => ({
+      date: day.date,
+      first: index === 0,
+      item,
+      // 老接口未提供趋势时只展示真实已有点，不用零值补齐。
+      trend: item.trend?.length
+        ? item.trend.slice(-5)
+        : [
+            ...(item.prevDate && item.prevCount != null
+              ? [{ date: item.prevDate, count: item.prevCount }]
+              : []),
+            ...(day.date && item.count != null
+              ? [{ date: day.date, count: item.count }]
+              : []),
+          ],
+    })),
+  ),
+);
 
 function logError(scope: string, error: any) {
   const status = error?.response?.status;
@@ -35,6 +60,7 @@ function logError(scope: string, error: any) {
   const data = error?.response?.data;
   const message =
     data?.result ||
+    error?.result ||
     error?.message ||
     (typeof error === 'string' ? error : 'unknown error');
   console.error(
@@ -46,6 +72,7 @@ function logError(scope: string, error: any) {
 async function loadPage() {
   if (finished.value || loadingMore.value) return;
   loadingMore.value = true;
+  loadMoreFailed.value = false;
   try {
     const res = await getDashboardSummaryApi({
       lastDate: cursor.value,
@@ -62,6 +89,7 @@ async function loadPage() {
       finished.value = true;
     }
   } catch (error) {
+    loadMoreFailed.value = true;
     logError('loadPage', error);
   } finally {
     loadingMore.value = false;
@@ -70,9 +98,8 @@ async function loadPage() {
 
 async function init() {
   loading.value = true;
-  days.value = [];
-  cursor.value = undefined;
-  finished.value = false;
+  failed.value = false;
+  loadMoreFailed.value = false;
   try {
     const res = await getDashboardSummaryApi({
       lastDate: undefined,
@@ -80,15 +107,15 @@ async function init() {
     });
     const incoming = res?.days || [];
     days.value = incoming;
-    if (res?.lastDate) cursor.value = res.lastDate;
-    if (!res?.hasMore || incoming.length === 0) finished.value = true;
+    cursor.value = res?.lastDate;
+    finished.value = !res?.hasMore || incoming.length === 0;
   } catch (error) {
+    failed.value = true;
     logError('init', error);
-    days.value = [];
   } finally {
     loading.value = false;
     loaded.value = true;
-    emit('loaded', days.value.length === 0);
+    emit('loaded', !failed.value && days.value.length === 0);
     // 内容不足一屏时主动再拉一次，确保向下滚动体验连贯
     requestAnimationFrame(() => maybeLoadMore());
   }
@@ -111,7 +138,14 @@ function setupObserver() {
 }
 
 function maybeLoadMore() {
-  if (loading.value || loadingMore.value || finished.value) return;
+  if (
+    loading.value ||
+    loadingMore.value ||
+    finished.value ||
+    failed.value ||
+    loadMoreFailed.value
+  )
+    return;
   if (!scrollRoot.value || !sentinel.value) return;
   const root = scrollRoot.value;
   const distance =
@@ -192,21 +226,8 @@ function deltaTone(item: ExerciseDashboardItemVO): DeltaInfo['tone'] {
   return deltaInfo(item)?.tone || 'neutral';
 }
 
-function deltaColor(item: ExerciseDashboardItemVO, base: string): string {
-  const tone = deltaTone(item);
-  if (tone === 'up') return '#10B981';
-  // down 情况下不再让整个 chip 变红，只返回基础色
-  return base;
-}
-
-function deltaBg(item: ExerciseDashboardItemVO, base: string): string {
-  const tone = deltaTone(item);
-  if (tone === 'up') return 'rgba(16, 185, 129, 0.12)';
-  // down 情况下不再使用红色背景
-  return `${base}1A`;
-}
-
 async function reload() {
+  if (loading.value || loadingMore.value) return;
   observer?.disconnect();
   await init();
   await nextTick();
@@ -215,7 +236,7 @@ async function reload() {
 
 onMounted(async () => {
   await init();
-  await Promise.resolve();
+  await nextTick();
   setupObserver();
 });
 
@@ -228,7 +249,7 @@ defineExpose({ reload });
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div class="exercise-summary flex min-h-0 min-w-0 flex-1 flex-col">
     <div
       v-if="loading"
       class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
@@ -241,6 +262,22 @@ defineExpose({ reload });
         active
         class="!w-full"
       />
+    </div>
+
+    <div
+      v-else-if="failed && days.length === 0"
+      class="flex flex-1 items-center justify-center gap-2 py-6 text-xs text-muted-foreground"
+      role="status"
+    >
+      <span>加载失败</span>
+      <button
+        type="button"
+        aria-label="重新加载运动记录"
+        class="rounded p-2 text-primary focus-visible:outline"
+        @click="reload"
+      >
+        <VbenIcon icon="mdi:refresh" class="size-4" />
+      </button>
     </div>
 
     <div
@@ -260,44 +297,67 @@ defineExpose({ reload });
     <div
       v-else
       ref="scrollRoot"
-      class="flex-1 space-y-1.5 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
+      class="exercise-scroll min-h-0 flex-1 overflow-y-auto px-2.5 pb-2.5 sm:px-3 sm:pb-3"
+      @scroll.passive="maybeLoadMore"
     >
-      <div
-        v-for="(day, dayIndex) in days"
-        :key="day.date || dayIndex"
-        class="rounded-xl p-1.5 transition-all hover:bg-accent/40"
+      <button
+        v-if="failed"
+        type="button"
+        class="mb-1 flex w-full items-center justify-center gap-1 py-1 text-xs text-muted-foreground"
+        aria-label="刷新运动记录失败，重试"
+        @click="reload"
       >
-        <div class="mb-1 flex items-baseline gap-1.5 px-1">
-          <span class="text-xs font-semibold text-foreground">
-            {{ formatDate(day.date) }}
-          </span>
-          <span class="text-[10px] text-muted-foreground">
-            {{ weekday(day.date) }}
+        <span>刷新失败</span><VbenIcon icon="mdi:refresh" class="size-3" />
+      </button>
+      <div
+        v-for="(row, index) in rows"
+        :key="`${row.date}-${row.item.exerciseTypeId}-${index}`"
+        class="exercise-row"
+      >
+        <div class="exercise-date text-muted-foreground">
+          <template v-if="row.first">
+            <span class="tabular-nums">{{ formatDate(row.date) }}</span>
+            <span class="exercise-weekday">{{ weekday(row.date) }}</span>
+          </template>
+        </div>
+        <div class="flex min-w-0 items-center gap-1.5">
+          <VbenIcon
+            :icon="itemIcon(row.item)"
+            class="exercise-icon size-3.5 shrink-0"
+            :style="{ color: itemColor(row.item) }"
+          />
+          <span class="exercise-name text-foreground">
+            {{ row.item.typeLabel || '其他' }}
           </span>
         </div>
-        <div class="flex flex-wrap gap-1.5 px-1">
-          <div
-            v-for="item in day.items || []"
-            :key="`${day.date}-${item.exerciseTypeId}`"
-            class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
-            :style="{
-              backgroundColor: deltaBg(item, itemColor(item)),
-              color: deltaColor(item, itemColor(item)),
+        <div class="exercise-values tabular-nums">
+          <span class="exercise-count text-foreground">{{
+            row.item.count
+          }}</span>
+          <span
+            class="exercise-delta"
+            :class="{
+              'text-emerald-600 dark:text-emerald-400':
+                deltaTone(row.item) === 'up',
+              'text-destructive': deltaTone(row.item) === 'down',
+              'text-muted-foreground': ['neutral', 'new'].includes(
+                deltaTone(row.item),
+              ),
             }"
+            :title="
+              row.item.prevCount == null
+                ? '首次记录'
+                : `上次 ${row.item.prevDate || ''}：${row.item.prevCount} 次`
+            "
           >
-            <VbenIcon :icon="itemIcon(item)" class="size-3" />
-            <span class="truncate">{{ item.typeLabel || '其他' }}</span>
-            <span class="font-semibold tabular-nums">{{ item.count }}</span>
-            <span
-              v-if="deltaInfo(item)"
-              class="rounded-full bg-white/60 px-1 text-[10px] tabular-nums dark:bg-black/20"
-              :class="deltaTone(item) === 'down' ? 'text-red-500' : ''"
-              :title="`上次 ${item.prevDate || ''}：${item.prevCount ?? '-'} 次`"
-            >
-              {{ deltaInfo(item)?.text }}
-            </span>
-          </div>
+            {{ deltaInfo(row.item)?.text }}
+          </span>
         </div>
+        <ExerciseTrend
+          :color="itemColor(row.item)"
+          :label="row.item.typeLabel || '其他'"
+          :trend="row.trend"
+        />
       </div>
 
       <div
@@ -309,14 +369,97 @@ defineExpose({ reload });
           v-if="loadingMore"
           class="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary"
         ></span>
-        <span v-else>向下滚动加载更多</span>
-      </div>
-      <div
-        v-else-if="days.length > 0"
-        class="py-2 text-center text-[10px] text-muted-foreground"
-      >
-        — 已经到底了 —
+        <button
+          v-else-if="loadMoreFailed"
+          type="button"
+          aria-label="加载更多运动记录失败，重试"
+          class="rounded p-1 text-primary focus-visible:outline"
+          @click="loadPage"
+        >
+          <VbenIcon icon="mdi:refresh" class="size-4" />
+        </button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.exercise-summary {
+  container-type: inline-size;
+}
+
+.exercise-scroll {
+  max-height: 240px;
+}
+
+.exercise-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(38px, max-content) minmax(
+      56px,
+      22%
+    );
+  column-gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.exercise-date {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.exercise-weekday {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.exercise-icon {
+  opacity: 0.85;
+}
+
+.exercise-name {
+  overflow-wrap: anywhere;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.exercise-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.exercise-count {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.exercise-delta {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+@container (max-width: 330px) {
+  .exercise-row {
+    grid-template-columns: 38px minmax(0, 1fr) minmax(34px, max-content) 56px;
+    column-gap: 6px;
+    min-height: 38px;
+  }
+}
+
+@container (max-width: 280px) {
+  .exercise-row {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(30px, max-content) 44px;
+    column-gap: 5px;
+    font-size: 11px;
+  }
+}
+</style>
