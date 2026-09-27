@@ -394,9 +394,10 @@ defineExpose({ reload });
 
 .exercise-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) minmax(38px, max-content) minmax(
+  grid-template-columns: 64px minmax(0, 1fr) minmax(82px, max-content) clamp(
       56px,
-      22%
+      18cqw,
+      80px
     );
   column-gap: 10px;
   align-items: center;
@@ -407,10 +408,11 @@ defineExpose({ reload });
 
 .exercise-date {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  gap: 5px;
+  align-items: baseline;
   font-size: 11px;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .exercise-weekday {
@@ -429,11 +431,14 @@ defineExpose({ reload });
 }
 
 .exercise-values {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(30px, max-content) minmax(36px, max-content);
+  gap: 8px;
+  align-items: baseline;
+  justify-content: end;
+  padding-right: 8px;
   line-height: 1.2;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -449,15 +454,21 @@ defineExpose({ reload });
 
 @container (max-width: 330px) {
   .exercise-row {
-    grid-template-columns: 38px minmax(0, 1fr) minmax(34px, max-content) 56px;
+    grid-template-columns: 60px minmax(0, 1fr) minmax(66px, max-content) 48px;
     column-gap: 6px;
     min-height: 38px;
+  }
+
+  .exercise-values {
+    grid-template-columns: minmax(24px, max-content) minmax(32px, max-content);
+    gap: 4px;
+    padding-right: 6px;
   }
 }
 
 @container (max-width: 280px) {
   .exercise-row {
-    grid-template-columns: 36px minmax(0, 1fr) minmax(30px, max-content) 44px;
+    grid-template-columns: 56px minmax(0, 1fr) minmax(66px, max-content) 40px;
     column-gap: 5px;
     font-size: 11px;
   }

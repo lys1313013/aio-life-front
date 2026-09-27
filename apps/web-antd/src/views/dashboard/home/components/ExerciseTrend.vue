@@ -35,7 +35,7 @@ const end = computed(() => points.value.at(-1));
           :key="point.date"
           class="flex justify-between gap-5"
         >
-          <span class="text-muted-foreground">{{ point.date }}</span>
+          <span class="text-muted-foreground">{{ point.date.slice(5) }}</span>
           <span>{{ point.count }}</span>
         </div>
       </div>
