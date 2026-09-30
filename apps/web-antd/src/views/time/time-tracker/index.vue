@@ -1382,7 +1382,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                     :class="{ active: selectedWeekDayIndex === index }"
                   >
                     <div class="day-name">{{ day.weekday }}</div>
-                    <div class="day-date">{{ day.date }}</div>
+                    <div class="day-date">
+                      {{ dayjs(day.date).format('MM-DD') }}
+                    </div>
                   </div>
                 </div>
 
@@ -1394,9 +1396,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                       class="hour-marker"
                       :style="{ top: `${(hour / 24) * 100}%` }"
                     >
-                      <span class="hour-label" v-if="hour < 24"
-                        >{{ hour.toString().padStart(2, '0') }}:00</span
-                      >
+                      <span class="hour-label" v-if="hour < 24">{{
+                        hour
+                      }}</span>
                     </div>
                   </div>
 
@@ -1483,7 +1485,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                     :class="{ active: selectedMonthDayIndex === index }"
                   >
                     <div class="day-name">{{ day.weekday }}</div>
-                    <div class="day-date">{{ day.date }}</div>
+                    <div class="day-date">
+                      {{ dayjs(day.date).format('MM-DD') }}
+                    </div>
                   </div>
                 </div>
 
@@ -1495,9 +1499,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                       class="hour-marker"
                       :style="{ top: `${(hour / 24) * 100}%` }"
                     >
-                      <span class="hour-label" v-if="hour < 24"
-                        >{{ hour.toString().padStart(2, '0') }}:00</span
-                      >
+                      <span class="hour-label" v-if="hour < 24">{{
+                        hour
+                      }}</span>
                     </div>
                   </div>
 
@@ -1560,7 +1564,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                   <div class="time-scale-header"></div>
                   <div class="day-column-header active">
                     <div class="day-name">{{ currentDayInfo.weekday }}</div>
-                    <div class="day-date">{{ currentDayInfo.date }}</div>
+                    <div class="day-date">
+                      {{ dayjs(currentDayInfo.date).format('MM-DD') }}
+                    </div>
                   </div>
                 </div>
 
@@ -1572,9 +1578,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
                       class="hour-marker"
                       :style="{ top: `${(hour / 24) * 100}%` }"
                     >
-                      <span class="hour-label" v-if="hour < 24"
-                        >{{ hour.toString().padStart(2, '0') }}:00</span
-                      >
+                      <span class="hour-label" v-if="hour < 24">{{
+                        hour
+                      }}</span>
                     </div>
                   </div>
 
@@ -1975,6 +1981,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
   height: 12px;
 }
 
+.timeline-container,
+.week-timeline-container,
+.month-timeline-container {
+  --time-scale-width: 32px;
+}
+
 .timeline-container {
   position: relative;
   display: flex;
@@ -1988,7 +2000,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .day-header {
   display: grid;
-  grid-template-columns: 45px 1fr;
+  grid-template-columns: var(--time-scale-width) 1fr;
   height: 45px;
   background: v-bind('token.colorBgContainer');
   border-bottom: 1px solid v-bind('token.colorSplit');
@@ -2034,7 +2046,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .month-header {
   display: grid;
-  grid-template-columns: 45px repeat(var(--month-day-count, 30), 1fr);
+  grid-template-columns: var(--time-scale-width) repeat(
+      var(--month-day-count, 30),
+      1fr
+    );
   height: 45px;
   overflow: hidden;
   background: v-bind('token.colorBgContainer');
@@ -2103,7 +2118,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .week-header {
   display: grid;
-  grid-template-columns: 45px repeat(7, 1fr);
+  grid-template-columns: var(--time-scale-width) repeat(7, 1fr);
   height: 45px;
   background: v-bind('token.colorBgContainer');
   border-bottom: 1px solid v-bind('token.colorSplit');
@@ -2111,8 +2126,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .time-scale-header {
   flex-shrink: 0;
-  width: 45px;
-  border-right: 1px solid v-bind('token.colorSplit');
+  width: var(--time-scale-width);
+  border-right: 1px solid v-bind('token.colorBorderSecondary');
 }
 
 .week-day-header {
@@ -2188,9 +2203,9 @@ const getDaySlots = (date: string): TimeSlot[] => {
 .time-scale {
   position: relative;
   flex-shrink: 0;
-  width: 45px;
+  width: var(--time-scale-width);
   background: v-bind('token.colorBgContainer');
-  border-right: 1px solid v-bind('token.colorSplit');
+  border-right: 1px solid v-bind('token.colorBorderSecondary');
 }
 
 .hour-marker {
@@ -2198,15 +2213,27 @@ const getDaySlots = (date: string): TimeSlot[] => {
   left: 0;
   width: 100%;
   height: 1px;
+}
+
+.hour-marker::after {
+  position: absolute;
+  right: 0;
+  width: 4px;
+  height: 1px;
+  content: '';
   background: v-bind('token.colorSplit');
 }
 
 .hour-label {
   position: absolute;
-  top: -8px;
-  left: 5px;
-  font-size: 12px;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
   color: v-bind('token.colorTextSecondary');
+  text-align: center;
+  transform: translateY(-50%);
 }
 
 .timeline-track {
@@ -2597,16 +2624,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
     height: 24px;
   }
 
-  .timeline-container .day-header {
-    grid-template-columns: 35px 1fr;
-  }
-
-  .timeline-container .time-scale-header {
-    width: 35px;
-  }
-
-  .timeline-container .time-scale {
-    width: 35px;
+  .timeline-container,
+  .week-timeline-container,
+  .month-timeline-container {
+    --time-scale-width: 28px;
   }
 }
 
@@ -2674,14 +2695,10 @@ const getDaySlots = (date: string): TimeSlot[] => {
   }
 
   .month-header {
-    grid-template-columns: 35px repeat(
+    grid-template-columns: var(--time-scale-width) repeat(
         var(--month-day-count, 30),
         minmax(45px, 1fr)
       );
-  }
-
-  .week-header {
-    grid-template-columns: 35px repeat(7, 1fr);
   }
 
   .month-day-header {
@@ -2701,13 +2718,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
     overflow: hidden;
   }
 
-  .time-scale {
-    width: 35px;
-  }
-
   .hour-label {
-    left: 2px;
-    font-size: 9px;
+    font-size: 10px;
   }
 
   .slot-title {
