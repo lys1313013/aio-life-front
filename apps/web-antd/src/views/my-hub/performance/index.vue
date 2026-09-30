@@ -31,6 +31,7 @@ interface RowType {
 const loading = ref(false);
 const dataSource = ref<RowType[]>([]);
 const modalVisible = ref(false);
+const formBusy = ref(false);
 const currentRow = ref<null | RowType>(null);
 
 const dictOptions = ref<Array<{ label: string; value: string }>>([]);
@@ -76,8 +77,8 @@ const openFormDrawer = (row?: RowType) => {
 };
 
 const closeFormModal = () => {
+  if (formBusy.value) return;
   modalVisible.value = false;
-  currentRow.value = null;
 };
 
 const tableReload = () => {
@@ -183,14 +184,25 @@ const tableReload = () => {
 
     <Modal
       v-model:open="modalVisible"
-      :title="currentRow ? '编辑活动' : '新增活动'"
-      :width="600"
+      class="performance-modal"
+      wrap-class-name="performance-modal-wrap"
+      centered
+      :width="640"
+      :closable="false"
+      :aria-label="currentRow ? '编辑活动' : '新增活动'"
+      :keyboard="!formBusy"
+      :mask-closable="false"
+      :mask-style="{
+        background: 'hsl(var(--overlay))',
+        backdropFilter: 'blur(5px)',
+      }"
       :footer="null"
       :destroy-on-close="true"
       @cancel="closeFormModal"
     >
       <FormDrawerDemo
         :values="currentRow"
+        @busy-change="formBusy = $event"
         @table-reload="tableReload"
         @close="closeFormModal"
       />
@@ -204,5 +216,23 @@ const tableReload = () => {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+</style>
+
+<style>
+.performance-modal-wrap .performance-modal {
+  max-width: calc(100vw - 32px);
+  padding-bottom: 0;
+}
+
+.performance-modal .ant-modal-content {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid hsl(var(--border) / 0.65);
+  border-radius: 20px;
+  background: hsl(var(--card));
+  box-shadow:
+    0 24px 80px -16px hsl(var(--overlay)),
+    0 4px 16px -4px hsl(var(--overlay));
 }
 </style>
