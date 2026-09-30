@@ -14,7 +14,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Select,
   Spin,
@@ -31,6 +30,7 @@ import {
   testFeishuChannelConfigApi,
   updateNotificationPreferencesApi,
 } from '#/api/core/notification';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const CHANNEL_LABELS: Record<string, string> = {
   STATION: '站内',
@@ -406,7 +406,9 @@ onMounted(fetchData);
                 :key="ch.channel"
                 class="channel-item"
               >
-                <span class="channel-label">{{ CHANNEL_LABELS[ch.channel] || ch.channel }}</span>
+                <span class="channel-label">{{
+                  CHANNEL_LABELS[ch.channel] || ch.channel
+                }}</span>
                 <Switch v-model:checked="ch.enabled" size="small" />
               </div>
             </div>

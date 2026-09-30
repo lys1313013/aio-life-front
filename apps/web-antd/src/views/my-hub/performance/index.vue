@@ -6,10 +6,11 @@ import {
   EnvironmentOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
-import { Empty, Modal } from 'ant-design-vue';
+import { Empty } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
 import { queryPerformances } from '#/api/core/performance';
+import { AppModal as Modal } from '#/components/app-modal';
 import AuthImage from '#/components/AuthImage.vue';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
@@ -184,18 +185,11 @@ const tableReload = () => {
 
     <Modal
       v-model:open="modalVisible"
-      class="performance-modal"
-      wrap-class-name="performance-modal-wrap"
       centered
       :width="640"
       :closable="false"
       :aria-label="currentRow ? '编辑活动' : '新增活动'"
-      :keyboard="!formBusy"
-      :mask-closable="false"
-      :mask-style="{
-        background: 'hsl(var(--overlay))',
-        backdropFilter: 'blur(5px)',
-      }"
+      :busy="formBusy"
       :footer="null"
       :destroy-on-close="true"
       @cancel="closeFormModal"
@@ -216,23 +210,5 @@ const tableReload = () => {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-}
-</style>
-
-<style>
-.performance-modal-wrap .performance-modal {
-  max-width: calc(100vw - 32px);
-  padding-bottom: 0;
-}
-
-.performance-modal .ant-modal-content {
-  overflow: hidden;
-  padding: 0;
-  border: 1px solid hsl(var(--border) / 0.65);
-  border-radius: 20px;
-  background: hsl(var(--card));
-  box-shadow:
-    0 24px 80px -16px hsl(var(--overlay)),
-    0 4px 16px -4px hsl(var(--overlay));
 }
 </style>

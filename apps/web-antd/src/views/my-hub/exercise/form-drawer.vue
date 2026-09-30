@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import { onMounted, ref, watch } from 'vue';
 
-import { Button } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
 import { add, update } from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/userDictType';
+import { AppModalFooter } from '#/components/app-modal';
 
 const props = defineProps<{
   values: any;
@@ -34,7 +34,7 @@ onMounted(() => {
   loadExerciseTypes();
 });
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   schema: [
     {
       component: 'Input',
@@ -116,9 +116,14 @@ watch(
 );
 
 // 提交表单
+const saving = ref(false);
 const handleSubmit = async () => {
+  if (saving.value) return;
+  saving.value = true;
   try {
-    const formData = await formApi.submitForm();
+    const { valid } = await formApi.validate();
+    if (!valid) return;
+    const formData = await formApi.getValues();
     let res;
     if (props.values && props.values.id) {
       // 编辑模式
@@ -133,39 +138,20 @@ const handleSubmit = async () => {
     }
   } catch (error) {
     console.error('提交表单失败:', error);
+  } finally {
+    saving.value = false;
   }
 };
 </script>
 
 <template>
-  <div class="p-4">
+  <div>
     <Form />
 
-    <div class="mt-6 flex justify-end">
-      <Button class="mr-2" @click="$emit('close')"> 取消 </Button>
-      <Button type="primary" @click="handleSubmit"> 确定 </Button>
-    </div>
+    <AppModalFooter
+      :confirm-loading="saving"
+      @cancel="$emit('close')"
+      @confirm="handleSubmit"
+    />
   </div>
 </template>
-
-<style scoped>
-.p-4 {
-  padding: 16px;
-}
-
-.mt-6 {
-  margin-top: 24px;
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.mr-2 {
-  margin-right: 8px;
-}
-</style>

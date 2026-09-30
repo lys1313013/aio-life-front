@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { nextTick, onMounted, ref, toRaw } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
+import { useVbenModal } from '#/adapter/modal';
 import { insertData, updateData } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
 
@@ -50,7 +49,7 @@ onMounted(() => {
   loadDictOptions();
 });
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   schema: [
     {
       component: 'Input',
@@ -165,37 +164,44 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
-    const formData = await formApi.submitForm();
-    const processedData = { ...toRaw(formData) };
+    modalApi.lock();
+    try {
+      const { valid } = await formApi.validate();
+      if (!valid) return;
+      const formData = await formApi.submitForm();
+      const processedData = { ...toRaw(formData) };
 
-    // 处理日期字段，确保格式正确
-    if (
-      processedData.expTime && // 如果只有日期部分，添加时间部分
-      typeof processedData.expTime === 'string' &&
-      !processedData.expTime.includes(' ')
-    ) {
-      processedData.expTime = `${processedData.expTime} 00:00:00`;
-    }
-
-    if (processedData.id) {
-      await updateData(processedData);
-    } else {
-      await insertData(processedData);
-    }
-
-    // 根据连续录入模式决定是否关闭弹窗
-    if (continuousMode.value) {
-      // 连续录入模式：重置表单，保持弹窗打开
-      resetForm();
-      tableReload();
-    } else {
-      // 普通模式：关闭弹窗
-      modalApi.close();
-      if (processedData.id) {
-        emit('updateSuccess', processedData);
-      } else {
-        tableReload();
+      // 处理日期字段，确保格式正确
+      if (
+        processedData.expTime && // 如果只有日期部分，添加时间部分
+        typeof processedData.expTime === 'string' &&
+        !processedData.expTime.includes(' ')
+      ) {
+        processedData.expTime = `${processedData.expTime} 00:00:00`;
       }
+
+      if (processedData.id) {
+        await updateData(processedData);
+      } else {
+        await insertData(processedData);
+      }
+
+      // 根据连续录入模式决定是否关闭弹窗
+      if (continuousMode.value) {
+        // 连续录入模式：重置表单，保持弹窗打开
+        resetForm();
+        tableReload();
+      } else {
+        // 普通模式：关闭弹窗
+        modalApi.close();
+        if (processedData.id) {
+          emit('updateSuccess', processedData);
+        } else {
+          tableReload();
+        }
+      }
+    } finally {
+      modalApi.unlock();
     }
   },
   onOpenChange(isOpen: boolean) {
@@ -236,14 +242,6 @@ const [Modal, modalApi] = useVbenModal({
     }
   },
   title: '',
-  bordered: false,
-  centered: true, // 手机端居中显示，避免全屏
-  closable: false,
-  fullscreenButton: false,
-  header: false, // 隐藏标题区域
-  headerClass: 'border-none',
-  footerClass: 'border-none px-6 pb-6 pt-2',
-  contentClass: 'p-6 pb-2',
 });
 </script>
 <template>

@@ -4,7 +4,6 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, onUnmounted, ref } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
 import {
@@ -22,6 +21,7 @@ import {
   Tooltip,
 } from 'ant-design-vue';
 
+import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/sysDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';

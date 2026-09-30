@@ -2,8 +2,6 @@
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 
-import { useVbenModal } from '@vben/common-ui';
-
 import {
   ColumnWidthOutlined,
   DeleteOutlined,
@@ -12,6 +10,7 @@ import {
 } from '@ant-design/icons-vue';
 import { Badge, Button, message, Popconfirm } from 'ant-design-vue';
 
+import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteUserApi, getUserListApi } from '#/api/system/user';
 

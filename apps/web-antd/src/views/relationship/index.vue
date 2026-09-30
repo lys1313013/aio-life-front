@@ -27,7 +27,6 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Popconfirm,
   Select,
   SelectOption,
@@ -46,6 +45,7 @@ import {
   updatePerson,
   updateRelationship,
 } from '#/api/relationship';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
 import {

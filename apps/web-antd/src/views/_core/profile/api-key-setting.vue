@@ -6,18 +6,19 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Select,
   Table,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { appDialog } from '#/adapter/modal-dialog';
 import {
   deleteApiKeyApi,
   generateApiKeyApi,
   getApiKeyListApi,
 } from '#/api/core/api-key';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
@@ -74,7 +75,7 @@ const handleGenerate = async () => {
   confirmLoading.value = true;
   try {
     const data = await generateApiKeyApi(formState.value);
-    Modal.success({
+    appDialog.success({
       title: '生成成功',
       content: `请妥善保管您的 API Key，关闭后将无法再次查看全文：\n\n${data.apiKey}`,
       okText: '确定',
@@ -149,6 +150,7 @@ onMounted(() => {
     <Modal
       v-model:open="visible"
       title="生成新 API Key"
+      ok-text="生成"
       :confirm-loading="confirmLoading"
       @ok="handleGenerate"
     >

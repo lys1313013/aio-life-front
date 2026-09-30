@@ -4,13 +4,14 @@ import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { formatDate } from '@vben/utils';
 
 import {
-  Modal as AModal,
   Avatar,
   List,
   ListItem,
   ListItemMeta,
   TypographyText,
 } from 'ant-design-vue';
+
+import { AppModal as AModal } from '#/components/app-modal';
 
 interface Conversation {
   userId: string;
@@ -91,7 +92,9 @@ watch(
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="border-b border-border p-4 text-lg font-medium text-foreground">我的消息</div>
+    <div class="border-b border-border p-4 text-lg font-medium text-foreground">
+      我的消息
+    </div>
     <div class="flex-1 overflow-y-auto">
       <List item-layout="horizontal" :data-source="conversations">
         <template #renderItem="{ item }">
@@ -110,7 +113,9 @@ watch(
               </template>
               <template #title>
                 <div class="flex items-center justify-between">
-                  <span class="truncate font-medium text-foreground">{{ item.username }}</span>
+                  <span class="truncate font-medium text-foreground">{{
+                    item.username
+                  }}</span>
                   <span class="text-xs text-muted-foreground">{{
                     formatDate(item.time, 'MM-DD HH:mm')
                   }}</span>
@@ -162,6 +167,8 @@ watch(
     <AModal
       v-model:open="deleteModalVisible"
       title="确认删除"
+      ok-text="删除"
+      :ok-button-props="{ danger: true }"
       @ok="handleDeleteConversation"
     >
       <p>确定要删除与该用户的会话吗？这将删除所有聊天记录且无法恢复。</p>

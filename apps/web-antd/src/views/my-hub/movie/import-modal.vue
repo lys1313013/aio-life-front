@@ -8,7 +8,6 @@ import { computed, ref } from 'vue';
 import { InboxOutlined } from '@ant-design/icons-vue';
 import {
   Alert,
-  Button,
   Descriptions,
   message,
   Radio,
@@ -18,6 +17,7 @@ import {
 } from 'ant-design-vue';
 
 import { MovieApi as MovieService } from '#/api/movie';
+import { AppModalFooter } from '#/components/app-modal';
 
 import { parseDoubanWorkbook } from './douban-import-parser';
 
@@ -191,18 +191,12 @@ const submit = async () => {
       </template>
     </Table>
 
-    <div
-      class="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4 dark:border-gray-800"
-    >
-      <Button @click="emit('close')">取消</Button>
-      <Button
-        type="primary"
-        :disabled="!preview || allIssues.length > 0"
-        :loading="importing || parsing"
-        @click="submit"
-      >
-        确认导入
-      </Button>
-    </div>
+    <AppModalFooter
+      :confirm-disabled="!preview || allIssues.length > 0"
+      :confirm-loading="importing || parsing"
+      confirm-text="确认导入"
+      @cancel="emit('close')"
+      @confirm="submit"
+    />
   </div>
 </template>

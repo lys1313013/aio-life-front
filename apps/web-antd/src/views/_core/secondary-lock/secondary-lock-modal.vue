@@ -2,9 +2,10 @@
 import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { message, Modal } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
 import { secondaryVerifyApi } from '#/api/core/auth';
+import { AppModal as Modal } from '#/components/app-modal';
 import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 
@@ -53,7 +54,6 @@ function handleCancel() {
     :centered="true"
     :closable="false"
     :confirm-loading="loading"
-    :mask-closable="false"
     :open="store.showModal"
     title="菜单锁验证"
     cancel-text="取消"

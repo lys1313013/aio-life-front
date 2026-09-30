@@ -9,12 +9,12 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Select,
   SelectOption,
 } from 'ant-design-vue';
 
 import { createPerson, updatePerson } from '#/api/relationship';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const props = defineProps<{
   editingPersonId: null | string;

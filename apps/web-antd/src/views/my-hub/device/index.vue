@@ -13,7 +13,6 @@ import {
   Form,
   Input,
   InputNumber,
-  Modal,
   Popconfirm,
   Row,
   Select,
@@ -24,6 +23,7 @@ import dayjs from 'dayjs';
 import { getByDictType } from '#/api/core/common';
 import { add, deleteData, query, update, uploadImage } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
+import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -32,6 +32,7 @@ export default {
   components: {
     AButton: Button,
     AModal: Modal,
+    AppModalDelete,
     AForm: Form,
     AFormItem: Form.Item,
     AInput: Input,
@@ -350,57 +351,22 @@ export default {
       <!-- 维护设备弹窗 -->
       <AModal
         v-model:open="visible"
+        :title="newDevice.id ? '编辑设备' : '新增设备'"
+        :confirm-loading="saving"
+        :busy="isDeleting(newDevice.id)"
         :closable="false"
         centered
         @ok="handleOk"
         @cancel="handleCancel"
       >
-        <template #footer>
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              width: 100%;
-            "
-          >
-            <div>
-              <APopconfirm
-                v-if="newDevice.id"
-                title="确定要删除这个设备吗？"
-                ok-text="确定"
-                cancel-text="取消"
-                :ok-button-props="{ loading: isDeleting(newDevice.id) }"
-                @confirm="handleDeleteFromModal"
-              >
-                <AButton
-                  danger
-                  type="text"
-                  :loading="isDeleting(newDevice.id)"
-                  :disabled="saving"
-                >
-                  <template #icon><DeleteOutlined /></template>
-                  删除
-                </AButton>
-              </APopconfirm>
-            </div>
-            <div>
-              <AButton
-                :disabled="saving || isDeleting(newDevice.id)"
-                @click="handleCancel"
-              >
-                取消
-              </AButton>
-              <AButton
-                type="primary"
-                :loading="saving"
-                :disabled="isDeleting(newDevice.id)"
-                @click="handleOk"
-              >
-                确定
-              </AButton>
-            </div>
-          </div>
+        <template #footer-leading>
+          <AppModalDelete
+            v-if="newDevice.id"
+            :action="handleDeleteFromModal"
+            :disabled="saving"
+            :loading="isDeleting(newDevice.id)"
+            title="确定要删除这个设备吗？"
+          />
         </template>
         <AForm :model="newDevice" layout="vertical" class="device-form">
           <AFormItem label="设备名称">
@@ -410,7 +376,7 @@ export default {
             <AInput v-model:value="newDevice.spec" placeholder="" />
           </AFormItem>
           <ARow :gutter="16">
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="设备类型">
                 <ASelect
                   v-model:value="newDevice.type"
@@ -419,7 +385,7 @@ export default {
                 />
               </AFormItem>
             </ACol>
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="设备状态">
                 <ASelect
                   v-model:value="newDevice.status"
@@ -430,7 +396,7 @@ export default {
             </ACol>
           </ARow>
           <ARow :gutter="16">
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="价格">
                 <AInputNumber
                   v-model:value="newDevice.purchasePrice"
@@ -438,14 +404,14 @@ export default {
                 />
               </AFormItem>
             </ACol>
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="购买平台">
                 <AInput v-model:value="newDevice.purchasePlace" />
               </AFormItem>
             </ACol>
           </ARow>
           <ARow :gutter="16">
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="购买日期">
                 <ADatePicker
                   format="YYYY-MM-DD"
@@ -454,7 +420,7 @@ export default {
                 />
               </AFormItem>
             </ACol>
-            <ACol :span="12">
+            <ACol :xs="24" :sm="12">
               <AFormItem label="退役日期">
                 <ADatePicker
                   format="YYYY-MM-DD"

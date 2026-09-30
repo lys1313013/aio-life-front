@@ -43,7 +43,32 @@ async function initSetupVbenForm() {
 
 const useVbenForm = useForm<ComponentType>;
 
-export { initSetupVbenForm, useVbenForm, z };
+/** Application dialog form preset. Existing page/search forms remain unchanged. */
+function useAppForm(
+  options: VbenFormProps<ComponentType> & { columns?: 1 | 2 },
+) {
+  const { columns = 1, commonConfig, wrapperClass, ...rest } = options;
+  return useForm<ComponentType>({
+    layout: 'vertical',
+    showDefaultActions: false,
+    ...rest,
+    wrapperClass: [
+      'app-form-fields',
+      columns === 2 ? 'app-form-fields-2' : 'grid-cols-1',
+      wrapperClass,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    commonConfig: {
+      formItemClass: 'pb-0 min-w-0',
+      labelClass: 'text-xs font-medium text-muted-foreground mb-2',
+      ...commonConfig,
+      componentProps: { size: 'large', ...commonConfig?.componentProps },
+    },
+  });
+}
+
+export { initSetupVbenForm, useAppForm, useVbenForm, z };
 
 export type VbenFormSchema = FormSchema<ComponentType>;
 export type { VbenFormProps };

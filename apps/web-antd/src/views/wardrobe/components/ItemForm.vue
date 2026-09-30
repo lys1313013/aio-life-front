@@ -8,13 +8,11 @@ import type {
 import { computed, ref, watch } from 'vue';
 
 import {
-  Button,
   DatePicker,
   Form,
   FormItem,
   Input,
   InputNumber,
-  Modal,
   Select,
   SelectOption,
   Space,
@@ -22,6 +20,7 @@ import {
 import dayjs from 'dayjs';
 
 import { uploadWardrobePhoto } from '#/api/wardrobe';
+import { AppModal as Modal } from '#/components/app-modal';
 import ImageUpload from '#/components/ImageUpload.vue';
 
 const props = defineProps<{
@@ -136,7 +135,6 @@ const handleSubmit = async () => {
     loading.value = false;
   }
 };
-
 </script>
 
 <template>
@@ -153,6 +151,8 @@ const handleSubmit = async () => {
         name="name"
         required
         :rules="[{ required: true, message: '请输入衣物名称' }]"
+        :confirm-loading="loading"
+        :ok-text="isEdit ? '更新' : '添加'"
       >
         <Input v-model:value="formData.name" placeholder="请输入衣物名称" />
       </FormItem>
@@ -228,12 +228,5 @@ const handleSubmit = async () => {
         />
       </FormItem>
     </Form>
-
-    <template #footer>
-      <Button @click="handleClose">取消</Button>
-      <Button type="primary" :loading="loading" @click="handleSubmit">
-        {{ isEdit ? '更新' : '添加' }}
-      </Button>
-    </template>
   </Modal>
 </template>

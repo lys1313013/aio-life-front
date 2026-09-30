@@ -13,7 +13,6 @@ import {
   Form as AForm,
   FormItem as AFormItem,
   Input as AInput,
-  Modal as AModal,
   Popconfirm as APopconfirm,
   RangePicker as ARangePicker,
   Select as ASelect,
@@ -29,6 +28,7 @@ import {
   queryMilestone,
   updateMilestone,
 } from '#/api/core/milestone';
+import { AppModal as AModal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 // Types

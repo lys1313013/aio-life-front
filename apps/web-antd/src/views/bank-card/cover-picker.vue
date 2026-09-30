@@ -2,16 +2,10 @@
 import { computed, onBeforeUnmount, ref } from 'vue';
 
 import { PictureOutlined, UndoOutlined } from '@ant-design/icons-vue';
-import {
-  Button,
-  message,
-  Modal,
-  Radio,
-  RadioGroup,
-  Slider,
-} from 'ant-design-vue';
+import { Button, message, Radio, RadioGroup, Slider } from 'ant-design-vue';
 
 import { uploadCover } from '#/api/bank-card';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const props = defineProps<{ fileId?: string }>();
 const emit = defineEmits<{ busy: [value: boolean]; change: [id?: string] }>();

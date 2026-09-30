@@ -9,7 +9,6 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Spin,
   Tree,
 } from 'ant-design-vue';
@@ -22,6 +21,7 @@ import {
   setSecondaryPasswordApi,
 } from '#/api/core/auth';
 import { getAllMenusApi } from '#/api/core/menu';
+import { AppModal as Modal } from '#/components/app-modal';
 import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 
@@ -421,7 +421,6 @@ loadCheckedMenus();
       :centered="true"
       :closable="false"
       :confirm-loading="menuSaving"
-      :mask-closable="false"
       title="保存菜单锁"
       cancel-text="取消"
       ok-text="确认保存"

@@ -14,7 +14,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Select,
   Skeleton,
@@ -29,6 +28,7 @@ import {
   verifyDoubanAccountApi,
 } from '#/api/core/user-bind';
 import csdnIcon from '#/assets/platforms/csdn.png';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const data = ref<UserBindEntity[]>([]);
 const loading = ref(true);

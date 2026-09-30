@@ -6,7 +6,6 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { formatDate } from '@vben/utils';
 
 import {
-  Modal as AModal,
   Button,
   Input,
   List,
@@ -14,6 +13,8 @@ import {
   ListItemMeta,
   Popconfirm,
 } from 'ant-design-vue';
+
+import { AppModal as AModal } from '#/components/app-modal';
 
 const props = defineProps<{
   selectedConversationId?: string;
@@ -208,6 +209,8 @@ const saveEdit = (conversationId: string) => {
     <AModal
       v-model:open="deleteModalVisible"
       title="确认删除"
+      ok-text="删除"
+      :ok-button-props="{ danger: true }"
       @ok="handleDeleteSession"
     >
       <p>确定要删除此会话吗？这将删除所有聊天记录且无法恢复。</p>

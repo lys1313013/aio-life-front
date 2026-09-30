@@ -11,7 +11,6 @@ import {
   Checkbox,
   Form,
   Input,
-  Modal,
   Popconfirm,
   Spin,
   Table,
@@ -24,6 +23,7 @@ import {
   setDefaultLLMKeyApi,
   updateLLMKeyApi,
 } from '#/api/core/llm';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const dropdownRef = ref<HTMLElement | null>(null);
 

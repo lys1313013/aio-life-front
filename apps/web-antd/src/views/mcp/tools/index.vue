@@ -18,7 +18,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Select,
   Switch,
   Tag,
@@ -27,6 +26,7 @@ import {
 
 import { generateApiKeyApi } from '#/api/core/api-key';
 import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
+import { AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 
 const tools = ref<McpToolInfo[]>([]);

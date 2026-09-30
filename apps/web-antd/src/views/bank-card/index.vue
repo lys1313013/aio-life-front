@@ -24,7 +24,6 @@ import {
   Menu,
   MenuItem,
   message,
-  Modal,
   Popconfirm,
   Segmented,
   Select,
@@ -42,6 +41,7 @@ import {
   revealNumber,
   saveTag,
 } from '#/api/bank-card';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import CardEditor from './card-editor.vue';
 import CardFace from './card-face.vue';

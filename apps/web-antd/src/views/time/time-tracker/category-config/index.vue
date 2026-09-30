@@ -29,7 +29,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Radio,
   Select,
@@ -47,6 +46,7 @@ import {
   saveCategory,
   updateCategory,
 } from '#/api/core/time-tracker-category';
+import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import { isRootCategory, orderCategoryTree } from '../category-tree';

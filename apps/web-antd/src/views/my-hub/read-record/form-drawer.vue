@@ -3,18 +3,12 @@ import { ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
-import {
-  Button,
-  Input,
-  message,
-  Popconfirm,
-  Tooltip,
-  Upload,
-} from 'ant-design-vue';
+import { Button, Input, message, Tooltip, Upload } from 'ant-design-vue';
 
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { ReadRecordApi } from '#/api/readRecord';
+import { AppModalDelete, AppModalFooter } from '#/components/app-modal';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 const props = defineProps<{
@@ -35,14 +29,13 @@ const statusOptions = [
   { label: '搁置', value: PROGRESS_STATUS.ON_HOLD },
 ];
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   commonConfig: {
     componentProps: {
       class: 'w-full',
     },
-    formItemClass: 'col-span-2 md:col-span-1 mb-2',
   },
-  wrapperClass: 'grid grid-cols-2 gap-x-3',
+  columns: 2,
   layout: 'vertical',
   schema: [
     {
@@ -68,7 +61,7 @@ const [Form, formApi] = useVbenForm({
       component: 'Input',
       fieldName: 'url',
       label: '链接 (支持豆瓣一键解析)',
-      formItemClass: 'col-span-2',
+      formItemClass: 'app-form-full',
       dependencies: {
         show: () => false,
         triggerFields: ['url'],
@@ -144,7 +137,7 @@ const [Form, formApi] = useVbenForm({
       component: 'Textarea',
       fieldName: 'remark',
       label: '书评',
-      formItemClass: 'col-span-2 mb-0 md:col-span-2',
+      formItemClass: 'app-form-full',
       componentProps: {
         rows: 2,
       },
@@ -386,26 +379,19 @@ const handleDelete = async () => {
 
     <Form />
 
-    <div
-      class="mt-5 flex justify-between border-t border-gray-100 pt-4 dark:border-gray-800"
+    <AppModalFooter
+      :confirm-loading="submitLoading"
+      :busy="uploadLoading || parseLoading"
+      @cancel="$emit('close')"
+      @confirm="onSubmit"
     >
-      <div>
-        <Popconfirm
+      <template #leading>
+        <AppModalDelete
           v-if="props.values?.id"
-          title="确定要删除吗?"
-          ok-text="删除"
-          cancel-text="取消"
-          @confirm="handleDelete"
-        >
-          <Button danger>删除</Button>
-        </Popconfirm>
-      </div>
-      <div class="flex gap-2">
-        <Button @click="$emit('close')">取消</Button>
-        <Button type="primary" :loading="submitLoading" @click="onSubmit">
-          保存
-        </Button>
-      </div>
-    </div>
+          :disabled="submitLoading || uploadLoading"
+          :action="handleDelete"
+        />
+      </template>
+    </AppModalFooter>
   </div>
 </template>

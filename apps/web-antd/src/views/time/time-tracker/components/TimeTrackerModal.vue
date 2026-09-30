@@ -3,7 +3,7 @@ import type { TimeSlot, TimeSlotFormData } from '../types';
 
 import { computed, onMounted, onUnmounted, ref, useId } from 'vue';
 
-import { DatePicker, message, Modal, Spin } from 'ant-design-vue';
+import { DatePicker, message, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import {
@@ -15,6 +15,7 @@ import {
   update,
 } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import { defaultConfig } from '../config';
 import { hasOverlap, isValidSlot } from '../utils';
@@ -306,6 +307,7 @@ defineExpose({ open });
     v-model:open="visible"
     :title="title"
     width="min(95vw, 600px)"
+    :busy="loading"
     :keyboard="!loading"
     :mask-closable="!loading"
     :closable="false"

@@ -20,12 +20,12 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Select,
   Textarea,
 } from 'ant-design-vue';
 
 import { saveCard, saveTag } from '#/api/bank-card';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import CardFace from './card-face.vue';
 import CoverPicker from './cover-picker.vue';
@@ -200,7 +200,6 @@ async function submit() {
     :cancel-button-props="{ disabled: saving || uploading }"
     :closable="!saving && !uploading"
     :keyboard="!saving && !uploading"
-    :mask-closable="false"
     @cancel="emit('update:open', false)"
     @ok="submit"
   >

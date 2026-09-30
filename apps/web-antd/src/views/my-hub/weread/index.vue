@@ -19,7 +19,6 @@ import {
   Empty,
   InputPassword,
   message,
-  Modal,
   Popconfirm,
   Spin,
   Tabs,
@@ -33,6 +32,7 @@ import {
   saveWereadConnection,
   syncWeread,
 } from '#/api/core/weread';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import Dashboard from './dashboard.vue';
 import { readingDate, readingTime, safeLink } from './format';

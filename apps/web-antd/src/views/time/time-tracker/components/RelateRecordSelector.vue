@@ -4,20 +4,12 @@ import type { ProgressStatus } from '#/api/core/progress-status';
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
 import { CloseOutlined, SearchOutlined } from '@ant-design/icons-vue';
-import {
-  Button,
-  Empty,
-  Input,
-  Modal,
-  Spin,
-  Switch,
-  Tag,
-  theme,
-} from 'ant-design-vue';
+import { Button, Empty, Input, Spin, Switch, Tag, theme } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { MovieApi } from '#/api/movie';
 import { ReadRecordApi } from '#/api/readRecord';
+import { AppModal as Modal } from '#/components/app-modal';
 import AuthImage from '#/components/AuthImage.vue';
 
 const props = defineProps<{

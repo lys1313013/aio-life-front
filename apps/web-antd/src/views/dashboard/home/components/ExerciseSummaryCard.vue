@@ -320,7 +320,7 @@ defineExpose({ reload });
             <span class="exercise-weekday">{{ weekday(row.date) }}</span>
           </template>
         </div>
-        <div class="flex min-w-0 items-center gap-1.5">
+        <div class="exercise-item">
           <VbenIcon
             :icon="itemIcon(row.item)"
             class="exercise-icon size-3.5 shrink-0"
@@ -329,29 +329,29 @@ defineExpose({ reload });
           <span class="exercise-name text-foreground">
             {{ row.item.typeLabel || '其他' }}
           </span>
-        </div>
-        <div class="exercise-values tabular-nums">
-          <span class="exercise-count text-foreground">{{
-            row.item.count
-          }}</span>
-          <span
-            class="exercise-delta"
-            :class="{
-              'text-emerald-600 dark:text-emerald-400':
-                deltaTone(row.item) === 'up',
-              'text-destructive': deltaTone(row.item) === 'down',
-              'text-muted-foreground': ['neutral', 'new'].includes(
-                deltaTone(row.item),
-              ),
-            }"
-            :title="
-              row.item.prevCount == null
-                ? '首次记录'
-                : `上次 ${row.item.prevDate || ''}：${row.item.prevCount} 次`
-            "
-          >
-            {{ deltaInfo(row.item)?.text }}
-          </span>
+          <div class="exercise-values tabular-nums">
+            <span class="exercise-count text-foreground">{{
+              row.item.count
+            }}</span>
+            <span
+              class="exercise-delta"
+              :class="{
+                'text-emerald-600 dark:text-emerald-400':
+                  deltaTone(row.item) === 'up',
+                'text-destructive': deltaTone(row.item) === 'down',
+                'text-muted-foreground': ['neutral', 'new'].includes(
+                  deltaTone(row.item),
+                ),
+              }"
+              :title="
+                row.item.prevCount == null
+                  ? '首次记录'
+                  : `上次 ${row.item.prevDate || ''}：${row.item.prevCount} 次`
+              "
+            >
+              {{ deltaInfo(row.item)?.text }}
+            </span>
+          </div>
         </div>
         <ExerciseTrend
           :color="itemColor(row.item)"
@@ -394,11 +394,7 @@ defineExpose({ reload });
 
 .exercise-row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) minmax(82px, max-content) clamp(
-      56px,
-      18cqw,
-      80px
-    );
+  grid-template-columns: 64px minmax(0, 1fr) clamp(56px, 18cqw, 80px);
   column-gap: 10px;
   align-items: center;
   min-height: 40px;
@@ -420,25 +416,30 @@ defineExpose({ reload });
   opacity: 0.7;
 }
 
+.exercise-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+
 .exercise-icon {
   opacity: 0.85;
 }
 
 .exercise-name {
+  min-width: 0;
   overflow-wrap: anywhere;
   font-weight: 400;
   line-height: 1.4;
 }
 
 .exercise-values {
-  display: grid;
-  grid-template-columns: minmax(30px, max-content) minmax(36px, max-content);
+  display: flex;
+  flex-shrink: 0;
   gap: 8px;
   align-items: baseline;
-  justify-content: end;
-  padding-right: 8px;
   line-height: 1.2;
-  text-align: right;
   white-space: nowrap;
 }
 
@@ -454,21 +455,19 @@ defineExpose({ reload });
 
 @container (max-width: 330px) {
   .exercise-row {
-    grid-template-columns: 60px minmax(0, 1fr) minmax(66px, max-content) 48px;
+    grid-template-columns: 60px minmax(0, 1fr) 48px;
     column-gap: 6px;
     min-height: 38px;
   }
 
   .exercise-values {
-    grid-template-columns: minmax(24px, max-content) minmax(32px, max-content);
-    gap: 4px;
-    padding-right: 6px;
+    gap: 5px;
   }
 }
 
 @container (max-width: 280px) {
   .exercise-row {
-    grid-template-columns: 56px minmax(0, 1fr) minmax(66px, max-content) 40px;
+    grid-template-columns: 56px minmax(0, 1fr) 40px;
     column-gap: 5px;
     font-size: 11px;
   }

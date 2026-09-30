@@ -15,7 +15,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Popconfirm,
   Popover,
   Select,
@@ -35,6 +34,7 @@ import {
   updateMenuSortApi,
   updateMenuStatusApi,
 } from '#/api/core/menu';
+import { AppModal as Modal } from '#/components/app-modal';
 import { resetRoutes, router } from '#/router';
 import { generateAccess } from '#/router/access';
 import { accessRoutes } from '#/router/routes';

@@ -9,7 +9,6 @@ import {
   Card,
   Divider,
   message,
-  Modal,
   Popconfirm,
   Spin,
   Table,
@@ -24,6 +23,7 @@ import {
   getMbtiHistory,
   saveMbtiResult,
 } from '#/api/core/mbti';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const loading = ref(false);
 const testStarted = ref(false);

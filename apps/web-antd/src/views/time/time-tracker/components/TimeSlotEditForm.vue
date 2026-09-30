@@ -25,8 +25,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
-  Popconfirm,
   Row,
   Textarea,
   theme,
@@ -36,6 +34,11 @@ import dayjs from 'dayjs';
 
 import { getRelateTypes } from '#/api/core/time-tracker';
 import { getByDictType } from '#/api/core/userDictType';
+import {
+  AppModalDelete,
+  AppModalFooter,
+  AppModal as Modal,
+} from '#/components/app-modal';
 
 import { categoryPath, orderCategoryTree } from '../category-tree';
 import { getCategoryColor, getCategoryIconById } from '../config';
@@ -69,15 +72,9 @@ const { useToken } = theme;
 const { token } = useToken();
 
 // 分类计算属性
-const categorySearch = ref('');
-const visibleCategories = computed(() => {
-  return orderCategoryTree(props.categories.filter((c) => !c.isHidden)).filter(
-    (c) =>
-      categoryPath(c.id, props.categories)
-        .toLowerCase()
-        .includes(categorySearch.value.toLowerCase()),
-  );
-});
+const visibleCategories = computed(() =>
+  orderCategoryTree(props.categories.filter((c) => !c.isHidden)),
+);
 
 const selectedCategory = computed(() => {
   if (!formState.value.categoryId) return null;
@@ -838,7 +835,7 @@ onUnmounted(() => {
         </div>
       </Form.Item>
 
-      <Row :gutter="16">
+      <Row :gutter="16" class="time-range-row">
         <Col :span="12">
           <Form.Item label="开始时间" name="startTime">
             <div class="time-control-group">
@@ -1169,39 +1166,25 @@ onUnmounted(() => {
         />
       </Form.Item>
 
-      <Form.Item style="margin-bottom: 0">
-        <div class="form-actions">
-          <Popconfirm
+      <AppModalFooter @cancel="$emit('cancel')" @confirm="handleSave">
+        <template #leading>
+          <AppModalDelete
             v-if="isExistingSlot"
-            title="确定要删除此时间段吗？"
-            ok-text="确定"
-            cancel-text="取消"
-            @confirm="handleDelete"
-          >
-            <Button danger>删除</Button>
-          </Popconfirm>
-          <div style="margin-left: auto">
-            <Button @click="$emit('cancel')">取消</Button>
-            <Button type="primary" html-type="submit">保存</Button>
-          </div>
-        </div>
-      </Form.Item>
+            title="确定删除此时间段吗？"
+            :action="handleDelete"
+          />
+        </template>
+      </AppModalFooter>
     </Form>
 
     <Modal
       v-model:open="categoryModalVisible"
       :closable="false"
       :centered="true"
-      :footer="null"
+      :footer="false"
       width="min(95vw, 500px)"
       :destroy-on-close="true"
     >
-      <Input
-        v-model:value="categorySearch"
-        allow-clear
-        placeholder="搜索分类"
-        class="mb-3"
-      />
       <div class="category-grid category-tree-grid">
         <button
           type="button"
@@ -1424,16 +1407,20 @@ onUnmounted(() => {
   border-radius: 4px;
 }
 
+.time-range-row {
+  margin-bottom: 24px;
+}
+
 .time-control-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .time-adjust-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .adjust-btn-wrap {
@@ -1446,23 +1433,20 @@ onUnmounted(() => {
 .time-adjust-buttons .ant-btn {
   flex: 1;
   min-width: 0;
-  height: auto;
+  height: 28px;
   padding: 2px 4px;
   font-size: 12px;
   line-height: 1.2;
 }
 
-.form-actions {
-  display: flex;
-  align-items: center;
-}
+@media (max-width: 479px) {
+  .time-adjust-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-.form-actions .ant-btn {
-  margin-right: 8px;
-}
-
-.form-actions .ant-btn:last-child {
-  margin-right: 0;
+  .time-adjust-buttons .ant-btn {
+    height: 32px;
+  }
 }
 
 :deep(.input-align-right input) {

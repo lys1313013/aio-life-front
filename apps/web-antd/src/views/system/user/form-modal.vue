@@ -1,18 +1,17 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
 import { message } from 'ant-design-vue';
 
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
+import { useVbenModal } from '#/adapter/modal';
 import { addUserApi, updateUserApi } from '#/api/system/user';
 
 const emit = defineEmits(['reload']);
 
 const isUpdate = ref(false);
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   commonConfig: {
     labelWidth: 80,
   },
@@ -75,20 +74,26 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
-    await formApi.validate();
-    const values = await formApi.getValues();
+    modalApi.lock();
     try {
-      if (isUpdate.value) {
-        await updateUserApi(values);
-        message.success('修改成功');
-      } else {
-        await addUserApi(values);
-        message.success('新增成功');
+      const { valid } = await formApi.validate();
+      if (!valid) return;
+      const values = await formApi.getValues();
+      try {
+        if (isUpdate.value) {
+          await updateUserApi(values);
+          message.success('修改成功');
+        } else {
+          await addUserApi(values);
+          message.success('新增成功');
+        }
+        modalApi.close();
+        emit('reload');
+      } catch (error) {
+        console.error(error);
       }
-      modalApi.close();
-      emit('reload');
-    } catch (error) {
-      console.error(error);
+    } finally {
+      modalApi.unlock();
     }
   },
   onOpenChange(isOpen: boolean) {

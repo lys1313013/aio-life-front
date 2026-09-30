@@ -14,7 +14,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Popconfirm,
   Progress,
   Select,
@@ -32,6 +31,7 @@ import {
   updateBiVideo,
 } from '#/api/core/bilibili-video';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
+import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 export default {
@@ -63,6 +63,7 @@ export default {
       videos: [],
       visible: false,
       isParsing: false,
+      saving: false,
       newVideo: {
         title: '',
         url: '',
@@ -201,17 +202,23 @@ export default {
     },
 
     async handleOk() {
+      if (this.saving || this.isParsing) return;
       if (!this.newVideo.url) {
         message.error('请输入B站视频URL');
         return;
       }
-      await (this.newVideo.id
-        ? updateBiVideo(this.newVideo.id, this.newVideo)
-        : insertBVideo(this.newVideo));
-      message.success('保存成功');
-      this.query();
-      this.visible = false;
-      this.resetForm();
+      this.saving = true;
+      try {
+        await (this.newVideo.id
+          ? updateBiVideo(this.newVideo.id, this.newVideo)
+          : insertBVideo(this.newVideo));
+        message.success('保存成功');
+        this.query();
+        this.visible = false;
+        this.resetForm();
+      } finally {
+        this.saving = false;
+      }
     },
 
     handleCancel() {
@@ -669,6 +676,8 @@ export default {
     <!-- 弹窗部分 -->
     <AModal
       v-model:open="visible"
+      :confirm-loading="saving"
+      :busy="isParsing"
       :title="newVideo.id ? '编辑视频' : '新增视频'"
       :width="700"
       :mask-closable="true"

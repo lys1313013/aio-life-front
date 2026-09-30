@@ -11,7 +11,6 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Spin,
   Switch,
 } from 'ant-design-vue';
@@ -23,6 +22,7 @@ import {
   getPasswordApi,
   updatePasswordApi,
 } from '#/api/core/password-manager';
+import { AppModal as Modal } from '#/components/app-modal';
 import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { usePasswordVaultStore } from '#/store/password-vault';
 import {

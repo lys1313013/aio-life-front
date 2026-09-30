@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import { Modal } from 'ant-design-vue';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import FormDrawer from '../form-drawer.vue';
 

@@ -21,8 +21,6 @@ import {
   FormItem as AFormItem,
   Input as AInput,
   InputNumber as AInputNumber,
-  Modal as AModal,
-  Popconfirm as APopconfirm,
   Select as ASelect,
   SelectOption as ASelectOption,
   Switch as ASwitch,
@@ -39,6 +37,7 @@ import {
   queryMemberships,
   updateMembership,
 } from '#/api/membership';
+import { AppModal as AModal, AppModalDelete } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -560,41 +559,17 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
       :width="isMobile ? '92vw' : 600"
       :centered="true"
       :closable="false"
-      :body-style="
-        isMobile ? { padding: '20px 16px 8px' } : { padding: '28px 24px 12px' }
-      "
+      @ok="handleSave"
     >
-      <template #footer>
-        <div class="flex items-center justify-between">
-          <APopconfirm
-            v-if="formState.id"
-            title="确定删除该会员吗？"
-            ok-text="删除"
-            cancel-text="取消"
-            @confirm="handleDelete(formState.id!)"
-          >
-            <AButton danger>删除</AButton>
-          </APopconfirm>
-          <div v-else></div>
-          <div class="flex gap-2">
-            <AButton @click="modalVisible = false">取消</AButton>
-            <AButton
-              type="primary"
-              :loading="submitLoading"
-              @click="handleSave"
-            >
-              确定
-            </AButton>
-          </div>
-        </div>
+      <template #footer-leading>
+        <AppModalDelete
+          v-if="formState.id"
+          :disabled="submitLoading"
+          title="确定删除该会员吗？"
+          :action="() => handleDelete(formState.id!)"
+        />
       </template>
-      <AForm
-        ref="formRef"
-        :model="formState"
-        :rules="rules"
-        :layout="isMobile ? 'vertical' : 'horizontal'"
-        :size="isMobile ? 'small' : 'middle'"
-      >
+      <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <AFormItem label="名称" name="name">
           <AInput
             v-model:value="formState.name"

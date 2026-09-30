@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { toRaw } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
+import { useVbenModal } from '#/adapter/modal';
 import { add, update } from '#/api/core/sysDictType';
 
 defineOptions({
@@ -15,7 +14,7 @@ const tableReload = () => {
   emit('tableReload');
 };
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   schema: [
     {
       component: 'Input',
@@ -65,14 +64,21 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
-    const newVar = toRaw(await formApi.submitForm());
-    if (newVar.dictId) {
-      await update(newVar.dictId, newVar);
-    } else {
-      await add(newVar);
+    modalApi.lock();
+    try {
+      const { valid } = await formApi.validate();
+      if (!valid) return;
+      const newVar = toRaw(await formApi.submitForm());
+      if (newVar.dictId) {
+        await update(newVar.dictId, newVar);
+      } else {
+        await add(newVar);
+      }
+      modalApi.close();
+      tableReload();
+    } finally {
+      modalApi.unlock();
     }
-    modalApi.close();
-    tableReload();
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
@@ -83,8 +89,6 @@ const [Modal, modalApi] = useVbenModal({
     }
   },
   title: '字典类型',
-  centered: true,
-  contentClass: 'flex-initial',
   class: 'sm:max-w-[500px]',
 });
 </script>

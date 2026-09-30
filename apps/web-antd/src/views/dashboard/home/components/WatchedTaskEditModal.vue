@@ -6,12 +6,10 @@ import { ref, watch } from 'vue';
 import { VbenIcon } from '@vben/common-ui';
 
 import {
-  Button as AButton,
   DatePicker as ADatePicker,
   Form as AForm,
   FormItem as AFormItem,
   Input as AInput,
-  Modal as AModal,
   Select as ASelect,
   SelectOption as ASelectOption,
   message,
@@ -23,6 +21,7 @@ import {
   unstarTaskDetail,
   updateTaskDetail,
 } from '#/api/core/todo';
+import { AppModal as AModal, AppModalFooter } from '#/components/app-modal';
 
 const props = defineProps<{
   task: null | WatchedTaskDetail;
@@ -112,7 +111,6 @@ const handleToggleStar = () => {
     centered
     @cancel="handleCancel"
     :confirm-loading="loading"
-    class="watched-task-edit-modal"
   >
     <div class="relative pt-2">
       <div class="absolute right-0 top-0 z-10">
@@ -154,19 +152,12 @@ const handleToggleStar = () => {
           />
         </AFormItem>
 
-        <div class="mt-6 flex justify-end gap-2">
-          <AButton @click="handleCancel">取消</AButton>
-          <AButton type="primary" @click="handleOk" :loading="loading">
-            保存
-          </AButton>
-        </div>
+        <AppModalFooter
+          :confirm-loading="loading"
+          @cancel="handleCancel"
+          @confirm="handleOk"
+        />
       </AForm>
     </div>
   </AModal>
 </template>
-
-<style>
-.watched-task-edit-modal .ant-modal-content {
-  padding-top: 16px;
-}
-</style>

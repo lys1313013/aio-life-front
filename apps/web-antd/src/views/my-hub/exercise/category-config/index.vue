@@ -17,7 +17,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Radio,
   Select,
@@ -30,6 +29,7 @@ import {
 
 import { deleteData, insert, query, update } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
+import { AppModal as Modal } from '#/components/app-modal';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
 
 import {

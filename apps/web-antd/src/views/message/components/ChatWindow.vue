@@ -6,15 +6,10 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { formatDate, formatDateTime } from '@vben/utils';
 
 import { ArrowLeftOutlined } from '@ant-design/icons-vue';
-import {
-  Modal as AModal,
-  Avatar,
-  Button,
-  Input,
-  message,
-} from 'ant-design-vue';
+import { Avatar, Button, Input, message } from 'ant-design-vue';
 
 import { deleteMessageApi } from '#/api/core/message';
+import { AppModal as AModal } from '#/components/app-modal';
 
 const props = defineProps<{
   isMobile?: boolean;
@@ -252,6 +247,8 @@ watch(
     <AModal
       v-model:open="deleteModalVisible"
       title="确认删除"
+      ok-text="删除"
+      :ok-button-props="{ danger: true }"
       :confirm-loading="deleteLoading"
       @ok="handleDeleteMessage"
     >

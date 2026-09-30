@@ -8,12 +8,12 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Select,
   SelectOption,
 } from 'ant-design-vue';
 
 import { createRelationship } from '#/api/relationship';
+import { AppModal as Modal } from '#/components/app-modal';
 
 const props = defineProps<{
   nodes: { id: string; name: string }[];

@@ -24,7 +24,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
   Popconfirm,
   Space,
   Spin,
@@ -48,6 +47,7 @@ import {
   updateCbtiPersonalityApi,
   uploadCbtiPersonalityImageApi,
 } from '#/api/core/cbti';
+import { AppModalFooter, AppModal as Modal } from '#/components/app-modal';
 
 import CbtiRadarChart from './cbti/components/CbtiRadarChart.vue';
 import CbtiVectorEditor from './cbti/components/CbtiVectorEditor.vue';
@@ -369,7 +369,7 @@ const adminListShown = computed(() => {
   });
 });
 
-const hexColorRegex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+const hexColorRegex = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const normalizeHex6 = (hex: string) => {
   const v = (hex || '').trim();
   if (!hexColorRegex.test(v)) return null;
@@ -1395,22 +1395,13 @@ onMounted(() => {
             :src="posterUrl"
             class="w-full rounded-2xl border border-orange-100 bg-white"
           />
-          <div class="mt-4 flex justify-end gap-2">
-            <Button
-              class="!rounded-full !font-black"
-              @click="posterVisible = false"
-            >
-              关闭
-            </Button>
-            <Button
-              type="primary"
-              class="!rounded-full !font-black"
-              :disabled="!posterUrl"
-              @click="savePoster"
-            >
-              下载
-            </Button>
-          </div>
+          <AppModalFooter
+            cancel-text="关闭"
+            confirm-text="保存海报"
+            :confirm-disabled="!posterUrl"
+            @cancel="posterVisible = false"
+            @confirm="savePoster"
+          />
         </Modal>
       </div>
 

@@ -23,7 +23,6 @@ import {
   FormItem,
   Input,
   message,
-  Modal,
   Popconfirm,
   Select,
   Spin,
@@ -38,6 +37,7 @@ import {
   getPasswordListApi,
   updatePasswordApi,
 } from '#/api/core/password-manager';
+import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
 import { usePasswordVaultStore } from '#/store/password-vault';
@@ -661,6 +661,7 @@ onUnmounted(() => {
     <Modal
       v-model:open="showUnlockModal"
       :title="isFirstTime ? '设置主密码' : '解锁密码库'"
+      :ok-text="isFirstTime ? '设置' : '解锁'"
       :confirm-loading="unlockLoading"
       centered
       @ok="handleUnlockSubmit"

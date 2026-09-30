@@ -21,7 +21,6 @@ import {
   Input,
   InputNumber,
   message,
-  Modal,
   Popconfirm,
   Radio,
   Select,
@@ -37,6 +36,7 @@ import {
   adminSaveCategory,
   adminUpdateCategory,
 } from '#/api/core/time-tracker-category';
+import { AppModal as Modal } from '#/components/app-modal';
 
 import { isRootCategory, orderCategoryTree } from '../category-tree';
 import {

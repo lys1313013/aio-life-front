@@ -9,7 +9,6 @@ import {
   MoreOutlined,
 } from '@ant-design/icons-vue';
 import {
-  Button,
   DatePicker,
   Dropdown,
   Empty,
@@ -19,7 +18,6 @@ import {
   Menu,
   MenuItem,
   message,
-  Modal,
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 
@@ -29,6 +27,7 @@ import {
   getAnniversaryRecords,
   updateAnniversaryRecord,
 } from '#/api/my-hub/anniversary';
+import { AppModalFooter, AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -335,12 +334,8 @@ const selectColor = (color: string) => {
         :title="null"
         :footer="null"
         width="420px"
-        class="custom-modal"
-        :body-style="{ padding: '0' }"
       >
-        <div
-          class="relative overflow-hidden rounded-lg bg-white dark:bg-gray-800"
-        >
+        <div class="relative">
           <div
             :class="`h-24 bg-gradient-to-r ${formState.color} relative flex items-center justify-center transition-colors duration-500`"
           >
@@ -349,21 +344,9 @@ const selectColor = (color: string) => {
             >
               {{ formState.icon }}
             </div>
-            <button
-              class="absolute right-4 top-4 text-white/80 transition-colors hover:text-white"
-              @click="modalVisible = false"
-            >
-              ✕
-            </button>
           </div>
 
-          <div class="px-6 pb-6 pt-12">
-            <h2
-              class="mb-6 text-center text-2xl font-bold text-gray-800 dark:text-gray-100"
-            >
-              {{ isEdit ? '编辑纪念日' : '新建纪念日' }}
-            </h2>
-
+          <div class="pt-12">
             <Form
               ref="formRef"
               :model="formState"
@@ -443,22 +426,11 @@ const selectColor = (color: string) => {
                 />
               </FormItem>
 
-              <div class="mt-8 flex gap-4">
-                <Button
-                  class="h-10 flex-1 rounded-xl border-gray-200 text-gray-500 hover:border-gray-300"
-                  @click="modalVisible = false"
-                >
-                  取消
-                </Button>
-                <Button
-                  type="primary"
-                  :loading="submitLoading"
-                  class="h-10 flex-1 rounded-xl border-none bg-gradient-to-r from-pink-500 to-violet-500 shadow-lg shadow-pink-500/30 hover:opacity-90"
-                  @click="handleOk"
-                >
-                  保存
-                </Button>
-              </div>
+              <AppModalFooter
+                :confirm-loading="submitLoading"
+                @cancel="modalVisible = false"
+                @confirm="handleOk"
+              />
             </Form>
           </div>
         </div>

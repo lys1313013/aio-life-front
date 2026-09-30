@@ -1,0 +1,256 @@
+/* Shared by Ant Design Vue shells and the Vben adapter. */
+.app-modal-wrap .app-modal {
+  max-width: calc(100vw - 32px);
+  padding-bottom: 0;
+}
+
+.app-modal .ant-modal-content,
+.app-vben-modal {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid hsl(var(--border) / 0.65);
+  border-radius: 20px;
+  background: hsl(var(--card));
+  box-shadow:
+    0 24px 80px -16px hsl(var(--overlay)),
+    0 4px 16px -4px hsl(var(--overlay));
+}
+
+.app-modal .ant-modal-body {
+  display: flex;
+  max-height: calc(100dvh - 24px);
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-modal-body,
+.app-vben-modal .app-modal-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 28px 28px 24px;
+}
+
+.app-modal-footer,
+.app-vben-modal .app-modal-footer {
+  flex-shrink: 0;
+  padding: 18px 28px;
+  border: 0;
+  background: transparent;
+}
+
+.app-modal-actions,
+.app-modal-actions-primary,
+.app-modal-actions-leading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-modal-actions {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.app-modal-actions-leading {
+  flex-wrap: wrap;
+}
+
+.app-modal-actions-primary {
+  margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.app-modal-footer :is(.ant-btn, button:not(.ant-switch)) {
+  height: 38px;
+  border-radius: 10px;
+}
+
+.app-modal-actions-primary > .ant-btn {
+  min-width: 80px;
+}
+
+.app-modal-footer .ant-btn-primary {
+  box-shadow: 0 3px 8px hsl(var(--primary) / 0.18);
+}
+
+.app-form-fields {
+  gap: 18px 20px;
+}
+
+.app-form-fields-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-form-full {
+  grid-column: 1 / -1;
+}
+
+.app-modal-form
+  :is(
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-picker,
+    .ant-select-selector
+  ) {
+  border-color: hsl(var(--border) / 0.8);
+  border-radius: 10px;
+  background: hsl(var(--background) / 0.5);
+  font-size: 14px;
+}
+
+.app-modal-form
+  :is(
+    input.ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-number,
+    .ant-picker
+  ) {
+  min-height: 40px;
+}
+
+.app-modal-form .ant-input-affix-wrapper > .ant-input {
+  min-height: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.app-modal-form .ant-input-number-input {
+  height: 38px;
+}
+
+.app-modal-form .ant-picker-input > input {
+  font-size: 14px;
+}
+
+.app-modal-form .ant-input-prefix {
+  margin-right: 8px;
+  color: hsl(var(--muted-foreground));
+}
+
+.app-modal-form
+  .ant-select-single:not(.ant-select-customize-input)
+  .ant-select-selector {
+  height: 40px;
+  align-items: center;
+}
+
+.app-modal-form .ant-select-single .ant-select-selection-search-input {
+  height: 38px;
+}
+
+.app-modal-form .ant-input:hover,
+.app-modal-form .ant-input-affix-wrapper:hover,
+.app-modal-form .ant-picker:hover,
+.app-modal-form .ant-select:hover .ant-select-selector {
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.app-modal-form .ant-input:focus,
+.app-modal-form .ant-input-affix-wrapper-focused,
+.app-modal-form .ant-picker-focused,
+.app-modal-form .ant-select-focused .ant-select-selector {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+.app-modal-form .ant-input[aria-invalid='true'],
+.app-modal-form .ant-form-item-has-error .ant-input,
+.app-modal-form .ant-input-status-error,
+.app-modal-form .ant-input-affix-wrapper-status-error,
+.app-modal-form .ant-picker-status-error,
+.app-modal-form .ant-input-number-status-error,
+.app-modal-form .ant-select-status-error .ant-select-selector {
+  border-color: hsl(var(--destructive));
+}
+
+.app-modal-form .ant-input[aria-invalid='true']:focus {
+  box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.1);
+}
+
+.app-modal-form .ant-form-item-label > label {
+  height: auto;
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.app-modal-form .ant-form-item {
+  margin-bottom: 18px;
+}
+
+.app-modal-form .ant-form-item:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 479px) {
+  .app-modal-body,
+  .app-vben-modal .app-modal-body {
+    padding: 24px 20px 20px;
+  }
+
+  .app-modal-footer,
+  .app-vben-modal .app-modal-footer {
+    padding: 16px 20px;
+  }
+
+  .app-form-fields-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-form-fields {
+    gap: 16px;
+  }
+}
+
+.app-modal-confirm .ant-modal-content {
+  padding: 28px;
+  border: 1px solid hsl(var(--border) / 0.65);
+  border-radius: 20px;
+  background: hsl(var(--card));
+  box-shadow: 0 24px 80px -16px hsl(var(--overlay));
+}
+
+.app-modal-confirm .ant-btn {
+  height: 38px;
+  border-radius: 10px;
+}
+
+.app-vben-modal {
+  max-height: calc(100dvh - 24px);
+}
+
+.app-vben-modal .app-modal-footer > button {
+  min-width: 80px;
+}
+
+.app-modal-form .ant-form-horizontal .ant-form-item-row {
+  flex-direction: column;
+}
+
+.app-modal-form .ant-form-horizontal .ant-form-item-label {
+  width: 100%;
+  max-width: 100%;
+  flex: none;
+  padding-bottom: 8px;
+  text-align: left;
+}
+
+.app-modal-form .ant-form-horizontal .ant-form-item-control {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Keep the dialog name available to assistive technology without a visible header. */
+.app-modal .ant-modal-header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

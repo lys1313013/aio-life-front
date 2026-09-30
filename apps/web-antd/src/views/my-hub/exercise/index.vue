@@ -26,16 +26,17 @@ import {
 import {
   Button,
   Card,
-  Modal,
   Popconfirm,
   RangePicker,
   Select,
   Tag,
 } from 'ant-design-vue';
 
+import { appDialog } from '#/adapter/modal-dialog';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/userDictType';
+import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import FormDrawerDemo from './form-drawer.vue';
@@ -1008,7 +1009,7 @@ const handleCardTouchStart = (row: RowType) => {
   longPressTriggered.value = false;
   longPressTimer = setTimeout(() => {
     longPressTriggered.value = true;
-    Modal.confirm({
+    appDialog.confirm({
       title: '是否确认删除该条运动记录?',
       okText: '是',
       cancelText: '否',

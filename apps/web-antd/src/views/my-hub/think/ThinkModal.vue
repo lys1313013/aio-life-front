@@ -12,9 +12,6 @@ import {
   Form,
   Input,
   message,
-  Modal,
-  Popconfirm,
-  Space,
   Spin,
   Switch,
   Tooltip,
@@ -26,6 +23,11 @@ import {
   save as saveThink,
   update as updateThink,
 } from '#/api/core/think';
+import {
+  AppModalDelete,
+  AppModalFooter,
+  AppModal as Modal,
+} from '#/components/app-modal';
 
 interface Event {
   id: number | string;
@@ -248,7 +250,6 @@ function formatDate(dateString: string) {
     :open="visible"
     :title="modalTitle"
     :footer="null"
-    :mask-closable="false"
     :destroy-on-close="true"
     centered
     @cancel="close"
@@ -301,75 +302,43 @@ function formatDate(dateString: string) {
           </div>
         </Form.Item>
 
-        <div
-          class="form-actions"
-          :style="{
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }"
+        <AppModalFooter
+          :confirm-loading="saving"
+          :busy="loading"
+          @cancel="close"
+          @confirm="save"
         >
-          <div>
-            <Popconfirm
+          <template #leading>
+            <AppModalDelete
               v-if="currentEditId"
-              title="确定要删除这条思考吗？"
-              ok-text="确定"
-              cancel-text="取消"
-              @confirm="handleDelete"
-            >
-              <Button danger type="text">
-                <template #icon><DeleteOutlined /></template>
-                删除
+              :disabled="saving"
+              title="确定删除这条思考吗？"
+              :action="handleDelete"
+            />
+            <Tooltip :title="form.hiddenContent ? '显示内容' : '隐藏内容'">
+              <Button
+                type="text"
+                shape="circle"
+                :aria-label="form.hiddenContent ? '显示内容' : '隐藏内容'"
+                @click="form.hiddenContent = !form.hiddenContent"
+              >
+                <template #icon>
+                  <EyeOutlined v-if="form.hiddenContent" /><EyeInvisibleOutlined
+                    v-else
+                  />
+                </template>
               </Button>
-            </Popconfirm>
-          </div>
-          <Space>
-            <div style="display: flex; align-items: center">
-              <Tooltip :title="form.hiddenContent ? '显示内容' : '隐藏内容'">
-                <Button
-                  type="text"
-                  shape="circle"
-                  @click="form.hiddenContent = !form.hiddenContent"
-                  :class="
-                    form.hiddenContent
-                      ? '!text-slate-400'
-                      : '!text-slate-600 dark:!text-slate-300'
-                  "
-                >
-                  <template #icon>
-                    <EyeOutlined v-if="form.hiddenContent" />
-                    <EyeInvisibleOutlined v-else />
-                  </template>
-                </Button>
-              </Tooltip>
-            </div>
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-right: 16px;
-                margin-left: 8px;
-              "
-            >
-              <span style="font-size: 14px; opacity: 0.85">添加到首页</span>
-              <Switch
+            </Tooltip>
+            <label
+              class="inline-flex items-center gap-2 text-xs text-muted-foreground"
+              >添加到首页<Switch
                 v-model:checked="form.isPinned"
                 :checked-value="1"
                 :un-checked-value="0"
                 size="small"
-              />
-            </div>
-            <Button @click="close" shape="round">取消</Button>
-            <Button
-              type="primary"
-              @click="save"
-              shape="round"
-              :loading="saving"
-            >
-              保存
-            </Button>
-          </Space>
-        </div>
+            /></label>
+          </template>
+        </AppModalFooter>
       </Form>
     </Spin>
   </Modal>
@@ -434,12 +403,6 @@ function formatDate(dateString: string) {
 .add-event-btn {
   border-radius: 12px;
   opacity: 0.8;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 24px;
 }
 
 textarea::-webkit-scrollbar {

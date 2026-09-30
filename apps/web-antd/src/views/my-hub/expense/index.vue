@@ -4,7 +4,6 @@ import type { VxeGridProps } from '#/adapter/vxe-table';
 
 import { onMounted, ref } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
 import { usePreferences } from '@vben/preferences';
 
 import {
@@ -14,6 +13,7 @@ import {
 } from '@ant-design/icons-vue';
 import { Button, message, Popconfirm } from 'ant-design-vue';
 
+import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, deleteData, query } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';

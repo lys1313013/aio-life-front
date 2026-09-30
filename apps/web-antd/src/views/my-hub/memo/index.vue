@@ -19,7 +19,6 @@ import {
   Empty,
   Input,
   message,
-  Modal,
   Popconfirm,
   Tooltip,
 } from 'ant-design-vue';
@@ -32,6 +31,7 @@ import {
   getMemoListApi,
   updateMemoApi,
 } from '#/api/core/memo';
+import { AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -394,10 +394,10 @@ onUnmounted(() => {
       :body-style="modalBodyStyle"
       :style="modalStyle"
       class="memo-modal"
+      :title="modalTitle"
     >
-      <template #title>
+      <template #toolbar>
         <div class="memo-modal-title">
-          <span>{{ modalTitle }}</span>
           <template v-if="!isMobile">
             <i
               v-for="direction in resizeDirections"

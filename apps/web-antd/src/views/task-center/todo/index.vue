@@ -16,7 +16,6 @@ import {
   Input as AInput,
   Menu as AMenu,
   MenuItem as AMenuItem,
-  Modal as AModal,
   Popconfirm as APopconfirm,
   Spin as ASpin,
   Tag as ATag,
@@ -27,6 +26,7 @@ import {
 import dayjs from 'dayjs';
 import draggable from 'vuedraggable';
 
+import { appDialog } from '#/adapter/modal-dialog';
 import {
   deleteColumn,
   deleteTask,
@@ -38,6 +38,7 @@ import {
   saveTask,
   updateColumn,
 } from '#/api/core/todo';
+import { AppModal as AModal } from '#/components/app-modal';
 
 import TaskEditDrawer from './task-edit-drawer.vue';
 
@@ -233,7 +234,7 @@ const deleteTaskFunc = async (taskId: string) => {
 
 // --- 列编辑/删除 ---
 const confirmDeleteColumn = (columnId: string) => {
-  AModal.confirm({
+  appDialog.confirm({
     title: '确认删除列',
     content: '删除列将同时删除该列下的所有任务，确定要删除吗？',
     okText: '确定',

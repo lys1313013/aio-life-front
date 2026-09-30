@@ -13,7 +13,6 @@ import {
   Form as AForm,
   FormItem as AFormItem,
   Input as AInput,
-  Modal as AModal,
   Select as ASelect,
   SelectOption as ASelectOption,
   Switch as ASwitch,
@@ -31,6 +30,7 @@ import {
   updateHonorRecord,
   uploadHonorAttachment,
 } from '#/api/core/honor';
+import { AppModal as AModal, AppModalDelete } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
@@ -257,14 +257,20 @@ const handleEdit = (item: Honor) => {
   modalVisible.value = true;
 };
 
+const deleteLoading = ref(false);
 const handleDelete = async (id: number) => {
+  if (deleteLoading.value) return;
+  deleteLoading.value = true;
   try {
     await deleteHonorRecords([id]);
     message.success('删除成功');
+    modalVisible.value = false;
     loadData();
   } catch (error) {
     // 全局拦截器已提示
     console.error('Failed to delete honor:', error);
+  } finally {
+    deleteLoading.value = false;
   }
 };
 
@@ -492,37 +498,21 @@ const getLevelLabel = (level: string) => {
     <AModal
       v-model:open="modalVisible"
       :confirm-loading="submitLoading"
+      :busy="deleteLoading"
+      :aria-label="modalTitle"
       @ok="handleSave"
       width="600px"
     >
-      <template #footer>
-        <div class="flex justify-between">
-          <AButton
-            v-if="modalTitle === '编辑荣誉'"
-            danger
-            @click="handleDelete(formState.id!)"
-          >
-            删除
-          </AButton>
-          <div></div>
-          <div class="flex gap-2">
-            <AButton @click="modalVisible = false">取消</AButton>
-            <AButton
-              type="primary"
-              :loading="submitLoading"
-              @click="handleSave"
-            >
-              确定
-            </AButton>
-          </div>
-        </div>
+      <template #footer-leading>
+        <AppModalDelete
+          v-if="modalTitle === '编辑荣誉'"
+          :disabled="submitLoading"
+          :loading="deleteLoading"
+          title="确定删除这条荣誉吗？"
+          :action="() => handleDelete(formState.id!)"
+        />
       </template>
-      <AForm
-        ref="formRef"
-        :model="formState"
-        :rules="rules"
-        layout="horizontal"
-      >
+      <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <AFormItem label="标题" name="title">
           <AInput
             v-model:value="formState.title"
@@ -531,7 +521,7 @@ const getLevelLabel = (level: string) => {
           />
         </AFormItem>
 
-        <div class="flex gap-4">
+        <div class="grid grid-cols-1 gap-x-4 min-[480px]:grid-cols-2">
           <AFormItem label="获得日期" name="honorDate" class="flex-1">
             <ADatePicker
               v-model:value="formState.honorDate"
@@ -557,7 +547,7 @@ const getLevelLabel = (level: string) => {
           </AFormItem>
         </div>
 
-        <div class="flex gap-4">
+        <div class="grid grid-cols-1 gap-x-4 min-[480px]:grid-cols-2">
           <AFormItem label="颁发机构" name="issuer" class="flex-1">
             <AInput
               v-model:value="formState.issuer"

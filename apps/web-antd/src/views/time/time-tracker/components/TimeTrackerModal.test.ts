@@ -42,6 +42,8 @@ vi.mock('ant-design-vue', () => ({
     props: ['open'],
     template: '<div v-if="open" data-test="modal"><slot /></div>',
   },
+  Button: { template: '<button><slot /></button>' },
+  Popconfirm: { template: '<div><slot /></div>' },
   Spin: { template: '<div><slot /></div>' },
 }));
 

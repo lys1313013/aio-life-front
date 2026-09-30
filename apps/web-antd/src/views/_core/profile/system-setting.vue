@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Button as AButton, message, Modal } from 'ant-design-vue';
+import { Button as AButton, message } from 'ant-design-vue';
+
+import { appDialog } from '#/adapter/modal-dialog';
 
 const handleClearCache = () => {
-  Modal.confirm({
+  appDialog.confirm({
     title: '清除缓存',
     content: '确定要清除所有前端缓存并更新版本吗？这将导致页面重新加载。',
     onOk: () => {

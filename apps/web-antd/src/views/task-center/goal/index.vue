@@ -20,11 +20,11 @@ import {
   SelectOption as ASelectOption,
   Tag as ATag,
   message,
-  Modal,
 } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 
+import { appDialog } from '#/adapter/modal-dialog';
 import {
   createGoal,
   deleteGoals,
@@ -32,6 +32,7 @@ import {
   updateGoal,
 } from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
+import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -276,22 +277,23 @@ const handleEdit = (item: GoalEntity) => {
   modalVisible.value = true;
 };
 
+const deleteGoal = async (id: number) => {
+  try {
+    await deleteGoals([id]);
+    message.success('删除成功');
+    modalVisible.value = false;
+    loadData();
+  } catch (error) {
+    console.error('Failed to delete goal:', error);
+  }
+};
 const handleDelete = async (id: number) => {
-  Modal.confirm({
+  appDialog.confirm({
     title: '确定要删除这个目标吗？',
     okText: '删除',
     cancelText: '取消',
     okType: 'danger',
-    async onOk() {
-      try {
-        await deleteGoals([id]);
-        message.success('删除成功');
-        loadData();
-      } catch (error) {
-        console.error('Failed to delete goal:', error);
-        // 全局拦截器已提示
-      }
-    },
+    onOk: () => deleteGoal(id),
   });
 };
 
@@ -559,27 +561,13 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
       @ok="handleSave"
       width="600px"
     >
-      <template #footer>
-        <div class="flex justify-between">
-          <AButton
-            v-if="modalTitle === '编辑'"
-            danger
-            @click="handleDelete(formState.id!)"
-          >
-            删除
-          </AButton>
-          <div></div>
-          <div class="flex gap-2">
-            <AButton @click="modalVisible = false">取消</AButton>
-            <AButton
-              type="primary"
-              :loading="submitLoading"
-              @click="handleSave"
-            >
-              确定
-            </AButton>
-          </div>
-        </div>
+      <template #footer-leading>
+        <AppModalDelete
+          v-if="modalTitle === '编辑'"
+          :disabled="submitLoading"
+          title="确定删除这个目标吗？"
+          :action="() => deleteGoal(formState.id!)"
+        />
       </template>
       <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <AFormItem label="目标标题" name="title">

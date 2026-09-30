@@ -8,7 +8,6 @@ import { VbenIcon } from '@vben/common-ui';
 import {
   Button as AButton,
   Empty as AEmpty,
-  Modal as AModal,
   Spin as ASpin,
   Tag as ATag,
   Tree as ATree,
@@ -16,6 +15,7 @@ import {
 } from 'ant-design-vue';
 
 import { getQuickNavCandidatesApi, QUICK_NAV_MAX } from '#/api/core/quick-nav';
+import { AppModal as AModal, AppModalFooter } from '#/components/app-modal';
 
 const props = defineProps<{
   /** 已经保存过的 menuId 集合（来自当前布局） */
@@ -132,16 +132,12 @@ function handleCancel() {
           </span>
         </template>
       </ATree>
-      <div class="mt-4 flex justify-end gap-2">
-        <AButton @click="handleCancel">取消</AButton>
-        <AButton
-          type="primary"
-          :disabled="checked.length === 0"
-          @click="handleOk"
-        >
-          确认 ({{ checked.length }})
-        </AButton>
-      </div>
+      <AppModalFooter
+        :confirm-disabled="checked.length === 0"
+        :confirm-text="`确认 (${checked.length})`"
+        @cancel="handleCancel"
+        @confirm="handleOk"
+      />
     </div>
   </AModal>
 </template>

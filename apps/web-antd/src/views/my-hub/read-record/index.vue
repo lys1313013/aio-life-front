@@ -6,10 +6,11 @@ import { onMounted, ref } from 'vue';
 import { usePreferences } from '@vben/preferences';
 
 import { SearchOutlined } from '@ant-design/icons-vue';
-import { Button, Empty, Input, Modal, Select, Spin } from 'ant-design-vue';
+import { Button, Empty, Input, Select, Spin } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { ReadRecordApi } from '#/api/readRecord';
+import { AppModal as Modal } from '#/components/app-modal';
 import AuthImage from '#/components/AuthImage.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 

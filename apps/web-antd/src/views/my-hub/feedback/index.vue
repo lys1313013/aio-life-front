@@ -18,7 +18,6 @@ import {
   Form as AForm,
   FormItem as AFormItem,
   Input as AInput,
-  Modal as AModal,
   Popconfirm as APopconfirm,
   Select as ASelect,
   SelectOption as ASelectOption,
@@ -37,6 +36,7 @@ import {
   uploadFeedbackAttachment,
   uploadFeedbackCommentAttachment,
 } from '#/api/core/feedback';
+import { AppModal as AModal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
@@ -341,19 +341,8 @@ const getImageUrl = (fileId: number | string) => {
       :confirm-loading="submitLoading"
       @ok="handleCreate"
       width="600px"
+      ok-text="提交"
     >
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <AButton @click="createModalVisible = false">取消</AButton>
-          <AButton
-            type="primary"
-            :loading="submitLoading"
-            @click="handleCreate"
-          >
-            提交
-          </AButton>
-        </div>
-      </template>
       <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <AFormItem label="类型" name="feedbackType">
           <ASelect v-model:value="formState.feedbackType">

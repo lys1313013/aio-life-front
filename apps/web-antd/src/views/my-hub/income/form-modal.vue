@@ -1,9 +1,8 @@
 <script lang="ts" setup>
 import { onMounted, ref, toRaw } from 'vue';
 
-import { useVbenModal } from '@vben/common-ui';
-
-import { useVbenForm } from '#/adapter/form';
+import { useAppForm } from '#/adapter/form';
+import { useVbenModal } from '#/adapter/modal';
 import { add, update } from '#/api/core/income';
 import { getByDictType } from '#/api/core/userDictType';
 
@@ -35,7 +34,7 @@ onMounted(() => {
   loadDictOptions();
 });
 
-const [Form, formApi] = useVbenForm({
+const [Form, formApi] = useAppForm({
   schema: [
     {
       component: 'Input',
@@ -101,6 +100,8 @@ const [Modal, modalApi] = useVbenModal({
   onConfirm: async () => {
     modalApi.lock();
     try {
+      const { valid } = await formApi.validate();
+      if (!valid) return;
       const newVar = toRaw(await formApi.submitForm());
       if (newVar.incomeId) {
         await update(newVar.incomeId, newVar);
@@ -123,14 +124,6 @@ const [Modal, modalApi] = useVbenModal({
     }
   },
   title: '',
-  bordered: false,
-  centered: true, // 手机端居中显示，避免全屏
-  closable: false,
-  fullscreenButton: false,
-  header: false, // 隐藏标题区域
-  headerClass: 'border-none',
-  footerClass: 'border-none px-6 pb-6 pt-2',
-  contentClass: 'p-6 pb-2',
 });
 </script>
 <template>

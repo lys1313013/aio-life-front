@@ -8,9 +8,10 @@ import { useRouter } from 'vue-router';
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
-import { message, Modal } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 
 import { registerApi, sendEmailCodeApi } from '#/api/core/auth';
+import { AppModal as Modal } from '#/components/app-modal';
 
 defineOptions({ name: 'Register' });
 
