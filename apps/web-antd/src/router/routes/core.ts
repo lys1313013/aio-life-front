@@ -1,7 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 import { LOGIN_PATH } from '@vben/constants';
-import { preferences } from '@vben/preferences';
 
 import { $t } from '#/locales';
 
@@ -25,7 +24,7 @@ const coreRoutes: RouteRecordRaw[] = [
   /**
    * 根路由
    * 使用基础布局，作为所有页面的父级容器，子级就不必配置BasicLayout。
-   * 此路由必须存在，且不应修改
+   * 此路由必须存在，首页由动态子路由提供。
    */
   {
     component: BasicLayout,
@@ -35,7 +34,6 @@ const coreRoutes: RouteRecordRaw[] = [
     },
     name: 'Root',
     path: '/',
-    redirect: preferences.app.defaultHomePath,
     children: [
       {
         meta: {
@@ -49,6 +47,12 @@ const coreRoutes: RouteRecordRaw[] = [
         component: () => import('#/views/my-hub/feedback/index.vue'),
       },
     ],
+  },
+  {
+    name: 'LegacyHome',
+    path: '/analytics',
+    redirect: (to) => ({ path: '/', query: to.query, hash: to.hash }),
+    meta: { hideInMenu: true, hideInTab: true, title: '主页' },
   },
   {
     component: () => import('#/views/intro/index.vue'),

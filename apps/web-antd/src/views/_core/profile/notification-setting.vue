@@ -7,6 +7,8 @@ import type {
 
 import { computed, onMounted, reactive, ref } from 'vue';
 
+import { handleEnterSubmit } from '@vben/utils';
+
 import {
   Alert,
   Button,
@@ -258,7 +260,15 @@ onMounted(fetchData);
           description="应用只有一个可见用户时会自动绑定；有多个用户时可直接选择。AIO Life 不会读取飞书消息。"
           class="mb-4"
         />
-        <Form :model="formState" layout="vertical">
+        <Form
+          :model="formState"
+          layout="vertical"
+          data-enter-submit-scope
+          @keydown.capture="
+            (event: KeyboardEvent) =>
+              handleEnterSubmit(event, handleSaveConfig, saving)
+          "
+        >
           <template v-if="!editingCredentials && config.configured">
             <Form.Item label="应用凭证">
               <div

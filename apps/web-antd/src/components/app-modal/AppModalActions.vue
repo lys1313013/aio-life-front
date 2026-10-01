@@ -45,6 +45,7 @@ defineEmits<{ cancel: [event: MouseEvent]; confirm: [event: MouseEvent] }>();
       </Button>
       <Button
         v-if="showConfirm"
+        data-modal-confirm
         v-bind="okButtonProps"
         type="primary"
         :loading="confirmLoading || okButtonProps?.loading"

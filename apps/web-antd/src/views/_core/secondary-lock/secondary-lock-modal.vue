@@ -68,7 +68,6 @@ function handleCancel() {
       <MaskedPasswordInput
         v-model:value="password"
         placeholder="请输入二级密码"
-        @keydown.enter="handleSubmit"
       />
     </div>
   </Modal>

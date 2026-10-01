@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { VbenFormSchema } from '#/adapter/form';
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 import { ProfilePasswordSetting, z } from '@vben/common-ui';
 
@@ -52,20 +52,26 @@ const formSchema = computed((): VbenFormSchema[] => {
   ];
 });
 
-function handleSubmit(values: any) {
-  changePasswordApi({
-    newPassword: values.newPassword,
-    oldPassword: values.oldPassword,
-  }).then(() => {
+const saving = ref(false);
+async function handleSubmit(values: any) {
+  if (saving.value) return;
+  saving.value = true;
+  try {
+    await changePasswordApi({
+      newPassword: values.newPassword,
+      oldPassword: values.oldPassword,
+    });
     message.success('密码修改成功');
-  });
+  } finally {
+    saving.value = false;
+  }
 }
 </script>
 <template>
   <ProfilePasswordSetting
-    ref="profilePasswordSettingRef"
     class="max-w-lg"
     :form-schema="formSchema"
+    :loading="saving"
     @submit="handleSubmit"
   />
 </template>

@@ -33,7 +33,7 @@ import {
 } from '@vben-core/shadcn-ui';
 import { ELEMENT_ID_MAIN_CONTENT } from '@vben-core/shared/constants';
 import { globalShareState } from '@vben-core/shared/global-state';
-import { cn } from '@vben-core/shared/utils';
+import { cn, handleEnterSubmit } from '@vben-core/shared/utils';
 
 import { useModalDraggable } from './use-modal-draggable';
 
@@ -90,6 +90,7 @@ const {
   showCancelButton,
   showConfirmButton,
   submitting,
+  submitOnEnter,
   title,
   titleTooltip,
   animationType,
@@ -226,6 +227,24 @@ function handleClosed() {
   isClosed.value = true;
   props.modalApi?.onClosed();
 }
+function onEnter(event: KeyboardEvent) {
+  if (!state?.value.isOpen || !submitOnEnter.value) return;
+  const button = dialogRef.value?.querySelector('[data-modal-confirm]') as
+    | HTMLButtonElement
+    | undefined;
+  if (!button) return;
+  handleEnterSubmit(
+    event,
+    () => button.click(),
+    !!(
+      submitting.value ||
+      showLoading.value ||
+      confirmLoading.value ||
+      confirmDisabled.value ||
+      button.disabled
+    ),
+  );
+}
 </script>
 <template>
   <Dialog
@@ -306,7 +325,8 @@ function handleClosed() {
         </VisuallyHidden>
       </DialogHeader>
       <div
-        ref="wrapperRef"
+        data-enter-submit-scope
+        @keydown.capture="onEnter"
         :class="
           cn('relative min-h-40 flex-1 overflow-y-auto p-3', contentClass, {
             'pointer-events-none': showLoading || submitting,
@@ -327,7 +347,6 @@ function handleClosed() {
 
       <DialogFooter
         v-if="showFooter"
-        ref="footerRef"
         :class="
           cn(
             'flex-row items-center justify-end p-2',
@@ -355,6 +374,7 @@ function handleClosed() {
           <component
             :is="components.PrimaryButton || VbenButton"
             v-if="showConfirmButton"
+            data-modal-confirm
             :disabled="confirmDisabled"
             :loading="confirmLoading || submitting"
             @click="() => modalApi?.onConfirm()"

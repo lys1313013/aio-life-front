@@ -28,7 +28,10 @@ async function generateAccessible(
   // 生成路由
   const accessibleRoutes = await generateRoutes(mode, options);
 
-  const root = router.getRoutes().find((item) => item.path === '/');
+  // 首页子路由也可以使用 '/'，优先按名称定位基础布局。
+  const root =
+    router.getRoutes().find((item) => item.name === 'Root') ??
+    router.getRoutes().find((item) => item.path === '/');
 
   // 获取已有的路由名称列表
   const names = root?.children?.map((item) => item.name) ?? [];

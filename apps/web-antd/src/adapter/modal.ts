@@ -10,6 +10,7 @@ export function useVbenModal<T extends ModalProps = ModalProps>(
 ) {
   return useBaseModal<T>({
     centered: true,
+    submitOnEnter: true,
     bordered: false,
     header: false,
     closable: false,

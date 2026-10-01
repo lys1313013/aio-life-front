@@ -5,7 +5,7 @@ import { $t } from '#/locales';
 const routes: RouteRecordRaw[] = [
   {
     name: 'Analytics',
-    path: '/analytics',
+    path: '/',
     component: () => import('#/views/dashboard/home/index.vue'),
     meta: {
       order: -1,

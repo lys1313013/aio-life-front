@@ -18,6 +18,7 @@ describe('vben application modal adapter', () => {
     expect(base).toHaveBeenCalledWith(
       expect.objectContaining({
         centered: true,
+        submitOnEnter: true,
         closeOnClickModal: true,
         header: false,
         closable: false,
@@ -28,6 +29,13 @@ describe('vben application modal adapter', () => {
         contentClass: 'app-modal-body app-modal-form custom-body',
         footerClass: 'app-modal-footer custom-footer',
       }),
+    );
+  });
+
+  it('allows opting out of Enter submission', () => {
+    useVbenModal({ submitOnEnter: false });
+    expect(base).toHaveBeenCalledWith(
+      expect.objectContaining({ submitOnEnter: false }),
     );
   });
 

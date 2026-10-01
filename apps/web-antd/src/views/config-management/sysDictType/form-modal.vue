@@ -57,7 +57,6 @@ const [Form, formApi] = useAppForm({
     },
   ],
   showDefaultActions: false,
-  submitOnEnter: true,
 });
 const [Modal, modalApi] = useVbenModal({
   onCancel() {

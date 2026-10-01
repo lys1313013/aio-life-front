@@ -1,4 +1,8 @@
-import { initPreferences } from '@vben/preferences';
+import {
+  initPreferences,
+  preferences,
+  updatePreferences,
+} from '@vben/preferences';
 import { unmountGlobalLoading } from '@vben/utils';
 
 import { overridesPreferences } from './preferences';
@@ -18,6 +22,11 @@ async function initApplication() {
     namespace,
     overrides: overridesPreferences,
   });
+
+  // 迁移旧版缓存的首页地址，保留其他个人偏好。
+  if (preferences.app.defaultHomePath === '/analytics') {
+    updatePreferences({ app: { defaultHomePath: '/' } });
+  }
 
   // 启动应用并挂载
   // vue应用主要逻辑及视图

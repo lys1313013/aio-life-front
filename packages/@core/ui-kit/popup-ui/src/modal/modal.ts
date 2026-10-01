@@ -124,6 +124,8 @@ export interface ModalProps {
    * @default true
    */
   showConfirmButton?: boolean;
+  /** Confirm with plain Enter in single-line fields. Default false. */
+  submitOnEnter?: boolean;
   /**
    * 提交中（锁定弹窗状态）
    */

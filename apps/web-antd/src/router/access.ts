@@ -4,6 +4,7 @@ import type {
 } from '@vben/types';
 
 import { generateAccessible } from '@vben/access';
+import { mapTree } from '@vben/utils';
 
 import { getAllMenusApi } from '#/api/core/menu';
 import { BasicLayout, IFrameView } from '#/layouts';
@@ -20,7 +21,13 @@ async function generateAccess(options: GenerateMenuAndRoutesOptions) {
 
   return await generateAccessible('backend', {
     ...options,
-    fetchMenuListAsync: () => getAllMenusApi(),
+    // 兼容后端已有的首页菜单配置，菜单 ID 和权限信息保持不变。
+    fetchMenuListAsync: async () =>
+      mapTree(await getAllMenusApi(), (route) => ({
+        ...route,
+        path: route.path === '/analytics' ? '/' : route.path,
+        redirect: route.redirect === '/analytics' ? '/' : route.redirect,
+      })),
     // 可以指定没有权限跳转403页面
     forbiddenComponent,
     // 如果 route.meta.menuVisibleWithForbidden = true

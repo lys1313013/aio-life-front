@@ -3,7 +3,7 @@ import { createApp, watchEffect } from 'vue';
 import { registerAccessDirective } from '@vben/access';
 import { registerLoadingDirective } from '@vben/common-ui/es/loading';
 import { preferences } from '@vben/preferences';
-import { initStores } from '@vben/stores';
+import { initStores, useTabbarStore } from '@vben/stores';
 import '@vben/styles';
 import '@vben/styles/antd';
 
@@ -45,6 +45,15 @@ async function bootstrap(namespace: string) {
 
   // 配置 pinia-tore
   await initStores(app, { namespace });
+
+  // 新首页会重新生成固定标签，移除旧地址缓存，避免出现两个“主页”。
+  const tabbarStore = useTabbarStore();
+  if (tabbarStore.tabs.some((tab) => tab.path === '/analytics')) {
+    tabbarStore.tabs = tabbarStore.tabs.filter(
+      (tab) => tab.path !== '/analytics',
+    );
+    await tabbarStore.updateCacheTabs();
+  }
 
   // 安装权限指令
   registerAccessDirective(app);

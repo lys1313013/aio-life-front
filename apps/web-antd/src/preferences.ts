@@ -8,6 +8,7 @@ import { defineOverridesPreferences } from '@vben/preferences';
 export const overridesPreferences = defineOverridesPreferences({
   // overrides
   app: {
+    defaultHomePath: '/',
     name: import.meta.env.VITE_APP_TITLE,
     preferencesButtonPosition: 'header',
   },

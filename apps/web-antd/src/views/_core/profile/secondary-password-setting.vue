@@ -433,7 +433,6 @@ loadCheckedMenus();
         <MaskedPasswordInput
           v-model:value="savePassword"
           placeholder="请输入二级密码"
-          @keydown.enter="handleSaveMenus"
         />
       </div>
     </Modal>

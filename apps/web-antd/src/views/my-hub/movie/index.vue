@@ -356,6 +356,7 @@ const tableReload = () => {
 
     <Modal
       v-model:open="importVisible"
+      :submit-on-enter="false"
       title="导入豆瓣观影记录"
       :width="isMobile ? 'calc(100vw - 32px)' : 820"
       :footer="null"

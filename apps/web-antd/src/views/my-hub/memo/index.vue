@@ -387,6 +387,7 @@ onUnmounted(() => {
       v-model:open="modalOpen"
       :confirm-loading="confirmLoading"
       :mask-closable="false"
+      :submit-on-enter="false"
       @ok="handleOk"
       @after-close="resetModalSize"
       :width="modalWidth"

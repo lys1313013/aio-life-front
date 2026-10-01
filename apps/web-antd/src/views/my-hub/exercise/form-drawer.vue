@@ -96,7 +96,6 @@ const [Form, formApi] = useAppForm({
     },
   ],
   showDefaultActions: false,
-  submitOnEnter: true,
 });
 
 // 监听 props.values 变化，实时更新表单数据

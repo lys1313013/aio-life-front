@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
 
+import { handleEnterSubmit } from '@vben/utils';
+
 import {
   CalendarOutlined,
   DeleteOutlined,
@@ -263,6 +265,9 @@ const submitNewDetail = async () => {
     addingDetail.value = false;
   }
 };
+function saveOnEnter(event: KeyboardEvent) {
+  handleEnterSubmit(event, () => (event.target as HTMLInputElement).blur());
+}
 </script>
 
 <template>
@@ -283,6 +288,7 @@ const submitNewDetail = async () => {
           placeholder="任务标题"
           class="task-title-input"
           @blur="saveTaskField"
+          @keydown="saveOnEnter"
         />
         <span v-if="taskSaving" class="saving-hint">
           <ASpin size="small" />
@@ -377,6 +383,7 @@ const submitNewDetail = async () => {
                 class="detail-input"
                 :class="{ 'detail-completed': detail.isCompleted === 1 }"
                 @blur="saveDetail(detail)"
+                @keydown="saveOnEnter"
               />
               <div class="detail-actions">
                 <AButton

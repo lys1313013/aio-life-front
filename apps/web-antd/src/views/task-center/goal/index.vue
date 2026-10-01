@@ -575,7 +575,6 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
             v-model:value="formState.title"
             placeholder="请输入目标标题"
             allow-clear
-            @press-enter="handleSave"
           />
         </AFormItem>
 

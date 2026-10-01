@@ -3,6 +3,8 @@ import type { SystemConfigVO } from '#/api/system/system-config';
 
 import { onMounted, ref } from 'vue';
 
+import { handleEnterSubmit } from '@vben/utils';
+
 import {
   Button as AButton,
   Card as ACard,
@@ -118,6 +120,15 @@ const getUserLabel = (userId: string) => {
         <ACard
           v-for="cfg in configs"
           :key="cfg.configKey"
+          data-enter-submit-scope
+          @keydown.capture="
+            (event: KeyboardEvent) =>
+              handleEnterSubmit(
+                event,
+                () => handleSave(cfg.configKey),
+                savingKey !== null,
+              )
+          "
           class="rounded-xl border border-border bg-card"
         >
           <template #title>

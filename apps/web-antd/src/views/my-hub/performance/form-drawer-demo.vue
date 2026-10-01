@@ -120,7 +120,6 @@ const [Form, formApi] = useAppForm({
     },
   ],
   showDefaultActions: false,
-  submitOnEnter: true,
   handleSubmit: () => handleSubmit(),
 });
 

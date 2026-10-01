@@ -121,7 +121,7 @@ const quickNavItems: WorkbenchQuickNavItem[] = [
     color: '#00d8ff',
     icon: 'ion:bar-chart-outline',
     title: '图表',
-    url: '/analytics',
+    url: '/',
   },
 ];
 

@@ -33,7 +33,10 @@ vi.mock('ant-design-vue', () => ({
                   )
                     emit('cancel', event);
                 },
-                onKeydown: () => emit('cancel', new MouseEvent('click')),
+                onKeydown: (event: KeyboardEvent) => {
+                  if (event.key === 'Escape' && props.keyboard)
+                    emit('cancel', new MouseEvent('click'));
+                },
               },
               slots.default?.(),
             )
@@ -81,6 +84,76 @@ afterEach(() => {
 });
 
 describe('application modal behavior', () => {
+  it('routes Enter to the save button once, ahead of legacy input handlers', async () => {
+    const legacy = vi.fn();
+    const wrapper = render(
+      {},
+      { default: () => h('input', { onKeydown: legacy }) },
+    );
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('ok')).toHaveLength(1);
+    expect(legacy).not.toHaveBeenCalled();
+    expect(wrapper.emitted('cancel')).toBeUndefined();
+  });
+
+  it.each([
+    { busy: true },
+    { confirmLoading: true },
+    { okButtonProps: { disabled: true } },
+    { okButtonProps: { loading: true } },
+    { submitOnEnter: false },
+    { footer: null },
+  ])('does not submit unavailable or opted-out dialogs: %j', async (props) => {
+    const wrapper = render(props, { default: '<input />' });
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(wrapper.emitted('ok')).toBeUndefined();
+  });
+
+  it('uses the nested form footer callback and loading state', async () => {
+    const save = vi.fn();
+    const loading = ref(false);
+    const wrapper = render(
+      { footer: null },
+      {
+        default: () =>
+          h('div', [
+            h('input'),
+            h(AppModalFooter, {
+              confirmLoading: loading.value,
+              onConfirm: save,
+            }),
+          ]),
+      },
+    );
+    await nextTick();
+    await nextTick();
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(save).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('ok')).toBeUndefined();
+    loading.value = true;
+    await nextTick();
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(save).toHaveBeenCalledOnce();
+  });
+
+  it('submits only the inner dialog', async () => {
+    const save = vi.fn();
+    const wrapper = render(
+      {},
+      {
+        default: () =>
+          h(
+            AppModal,
+            { open: true, onOk: save },
+            { default: () => h('input') },
+          ),
+      },
+    );
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' });
+    expect(save).toHaveBeenCalledOnce();
+    expect(wrapper.emitted('ok')).toBeUndefined();
+  });
+
   it('keeps a semantic name and closes the controlled model from cancel', async () => {
     const wrapper = render({ title: '编辑活动' });
     expect(wrapper.attributes('aria-label')).toBe('编辑活动');

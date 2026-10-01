@@ -17,6 +17,7 @@ import { useAuthStore } from '#/store/auth';
 
 const authStore = useAuthStore();
 const profileBaseSettingRef = ref();
+const saving = ref(false);
 
 const handlePaste = async (e: ClipboardEvent) => {
   const items = e.clipboardData?.items;
@@ -92,6 +93,8 @@ const formSchema = computed((): VbenFormSchema[] => {
 });
 
 const handleSubmit = async (values: any) => {
+  if (saving.value) return;
+  saving.value = true;
   try {
     if (
       values.avatar &&
@@ -111,6 +114,8 @@ const handleSubmit = async (values: any) => {
       .setValues({ ...data, avatar: fileList });
   } catch (error) {
     console.error(error);
+  } finally {
+    saving.value = false;
   }
 };
 
@@ -131,6 +136,7 @@ onMounted(async () => {
       ref="profileBaseSettingRef"
       class="max-w-lg"
       :form-schema="formSchema"
+      :loading="saving"
       @submit="handleSubmit"
     />
   </div>

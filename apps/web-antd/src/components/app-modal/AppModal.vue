@@ -5,6 +5,8 @@ import type { StyleValue } from 'vue';
 
 import { computed, provide, reactive, ref, useAttrs, useSlots } from 'vue';
 
+import { handleEnterSubmit } from '@vben/utils';
+
 import { Modal } from 'ant-design-vue';
 
 import AppModalActions from './AppModalActions.vue';
@@ -23,11 +25,13 @@ const props = withDefaults(
     okButtonProps?: ButtonProps;
     okText?: string;
     open?: boolean;
+    submitOnEnter?: boolean;
     title?: null | string;
     width?: number | string;
   }>(),
   {
     open: false,
+    submitOnEnter: true,
     title: undefined,
     width: 640,
     footer: undefined,
@@ -72,6 +76,21 @@ function cancel(event: MouseEvent) {
 function confirm(event: MouseEvent) {
   if (!isBusy.value && !props.okButtonProps?.disabled) emit('ok', event);
 }
+function onEnter(event: KeyboardEvent) {
+  if (!props.open || !props.submitOnEnter) return;
+  const button = footerTarget.value?.querySelector<HTMLButtonElement>(
+    '[data-modal-confirm]',
+  );
+  if (!button) return;
+  handleEnterSubmit(
+    event,
+    () => button.click(),
+    isBusy.value ||
+      button.disabled ||
+      button.getAttribute('aria-disabled') === 'true' ||
+      button.classList.contains('ant-btn-loading'),
+  );
+}
 </script>
 
 <template>
@@ -108,6 +127,8 @@ function confirm(event: MouseEvent) {
       class="app-modal-body app-modal-form"
       :style="(attrs.bodyStyle || attrs['body-style']) as StyleValue"
       :aria-busy="isBusy"
+      data-enter-submit-scope
+      @keydown.capture="onEnter"
     >
       <div v-if="slots.toolbar" class="app-modal-toolbar">
         <slot name="toolbar"></slot>

@@ -672,14 +672,12 @@ onUnmounted(() => {
           <MaskedPasswordInput
             v-model:value="masterPasswordInput"
             placeholder="请输入主密码"
-            @keydown.enter="handleUnlockSubmit"
           />
         </FormItem>
         <FormItem v-if="isFirstTime" label="确认主密码">
           <MaskedPasswordInput
             v-model:value="confirmPasswordInput"
             placeholder="请再次输入主密码"
-            @keydown.enter="handleUnlockSubmit"
           />
         </FormItem>
       </Form>

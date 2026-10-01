@@ -170,7 +170,9 @@ const loadData = async () => {
       title: {
         text: totalDuration > 0 ? totalStr : '',
         left: 'center',
-        top: 'center',
+        top: '50%',
+        padding: 0,
+        textVerticalAlign: 'middle',
         textStyle: {
           fontSize: 14,
           fontWeight: 'bold',
@@ -197,6 +199,22 @@ const loadData = async () => {
       legend: {
         show: false,
       },
+      media: [
+        {
+          query: { maxWidth: 200 },
+          option: {
+            // 底部外置标签占用更多高度，圆环与总时长同步上移以平衡留白。
+            title: { top: '40%', textStyle: { fontSize: 12 } },
+            series: [{ top: '-10%', bottom: '10%', radius: ['35%', '55%'] }],
+          },
+        },
+        {
+          option: {
+            title: { top: '50%', textStyle: { fontSize: 14 } },
+            series: [{ top: 0, bottom: 0, radius: ['45%', '70%'] }],
+          },
+        },
+      ],
       series: [
         {
           animationDelay() {
@@ -231,6 +249,7 @@ const loadData = async () => {
           label: {
             show: true,
             position: 'outside',
+            bleedMargin: 0,
             formatter: (params: any) => {
               const duration = params.value;
               const hours = Math.floor(duration / 60);
@@ -289,7 +308,7 @@ defineExpose({
       spinning: loading,
       class: '!bg-transparent dark:!bg-transparent',
     }"
-    class="flex h-full w-full flex-row p-2 sm:p-4"
+    class="flex h-full w-full flex-row p-2 sm:py-4"
   >
     <!-- 最左侧竖向时间轴 (固定宽度，绝不被挤压) -->
     <div
@@ -315,7 +334,7 @@ defineExpose({
     </div>
 
     <!-- 右侧内容区：饼图 + 最新记录 -->
-    <div class="flex min-w-0 flex-1 flex-row items-center gap-1 sm:gap-2">
+    <div class="flex min-w-0 flex-1 flex-row items-center gap-1">
       <!-- 
         【经验沉淀：EchartsUI 高度塌陷/截断问题】
         @vben/plugins/echarts 提供的 EchartsUI 组件内部源码默认写死了 height: '300px'。
@@ -326,13 +345,13 @@ defineExpose({
         1. 外层包裹容器必须有明确的高度限制（如 h-[160px] 或最大高度）。
         2. EchartsUI 必须显式传入 height="100%" width="100%" 以覆盖内部默认值。
       -->
-      <div class="relative h-[160px] w-[65%] min-w-0 sm:h-[180px] sm:w-[70%]">
+      <div class="relative h-[160px] min-w-0 flex-1 sm:h-[180px]">
         <EchartsUI ref="chartRef" height="100%" width="100%" />
       </div>
 
       <!-- 最新记录列表：整体居中、固定行距，避免少量记录被拉开 -->
       <div
-        class="flex h-[160px] w-[35%] flex-col overflow-y-auto py-1 sm:h-[180px] sm:w-[30%]"
+        class="flex h-[160px] w-[42%] min-w-0 shrink-0 flex-col overflow-y-auto py-1 sm:h-[180px]"
       >
         <div
           v-if="recentRecords.length > 0"

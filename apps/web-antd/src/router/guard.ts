@@ -61,7 +61,8 @@ function setupAccessGuard(router: Router) {
     const authStore = useAuthStore();
 
     // 基本路由，这些路由不需要进入权限拦截
-    if (coreRouteNames.includes(to.name as string)) {
+    // 根路径首次访问时仍需鉴权并加载动态首页，不能按基础布局直接放行。
+    if (to.name !== 'Root' && coreRouteNames.includes(to.name as string)) {
       if (to.path === LOGIN_PATH && accessStore.accessToken) {
         return decodeURIComponent(
           (to.query?.redirect as string) ||
@@ -105,8 +106,7 @@ function setupAccessGuard(router: Router) {
         if (!secondaryLockStore.isUnlocked(menuPath)) {
           secondaryLockStore.triggerUnlock(menuPath);
           // 硬刷新直接访问被锁菜单时不能 return false（会停在无匹配路由导致白屏），
-          // 也不能跳 '/' —— '/' 存在 redirect，在守卫内返回带 redirect 的路径会卡死（matched 为空、白屏）。
-          // 直接跳默认首页，正常渲染并弹出解锁弹窗。
+          // 跳默认首页，正常渲染并弹出解锁弹窗。
           return from.fullPath
             ? false
             : { path: preferences.app.defaultHomePath };
@@ -146,7 +146,7 @@ function setupAccessGuard(router: Router) {
     accessStore.setAccessRoutes(accessibleRoutes);
     accessStore.setIsAccessChecked(true);
     const redirectPath = (from.query.redirect ??
-      (to.path === preferences.app.defaultHomePath
+      (to.fullPath === preferences.app.defaultHomePath
         ? userInfo.homePath || preferences.app.defaultHomePath
         : to.fullPath)) as string;
 

@@ -147,7 +147,6 @@ const [Form, formApi] = useAppForm({
     },
   ],
   showDefaultActions: false,
-  submitOnEnter: true,
 });
 
 // 重置表单数据
