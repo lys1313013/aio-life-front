@@ -27,13 +27,13 @@ import { useSecondaryLockStore } from '#/store/secondary-lock';
 
 // ── 菜单锁选择 ──
 interface MenuTreeNode {
-  key: number | string;
+  key: string;
   title: string;
   children?: MenuTreeNode[];
 }
 
 const treeData = ref<MenuTreeNode[]>([]);
-const checkedKeys = ref<Array<number | string>>([]);
+const checkedKeys = ref<string[]>([]);
 const menuLoading = ref(true);
 const menuSaving = ref(false);
 
@@ -57,7 +57,7 @@ function buildTree(nodes: any[]): MenuTreeNode[] {
   return (nodes || [])
     .filter((n) => n.meta?.menuId != null && n.meta?.title)
     .map((n) => ({
-      key: Number(n.meta.menuId),
+      key: String(n.meta.menuId),
       title: n.meta.title,
       children: n.children?.length ? buildTree(n.children) : undefined,
     }));
@@ -66,18 +66,18 @@ function buildTree(nodes: any[]): MenuTreeNode[] {
 async function loadCheckedMenus() {
   try {
     const ids = await getSecondaryLockMenusApi();
-    checkedKeys.value = ids.map(Number);
+    checkedKeys.value = ids.map(String);
   } catch (error) {
     console.error('加载菜单锁失败', error);
   }
 }
 
-function getCheckedIds(): number[] {
-  return checkedKeys.value.map(Number);
+function getCheckedIds(): string[] {
+  return [...checkedKeys.value];
 }
 
 function onCheck(keys: Array<number | string>) {
-  checkedKeys.value = keys;
+  checkedKeys.value = keys.map(String);
 }
 
 function openSaveModal() {

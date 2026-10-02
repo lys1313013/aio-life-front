@@ -1,7 +1,5 @@
 import type { Router } from 'vue-router';
 
-import type { MenuRecordRaw } from '@vben/types';
-
 import { LOGIN_PATH } from '@vben/constants';
 import { preferences } from '@vben/preferences';
 import {
@@ -12,13 +10,11 @@ import {
 } from '@vben/stores';
 import { startProgress, stopProgress } from '@vben/utils';
 
-import { getMenuPreferencesApi } from '#/api/core/menu';
 import { accessRoutes, coreRouteNames } from '#/router/routes';
 import { useAuthStore } from '#/store';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
-import { filterVisibleMenus } from '#/utils/menu-visibility';
 
-import { generateAccess } from './access';
+import { refreshNavigation } from './navigation';
 
 /**
  * 通用守卫配置
@@ -101,7 +97,7 @@ function setupAccessGuard(router: Router) {
       // 二级锁检查
       const secondaryLockStore = useSecondaryLockStore();
       const menuId = to.meta.menuId;
-      if (menuId != null && secondaryLockStore.isMenuLocked(Number(menuId))) {
+      if (menuId != null && secondaryLockStore.isMenuLocked(menuId)) {
         const menuPath = to.path;
         if (!secondaryLockStore.isUnlocked(menuPath)) {
           secondaryLockStore.triggerUnlock(menuPath);
@@ -120,31 +116,8 @@ function setupAccessGuard(router: Router) {
     const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
     const userRoles = userInfo.roles ?? [];
 
-    // 生成菜单和路由
-    const [{ accessibleMenus, accessibleRoutes }, menuPreferences] =
-      await Promise.all([
-        generateAccess({
-          roles: userRoles,
-          router,
-          // 则会在菜单中显示，但是访问会被重定向到403
-          routes: accessRoutes,
-        }),
-        // 显示偏好不可用时保留系统默认导航，不能阻断登录和页面访问。
-        // 请求层仍会提示错误；设置页加载失败时禁止覆盖原设置。
-        getMenuPreferencesApi().catch(() => ({ hiddenMenuIds: [] })),
-      ]);
-
-    // 加载用户锁定的菜单 ID 并补丁菜单树（给对应菜单打上 secondaryLock 标记）
+    await refreshNavigation({ roles: userRoles, router, routes: accessRoutes });
     const secondaryLockStore = useSecondaryLockStore();
-    await secondaryLockStore.loadLockedMenus();
-    patchMenuSecondaryLock(accessibleMenus, secondaryLockStore);
-
-    // 保存菜单信息和路由信息
-    accessStore.setAccessMenus(
-      filterVisibleMenus(accessibleMenus, menuPreferences.hiddenMenuIds),
-    );
-    accessStore.setAccessRoutes(accessibleRoutes);
-    accessStore.setIsAccessChecked(true);
     const redirectPath = (from.query.redirect ??
       (to.fullPath === preferences.app.defaultHomePath
         ? userInfo.homePath || preferences.app.defaultHomePath
@@ -154,10 +127,7 @@ function setupAccessGuard(router: Router) {
     // 不能把被锁目标作为守卫返回的 location —— 会先路由到该目标再触发二级锁的二次递归导航，导致白屏卡死。
     const target = router.resolve(decodeURIComponent(redirectPath));
     const targetMenuId = target.meta?.menuId;
-    if (
-      targetMenuId != null &&
-      secondaryLockStore.isMenuLocked(Number(targetMenuId))
-    ) {
+    if (targetMenuId != null && secondaryLockStore.isMenuLocked(targetMenuId)) {
       secondaryLockStore.triggerUnlock(target.path);
       return { path: preferences.app.defaultHomePath };
     }
@@ -210,23 +180,6 @@ function createRouterGuard(router: Router) {
   setupAccessGuard(router);
   /** 标签页自动刷新 */
   setupTabGuard(router);
-}
-
-/**
- * 给菜单树打上二级锁标记，使菜单项图标能正确显示。
- */
-function patchMenuSecondaryLock(
-  menus: MenuRecordRaw[],
-  store: ReturnType<typeof useSecondaryLockStore>,
-) {
-  for (const menu of menus) {
-    if (menu.menuId != null && store.isMenuLocked(menu.menuId)) {
-      menu.secondaryLock = true;
-    }
-    if (menu.children?.length) {
-      patchMenuSecondaryLock(menu.children, store);
-    }
-  }
 }
 
 export { createRouterGuard };

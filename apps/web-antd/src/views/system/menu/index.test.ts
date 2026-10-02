@@ -38,8 +38,11 @@ vi.mock('@vben/stores', () => ({
 vi.mock('#/store', () => ({ useAuthStore: () => ({}) }));
 vi.mock('#/router', () => ({ resetRoutes: vi.fn(), router: {} }));
 vi.mock('#/router/routes', () => ({ accessRoutes: [] }));
-vi.mock('#/router/access', () => ({
-  generateAccess: async () => ({ accessibleMenus: [], accessibleRoutes: [] }),
+vi.mock('#/router/navigation', () => ({
+  refreshNavigation: async () => ({
+    accessibleMenus: [],
+    accessibleRoutes: [],
+  }),
 }));
 
 const parentId = '90071992547409930';

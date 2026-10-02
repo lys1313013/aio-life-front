@@ -51,7 +51,7 @@ interface MenuRecordRaw extends MenuRecordBadgeRaw {
   /**
    * 菜单ID（后端返回）
    */
-  menuId?: number;
+  menuId?: string;
   /**
    * 菜单名
    */

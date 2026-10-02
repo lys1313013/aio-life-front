@@ -181,7 +181,7 @@ export async function secondaryVerifyApi(
 }
 
 export interface SaveSecondaryLockMenusParams {
-  menuIds: number[];
+  menuIds: string[];
   /** 二级密码，修改菜单锁前必须验证 */
   secondaryPassword: string;
 }
@@ -190,7 +190,7 @@ export interface SaveSecondaryLockMenusParams {
  * 获取当前用户锁定的菜单 ID 列表
  */
 export async function getSecondaryLockMenusApi() {
-  return requestClient.get<number[]>('/auth/secondary-lock/menus');
+  return requestClient.get<string[]>('/auth/secondary-lock/menus');
 }
 
 /**

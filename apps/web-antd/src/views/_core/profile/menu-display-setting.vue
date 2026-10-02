@@ -8,7 +8,7 @@ import { useRouter } from 'vue-router';
 
 import { VbenIcon } from '@vben/common-ui';
 import { useAccessStore } from '@vben/stores';
-import { generateMenus, mapTree } from '@vben/utils';
+import { generateMenus } from '@vben/utils';
 
 import {
   Button,
@@ -26,7 +26,7 @@ import {
 } from '#/api/core/menu';
 import { $t } from '#/locales';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
-import { filterVisibleMenus } from '#/utils/menu-visibility';
+import { visibleNavigationMenus } from '#/utils/navigation-menus';
 
 const router = useRouter();
 const accessStore = useAccessStore();
@@ -123,13 +123,12 @@ function applyPreferences(preference: UserMenuPreference) {
 
   // 从完整授权路由重新生成菜单，已隐藏的项可恢复，页面和标签无需关闭。
   const allMenus = generateMenus(accessStore.accessRoutes, router);
-  const visible = filterVisibleMenus(allMenus, preference.hiddenMenuIds);
   accessStore.setAccessMenus(
-    mapTree(visible, (menu) => ({
-      ...menu,
-      secondaryLock:
-        menu.menuId != null && secondaryLockStore.isMenuLocked(menu.menuId),
-    })),
+    visibleNavigationMenus(
+      allMenus,
+      preference.hiddenMenuIds,
+      secondaryLockStore,
+    ),
   );
 }
 

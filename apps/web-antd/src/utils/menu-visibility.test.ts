@@ -8,14 +8,14 @@ describe('个人菜单显示', () => {
   const menus: MenuRecordRaw[] = [
     {
       children: [
-        { menuId: 11, name: '运动', path: '/exercise', secondaryLock: true },
-        { menuId: 12, name: '闪念', path: '/think' },
+        { menuId: '11', name: '运动', path: '/exercise', secondaryLock: true },
+        { menuId: '12', name: '闪念', path: '/think' },
       ],
-      menuId: 10,
+      menuId: '10',
       name: '记录',
       path: '/record',
     },
-    { menuId: 20, name: '个人中心', path: '/profile' },
+    { menuId: '20', name: '个人中心', path: '/profile' },
   ];
 
   it('隐藏子菜单并保留其他菜单及锁标记，不修改原树', () => {
@@ -42,11 +42,10 @@ describe('个人菜单显示', () => {
   });
 
   it('按字符串匹配后端雪花ID，不发生数值精度碰撞', () => {
-    // 现有共享类型尚为 number，实际 API 中 Long 返回 string。
-    const largeIds = [
+    const largeIds: MenuRecordRaw[] = [
       { menuId: '9007199254740992', name: 'A', path: '/a' },
       { menuId: '9007199254740993', name: 'B', path: '/b' },
-    ] as unknown as MenuRecordRaw[];
+    ];
     expect(filterVisibleMenus(largeIds, ['9007199254740993'])).toEqual([
       largeIds[0],
     ]);

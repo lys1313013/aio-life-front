@@ -6,7 +6,7 @@ import type { SysMenuAdminItem, SysMenuSaveReq } from '#/api/core/menu';
 import { computed, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
-import { useAccessStore, useUserStore } from '@vben/stores';
+import { useUserStore } from '@vben/stores';
 
 import {
   Button,
@@ -35,8 +35,8 @@ import {
   updateMenuStatusApi,
 } from '#/api/core/menu';
 import { AppModal as Modal } from '#/components/app-modal';
-import { resetRoutes, router } from '#/router';
-import { generateAccess } from '#/router/access';
+import { router } from '#/router';
+import { refreshNavigation } from '#/router/navigation';
 import { accessRoutes } from '#/router/routes';
 import { useAuthStore } from '#/store';
 
@@ -132,7 +132,6 @@ const editVisible = ref(false);
 const saving = ref(false);
 const editingId = ref<null | string>(null);
 const statusChanging = ref<Record<string, boolean>>({});
-const accessStore = useAccessStore();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 
@@ -295,16 +294,7 @@ const loadRoleOptions = async () => {
 const refreshAccessibleMenus = async () => {
   const userInfo = userStore.userInfo || (await authStore.fetchUserInfo());
   const userRoles = userInfo.roles ?? [];
-  resetRoutes();
-  const { accessibleMenus, accessibleRoutes: nextAccessRoutes } =
-    await generateAccess({
-      roles: userRoles,
-      router,
-      routes: accessRoutes,
-    });
-  accessStore.setAccessMenus(accessibleMenus);
-  accessStore.setAccessRoutes(nextAccessRoutes);
-  accessStore.setIsAccessChecked(true);
+  await refreshNavigation({ roles: userRoles, router, routes: accessRoutes });
 };
 
 const openCreate = (parentId = '0') => {

@@ -21,7 +21,7 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   const unlockedPaths = ref<Set<string>>(new Set());
 
   /** 待解锁后跳转的目标路径 */
-  const pendingTargetPath = ref<string | null>(null);
+  const pendingTargetPath = ref<null | string>(null);
 
   /** 路由守卫触发时跳转；接口触发时保留当前页面。 */
   const navigateAfterUnlock = ref(true);
@@ -34,24 +34,20 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     try {
       const ids = await getSecondaryLockMenusApi();
       // 后端 Long 序列化为字符串，保留完整 ID。
-      lockedMenuIds.value = new Set(ids.map(String));
+      lockedMenuIds.value = new Set(ids);
+      loaded.value = true;
     } catch {
       // ignore
-    } finally {
-      loaded.value = true;
     }
   }
 
-  async function saveLockedMenus(
-    ids: (number | string)[],
-    secondaryPassword: string,
-  ) {
+  async function saveLockedMenus(ids: string[], secondaryPassword: string) {
     const uniqueIds = [...new Set(ids.map(String))];
     await saveSecondaryLockMenusApi({ menuIds: uniqueIds, secondaryPassword });
     lockedMenuIds.value = new Set(uniqueIds);
   }
 
-  function isMenuLocked(menuId: number | string): boolean {
+  function isMenuLocked(menuId: string): boolean {
     return lockedMenuIds.value.has(String(menuId));
   }
 

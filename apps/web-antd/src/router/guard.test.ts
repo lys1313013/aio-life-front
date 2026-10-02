@@ -19,6 +19,8 @@ const state = vi.hoisted(() => ({
   },
   user: { userInfo: { roles: [], homePath: '/' } },
   generateAccess: vi.fn(),
+  lockedIds: new Set<string>(),
+  triggerUnlock: vi.fn(),
 }));
 
 vi.mock('@vben/constants', () => ({ LOGIN_PATH: '/auth/login' }));
@@ -50,13 +52,15 @@ vi.mock('#/store', () => ({ useAuthStore: () => ({}) }));
 vi.mock('#/store/secondary-lock', () => ({
   useSecondaryLockStore: () => ({
     loadLockedMenus: async () => {},
-    isMenuLocked: () => false,
+    isMenuLocked: (id: string) => state.lockedIds.has(id),
+    isUnlocked: () => false,
+    triggerUnlock: state.triggerUnlock,
   }),
 }));
 vi.mock('#/utils/menu-visibility', () => ({
   filterVisibleMenus: (menus: unknown[]) => menus,
 }));
-vi.mock('./access', () => ({ generateAccess: state.generateAccess }));
+vi.mock('./navigation', () => ({ refreshNavigation: state.generateAccess }));
 
 function stubPage(route: RouteRecordRaw): RouteRecordRaw {
   const result = { ...route };
@@ -80,6 +84,13 @@ function makeRouter() {
       component: {},
       meta: { title: '主页' },
     });
+    router.addRoute('Root', {
+      name: 'Locked',
+      path: '/locked',
+      component: {},
+      meta: { menuId: '9007199254740993', title: '锁定页' },
+    });
+    state.access.setIsAccessChecked(true);
     return { accessibleMenus: [], accessibleRoutes: [] };
   });
   createRouterGuard(router);
@@ -92,6 +103,7 @@ describe('根路径首页', () => {
     state.access.accessToken = '';
     state.access.isAccessChecked = false;
     state.user.userInfo.homePath = '/';
+    state.lockedIds.clear();
   });
 
   it('未登录访问根路径仍跳转登录，不放行基础布局', async () => {
@@ -129,5 +141,23 @@ describe('根路径首页', () => {
     await router.push('/auth/login');
     expect(router.currentRoute.value.path).toBe('/');
     expect(router.currentRoute.value.name).toBe('Analytics');
+  });
+  it('保留大整数菜单 ID 并拦截已锁页面', async () => {
+    state.access.accessToken = 'test-token';
+    state.lockedIds.add('9007199254740993');
+    const router = makeRouter();
+    await router.push('/');
+    await router.push('/locked');
+    expect(state.triggerUnlock).toHaveBeenCalledWith('/locked');
+    expect(router.currentRoute.value.path).toBe('/');
+  });
+
+  it('首次直达大整数 ID 的锁页面时先回首页', async () => {
+    state.access.accessToken = 'test-token';
+    state.lockedIds.add('9007199254740993');
+    const router = makeRouter();
+    await router.push('/locked');
+    expect(state.triggerUnlock).toHaveBeenCalledWith('/locked');
+    expect(router.currentRoute.value.path).toBe('/');
   });
 });

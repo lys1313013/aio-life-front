@@ -105,7 +105,7 @@ interface RouteMeta {
   /**
    * 菜单ID（后端返回）
    */
-  menuId?: number;
+  menuId?: string;
   /**
    * 菜单可以看到，但是访问会被重定向到403
    */
