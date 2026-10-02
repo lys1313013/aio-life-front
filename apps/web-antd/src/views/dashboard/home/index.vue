@@ -601,7 +601,7 @@ function navTo(nav: { url?: string }) {
       </template>
     </div>
     <div
-      class="mt-2 grid items-stretch gap-x-2 gap-y-3 sm:mt-3 sm:gap-x-3 sm:gap-y-3 md:grid-cols-2 lg:grid-cols-3"
+      class="mt-2 grid items-stretch gap-2 sm:mt-3 sm:gap-3 md:grid-cols-2 lg:grid-cols-3"
     >
       <!-- 时迹统计 -->
       <div
