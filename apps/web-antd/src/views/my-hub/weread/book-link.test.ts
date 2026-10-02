@@ -57,7 +57,7 @@ describe('阅读排行打开书籍', () => {
     const wrapper = render();
     await wrapper.get('button').trigger('click');
     expect(popup.opener).toBeNull();
-    expect(wrapper.get('[role="progressbar"]').exists()).toBe(true);
+    expect(wrapper.find('[role="progressbar"]').exists()).toBe(true);
     expect(wrapper.get('button').attributes('disabled')).toBeDefined();
     expect(api.get).toHaveBeenCalledWith(book.bookId);
     resolve({ deepLink: link });
