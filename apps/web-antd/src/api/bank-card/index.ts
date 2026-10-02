@@ -24,8 +24,8 @@ export interface BankCard {
   cardName: null | string;
   alias: null | string;
   cardType: 'credit' | 'debit';
-  cardNoFirst4: string;
-  cardNoLast4: string;
+  cardNoFirst4: null | string;
+  cardNoLast4: null | string;
   branchName: null | string;
   status: 'closed' | 'frozen' | 'lost' | 'normal';
   openedDate: null | string;
@@ -33,6 +33,9 @@ export interface BankCard {
   creditLimit: null | number | string;
   statementDay: null | number;
   repaymentDay: null | number;
+  coverTemplateId?: null | string;
+  coverTemplateFileId?: null | string;
+  coverTemplateName?: null | string;
   coverColor: null | string;
   coverSourceUrl: null | string;
   sortOrder: number;
@@ -42,7 +45,14 @@ export interface BankCard {
 }
 export type BankCardInput = Omit<
   BankCard,
-  'bankCode' | 'bankName' | 'cardNoFirst4' | 'cardNoLast4' | 'id' | 'tags'
+  | 'bankCode'
+  | 'bankName'
+  | 'cardNoFirst4'
+  | 'cardNoLast4'
+  | 'coverTemplateFileId'
+  | 'coverTemplateName'
+  | 'id'
+  | 'tags'
 > & { cardNo?: string; tagIds: string[] };
 export const listCards = () => requestClient.get<BankCard[]>('/bank-cards');
 export const listBanks = () =>

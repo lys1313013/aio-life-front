@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { PictureOutlined, UndoOutlined } from '@ant-design/icons-vue';
 import { Button, message, Radio, RadioGroup, Slider } from 'ant-design-vue';
@@ -7,7 +7,11 @@ import { Button, message, Radio, RadioGroup, Slider } from 'ant-design-vue';
 import { uploadCover } from '#/api/bank-card';
 import { AppModal as Modal } from '#/components/app-modal';
 
-const props = defineProps<{ fileId?: string }>();
+const props = defineProps<{
+  active: boolean;
+  fileId?: string;
+  uploadFn?: (file: File) => Promise<{ id: string }>;
+}>();
 const emit = defineEmits<{ busy: [value: boolean]; change: [id?: string] }>();
 const input = ref<HTMLInputElement>();
 const source = ref('');
@@ -27,6 +31,10 @@ function selectFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (input.value) input.value.value = '';
   if (!file) return;
+  openFile(file);
+}
+function openFile(file: File) {
+  if (!props.active || busy.value || cropOpen.value) return;
   if (
     !['image/jpeg', 'image/png'].includes(file.type) ||
     file.size > 5 * 1024 * 1024
@@ -39,6 +47,20 @@ function selectFile(event: Event) {
   mode.value = 'contain';
   zoom.value = 1;
   cropOpen.value = true;
+}
+function handlePaste(event: ClipboardEvent) {
+  if (!props.active || busy.value || cropOpen.value || event.defaultPrevented)
+    return;
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (!item.type.startsWith('image/')) continue;
+    const file = item.getAsFile();
+    if (!file) continue;
+    event.preventDefault();
+    openFile(file);
+    return;
+  }
 }
 async function confirm() {
   busy.value = true;
@@ -73,7 +95,10 @@ async function confirm() {
         'image/png',
       ),
     );
-    const result = await uploadCover(
+    // 校验自动缩放后的实际文件大小，原图仍允许最大 5MB。
+    if (blob.size > 3 * 1024 * 1024)
+      throw new Error('处理后的卡面不能超过3MB，请选择更小的图片');
+    const result = await (props.uploadFn || uploadCover)(
       new File([blob], 'card-cover.png', { type: 'image/png' }),
     );
     emit('change', result.id);
@@ -87,7 +112,11 @@ async function confirm() {
     emit('busy', false);
   }
 }
-onBeforeUnmount(cleanup);
+onMounted(() => document.addEventListener('paste', handlePaste));
+onBeforeUnmount(() => {
+  document.removeEventListener('paste', handlePaste);
+  cleanup();
+});
 </script>
 <template>
   <div class="cover-actions">
@@ -96,9 +125,15 @@ onBeforeUnmount(cleanup);
       type="file"
       accept="image/png,image/jpeg"
       hidden
+      style="display: none"
       @change="selectFile"
     />
-    <Button size="small" :loading="busy" @click="input?.click()">
+    <Button
+      size="small"
+      :loading="busy"
+      :disabled="!active"
+      @click="input?.click()"
+    >
       <template #icon><PictureOutlined /></template
       >{{ props.fileId ? '更换卡面' : '上传卡面' }}
     </Button>
@@ -107,7 +142,7 @@ onBeforeUnmount(cleanup);
       size="small"
       type="text"
       aria-label="恢复默认卡面"
-      :disabled="busy"
+      :disabled="!active || busy"
       @click="emit('change', undefined)"
     >
       <UndoOutlined />

@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
-import { BankOutlined } from '@ant-design/icons-vue';
+import {
+  BankOutlined,
+  LoadingOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons-vue';
 
 import { useAuthImageUrl } from '#/composables/useAuthImageUrl';
+import { clearImageCache } from '#/utils/file';
 
 import { defaultColor } from './model';
 
@@ -15,47 +20,109 @@ const props = defineProps<{
   color?: null | string;
   fileId?: string;
 }>();
-const { blobUrl, error, loading } = useAuthImageUrl(() => props.fileId);
-const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
+const retry = ref(0);
+const { blobUrl, error, loading } = useAuthImageUrl(() => {
+  void retry.value;
+  return props.fileId;
+});
+const hasImage = computed(
+  () => props.fileId && blobUrl.value && !error.value && !loading.value,
+);
 </script>
 <template>
-  <div
-    class="card-face"
-    :class="{ 'has-image': hasImage, 'has-actions': $slots.actions }"
-    :style="{ '--card-color': color || defaultColor(bankCode) }"
-    :aria-busy="loading"
-  >
-    <img
-      v-if="hasImage"
-      :src="blobUrl"
-      :alt="`${bankName || ''}卡面`"
-      @error="error = true"
-    />
-    <template v-else>
-      <div class="face-bank">
-        <span class="bank-mark"><BankOutlined /></span
-        ><span>{{ bankName || '选择银行' }}</span>
+  <div class="card-presentation">
+    <div
+      class="card-face"
+      :class="{ 'has-image': hasImage, 'has-actions': $slots.actions }"
+      :style="{ '--card-color': color || defaultColor(bankCode) }"
+      :aria-busy="loading"
+    >
+      <img
+        v-if="hasImage"
+        :src="blobUrl"
+        :alt="`${bankName || ''}卡面`"
+        @error="error = true"
+      />
+      <template v-else>
+        <div class="face-bank">
+          <span class="bank-mark"><BankOutlined /></span
+          ><span>{{ bankName || '选择银行' }}</span>
+        </div>
+        <div class="chip" aria-hidden="true"><span></span></div>
+        <div class="face-bottom">
+          <span class="product-name">{{
+            cardName || bankCode || 'BANK CARD'
+          }}</span
+          ><span class="card-type">{{
+            cardType === 'credit' ? '信用卡' : '储蓄卡'
+          }}</span>
+        </div>
+        <div class="face-orbit" aria-hidden="true"></div>
+      </template>
+      <div
+        v-if="loading"
+        class="image-state"
+        role="status"
+        aria-label="加载卡面"
+      >
+        <LoadingOutlined spin />
       </div>
-      <div class="chip" aria-hidden="true"><span></span></div>
-      <div class="face-bottom">
-        <span class="product-name">{{
-          cardName || bankCode || 'BANK CARD'
-        }}</span
-        ><span class="card-type">{{
-          cardType === 'credit' ? '信用卡' : '储蓄卡'
-        }}</span>
+      <button
+        v-else-if="error"
+        class="image-state"
+        type="button"
+        aria-label="重试卡面图片"
+        @click.stop="
+          clearImageCache(fileId);
+          retry++;
+        "
+      >
+        <ReloadOutlined />
+      </button>
+      <div
+        v-if="!hasImage && ($slots.number || $slots.actions)"
+        class="face-overlay"
+      >
+        <div v-if="$slots.number" class="face-number">
+          <slot name="number"></slot>
+        </div>
+        <div v-if="$slots.actions" class="face-actions">
+          <slot name="actions"></slot>
+        </div>
       </div>
-      <div class="face-orbit" aria-hidden="true"></div>
-    </template>
-    <div v-if="$slots.number" class="face-number">
-      <slot name="number"></slot>
     </div>
-    <div v-if="$slots.actions" class="face-actions">
-      <slot name="actions"></slot>
+    <div
+      v-if="$slots.caption || (hasImage && ($slots.number || $slots.actions))"
+      class="card-footer"
+    >
+      <div v-if="$slots.caption" class="footer-caption">
+        <slot name="caption"></slot>
+      </div>
+      <div v-if="hasImage && $slots.number" class="footer-number">
+        <slot name="number"></slot>
+      </div>
+      <div v-if="hasImage && $slots.actions" class="footer-actions">
+        <slot name="actions"></slot>
+      </div>
     </div>
   </div>
 </template>
 <style scoped>
+.image-state {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 2;
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
 .card-face {
   position: relative;
   overflow: hidden;
@@ -108,16 +175,43 @@ const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
   top: 23px;
   right: 16px;
 }
-.has-image .face-number,
-.has-image .face-actions {
-  background: rgb(0 0 0 / 65%);
-  border-radius: 6px;
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 3px 0;
+  color: hsl(var(--foreground));
 }
-.has-image .face-number {
-  left: auto;
-  width: fit-content;
-  max-width: calc(100% - 46px);
-  padding: 0 6px;
+.footer-caption {
+  flex: 1;
+  min-width: 0;
+}
+.footer-number {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 65%;
+  margin-left: auto;
+  color: hsl(var(--muted-foreground));
+  text-align: right;
+}
+.footer-number :deep(.card-number) {
+  font-size: 13px;
+  line-height: 20px;
+  letter-spacing: 0.025em;
+  overflow-wrap: anywhere;
+}
+.footer-actions {
+  flex: none;
+}
+.card-footer .footer-actions :deep(.ant-btn) {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+.card-footer .footer-actions :deep(.ant-btn:hover),
+.card-footer .footer-actions :deep(.ant-btn:focus-visible) {
+  background: hsl(var(--muted));
 }
 .bank-mark {
   display: grid;

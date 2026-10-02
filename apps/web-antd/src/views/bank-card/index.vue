@@ -11,7 +11,6 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   PlusOutlined,
-  ReloadOutlined,
   SearchOutlined,
   TagsOutlined,
 } from '@ant-design/icons-vue';
@@ -44,7 +43,7 @@ import { AppModal as Modal } from '#/components/app-modal';
 
 import CardEditor from './card-editor.vue';
 import CardFace from './card-face.vue';
-import { filterCards, money, STATUS_OPTIONS } from './model';
+import { filterCards, STATUS_OPTIONS } from './model';
 
 const cards = ref<BankCard[]>([]);
 const banks = ref<BankOption[]>([]);
@@ -110,6 +109,9 @@ async function load() {
   }
 }
 function openEditor(card?: BankCard) {
+  if (card && deleting.value === card.id) return;
+  menuCardId.value = '';
+  deleteConfirmId.value = '';
   clearNumbers();
   editing.value = card;
   editorOpen.value = true;
@@ -132,8 +134,6 @@ async function cardAction(card: BankCard, action: string) {
   if (action === 'delete') {
     await nextTick();
     deleteConfirmId.value = card.id;
-  } else if (action === 'edit') {
-    openEditor(card);
   } else {
     await numberAction(card, action === 'copy');
   }
@@ -290,14 +290,6 @@ onBeforeUnmount(() => {
           <TagsOutlined />
         </Button>
         <Button
-          type="text"
-          aria-label="刷新银行卡"
-          :loading="loading"
-          @click="load"
-        >
-          <ReloadOutlined />
-        </Button>
-        <Button
           type="primary"
           aria-label="添加银行卡"
           :disabled="loading || failed"
@@ -357,18 +349,30 @@ onBeforeUnmount(() => {
           v-for="card in visibleCards"
           :key="card.id"
           class="bank-item"
-          :aria-label="`${card.bankName} 尾号 ${card.cardNoLast4}`"
+          :aria-label="
+            card.cardNoLast4
+              ? `${card.bankName} 尾号 ${card.cardNoLast4}`
+              : card.bankName
+          "
         >
           <CardFace
+            role="button"
+            :tabindex="deleting === card.id ? -1 : 0"
+            :aria-label="`编辑银行卡：${card.alias || card.cardName || card.bankName}${card.cardNoLast4 ? ` 尾号 ${card.cardNoLast4}` : ''}`"
+            :aria-disabled="deleting === card.id"
+            class="cursor-pointer rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
             :bank-name="card.bankName"
             :bank-code="card.bankCode"
             :card-name="card.cardName"
             :card-type="card.cardType"
             :color="card.coverColor"
-            :file-id="card.coverFileIds[0]"
+            :file-id="card.coverTemplateFileId || card.coverFileIds[0]"
+            @click="openEditor(card)"
+            @keydown.enter.self.prevent="openEditor(card)"
+            @keydown.space.self.prevent="openEditor(card)"
           >
             <template #number>
-              <span class="card-number">{{
+              <span v-if="card.cardNoLast4" class="card-number">{{
                 numbers[card.id]?.replace(/(.{4})/g, '$1 ').trim() ||
                 [card.cardNoFirst4, '••••', card.cardNoLast4]
                   .filter(Boolean)
@@ -376,10 +380,14 @@ onBeforeUnmount(() => {
               }}</span>
             </template>
             <template #actions>
-              <div class="card-actions">
+              <div class="card-actions" @click.stop>
                 <Popconfirm
                   :open="deleteConfirmId === card.id"
-                  :title="`删除尾号 ${card.cardNoLast4} 的银行卡？`"
+                  :title="
+                    card.cardNoLast4
+                      ? `删除尾号 ${card.cardNoLast4} 的银行卡？`
+                      : `删除${card.alias || card.cardName || card.bankName}的银行卡？`
+                  "
                   placement="topRight"
                   :ok-button-props="{ loading: deleting === card.id }"
                   :cancel-button-props="{ disabled: deleting === card.id }"
@@ -418,7 +426,7 @@ onBeforeUnmount(() => {
                     </Button>
                     <template #overlay>
                       <Menu @click="({ key }) => cardAction(card, String(key))">
-                        <MenuItem key="number">
+                        <MenuItem v-if="card.cardNoLast4" key="number">
                           <template #icon>
                             <EyeInvisibleOutlined
                               v-if="numbers[card.id]"
@@ -426,13 +434,9 @@ onBeforeUnmount(() => {
                           </template>
                           {{ numbers[card.id] ? '隐藏卡号' : '查看卡号' }}
                         </MenuItem>
-                        <MenuItem key="copy">
+                        <MenuItem v-if="card.cardNoLast4" key="copy">
                           <template #icon><CopyOutlined /></template>
                           复制卡号
-                        </MenuItem>
-                        <MenuItem key="edit">
-                          <template #icon><EditOutlined /></template>
-                          编辑银行卡
                         </MenuItem>
                         <MenuItem key="delete" danger>
                           <template #icon><DeleteOutlined /></template>
@@ -444,53 +448,35 @@ onBeforeUnmount(() => {
                 </Popconfirm>
               </div>
             </template>
-          </CardFace>
-          <div
-            v-if="
-              card.alias ||
-              card.coverFileIds.length > 0 ||
-              card.status !== 'normal' ||
-              (card.cardType === 'credit' &&
-                (card.creditLimit !== null || card.repaymentDay)) ||
-              card.tags.length > 0
-            "
-            class="card-info"
-          >
-            <div
+            <template
               v-if="
                 card.alias ||
+                card.coverTemplateId ||
                 card.coverFileIds.length > 0 ||
                 card.status !== 'normal'
               "
-              class="card-title"
+              #caption
             >
-              <span>{{
-                card.alias ||
-                (card.coverFileIds.length > 0 ? card.bankName : '')
-              }}</span
-              ><span
-                v-if="card.status !== 'normal'"
-                class="status-label"
-                :class="`status-${card.status}`"
-                >{{
-                  STATUS_OPTIONS.find((s) => s.value === card.status)?.label
+              <div class="card-title">
+                <span>{{
+                  card.alias ||
+                  (card.coverTemplateId || card.coverFileIds.length > 0
+                    ? card.bankName
+                    : '')
                 }}</span
-              >
-            </div>
-            <div
-              v-if="
-                card.cardType === 'credit' &&
-                (card.creditLimit !== null || card.repaymentDay)
-              "
-              class="credit-meta"
-            >
-              <span v-if="card.creditLimit !== null"
-                >额度 <strong>¥ {{ money(card.creditLimit) }}</strong></span
-              ><span v-if="card.repaymentDay"
-                >{{ card.repaymentDay }} 日还款</span
-              >
-            </div>
-            <div v-if="card.tags.length > 0" class="tag-list">
+                ><span
+                  v-if="card.status !== 'normal'"
+                  class="status-label"
+                  :class="`status-${card.status}`"
+                  >{{
+                    STATUS_OPTIONS.find((s) => s.value === card.status)?.label
+                  }}</span
+                >
+              </div>
+            </template>
+          </CardFace>
+          <div v-if="card.tags.length > 0" class="card-info">
+            <div class="tag-list">
               <Tag
                 v-for="tag in card.tags"
                 :key="tag.id"
@@ -592,7 +578,6 @@ onBeforeUnmount(() => {
 .toolbar,
 .card-actions,
 .card-title,
-.credit-meta,
 .tag-management-actions {
   display: flex;
   align-items: center;
@@ -643,7 +628,6 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 8px;
   font-size: 14px;
-  margin-bottom: 7px;
   min-height: 20px;
 }
 .card-title > span:first-child {
@@ -675,19 +659,6 @@ onBeforeUnmount(() => {
 .card-actions :deep(.ant-btn:focus-visible) {
   color: inherit;
   background: rgb(255 255 255 / 16%);
-}
-.credit-meta {
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 5px;
-  color: hsl(var(--muted-foreground));
-  font-size: 12px;
-  margin-top: 7px;
-}
-.credit-meta strong {
-  color: hsl(var(--foreground));
-  font-weight: 500;
-  margin-left: 4px;
 }
 .tag-list {
   display: flex;

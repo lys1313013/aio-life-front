@@ -7,10 +7,11 @@ import type {
   BankOption,
   CardTag,
 } from '#/api/bank-card';
+import type { CoverOption } from '#/api/bank-card/covers';
 
 import { computed, ref, watch } from 'vue';
 
-import { DownOutlined } from '@ant-design/icons-vue';
+import { DownOutlined, QuestionCircleOutlined } from '@ant-design/icons-vue';
 import {
   AutoComplete,
   Button,
@@ -20,6 +21,7 @@ import {
   Input,
   InputNumber,
   message,
+  Popover,
   Select,
   Textarea,
 } from 'ant-design-vue';
@@ -30,6 +32,7 @@ import { AppModal as Modal } from '#/components/app-modal';
 import CardFace from './card-face.vue';
 import CoverPicker from './cover-picker.vue';
 import { COLORS, defaultColor, STATUS_OPTIONS } from './model';
+import TemplatePicker from './template-picker.vue';
 
 const props = defineProps<{
   banks: BankOption[];
@@ -61,6 +64,7 @@ function empty(): BankCardInput {
     creditLimit: null,
     statementDay: null,
     repaymentDay: null,
+    coverTemplateId: null,
     coverColor: null,
     coverSourceUrl: null,
     sortOrder: 0,
@@ -71,6 +75,29 @@ function empty(): BankCardInput {
 }
 const form = ref(empty());
 const bankText = ref('');
+const templateOpen = ref(false);
+const templateFileId = ref<string>();
+const templateBank = ref<null | string>();
+const templateType = ref<string>();
+function selectTemplate(item: CoverOption) {
+  form.value.coverTemplateId = item.id;
+  form.value.coverFileIds = [];
+  form.value.coverSourceUrl = null;
+  templateFileId.value = item.fileId;
+  templateBank.value = form.value.bankId;
+  templateType.value = form.value.cardType;
+}
+watch(
+  () => [form.value.bankId, form.value.cardType],
+  () => {
+    if (
+      form.value.coverTemplateId &&
+      (templateBank.value !== form.value.bankId ||
+        templateType.value !== form.value.cardType)
+    )
+      coverChange();
+  },
+);
 const bank = computed(() =>
   props.banks.find((b) => b.id === form.value.bankId),
 );
@@ -123,6 +150,10 @@ watch(
           coverFileIds: [...props.card.coverFileIds],
         }
       : empty();
+    templateOpen.value = false;
+    templateFileId.value = props.card?.coverTemplateFileId || undefined;
+    templateBank.value = form.value.bankId;
+    templateType.value = form.value.cardType;
     bankText.value = props.card?.bankName ?? '';
     expanded.value = false;
     formRef.value?.clearValidate();
@@ -142,6 +173,8 @@ function changeType(type: unknown) {
   }
 }
 function coverChange(id?: string) {
+  form.value.coverTemplateId = null;
+  templateFileId.value = undefined;
   form.value.coverFileIds = id ? [id] : [];
   form.value.coverSourceUrl = null;
 }
@@ -149,10 +182,6 @@ async function submit() {
   try {
     await formRef.value?.validate();
   } catch {
-    return;
-  }
-  if (!props.card && !form.value.cardNo?.trim()) {
-    message.error('请输入卡号');
     return;
   }
   saving.value = true;
@@ -211,14 +240,39 @@ async function submit() {
           :card-name="form.cardName"
           :card-type="form.cardType"
           :color="form.coverColor"
-          :file-id="form.coverFileIds[0]"
+          :file-id="templateFileId || form.coverFileIds[0]"
         />
         <CoverPicker
-          :file-id="form.coverFileIds[0]"
+          :active="open && !saving"
+          :file-id="templateFileId || form.coverFileIds[0]"
           @change="coverChange"
           @busy="uploading = $event"
         />
-        <div v-if="form.coverFileIds.length === 0" class="color-options">
+        <div class="mt-3 flex items-center justify-center gap-1">
+          <Button
+            :disabled="!form.bankId || !bank?.enabled || saving || uploading"
+            @click="templateOpen = true"
+          >
+            选择公共卡面
+          </Button>
+          <Popover
+            v-if="!form.bankId || !bank?.enabled"
+            :trigger="['hover', 'focus', 'click']"
+            :content="
+              form.bankId
+                ? '该银行已停用，暂不可选择公共卡面'
+                : '请先从银行列表中选择银行，再选择公共卡面'
+            "
+          >
+            <Button type="text" shape="circle" aria-label="公共卡面选择说明">
+              <QuestionCircleOutlined />
+            </Button>
+          </Popover>
+        </div>
+        <div
+          v-if="!form.coverTemplateId && form.coverFileIds.length === 0"
+          class="color-options"
+        >
           <button
             v-for="color in COLORS"
             :key="color"
@@ -286,7 +340,7 @@ async function submit() {
           :rules="[
             {
               validator: async (_rule: unknown, value: string) => {
-                if (!value && card) return;
+                if (!value?.trim()) return;
                 if (!/^[0-9]{12,19}$/.test((value || '').replace(/[\s-]/g, '')))
                   throw new Error('请输入12至19位卡号');
               },
@@ -299,7 +353,9 @@ async function submit() {
             inputmode="numeric"
             :maxlength="32"
             :placeholder="
-              card ? `留空保留原卡号 · ${card.cardNoLast4}` : '输入完整卡号'
+              card?.cardNoLast4
+                ? `留空保留原卡号 · ${card.cardNoLast4}`
+                : '卡号（选填）'
             "
           />
         </FormItem>
@@ -439,6 +495,13 @@ async function submit() {
       </Form>
     </div>
   </Modal>
+  <TemplatePicker
+    v-model:open="templateOpen"
+    :bank-id="form.bankId"
+    :bank-name="bank?.name"
+    :card-type="form.cardType"
+    @select="selectTemplate"
+  />
 </template>
 <style scoped>
 .editor-layout {
