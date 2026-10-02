@@ -219,6 +219,7 @@ onBeforeUnmount(() => {
           <SubMenuContent
             :class="is('active', active)"
             :icon="menuIcon"
+            :icon-color="iconColor"
             :is-menu-more="isSubMenuMore"
             :is-top-level-menu-submenu="isTopLevelMenuSubmenu"
             :level="currentLevel"
@@ -250,6 +251,7 @@ onBeforeUnmount(() => {
       <SubMenuContent
         :class="is('active', active)"
         :icon="menuIcon"
+        :icon-color="iconColor"
         :is-menu-more="isSubMenuMore"
         :is-top-level-menu-submenu="isTopLevelMenuSubmenu"
         :level="currentLevel"

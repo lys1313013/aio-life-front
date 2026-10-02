@@ -9,6 +9,37 @@ import { generateMenus } from '../generate-menus';
 // Nested route setup to test child inclusion and hideChildrenInMenu functionality
 
 describe('generateMenus', () => {
+  it('preserves top-level icon colors through backend routes without changing meta', async () => {
+    const { generateRoutesByBackend } =
+      await import('../generate-routes-backend');
+    const routes = await generateRoutesByBackend({
+      fetchMenuListAsync: async () => [
+        {
+          name: 'colored',
+          path: '/colored',
+          component: 'BasicLayout',
+          iconColor: '#427bea',
+          meta: { title: '颜色', icon: 'lucide:palette' },
+          children: [
+            {
+              name: 'child',
+              path: '/colored/child',
+              component: 'BasicLayout',
+              iconColor: '#abcdef',
+              meta: { title: '子菜单' },
+            },
+          ],
+        },
+      ],
+      layoutMap: { BasicLayout: async () => ({ template: '<div />' }) },
+      router: mockRouter as unknown as Router,
+      routes: [],
+    });
+    const menus = generateMenus(routes, mockRouter as unknown as Router);
+    expect(menus[0]?.iconColor).toBe('#427bea');
+    expect(menus[0]?.children?.[0]?.iconColor).toBe('#abcdef');
+    expect(routes[0]?.meta).not.toHaveProperty('iconColor');
+  });
   // 模拟路由数据
   const mockRoutes = [
     {

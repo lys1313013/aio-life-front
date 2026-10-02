@@ -5,6 +5,7 @@ import type { RouteRecordRaw } from 'vue-router';
  * 扩展路由原始对象
  */
 type ExRouteRecordRaw = RouteRecordRaw & {
+  iconColor?: string;
   parent?: string;
   parents?: string[];
   path?: any;
@@ -46,6 +47,11 @@ interface MenuRecordRaw extends MenuRecordBadgeRaw {
    * 图标名
    */
   icon?: Component | string;
+  iconColor?: string;
+  /**
+   * 菜单ID（后端返回）
+   */
+  menuId?: number;
   /**
    * 菜单名
    */
@@ -67,18 +73,14 @@ interface MenuRecordRaw extends MenuRecordBadgeRaw {
    */
   path: string;
   /**
+   * 是否启用二级锁（前端计算填充）
+   */
+  secondaryLock?: boolean;
+  /**
    * 是否显示菜单
    * @default true
    */
   show?: boolean;
-  /**
-   * 菜单ID（后端返回）
-   */
-  menuId?: number;
-  /**
-   * 是否启用二级锁（前端计算填充）
-   */
-  secondaryLock?: boolean;
 }
 
 export type { ExRouteRecordRaw, MenuRecordBadgeRaw, MenuRecordRaw };

@@ -48,6 +48,7 @@ const treeData = computed(() => {
       checkable: !existing.value.has(c.menuId),
       disabled: existing.value.has(c.menuId),
       icon: c.icon,
+      color: c.color,
       key: c.menuId,
       title: c.title,
     })),
@@ -124,9 +125,14 @@ function handleCancel() {
         block-line
         @update:checked-keys="onCheck"
       >
-        <template #title="{ title, icon, disabled }">
+        <template #title="{ title, icon, color, disabled }">
           <span class="inline-flex items-center gap-1">
-            <VbenIcon v-if="icon" :icon="icon" class="text-base" />
+            <VbenIcon
+              v-if="icon"
+              :icon="icon"
+              :style="{ color: color || undefined }"
+              class="text-base"
+            />
             <span>{{ title }}</span>
             <ATag v-if="disabled" color="default" class="!ml-1">已添加</ATag>
           </span>

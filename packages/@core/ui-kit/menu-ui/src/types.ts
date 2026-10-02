@@ -68,6 +68,7 @@ interface SubMenuProps extends MenuRecordBadgeRaw {
    * @zh_CN 图标
    */
   icon?: Component | string;
+  iconColor?: string;
   /**
    * @zh_CN submenu 名称
    */
@@ -87,6 +88,7 @@ interface MenuItemProps extends MenuRecordBadgeRaw {
    * @zh_CN 图标
    */
   icon?: Component | string;
+  iconColor?: string;
   /**
    * @zh_CN menuitem 名称
    */

@@ -73,6 +73,7 @@ const treeData = computed(() => {
       key: node.id,
       title: node.meta?.title || node.name,
       iconName: node.meta?.icon,
+      iconColor: node.iconColor,
       inactive: node.status !== 1,
       children: node.children?.length ? build(node.children) : undefined,
     }));
@@ -316,6 +317,7 @@ const openCreate = (parentId = '0') => {
     sort: 0,
     roles: '',
     component: '',
+    iconColor: '',
     redirect: '',
     meta: {},
   };
@@ -337,6 +339,7 @@ const openEdit = (row: any) => {
     sort: r.sort ?? 0,
     roles: r.roles ?? '',
     component: r.component ?? '',
+    iconColor: r.iconColor ?? '',
     redirect: r.redirect ?? '',
     meta: r.meta ?? {},
   };
@@ -371,12 +374,18 @@ const save = async () => {
     const normalizedSelectedRoles = Array.from(
       new Set(selectedRoles.value.map((x) => x.trim()).filter(Boolean)),
     );
+    const iconColor = form.value.iconColor?.trim() || '';
+    if (iconColor && !/^#[0-9a-f]{6}$/i.test(iconColor)) {
+      message.error('请输入六位颜色值，如 #427bea');
+      return;
+    }
     const parsedMeta = parseMeta();
     if (metaTitle.value) parsedMeta.title = metaTitle.value.trim();
     if (metaIcon.value) parsedMeta.icon = metaIcon.value.trim();
 
     const payload: SysMenuSaveReq = {
       ...form.value,
+      iconColor,
       name: form.value.name?.trim(),
       path: form.value.path?.trim(),
       component: form.value.component?.trim(),
@@ -597,7 +606,7 @@ onMounted(() => {
               @select="handleSelect"
               @drop="handleDrop"
             >
-              <template #title="{ key, title, iconName, inactive }">
+              <template #title="{ key, title, iconName, iconColor, inactive }">
                 <span
                   class="inline-flex max-w-full items-center gap-2"
                   :class="{ 'text-muted-foreground': inactive }"
@@ -606,6 +615,7 @@ onMounted(() => {
                   <VbenIcon
                     v-else-if="iconName"
                     :icon="iconName"
+                    :style="{ color: iconColor || undefined }"
                     class="size-4 shrink-0"
                   />
                   <span class="truncate" :title="title">{{ title }}</span>
@@ -692,6 +702,7 @@ onMounted(() => {
                   <VbenIcon
                     v-if="record.meta?.icon"
                     :icon="record.meta.icon"
+                    :style="{ color: record.iconColor || undefined }"
                     class="size-4 flex-shrink-0 text-foreground"
                   />
                   <div>
@@ -806,6 +817,7 @@ onMounted(() => {
                   <VbenIcon
                     v-if="metaIcon.trim()"
                     :icon="metaIcon.trim()"
+                    :style="{ color: form.iconColor || undefined }"
                     class="size-5"
                     data-testid="menu-icon-preview"
                   />
@@ -814,6 +826,25 @@ onMounted(() => {
                   v-model:value="metaIcon"
                   class="min-w-0 flex-1"
                   placeholder="例如 mdi:clock-outline"
+                />
+              </div>
+            </Form.Item>
+            <Form.Item label="图标颜色">
+              <div class="flex items-center gap-2">
+                <input
+                  type="color"
+                  aria-label="选择图标颜色"
+                  class="h-8 w-10 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                  :value="form.iconColor || '#427bea'"
+                  @input="
+                    form.iconColor = ($event.target as HTMLInputElement).value
+                  "
+                />
+                <Input
+                  v-model:value="form.iconColor"
+                  placeholder="默认颜色"
+                  allow-clear
+                  aria-label="图标颜色值"
                 />
               </div>
             </Form.Item>

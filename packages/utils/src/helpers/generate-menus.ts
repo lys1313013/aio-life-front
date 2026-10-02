@@ -71,6 +71,7 @@ function generateMenus(
       badgeType,
       badgeVariants,
       icon,
+      iconColor: route.iconColor,
       menuId,
       name,
       order,

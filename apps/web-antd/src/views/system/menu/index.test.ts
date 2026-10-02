@@ -2,8 +2,17 @@ import type { SysMenuAdminItem } from '#/api/core/menu';
 
 import { flushPromises, shallowMount } from '@vue/test-utils';
 
-import { message, Popconfirm, Switch, Table, Tree } from 'ant-design-vue';
+import {
+  Input,
+  message,
+  Popconfirm,
+  Switch,
+  Table,
+  Tree,
+} from 'ant-design-vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AppModal } from '#/components/app-modal';
 
 import MenuPage from './index.vue';
 
@@ -242,5 +251,45 @@ describe('菜单树与明细联动', () => {
     expect(wrapper.findComponent(Tree).props('selectedKeys')).toEqual([
       parentId,
     ]);
+  });
+});
+
+describe('菜单图标颜色', () => {
+  it('编辑时回显独立颜色，保存并清空，不写入 meta', async () => {
+    const row = {
+      ...menu('colored'),
+      iconColor: '#427bea',
+      meta: { icon: 'lucide:book', title: '图书' },
+    };
+    api.getMenuAdminTreeApi.mockResolvedValueOnce([row]);
+    api.updateMenuApi.mockImplementation(async (id, payload) => ({
+      ...row,
+      ...payload,
+      id,
+    }));
+    const wrapper = await mountPage();
+    await select(wrapper, 'colored');
+    await wrapper.get('[aria-label="编辑菜单"]').trigger('click');
+    const input = wrapper
+      .findAllComponents(Input)
+      .find((item) => item.attributes('aria-label') === '图标颜色值')!;
+    expect(input.props('value')).toBe('#427bea');
+    input.vm.$emit('update:value', '#abcdef');
+    await wrapper.vm.$nextTick();
+    wrapper.findComponent(AppModal).vm.$emit('ok');
+    await flushPromises();
+    expect(api.updateMenuApi).toHaveBeenLastCalledWith(
+      'colored',
+      expect.objectContaining({ iconColor: '#abcdef', meta: row.meta }),
+    );
+    await wrapper.get('[aria-label="编辑菜单"]').trigger('click');
+    input.vm.$emit('update:value', '');
+    await wrapper.vm.$nextTick();
+    wrapper.findComponent(AppModal).vm.$emit('ok');
+    await flushPromises();
+    expect(api.updateMenuApi).toHaveBeenLastCalledWith(
+      'colored',
+      expect.objectContaining({ iconColor: '', meta: row.meta }),
+    );
   });
 });

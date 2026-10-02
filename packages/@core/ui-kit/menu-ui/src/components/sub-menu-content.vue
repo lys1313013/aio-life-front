@@ -86,6 +86,7 @@ const iconArrowStyle = computed(() => {
       v-if="!isMenuMore"
       :class="nsMenu.e('icon')"
       :icon="icon"
+      :style="{ color: iconColor || undefined }"
       fallback
     />
 

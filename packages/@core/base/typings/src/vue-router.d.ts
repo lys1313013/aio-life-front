@@ -103,6 +103,10 @@ interface RouteMeta {
    */
   maxNumOfOpenTab?: number;
   /**
+   * 菜单ID（后端返回）
+   */
+  menuId?: number;
+  /**
    * 菜单可以看到，但是访问会被重定向到403
    */
   menuVisibleWithForbidden?: boolean;
@@ -123,17 +127,13 @@ interface RouteMeta {
    */
   query?: Recordable;
   /**
-   * 标题名称
-   */
-  title: string;
-  /**
-   * 菜单ID（后端返回）
-   */
-  menuId?: number;
-  /**
    * 是否启用二级锁（用户级，前端填充）
    */
   secondaryLock?: boolean;
+  /**
+   * 标题名称
+   */
+  title: string;
 }
 
 // 定义递归类型以将 RouteRecordRaw 的 component 属性更改为 string
@@ -143,6 +143,7 @@ type RouteRecordStringComponent<T = string> = Omit<
 > & {
   children?: RouteRecordStringComponent<T>[];
   component: T;
+  iconColor?: string;
 };
 
 type ComponentRecordType = Record<string, () => Promise<Component>>;

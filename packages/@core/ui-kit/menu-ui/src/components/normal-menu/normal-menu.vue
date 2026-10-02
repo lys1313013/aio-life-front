@@ -50,7 +50,12 @@ function menuIcon(menu: MenuRecordRaw) {
         @click="() => emit('select', menu)"
         @mouseenter="() => emit('enter', menu)"
       >
-        <VbenIcon :class="e('icon')" :icon="menuIcon(menu)" fallback />
+        <VbenIcon
+          :class="e('icon')"
+          :icon="menuIcon(menu)"
+          :style="{ color: menu.iconColor || undefined }"
+          fallback
+        />
 
         <span :class="e('name')" class="truncate"> {{ menu.name }}</span>
       </li>

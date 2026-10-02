@@ -43,6 +43,7 @@ export async function resetMenuPreferencesApi() {
 export interface SysMenuAdminItem {
   children?: SysMenuAdminItem[];
   component?: string;
+  iconColor?: string;
   id: string;
   meta?: Record<string, any>;
   name: string;
@@ -56,6 +57,7 @@ export interface SysMenuAdminItem {
 
 export interface SysMenuSaveReq {
   component?: string;
+  iconColor?: string;
   meta?: Record<string, any>;
   name: string;
   parentId?: string;
