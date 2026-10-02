@@ -342,6 +342,7 @@ export default {
 
 <template>
   <ACard
+    class="device-page"
     style="width: 100%"
     :tab-list="tabList"
     :active-tab-key="tabKey"
@@ -598,6 +599,11 @@ export default {
 </template>
 
 <style scoped>
+.device-page :deep(.ant-card-head),
+.device-page :deep(.ant-tabs-nav::before) {
+  border-bottom: 0;
+}
+
 .header {
   display: flex;
   align-items: center;
