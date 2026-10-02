@@ -5,7 +5,7 @@ import type { BankOption } from '#/api/bank-card';
 import type { CoverTemplate } from '#/api/bank-card/covers';
 import type { ApiRequests } from '#/api/payload';
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import {
   DeleteOutlined,
@@ -88,17 +88,39 @@ const filtered = computed(() =>
     )
     .toSorted((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id)),
 );
+let generation = 0;
+let mutationVersion = 0;
+let disposed = false;
+const mutations = new Map<string, { item?: CoverTemplate; version: number }>();
+
+function recordMutation(id: string, item?: CoverTemplate) {
+  mutations.set(id, { item, version: ++mutationVersion });
+}
+
 async function load() {
+  const request = ++generation;
+  const version = mutationVersion;
   loading.value = true;
   failed.value = false;
   try {
-    const result = await Promise.all([listCoverTemplates(), listCoverBanks()]);
-    items.value = result[0];
-    banks.value = result[1];
+    const [templates, bankList] = await Promise.all([
+      listCoverTemplates(),
+      listCoverBanks(),
+    ]);
+    if (disposed || request !== generation) return;
+    const latest = new Map(templates.map((item) => [item.id, item]));
+    // 保留该查询发出后已成功的写入，避免慢响应复活删除项或回滚启停状态。
+    for (const [id, mutation] of mutations) {
+      if (mutation.version <= version) continue;
+      if (mutation.item) latest.set(id, mutation.item);
+      else latest.delete(id);
+    }
+    items.value = [...latest.values()];
+    banks.value = bankList;
   } catch {
-    failed.value = true;
+    if (!disposed && request === generation) failed.value = true;
   } finally {
-    loading.value = false;
+    if (!disposed && request === generation) loading.value = false;
   }
 }
 function edit(item?: CoverTemplate) {
@@ -118,9 +140,12 @@ function edit(item?: CoverTemplate) {
   formRef.value?.clearValidate();
 }
 function replace(item: CoverTemplate) {
+  if (disposed) return;
+  recordMutation(item.id, item);
   items.value = [...items.value.filter((row) => row.id !== item.id), item];
 }
 async function save() {
+  if (saving.value || uploading.value) return;
   try {
     await formRef.value?.validate();
   } catch {
@@ -135,6 +160,7 @@ async function save() {
   }
 }
 async function toggle(item: CoverTemplate) {
+  if (busy.value[item.id]) return;
   busy.value[item.id] = true;
   try {
     replace(await setCoverEnabled(item.id, item.isEnabled === 1 ? 0 : 1));
@@ -143,15 +169,22 @@ async function toggle(item: CoverTemplate) {
   }
 }
 async function remove(item: CoverTemplate) {
+  if (busy.value[item.id]) return;
   busy.value[item.id] = true;
   try {
     await deleteCoverTemplate(item.id);
+    if (disposed) return;
+    recordMutation(item.id);
     items.value = items.value.filter((row) => row.id !== item.id);
   } finally {
     busy.value[item.id] = false;
   }
 }
 onMounted(load);
+onBeforeUnmount(() => {
+  disposed = true;
+  generation++;
+});
 </script>
 <template>
   <div class="cover-page">

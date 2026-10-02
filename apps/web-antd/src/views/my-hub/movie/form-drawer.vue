@@ -232,7 +232,7 @@ const handleUploadCover = async ({ file, onSuccess, onError }: any) => {
     uploadLoading.value = true;
     const res = await MovieApi.uploadCover(file as File);
     if (res) {
-      formApi.setValues({ coverImgUrl: res.fileUrl, fileId: res.id });
+      formApi.setValues({ coverImgUrl: '', fileId: res.id });
       previewImg.value = await fetchAuthImageUrl(res.id);
       message.success('上传海报成功');
       onSuccess?.(res, file);
