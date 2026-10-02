@@ -14,6 +14,26 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'lucide:credit-card',
+          title: '银行卡卡面',
+          authority: ['admin'],
+        },
+        name: 'BankCardCoverAdmin',
+        path: '/system/bank-card-covers',
+        component: () => import('#/views/system/bank-card-covers/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'lucide:folder',
+          title: '对象存储',
+          authority: ['admin'],
+        },
+        name: 'StorageAdmin',
+        path: '/system/storage',
+        component: () => import('#/views/system/storage/index.vue'),
+      },
+      {
+        meta: {
           icon: 'mdi:clipboard-text-clock-outline',
           title: '操作日志',
           authority: ['admin'],
