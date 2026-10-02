@@ -74,6 +74,20 @@ export interface BVideoUpdateReq {
   pagesInfo?: null | string;
 }
 
+export interface BankCardCoverEnabledReq {
+  isEnabled?: null | number;
+}
+
+export interface BankCardCoverTemplateReq {
+  name?: null | string;
+  bankId?: null | string;
+  cardType?: null | string;
+  sourceUrl?: null | string;
+  isEnabled?: null | number;
+  sortOrder?: null | number;
+  fileId?: null | string;
+}
+
 export interface BankCardReq {
   bankId?: null | string;
   customBankName?: null | string;
@@ -88,6 +102,7 @@ export interface BankCardReq {
   creditLimit?: null | number | string;
   statementDay?: null | number;
   repaymentDay?: null | number;
+  coverTemplateId?: null | string;
   coverColor?: null | string;
   coverSourceUrl?: null | string;
   sortOrder?: null | number;
@@ -421,6 +436,7 @@ export interface MenuSaveReq {
   parentId?: null | string;
   name?: null | string;
   path?: null | string;
+  iconColor?: null | string;
   component?: null | string;
   redirect?: null | string;
   meta?: null | Record<string, unknown>;
@@ -1051,6 +1067,8 @@ export interface ApiRequests {
   BVideoCreateReq: BVideoCreateReq;
   BVideoProgressReq: BVideoProgressReq;
   BVideoUpdateReq: BVideoUpdateReq;
+  BankCardCoverEnabledReq: BankCardCoverEnabledReq;
+  BankCardCoverTemplateReq: BankCardCoverTemplateReq;
   BankCardReq: BankCardReq;
   BankCardTagReq: BankCardTagReq;
   CbtiPersonalitySaveReq: CbtiPersonalitySaveReq;
@@ -1232,6 +1250,18 @@ const fields: Record<string, Record<string, null | string>> = {
     ownerName: null,
     pagesInfo: null,
   },
+  BankCardCoverEnabledReq: {
+    isEnabled: null,
+  },
+  BankCardCoverTemplateReq: {
+    name: null,
+    bankId: null,
+    cardType: null,
+    sourceUrl: null,
+    isEnabled: null,
+    sortOrder: null,
+    fileId: null,
+  },
   BankCardReq: {
     bankId: null,
     customBankName: null,
@@ -1246,6 +1276,7 @@ const fields: Record<string, Record<string, null | string>> = {
     creditLimit: null,
     statementDay: null,
     repaymentDay: null,
+    coverTemplateId: null,
     coverColor: null,
     coverSourceUrl: null,
     sortOrder: null,
@@ -1544,6 +1575,7 @@ const fields: Record<string, Record<string, null | string>> = {
     parentId: null,
     name: null,
     path: null,
+    iconColor: null,
     component: null,
     redirect: null,
     meta: null,
@@ -2123,10 +2155,13 @@ export function pickPayloadList<K extends keyof ApiRequests>(
 }
 
 const queryFields: Record<string, string[]> = {
+  '/bank-cards/cover-templates': ['bankId', 'cardType'],
   '/bank-cards': [],
   '/bank-cards/banks': [],
   '/bank-cards/{id}': [],
   '/bank-cards/tags': [],
+  '/system/bank-card-covers': [],
+  '/system/bank-card-covers/banks': [],
   '/docs/catalog': [],
   '/docs/operations': ['keyword', 'module', 'page', 'pageSize'],
   '/docs/operations/{operationId}': [],
@@ -2305,6 +2340,7 @@ const queryFields: Record<string, string[]> = {
   '/weread/connection': [],
   '/weread/stats': ['baseTime', 'mode'],
   '/weread/notes': ['bookId'],
+  '/weread/book-link': ['bookId'],
   '/weread/progress': ['bookId'],
   '/relationships/graph': [],
   '/relationships/persons': [],
@@ -2342,6 +2378,9 @@ const queryFields: Record<string, string[]> = {
   '/menu/all': [],
   '/quick-nav/candidates': [],
   '/quick-nav/my': [],
+  '/system/storage/objects': ['cursor', 'pageSize', 'prefix'],
+  '/system/storage/preview': ['key'],
+  '/system/storage/download': ['key'],
   '/system-config/list': ['keyPrefix'],
   '/system-config/{key}': [],
   '/menu/preferences': [],
@@ -2374,6 +2413,24 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/bank-cards/tags/{id}',
     model: 'BankCardTagReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/system/bank-card-covers',
+    model: 'BankCardCoverTemplateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/system/bank-card-covers/{id}',
+    model: 'BankCardCoverTemplateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/system/bank-card-covers/{id}/enabled',
+    model: 'BankCardCoverEnabledReq',
     list: false,
   },
   {
