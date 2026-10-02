@@ -337,75 +337,46 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
 <template>
   <div class="min-h-full bg-background/50 p-4">
     <!-- Stats -->
-    <div class="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <div
-        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
-      >
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-500/10 text-green-500 sm:h-10 sm:w-10"
+    <section
+      class="mb-4 flex flex-col gap-3 py-2 text-card-foreground sm:flex-row sm:items-center sm:gap-6"
+      aria-label="订阅概览"
+      :aria-busy="statsLoading"
+    >
+      <div class="min-w-0 flex-1">
+        <p class="text-xs text-muted-foreground">当前月均</p>
+        <p
+          class="mt-1 break-all text-[28px] font-medium tabular-nums leading-10"
+          :class="{ 'animate-pulse': statsLoading }"
         >
-          <IconifyIcon icon="mdi:check-circle-outline" class="text-xl" />
+          {{ statsLoading ? '—' : `¥${formatAmount(stats.monthlyAmount)}` }}
+        </p>
+      </div>
+      <dl class="grid min-w-0 grid-cols-3 gap-2 sm:flex-[2] sm:gap-4">
+        <div>
+          <dt class="text-xs text-muted-foreground">生效中</dt>
+          <dd class="mt-1 text-xl font-medium tabular-nums leading-7">
+            {{ statsLoading ? '—' : stats.activeCount }}
+          </dd>
         </div>
         <div>
-          <p class="text-xs text-muted-foreground">生效中</p>
-          <p
-            class="mt-0.5 text-2xl font-bold leading-none text-card-foreground"
-          >
-            {{ stats.activeCount }}
-          </p>
-        </div>
-      </div>
-      <div
-        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
-      >
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500 sm:h-10 sm:w-10"
-        >
-          <IconifyIcon icon="mdi:calendar-alert" class="text-xl" />
+          <dt class="text-xs text-muted-foreground">本月到期</dt>
+          <dd class="mt-1 text-xl font-medium tabular-nums leading-7">
+            {{ statsLoading ? '—' : stats.expiringThisMonthCount }}
+          </dd>
         </div>
         <div>
-          <p class="text-xs text-muted-foreground">本月到期</p>
-          <p class="mt-0.5 text-2xl font-bold leading-none text-orange-500">
-            {{ stats.expiringThisMonthCount }}
-          </p>
-        </div>
-      </div>
-      <div
-        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
-      >
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 sm:h-10 sm:w-10"
-        >
-          <IconifyIcon icon="mdi:clock-alert-outline" class="text-xl" />
-        </div>
-        <div>
-          <p class="text-xs text-muted-foreground">即将到期</p>
-          <p
-            class="mt-0.5 text-2xl font-bold leading-none text-card-foreground"
+          <dt class="text-xs text-muted-foreground">即将到期</dt>
+          <dd
+            class="mt-1 text-xl font-medium tabular-nums leading-7"
+            :class="{
+              'text-amber-700 dark:text-amber-400': stats.expiringCount > 0,
+            }"
           >
-            {{ stats.expiringCount }}
-          </p>
+            {{ statsLoading ? '—' : stats.expiringCount }}
+          </dd>
         </div>
-      </div>
-      <div
-        class="flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-sm sm:gap-3 sm:p-4"
-      >
-        <div
-          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 sm:h-10 sm:w-10"
-        >
-          <IconifyIcon icon="mdi:cash-multiple" class="text-xl" />
-        </div>
-        <div class="min-w-0">
-          <p class="text-xs text-muted-foreground">当前月均</p>
-          <p
-            class="mt-0.5 truncate text-base font-bold leading-none text-blue-500 sm:text-xl"
-            :title="`￥${formatAmount(stats.monthlyAmount)}`"
-          >
-            ￥{{ formatAmount(stats.monthlyAmount) }}
-          </p>
-        </div>
-      </div>
-    </div>
+      </dl>
+    </section>
 
     <!-- Filters -->
     <div class="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
