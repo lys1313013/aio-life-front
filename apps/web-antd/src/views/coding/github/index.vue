@@ -476,21 +476,27 @@ watch(
       class="mb-6 shadow-sm"
       :head-style="{
         borderBottom: 'none',
-        paddingLeft: '12px',
-        paddingRight: '12px',
+        paddingLeft: '20px',
+        paddingRight: '20px',
       }"
-      :body-style="{ padding: '0 12px 20px 12px' }"
+      :body-style="{ padding: '2px 20px 20px' }"
     >
       <template #title>
         <div class="flex flex-wrap items-center justify-between gap-2">
-          <span class="text-sm md:text-base"
-            >过去一年共提交 {{ totalContributions }} 次</span
-          >
-          <span
-            class="text-xs font-normal text-gray-500 md:text-sm dark:text-gray-400"
-          >
-            连续提交:
-            <span class="font-medium text-green-600 dark:text-green-500">
+          <span class="text-sm font-normal text-muted-foreground">
+            过去一年共提交
+            <span
+              class="mx-1 text-base font-semibold tabular-nums text-foreground"
+            >
+              {{ totalContributions }}
+            </span>
+            次
+          </span>
+          <span class="text-xs font-normal text-muted-foreground md:text-sm">
+            连续提交
+            <span
+              class="mx-1 font-medium tabular-nums text-emerald-700 dark:text-emerald-400"
+            >
               {{ currentStreak }}
             </span>
             天
@@ -501,7 +507,7 @@ watch(
         ref="scrollContainer"
         class="w-full overflow-x-auto overflow-y-hidden transition-all"
       >
-        <div class="h-[125px] min-w-[720px] md:h-[130px]">
+        <div class="h-[136px] min-w-[800px] lg:h-[156px]">
           <Skeleton
             v-if="loading"
             active
