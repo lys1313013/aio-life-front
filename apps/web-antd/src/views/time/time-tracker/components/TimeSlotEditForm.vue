@@ -15,6 +15,7 @@ import { createIconifyIcon } from '@vben/icons';
 
 import {
   DeleteOutlined,
+  MinusOutlined,
   PlusOutlined,
   RightOutlined,
 } from '@ant-design/icons-vue';
@@ -70,6 +71,12 @@ const emit = defineEmits<Emits>();
 
 const { useToken } = theme;
 const { token } = useToken();
+
+const timePickerDropdownAlign = {
+  points: ['tc', 'bc'],
+  offset: [0, 4],
+  overflow: { adjustX: 1, adjustY: 1 },
+};
 
 // 分类计算属性
 const visibleCategories = computed(() =>
@@ -632,17 +639,11 @@ const adjustEndTime = (minutes: number) => {
 };
 
 const addExercise = () => {
-  let lastExerciseTypeId: string = '';
-  if (formState.value.exercises.length > 0) {
-    const lastExercise =
-      formState.value.exercises[formState.value.exercises.length - 1];
-    if (lastExercise) {
-      lastExerciseTypeId = lastExercise.exerciseTypeId || '';
-    }
-  }
+  const lastExercise =
+    formState.value.exercises[formState.value.exercises.length - 1];
   formState.value.exercises.push({
-    exerciseTypeId: lastExerciseTypeId,
-    exerciseCount: undefined,
+    exerciseTypeId: lastExercise?.exerciseTypeId || '',
+    exerciseCount: lastExercise?.exerciseCount,
   });
 };
 
@@ -839,15 +840,7 @@ onUnmounted(() => {
         <Col :span="12">
           <Form.Item label="开始时间" name="startTime">
             <div class="time-control-group">
-              <TimePicker
-                v-model:value="formState.startTime"
-                format="HH:mm"
-                style="width: 100%"
-                placeholder="选择开始时间"
-                :input-read-only="isMobile"
-                @open-change="handleTimePickerOpenChange"
-              />
-              <div class="time-adjust-buttons">
+              <div class="time-input-row">
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(-1, 'start')"
@@ -858,12 +851,27 @@ onUnmounted(() => {
                   @touchcancel="stopLongPress"
                 >
                   <Button
-                    size="small"
+                    type="text"
+                    class="time-step-button"
                     :disabled="!formState.startTime"
+                    aria-label="开始时间减少1分钟"
                     @click="handleClick(-1, 'start')"
-                    >-1</Button
                   >
+                    <MinusOutlined />
+                  </Button>
                 </span>
+                <TimePicker
+                  v-model:value="formState.startTime"
+                  format="HH:mm"
+                  class="time-value-picker"
+                  :allow-clear="false"
+                  :bordered="false"
+                  :dropdown-align="timePickerDropdownAlign"
+                  :suffix-icon="null"
+                  placeholder="选择开始时间"
+                  :input-read-only="isMobile"
+                  @open-change="handleTimePickerOpenChange"
+                />
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(1, 'start')"
@@ -874,12 +882,17 @@ onUnmounted(() => {
                   @touchcancel="stopLongPress"
                 >
                   <Button
-                    size="small"
+                    type="text"
+                    class="time-step-button"
                     :disabled="!formState.startTime"
+                    aria-label="开始时间增加1分钟"
                     @click="handleClick(1, 'start')"
-                    >+1</Button
                   >
+                    <PlusOutlined />
+                  </Button>
                 </span>
+              </div>
+              <div class="time-adjust-buttons">
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(-30, 'start')"
@@ -919,15 +932,7 @@ onUnmounted(() => {
         <Col :span="12">
           <Form.Item label="结束时间" name="endTime">
             <div class="time-control-group">
-              <TimePicker
-                v-model:value="formState.endTime"
-                format="HH:mm"
-                style="width: 100%"
-                placeholder="选择结束时间"
-                :input-read-only="isMobile"
-                @open-change="handleTimePickerOpenChange"
-              />
-              <div class="time-adjust-buttons">
+              <div class="time-input-row">
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(-1, 'end')"
@@ -938,12 +943,27 @@ onUnmounted(() => {
                   @touchcancel="stopLongPress"
                 >
                   <Button
-                    size="small"
+                    type="text"
+                    class="time-step-button"
                     :disabled="!formState.endTime"
+                    aria-label="结束时间减少1分钟"
                     @click="handleClick(-1, 'end')"
-                    >-1</Button
                   >
+                    <MinusOutlined />
+                  </Button>
                 </span>
+                <TimePicker
+                  v-model:value="formState.endTime"
+                  format="HH:mm"
+                  class="time-value-picker"
+                  :allow-clear="false"
+                  :bordered="false"
+                  :dropdown-align="timePickerDropdownAlign"
+                  :suffix-icon="null"
+                  placeholder="选择结束时间"
+                  :input-read-only="isMobile"
+                  @open-change="handleTimePickerOpenChange"
+                />
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(1, 'end')"
@@ -954,12 +974,17 @@ onUnmounted(() => {
                   @touchcancel="stopLongPress"
                 >
                   <Button
-                    size="small"
+                    type="text"
+                    class="time-step-button"
                     :disabled="!formState.endTime"
+                    aria-label="结束时间增加1分钟"
                     @click="handleClick(1, 'end')"
-                    >+1</Button
                   >
+                    <PlusOutlined />
+                  </Button>
                 </span>
+              </div>
+              <div class="time-adjust-buttons">
                 <span
                   class="adjust-btn-wrap"
                   @mousedown="startLongPress(-30, 'end')"
@@ -1417,9 +1442,48 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+.time-input-row {
+  display: flex;
+  align-items: center;
+  background-color: v-bind('token.colorBgContainer');
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: v-bind('`${token.borderRadius}px`');
+  transition: border-color 0.2s;
+}
+
+.time-input-row:hover,
+.time-input-row:focus-within {
+  border-color: v-bind('token.colorPrimary');
+}
+
+.time-input-row .adjust-btn-wrap {
+  flex: 0 0 auto;
+}
+
+.time-step-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.time-value-picker {
+  flex: 1;
+  min-width: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.time-value-picker :deep(input) {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .time-adjust-buttons {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -1440,10 +1504,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 479px) {
-  .time-adjust-buttons {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .time-adjust-buttons .ant-btn {
     height: 32px;
   }
