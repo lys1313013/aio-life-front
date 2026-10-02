@@ -3,6 +3,8 @@ import type { TimeSlot, TimeSlotFormData } from '../types';
 
 import { computed, onMounted, onUnmounted, ref, useId } from 'vue';
 
+import { createIconifyIcon } from '@vben/icons';
+
 import { DatePicker, message, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -22,6 +24,7 @@ import { hasOverlap, isValidSlot } from '../utils';
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
 
 const emit = defineEmits(['success']);
+const CalendarIcon = createIconifyIcon('lucide:calendar');
 const dateInputId = useId();
 
 const visible = ref(false);
@@ -70,7 +73,13 @@ const loadCategories = async () => {
   }
 };
 
-const title = computed(() => '');
+const dateFormat = computed(() => {
+  const date = dayjs(editingSlot.value?.date);
+  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][
+    date.day()
+  ];
+  return `${date.year() === dayjs().year() ? '' : 'YYYY年'}M月D日 [${weekday}]`;
+});
 
 const updateIsMobile = () => {
   isMobile.value = window.innerWidth < 1024;
@@ -305,8 +314,9 @@ defineExpose({ open });
 <template>
   <Modal
     v-model:open="visible"
-    :title="title"
-    width="min(95vw, 600px)"
+    aria-label="时迹录入"
+    class="time-record-modal"
+    width="min(95vw, 440px)"
     :busy="loading"
     :keyboard="!loading"
     :mask-closable="!loading"
@@ -317,29 +327,28 @@ defineExpose({ open });
   >
     <Spin :spinning="loading">
       <template #default>
-        <label
-          v-if="editingSlot && !isEditMode"
-          :for="dateInputId"
-          class="sr-only"
-        >
-          录入日期
-        </label>
-        <DatePicker
-          :id="dateInputId"
-          v-if="editingSlot && !isEditMode"
-          :value="editingSlot.date"
-          value-format="YYYY-MM-DD"
-          format="YYYY-MM-DD"
-          :allow-clear="false"
-          :disabled="loading"
-          :input-read-only="isMobile"
-          class="mb-4 w-full"
-          @change="handleDateChange"
-        />
+        <div v-if="editingSlot" class="record-date-row">
+          <CalendarIcon class="record-date-icon" aria-hidden="true" />
+          <label :for="dateInputId" class="sr-only">录入日期</label>
+          <DatePicker
+            :id="dateInputId"
+            :value="editingSlot.date"
+            value-format="YYYY-MM-DD"
+            :format="dateFormat"
+            :allow-clear="false"
+            :disabled="loading || isEditMode"
+            :input-read-only="isMobile"
+            :bordered="false"
+            :suffix-icon="null"
+            class="record-date-picker"
+            @change="handleDateChange"
+          />
+        </div>
         <TimeSlotEditForm
           v-if="editingSlot"
           v-bind="{ slot: editingSlot }"
           :categories="categories"
+          :busy="loading"
           :existing-slots="existingSlots"
           @save="handleSave"
           @delete="handleDelete"
@@ -353,5 +362,45 @@ defineExpose({ open });
 <style scoped>
 :deep(.ant-modal-content) {
   user-select: none;
+}
+
+.record-date-row {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+}
+
+.record-date-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 22px;
+}
+
+.record-date-row :deep(.record-date-picker) {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.record-date-row :deep(input) {
+  color: hsl(var(--foreground));
+}
+</style>
+<style>
+.time-record-modal .app-modal-body {
+  padding: 16px 16px 0;
+}
+
+.time-record-modal .app-modal-footer {
+  padding: 20px 16px 16px;
 }
 </style>

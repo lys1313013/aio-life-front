@@ -2,7 +2,7 @@ import type { TimeSlot } from '../types';
 
 import { shallowMount } from '@vue/test-utils';
 
-import { Form, InputNumber, TimePicker } from 'ant-design-vue';
+import { Button, Form, TimePicker } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { describe, expect, it, vi } from 'vitest';
@@ -56,13 +56,19 @@ function getEndTimeValue(wrapper: ReturnType<typeof mountForm>): string {
 }
 
 describe('时迹编辑器的闭区间输入', () => {
-  it('输入 30 分钟后，结束于 09:29 且仍显示 30 分钟', async () => {
+  it('修改结束时间后按闭区间实时显示时长', async () => {
     const wrapper = mountForm(540, 540);
-    const minutes = wrapper.findAllComponents(InputNumber)[1]!;
-    minutes.vm.$emit('update:value', 30);
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
+    wrapper
+      .findAllComponents(TimePicker)[1]!
+      .vm.$emit('update:value', dayjs('2026-09-12T09:29:00'));
     await wrapper.vm.$nextTick();
-    expect(getEndTimeValue(wrapper)).toBe('09:29');
-    expect(minutes.props('value')).toBe(30);
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('30分');
+    wrapper
+      .findAllComponents(TimePicker)[1]!
+      .vm.$emit('update:value', dayjs('2026-09-12T10:00:00'));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1小时1分');
     wrapper.unmount();
   });
 
@@ -82,11 +88,8 @@ describe('时迹编辑器的闭区间输入', () => {
 
   it('23:59 的记录保持 1 分钟，校验允许开始等于结束', async () => {
     const wrapper = mountForm(1439, 1439);
-    const minutes = wrapper.findAllComponents(InputNumber)[1]!;
-    minutes.vm.$emit('update:value', 30);
-    await wrapper.vm.$nextTick();
     expect(getEndTimeValue(wrapper)).toBe('23:59');
-    expect(minutes.props('value')).toBe(1);
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
     const rules = wrapper.findComponent(Form).props('rules')?.endTime;
     const rule = Array.isArray(rules)
       ? rules.find((item) => item.validator)
@@ -98,21 +101,29 @@ describe('时迹编辑器的闭区间输入', () => {
     wrapper.unmount();
   });
 
-  it('输入时长不会占用下一条记录的开始分钟', async () => {
-    const wrapper = mountForm(540, 540, [
-      {
-        id: 'next',
-        date: '2026-09-12',
-        categoryId: 'read',
-        startTime: 570,
-        endTime: 599,
-      },
-    ]);
-    const minutes = wrapper.findAllComponents(InputNumber)[1]!;
-    minutes.vm.$emit('update:value', 45);
+  it('结束早于开始时阻止保存', async () => {
+    const wrapper = mountForm(600, 599);
+    const rules = wrapper.findComponent(Form).props('rules')?.endTime;
+    const rule = Array.isArray(rules)
+      ? rules.find((item) => item.validator)
+      : rules;
+    if (!rule?.validator) throw new Error('缺少结束时间校验');
+    await expect(rule.validator(rule, undefined, () => {})).rejects.toThrow(
+      '结束时间必须大于等于开始时间',
+    );
+    wrapper.unmount();
+  });
+
+  it('保存中禁用编辑和提交', async () => {
+    const wrapper = mountForm(540, 569);
+    await wrapper.setProps({ busy: true });
+    expect(wrapper.findComponent(Form).props('disabled')).toBe(true);
+    expect(
+      wrapper.get('[aria-label="选择分类"]').attributes('disabled'),
+    ).toBeDefined();
+    wrapper.findComponent(Button).vm.$emit('click');
     await wrapper.vm.$nextTick();
-    expect(getEndTimeValue(wrapper)).toBe('09:29');
-    expect(minutes.props('value')).toBe(30);
+    expect(wrapper.emitted('save')).toBeUndefined();
     wrapper.unmount();
   });
 });

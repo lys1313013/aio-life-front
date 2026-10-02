@@ -9,24 +9,23 @@ import type {
   TimeSlotFormData,
 } from '../types';
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 
 import { createIconifyIcon } from '@vben/icons';
 
 import {
+  AppstoreOutlined,
   DeleteOutlined,
-  MinusOutlined,
   PlusOutlined,
   RightOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
-  Col,
   Form,
   Input,
   InputNumber,
   message,
-  Row,
+  Spin,
   Textarea,
   theme,
   TimePicker,
@@ -44,9 +43,6 @@ import {
 import { categoryPath, orderCategoryTree } from '../category-tree';
 import { getCategoryColor, getCategoryIconById } from '../config';
 import {
-  endTimeFromDuration,
-  getAboveSlotEndTime,
-  getBelowSlotStartTime,
   getSlotDuration,
   isValidSlot,
   minutesToTime,
@@ -58,6 +54,7 @@ interface Props {
   slot: TimeSlot;
   categories: (MergedCategory | TimeSlotCategory)[];
   existingSlots?: TimeSlot[];
+  busy?: boolean;
 }
 
 interface Emits {
@@ -68,6 +65,8 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const startInputId = useId();
+const endInputId = useId();
 
 const { useToken } = theme;
 const { token } = useToken();
@@ -155,6 +154,7 @@ interface ExerciseTypeOption {
 }
 
 const exerciseTypeOptions = ref<ExerciseTypeOption[]>([]);
+const exerciseTypesLoading = ref(false);
 const exerciseTypeModalVisible = ref(false);
 const currentEditingExerciseIndex = ref(-1);
 const relateTypeList = ref<Array<{ label: string; value: number }>>([]);
@@ -217,6 +217,7 @@ const currentRelateType = computed(() => {
 
 // 加载运动类型
 const loadExerciseTypes = async () => {
+  exerciseTypesLoading.value = true;
   try {
     const res = await getByDictType('exercise_type');
     if (res && res.dictDetailList) {
@@ -229,6 +230,8 @@ const loadExerciseTypes = async () => {
     }
   } catch (error) {
     console.error('加载运动类型失败:', error);
+  } finally {
+    exerciseTypesLoading.value = false;
   }
 };
 
@@ -237,34 +240,6 @@ onMounted(() => {
   loadRelateTypes();
   window.addEventListener('resize', updateIsMobile);
 });
-
-// 长按连续调整
-const longPressTimer = ref<null | ReturnType<typeof setTimeout>>(null);
-const repeatTimer = ref<null | ReturnType<typeof setInterval>>(null);
-const longPressDirection = ref(0);
-const longPressType = ref<'end' | 'start'>('start');
-const longPressTriggered = ref(false);
-const LONG_PRESS_DELAY = 400;
-const REPEAT_INTERVAL = 100;
-
-const clearAllTimers = () => {
-  if (longPressTimer.value !== null) {
-    clearTimeout(longPressTimer.value);
-    longPressTimer.value = null;
-  }
-  if (repeatTimer.value !== null) {
-    clearInterval(repeatTimer.value);
-    repeatTimer.value = null;
-  }
-};
-
-const doAdjust = (direction: number, type: 'end' | 'start') => {
-  if (type === 'start') {
-    adjustStartTime(direction);
-  } else {
-    adjustEndTime(direction);
-  }
-};
 
 // 计算时长
 const duration = computed(() => {
@@ -279,65 +254,10 @@ const duration = computed(() => {
   );
 });
 
-// 更新时长逻辑
-const updateDuration = (val: number) => {
-  if (!formState.value.startTime) return;
-
-  const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  const proposedEndMinutes = endTimeFromDuration(
-    startMinutes,
-    Math.max(1, val),
-  );
-
-  let maxMinutes = 1439;
-
-  if (props.existingSlots) {
-    const tempSlot = {
-      ...props.slot,
-      id: formState.value.id || 'temp-id',
-      startTime: startMinutes,
-      endTime: startMinutes, // 设置为开始时间，以便查找紧邻的下一个时间段
-    };
-
-    const belowStartTime = getBelowSlotStartTime(
-      props.existingSlots,
-      tempSlot,
-      tempSlot.id,
-    );
-    if (belowStartTime !== null) {
-      maxMinutes = belowStartTime - 1; // 结束时间不能超过下一个时间段的开始时间
-    }
-  }
-
-  if (maxMinutes < startMinutes) return;
-
-  // 闭区间允许开始与结束相同，表示 1 分钟。
-  const finalEndMinutes = Math.max(
-    startMinutes,
-    Math.min(maxMinutes, proposedEndMinutes),
-  );
-
-  formState.value.endTime = minutesToTimePickerValue(finalEndMinutes);
-};
-
-// 计算小时（可编辑）
-const editableHours = computed({
-  get: () => Math.floor(duration.value / 60),
-  set: (val: number) => {
-    const currentMinutes = duration.value % 60;
-    const totalMinutes = (val || 0) * 60 + currentMinutes;
-    updateDuration(totalMinutes);
-  },
-});
-
-// 计算分钟（可编辑）
-const editableMinutes = computed({
-  get: () => duration.value % 60,
-  set: (val: number) => {
-    const currentHours = Math.floor(duration.value / 60);
-    const totalMinutes = currentHours * 60 + (val || 0);
-    updateDuration(totalMinutes);
-  },
+const displayDuration = computed(() => {
+  const hours = Math.floor(duration.value / 60);
+  const minutes = duration.value % 60;
+  return `${hours ? `${hours}小时` : ''}${minutes || !hours ? `${minutes}分` : ''}`;
 });
 
 // 表单验证规则
@@ -510,6 +430,7 @@ const handleCategorySelect = (category: MergedCategory | TimeSlotCategory) => {
 
 // 处理保存
 const handleSave = async () => {
+  if (props.busy) return;
   try {
     await formRef.value?.validate();
 
@@ -536,106 +457,6 @@ const handleSave = async () => {
   } catch (error) {
     console.error('表单验证失败:', error);
   }
-};
-
-// 调整开始时间
-const adjustStartTime = (minutes: number) => {
-  if (!formState.value.startTime) return;
-
-  const currentMinutes = timeToMinutes(
-    formState.value.startTime.format('HH:mm'),
-  );
-  const proposedMinutes = currentMinutes + minutes;
-
-  // 获取上下界限
-  let minMinutes = 0;
-  let maxMinutes = 1439;
-
-  if (props.existingSlots && props.slot) {
-    // 构造当前临时slot用于查询
-    const tempSlot = {
-      ...props.slot,
-      id: formState.value.id || 'temp-id',
-      startTime: currentMinutes,
-      endTime: formState.value.endTime
-        ? timeToMinutes(formState.value.endTime.format('HH:mm'))
-        : Math.min(1439, endTimeFromDuration(currentMinutes, 30)),
-    };
-
-    // 获取上方最近的时间段结束时间
-    // 注意：这里我们要找的是在这个slot开始时间之前最近的一个结束时间
-    const aboveEndTime = getAboveSlotEndTime(
-      props.existingSlots,
-      tempSlot,
-      tempSlot.id,
-    );
-    if (aboveEndTime !== null) {
-      // 限制：必须 > 上一个的结束时间。如果上一个结束是10:30，这里只能是10:31
-      minMinutes = aboveEndTime + 1;
-    }
-  }
-
-  // 闭区间允许开始时间等于结束时间。
-  if (formState.value.endTime) {
-    const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-    maxMinutes = Math.min(maxMinutes, endMinutes);
-  }
-
-  // 如果范围无效（min > max），则不调整
-  if (minMinutes > maxMinutes) return;
-
-  // 限制范围
-  const newMinutes = Math.max(
-    minMinutes,
-    Math.min(maxMinutes, proposedMinutes),
-  );
-
-  formState.value.startTime = minutesToTimePickerValue(newMinutes);
-};
-
-// 调整结束时间
-const adjustEndTime = (minutes: number) => {
-  if (!formState.value.endTime) return;
-
-  const currentMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
-  const proposedMinutes = currentMinutes + minutes;
-
-  let maxMinutes = 1439;
-  let minMinutes = 0; // 受限于开始时间
-
-  if (formState.value.startTime) {
-    minMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  }
-
-  if (props.existingSlots && props.slot) {
-    const tempSlot = {
-      ...props.slot,
-      id: formState.value.id || 'temp-id',
-      startTime: formState.value.startTime
-        ? timeToMinutes(formState.value.startTime.format('HH:mm'))
-        : 0,
-      endTime: currentMinutes,
-    };
-
-    const belowStartTime = getBelowSlotStartTime(
-      props.existingSlots,
-      tempSlot,
-      tempSlot.id,
-    );
-    if (belowStartTime !== null) {
-      // 限制：必须 < 下一个的开始时间。如果下一个开始是11:00，这里只能是10:59
-      maxMinutes = belowStartTime - 1;
-    }
-  }
-
-  if (minMinutes > maxMinutes) return;
-
-  const newMinutes = Math.max(
-    minMinutes,
-    Math.min(maxMinutes, proposedMinutes),
-  );
-
-  formState.value.endTime = minutesToTimePickerValue(newMinutes);
 };
 
 const addExercise = () => {
@@ -711,40 +532,6 @@ const handleDelete = () => {
   }
 };
 
-// mousedown / touchstart：启动长按检测
-const startLongPress = (direction: number, type: 'end' | 'start') => {
-  clearAllTimers();
-  longPressDirection.value = direction;
-  longPressType.value = type;
-  longPressTriggered.value = false;
-  longPressTimer.value = setTimeout(() => {
-    longPressTriggered.value = true;
-    doAdjust(direction, type);
-    repeatTimer.value = setInterval(() => {
-      doAdjust(longPressDirection.value, longPressType.value);
-    }, REPEAT_INTERVAL);
-  }, LONG_PRESS_DELAY);
-};
-
-// mouseup / mouseleave / touchend / touchcancel：停止
-// 若定时器未触发（短按），执行一次调整并阻止后续 click
-const stopLongPress = () => {
-  if (!longPressTriggered.value && longPressTimer.value !== null) {
-    longPressTriggered.value = true;
-    doAdjust(longPressDirection.value, longPressType.value);
-  }
-  clearAllTimers();
-};
-
-// @click：键盘 / 无障碍后备（mousedown 已处理的会被 longPressTriggered 屏蔽）
-const handleClick = (direction: number, type: 'end' | 'start') => {
-  if (longPressTriggered.value) {
-    longPressTriggered.value = false;
-    return;
-  }
-  doAdjust(direction, type);
-};
-
 // TimePicker 展开时将选中项滚动到列中央
 // Ant Design 内部也会在 popup 渲染后执行 scrollIntoView，因此延迟后再覆盖一次
 const scrollTimePanelToCenter = () => {
@@ -768,9 +555,8 @@ const handleTimePickerOpenChange = (open: boolean) => {
   setTimeout(() => requestAnimationFrame(scrollTimePanelToCenter), 180);
 };
 
-// 组件卸载时清理定时器
+// 组件卸载时清理监听
 onUnmounted(() => {
-  clearAllTimers();
   window.removeEventListener('resize', updateIsMobile);
 });
 </script>
@@ -781,284 +567,79 @@ onUnmounted(() => {
       ref="formRef"
       :model="formState"
       :rules="rules"
+      :disabled="busy"
       layout="vertical"
       @finish="handleSave"
     >
-      <Form.Item label="标题" name="title">
-        <Input
-          v-model:value="formState.title"
-          placeholder="标题"
-          @blur="handleTitleBlur"
-        />
-      </Form.Item>
-
       <Form.Item name="categoryId">
-        <div
+        <button
+          type="button"
           class="category-inline-trigger"
+          aria-label="选择分类"
+          :disabled="busy"
           @click="categoryModalVisible = true"
         >
-          <span class="category-label-text">
-            <span
-              :style="{
-                color: token.colorError,
-                marginRight: '4px',
-                fontFamily: 'SimSun, sans-serif',
-              }"
-              >*</span
-            >分类
-          </span>
-          <div class="category-value-wrapper">
-            <template v-if="selectedCategory">
-              <div class="category-icon-wrapper-small">
-                <component
-                  v-if="getDisplayIcon(selectedCategory)"
-                  :is="getDisplayIcon(selectedCategory)"
-                  class="category-icon-small"
-                  :style="{ color: getDisplayColor(selectedCategory) }"
-                />
-                <div
-                  v-else
-                  class="category-color-dot-small"
-                  :style="{
-                    backgroundColor: getDisplayColor(selectedCategory),
-                  }"
-                ></div>
-              </div>
-              <span class="category-name-small">{{
-                getDisplayName(selectedCategory)
-              }}</span>
-            </template>
-            <template v-else>
-              <span class="placeholder-text">请选择分类</span>
-            </template>
-            <RightOutlined class="trigger-arrow" />
-          </div>
-        </div>
+          <component
+            v-if="selectedCategory && getDisplayIcon(selectedCategory)"
+            :is="getDisplayIcon(selectedCategory)"
+            class="category-icon-small"
+            :style="{ color: getDisplayColor(selectedCategory) }"
+          />
+          <span
+            v-else-if="selectedCategory"
+            class="category-color-dot-small"
+            :style="{ backgroundColor: getDisplayColor(selectedCategory) }"
+          ></span>
+          <AppstoreOutlined v-else class="category-icon-small" />
+          <span class="category-name-small">{{
+            selectedCategory ? getDisplayName(selectedCategory) : '选择分类'
+          }}</span>
+          <RightOutlined class="trigger-arrow" />
+        </button>
       </Form.Item>
 
-      <Row :gutter="16" class="time-range-row">
-        <Col :span="12">
-          <Form.Item label="开始时间" name="startTime">
-            <div class="time-control-group">
-              <div class="time-input-row">
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(-1, 'start')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(-1, 'start')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    type="text"
-                    class="time-step-button"
-                    :disabled="!formState.startTime"
-                    aria-label="开始时间减少1分钟"
-                    @click="handleClick(-1, 'start')"
-                  >
-                    <MinusOutlined />
-                  </Button>
-                </span>
-                <TimePicker
-                  v-model:value="formState.startTime"
-                  format="HH:mm"
-                  class="time-value-picker"
-                  :allow-clear="false"
-                  :bordered="false"
-                  :dropdown-align="timePickerDropdownAlign"
-                  :suffix-icon="null"
-                  placeholder="选择开始时间"
-                  :input-read-only="isMobile"
-                  @open-change="handleTimePickerOpenChange"
-                />
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(1, 'start')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(1, 'start')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    type="text"
-                    class="time-step-button"
-                    :disabled="!formState.startTime"
-                    aria-label="开始时间增加1分钟"
-                    @click="handleClick(1, 'start')"
-                  >
-                    <PlusOutlined />
-                  </Button>
-                </span>
-              </div>
-              <div class="time-adjust-buttons">
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(-30, 'start')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(-30, 'start')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    size="small"
-                    :disabled="!formState.startTime"
-                    @click="handleClick(-30, 'start')"
-                    >-30</Button
-                  >
-                </span>
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(30, 'start')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(30, 'start')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    size="small"
-                    :disabled="!formState.startTime"
-                    @click="handleClick(30, 'start')"
-                    >+30</Button
-                  >
-                </span>
-              </div>
-            </div>
-          </Form.Item>
-        </Col>
-        <Col :span="12">
-          <Form.Item label="结束时间" name="endTime">
-            <div class="time-control-group">
-              <div class="time-input-row">
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(-1, 'end')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(-1, 'end')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    type="text"
-                    class="time-step-button"
-                    :disabled="!formState.endTime"
-                    aria-label="结束时间减少1分钟"
-                    @click="handleClick(-1, 'end')"
-                  >
-                    <MinusOutlined />
-                  </Button>
-                </span>
-                <TimePicker
-                  v-model:value="formState.endTime"
-                  format="HH:mm"
-                  class="time-value-picker"
-                  :allow-clear="false"
-                  :bordered="false"
-                  :dropdown-align="timePickerDropdownAlign"
-                  :suffix-icon="null"
-                  placeholder="选择结束时间"
-                  :input-read-only="isMobile"
-                  @open-change="handleTimePickerOpenChange"
-                />
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(1, 'end')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(1, 'end')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    type="text"
-                    class="time-step-button"
-                    :disabled="!formState.endTime"
-                    aria-label="结束时间增加1分钟"
-                    @click="handleClick(1, 'end')"
-                  >
-                    <PlusOutlined />
-                  </Button>
-                </span>
-              </div>
-              <div class="time-adjust-buttons">
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(-30, 'end')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(-30, 'end')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    size="small"
-                    :disabled="!formState.endTime"
-                    @click="handleClick(-30, 'end')"
-                    >-30</Button
-                  >
-                </span>
-                <span
-                  class="adjust-btn-wrap"
-                  @mousedown="startLongPress(30, 'end')"
-                  @mouseup="stopLongPress"
-                  @mouseleave="stopLongPress"
-                  @touchstart.prevent="startLongPress(30, 'end')"
-                  @touchend="stopLongPress"
-                  @touchcancel="stopLongPress"
-                >
-                  <Button
-                    size="small"
-                    :disabled="!formState.endTime"
-                    @click="handleClick(30, 'end')"
-                    >+30</Button
-                  >
-                </span>
-              </div>
-            </div>
-          </Form.Item>
-        </Col>
-      </Row>
-
-      <Form.Item>
-        <div style="display: flex; gap: 8px; align-items: center">
-          <span style="flex-shrink: 0; color: v-bind('token.colorText')"
-            >时长</span
-          >
-          <div style="display: flex; flex: 1; gap: 8px">
-            <div style="display: flex; flex: 1; gap: 4px; align-items: center">
-              <InputNumber
-                v-model:value="editableHours"
-                :min="0"
-                :precision="0"
-                class="input-align-right"
-                style="flex: 1"
-                placeholder="时"
-                inputmode="numeric"
-                pattern="[0-9]*"
-              />
-              <span>时</span>
-            </div>
-            <div style="display: flex; flex: 1; gap: 4px; align-items: center">
-              <InputNumber
-                v-model:value="editableMinutes"
-                :min="0"
-                :max="59"
-                :precision="0"
-                class="input-align-right"
-                inputmode="numeric"
-                pattern="[0-9]*"
-                style="flex: 1"
-                placeholder="分"
-              />
-              <span>分</span>
-            </div>
-          </div>
+      <div class="compact-time-range">
+        <Form.Item name="startTime" class="compact-time-field">
+          <label :for="startInputId" class="compact-time-label">开始</label>
+          <TimePicker
+            :id="startInputId"
+            v-model:value="formState.startTime"
+            aria-label="开始时间"
+            format="HH:mm"
+            class="time-value-picker"
+            :allow-clear="false"
+            :bordered="false"
+            :suffix-icon="null"
+            :dropdown-align="timePickerDropdownAlign"
+            :input-read-only="isMobile"
+            :disabled="busy"
+            @open-change="handleTimePickerOpenChange"
+          />
+        </Form.Item>
+        <div class="compact-time-summary">
+          <span class="compact-duration" aria-label="记录时长">{{
+            displayDuration
+          }}</span>
+          <span class="compact-time-arrow" aria-hidden="true"></span>
         </div>
-      </Form.Item>
+        <Form.Item name="endTime" class="compact-time-field">
+          <label :for="endInputId" class="compact-time-label">结束</label>
+          <TimePicker
+            :id="endInputId"
+            v-model:value="formState.endTime"
+            aria-label="结束时间"
+            format="HH:mm"
+            class="time-value-picker"
+            :allow-clear="false"
+            :bordered="false"
+            :suffix-icon="null"
+            :dropdown-align="timePickerDropdownAlign"
+            :input-read-only="isMobile"
+            :disabled="busy"
+            @open-change="handleTimePickerOpenChange"
+          />
+        </Form.Item>
+      </div>
 
       <Form.Item
         v-if="currentRelateType"
@@ -1091,9 +672,13 @@ onUnmounted(() => {
             "
           >
             <span>运动明细</span>
-            <Button type="link" size="small" @click="addExercise">
+            <Button
+              type="text"
+              class="exercise-action"
+              aria-label="添加运动"
+              @click="addExercise"
+            >
               <template #icon><PlusOutlined /></template>
-              添加
             </Button>
           </div>
 
@@ -1107,9 +692,12 @@ onUnmounted(() => {
               margin-bottom: 8px;
             "
           >
-            <div style="flex: 2">
-              <div
+            <div class="exercise-type-control">
+              <button
+                type="button"
                 class="exercise-type-trigger"
+                :aria-label="`运动项目 ${index + 1}`"
+                :disabled="busy"
                 @click="openExerciseTypeModal(index)"
               >
                 <template
@@ -1145,12 +733,13 @@ onUnmounted(() => {
                   <span class="placeholder-text">选择运动类型</span>
                 </template>
                 <RightOutlined class="trigger-arrow" />
-              </div>
+              </button>
             </div>
-            <div style="flex: 1">
+            <div class="exercise-count">
               <InputNumber
                 v-model:value="exercise.exerciseCount"
                 placeholder="数量"
+                aria-label="运动数量"
                 style="width: 100%"
                 :min="0"
                 :precision="0"
@@ -1159,51 +748,69 @@ onUnmounted(() => {
             <Button
               type="text"
               danger
-              size="small"
+              class="exercise-action"
+              :aria-label="`移除运动 ${index + 1}`"
               @click="removeExercise(index)"
             >
               <template #icon><DeleteOutlined /></template>
             </Button>
           </div>
-
-          <div
-            v-if="formState.exercises.length === 0"
-            :style="{
-              padding: '8px',
-              color: token.colorTextQuaternary,
-              textAlign: 'center',
-              cursor: 'pointer',
-              border: `1px dashed ${token.colorBorderSecondary}`,
-              borderRadius: '4px',
-            }"
-            @click="addExercise"
-          >
-            点击添加运动明细
-          </div>
         </div>
       </template>
 
-      <Form.Item label="描述" name="description">
+      <Form.Item name="title">
+        <Input
+          v-model:value="formState.title"
+          class="compact-title"
+          placeholder="标题"
+          aria-label="记录标题"
+          :maxlength="50"
+          @blur="handleTitleBlur"
+        />
+      </Form.Item>
+      <Form.Item name="description">
         <Textarea
           v-model:value="formState.description"
-          placeholder="描述信息"
-          :rows="3"
+          placeholder="描述"
+          aria-label="记录备注"
+          class="compact-description"
+          :maxlength="200"
+          :auto-size="{ minRows: 3, maxRows: 6 }"
         />
       </Form.Item>
 
-      <AppModalFooter @cancel="$emit('cancel')" @confirm="handleSave">
-        <template #leading>
+      <AppModalFooter :busy="busy">
+        <div class="compact-actions">
           <AppModalDelete
             v-if="isExistingSlot"
             title="确定删除此时间段吗？"
             :action="handleDelete"
           />
-        </template>
+          <Button
+            type="primary"
+            class="compact-save"
+            :style="{
+              '--save-color': `color-mix(in srgb, ${token.colorPrimary} 65%, ${token.colorText})`,
+              '--save-background': `color-mix(in srgb, ${token.colorPrimary} 14%, ${token.colorBgContainer})`,
+              '--save-hover-background': `color-mix(in srgb, ${token.colorPrimary} 20%, ${token.colorBgContainer})`,
+              '--save-active-background': `color-mix(in srgb, ${token.colorPrimary} 26%, ${token.colorBgContainer})`,
+              '--save-disabled-color': token.colorTextDisabled,
+              '--save-disabled-background': token.colorFillTertiary,
+            }"
+            data-modal-confirm
+            :loading="busy"
+            :disabled="busy"
+            @click="handleSave"
+          >
+            保存
+          </Button>
+        </div>
       </AppModalFooter>
     </Form>
 
     <Modal
       v-model:open="categoryModalVisible"
+      aria-label="选择分类"
       :closable="false"
       :centered="true"
       :footer="false"
@@ -1217,6 +824,8 @@ onUnmounted(() => {
           :key="category.id"
           class="category-grid-item"
           :class="{ active: formState.categoryId === category.id }"
+          :aria-label="getDisplayName(category)"
+          :aria-pressed="formState.categoryId === category.id"
           @click="handleCategorySelect(category)"
         >
           <div class="category-icon-wrapper">
@@ -1241,47 +850,56 @@ onUnmounted(() => {
 
     <Modal
       v-model:open="exerciseTypeModalVisible"
+      aria-label="选择运动"
       :closable="false"
       :centered="true"
-      :footer="null"
+      :footer="false"
       width="min(95vw, 500px)"
       :destroy-on-close="true"
     >
-      <div class="category-grid">
-        <div
-          v-for="option in exerciseTypeOptions"
-          :key="option.value"
-          class="category-grid-item"
-          :class="{
-            active:
-              currentEditingExerciseIndex >= 0 &&
+      <Spin :spinning="exerciseTypesLoading">
+        <div class="category-grid">
+          <button
+            type="button"
+            v-for="option in exerciseTypeOptions"
+            :key="option.value"
+            class="category-grid-item"
+            :class="{
+              active:
+                currentEditingExerciseIndex >= 0 &&
+                formState.exercises[currentEditingExerciseIndex]
+                  ?.exerciseTypeId === option.value,
+            }"
+            :aria-label="option.label"
+            :aria-pressed="
               formState.exercises[currentEditingExerciseIndex]
-                ?.exerciseTypeId === option.value,
-          }"
-          @click="handleExerciseTypeSelect(option)"
-        >
-          <div class="category-icon-wrapper">
-            <component
-              v-if="renderExerciseTypeIcon(option)"
-              :is="renderExerciseTypeIcon(option)!"
-              class="category-icon-large"
-              :style="{ color: option.color }"
-            />
-            <div
-              v-else
-              class="category-color-dot-large"
-              :style="{ backgroundColor: option.color }"
-            ></div>
+                ?.exerciseTypeId === option.value
+            "
+            @click="handleExerciseTypeSelect(option)"
+          >
+            <div class="category-icon-wrapper">
+              <component
+                v-if="renderExerciseTypeIcon(option)"
+                :is="renderExerciseTypeIcon(option)!"
+                class="category-icon-large"
+                :style="{ color: option.color }"
+              />
+              <div
+                v-else
+                class="category-color-dot-large"
+                :style="{ backgroundColor: option.color }"
+              ></div>
+            </div>
+            <span class="category-name-large">{{ option.label }}</span>
+          </button>
+          <div
+            v-if="!exerciseTypesLoading && exerciseTypeOptions.length === 0"
+            class="exercise-type-empty"
+          >
+            暂无运动类型
           </div>
-          <span class="category-name-large">{{ option.label }}</span>
         </div>
-        <div
-          v-if="exerciseTypeOptions.length === 0"
-          class="exercise-type-empty"
-        >
-          暂无运动类型
-        </div>
-      </div>
+      </Spin>
     </Modal>
   </div>
 </template>
@@ -1289,271 +907,310 @@ onUnmounted(() => {
 <style scoped>
 .time-slot-edit-form {
   padding: 0;
-  margin-bottom: -16px;
   user-select: none;
+}
+
+.time-slot-edit-form :deep(.ant-form-item) {
+  margin-bottom: 12px;
+}
+
+.time-slot-edit-form :deep(.ant-form-item:last-child) {
+  margin-bottom: 0;
 }
 
 .category-inline-trigger {
   display: flex;
+  width: 100%;
+  min-height: 52px;
   align-items: center;
-  justify-content: space-between;
-  padding: 4px 0;
+  gap: 12px;
+  padding: 4px 12px;
+  text-align: left;
+  color: v-bind('token.colorText');
+  background: transparent;
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 12px;
   cursor: pointer;
 }
 
-.category-label-text {
-  font-size: 14px;
-  color: v-bind('token.colorText');
+.category-inline-trigger:hover,
+.exercise-type-trigger:hover {
+  border-color: v-bind('token.colorPrimary');
 }
 
-.category-value-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.category-icon-wrapper-small {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.category-inline-trigger:focus-visible,
+.exercise-type-trigger:focus-visible,
+.category-grid-item:focus-visible {
+  outline: 2px solid v-bind('token.colorPrimary');
+  outline-offset: 2px;
 }
 
 .category-icon-small {
-  font-size: 16px;
+  flex-shrink: 0;
+  font-size: 22px;
 }
 
 .category-color-dot-small {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
   border-radius: 50%;
 }
 
 .category-name-small {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
-  color: v-bind('token.colorText');
+  overflow-wrap: anywhere;
 }
 
-.placeholder-text {
-  color: v-bind('token.colorTextPlaceholder');
-  font-size: 14px;
+.placeholder-text,
+.trigger-arrow {
+  color: v-bind('token.colorTextSecondary');
 }
 
 .trigger-arrow {
-  margin-left: 2px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.compact-time-range {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  margin-bottom: 12px;
+  background: v-bind('token.colorFillQuaternary');
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 12px;
+}
+
+.compact-time-range :deep(.compact-time-field) {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.compact-time-label {
+  display: block;
+  color: v-bind('token.colorTextSecondary');
+  font-size: 13px;
+}
+
+.compact-time-range :deep(.time-value-picker) {
+  width: 100%;
+  padding: 0 4px;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+.compact-time-range :deep(.time-value-picker input) {
+  color: v-bind('token.colorText');
+  font-size: clamp(24px, 6vw, 28px);
+  font-weight: 300;
+  line-height: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.compact-time-summary {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 4px 0;
+}
+
+.compact-duration {
+  padding: 0 4px;
+  color: v-bind('token.colorTextSecondary');
   font-size: 12px;
-  color: v-bind('token.colorTextPlaceholder');
+  white-space: nowrap;
+}
+
+.compact-time-arrow {
+  position: relative;
+  width: 100%;
+  height: 1px;
+  background: v-bind('token.colorTextTertiary');
+}
+
+.compact-time-arrow::after {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  content: '';
+  border-top: 1px solid v-bind('token.colorTextTertiary');
+  border-right: 1px solid v-bind('token.colorTextTertiary');
+  transform: rotate(45deg);
+}
+
+.time-slot-edit-form :deep(.compact-title) {
+  min-height: 44px;
+}
+
+.time-slot-edit-form :deep(.compact-description) {
+  padding: 10px 12px;
+}
+
+.time-slot-edit-form :deep(input::placeholder),
+.time-slot-edit-form :deep(textarea::placeholder) {
+  color: v-bind('token.colorTextSecondary');
+}
+
+.compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.compact-actions :deep(.ant-btn) {
+  min-width: 44px;
+  height: 44px;
+}
+
+.compact-actions .compact-save {
+  flex: 1;
+  height: 44px;
+  color: var(--save-color);
+  background: var(--save-background);
+  border-color: transparent;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.compact-actions .compact-save:not(:disabled):hover {
+  color: var(--save-color);
+  background: var(--save-hover-background);
+}
+
+.compact-actions .compact-save:not(:disabled):active {
+  color: var(--save-color);
+  background: var(--save-active-background);
+}
+
+.compact-actions .compact-save:disabled {
+  color: var(--save-disabled-color);
+  background: var(--save-disabled-background);
+}
+
+.exercise-type-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-count {
+  width: 72px;
+  flex-shrink: 0;
+}
+
+.exercise-count :deep(.ant-input-number-input) {
+  height: 42px;
+  text-align: center;
+}
+
+.exercise-action {
+  min-width: 44px;
+  height: 44px;
+}
+
+.exercise-type-trigger {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid v-bind('token.colorBorder');
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.exercise-icon-wrapper {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.exercise-type-icon {
+  font-size: 18px;
+}
+
+.exercise-type-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: v-bind('token.colorText');
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   max-height: 60vh;
+  gap: 4px;
   padding: 4px;
   overflow-y: auto;
 }
 
-.category-tree-grid {
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-}
-
-.category-tree-grid .category-name-large {
-  overflow-wrap: anywhere;
-  line-height: 1.4;
-}
-
-.category-grid::-webkit-scrollbar {
-  width: 4px;
-}
-
-.category-grid::-webkit-scrollbar-thumb {
-  background-color: v-bind('token.colorTextQuaternary');
-  border-radius: 2px;
-}
-
 .category-grid-item {
   display: flex;
+  min-height: 76px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 2px;
-  cursor: pointer;
+  padding: 8px 4px;
+  background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
-  transition: all 0.2s;
+  cursor: pointer;
 }
 
 .category-grid-item:hover {
-  background-color: v-bind('token.colorFillQuaternary');
+  background: v-bind('token.colorFillQuaternary');
 }
 
 .category-grid-item.active {
-  background-color: v-bind('token.colorFillTertiary');
-  border-color: v-bind('token.colorBorderSecondary');
+  border-color: v-bind('token.colorTextSecondary');
 }
 
 .category-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
-  margin-bottom: 4px;
+  height: 24px;
+  margin-bottom: 8px;
 }
 
 .category-icon-large {
-  font-size: 20px;
-  color: v-bind('token.colorTextSecondary');
-  transition: color 0.2s;
+  font-size: 24px;
 }
 
 .category-color-dot-large {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
 }
 
 .category-name-large {
-  font-size: 11px;
-  line-height: 1.1;
+  font-size: 13px;
+  line-height: 1.4;
   color: v-bind('token.colorText');
   text-align: center;
-  transition: font-weight 0.2s;
-}
-
-.category-grid-item.active .category-name-large {
-  font-weight: 600;
-}
-
-.duration-display {
-  padding: 8px 12px;
-  font-weight: 500;
-  color: v-bind('token.colorText');
-  background: v-bind('token.colorFillQuaternary');
-  border-radius: 4px;
-}
-
-.time-range-row {
-  margin-bottom: 24px;
-}
-
-.time-control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.time-input-row {
-  display: flex;
-  align-items: center;
-  background-color: v-bind('token.colorBgContainer');
-  border: 1px solid v-bind('token.colorBorder');
-  border-radius: v-bind('`${token.borderRadius}px`');
-  transition: border-color 0.2s;
-}
-
-.time-input-row:hover,
-.time-input-row:focus-within {
-  border-color: v-bind('token.colorPrimary');
-}
-
-.time-input-row .adjust-btn-wrap {
-  flex: 0 0 auto;
-}
-
-.time-step-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-}
-
-.time-value-picker {
-  flex: 1;
-  min-width: 0;
-  padding-right: 0;
-  padding-left: 0;
-}
-
-.time-value-picker :deep(input) {
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.time-adjust-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.adjust-btn-wrap {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  touch-action: manipulation;
-}
-
-.time-adjust-buttons .ant-btn {
-  flex: 1;
-  min-width: 0;
-  height: 28px;
-  padding: 2px 4px;
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-@media (max-width: 479px) {
-  .time-adjust-buttons .ant-btn {
-    height: 32px;
-  }
-}
-
-:deep(.input-align-right input) {
-  text-align: right;
-}
-
-.exercise-type-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px;
-  min-height: 32px;
-  cursor: pointer;
-  background-color: v-bind('token.colorBgContainer');
-  border: 1px solid v-bind('token.colorBorder');
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.exercise-type-trigger:hover {
-  border-color: v-bind('token.colorPrimary');
-}
-
-.exercise-icon-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 6px;
-}
-
-.exercise-type-icon {
-  font-size: 16px;
-}
-
-.exercise-type-name {
-  flex: 1;
-  overflow: hidden;
-  font-size: 14px;
-  color: v-bind('token.colorText');
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .exercise-type-empty {
-  padding: 24px;
-  color: v-bind('token.colorTextQuaternary');
-  text-align: center;
   grid-column: 1 / -1;
+  padding: 24px;
+  color: v-bind('token.colorTextSecondary');
+  text-align: center;
 }
 </style>
