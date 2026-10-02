@@ -10,6 +10,7 @@ import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { DatePicker, Empty, Segmented, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import BookLink from './book-link.vue';
 import { readingTime, safeLink } from './format';
 
 const props = defineProps<{
@@ -139,10 +140,10 @@ watch(() => [props.stats, props.mode], draw);
       </section>
       <section class="wr-panel">
         <h3>阅读最多的书</h3>
-        <div
+        <BookLink
           v-for="(row, i) in stats.readLongest?.slice(0, 4)"
           :key="row.book?.bookId ?? i"
-          class="wr-rank"
+          :book="row.book"
         >
           <span>{{ String(i + 1).padStart(2, '0') }}</span>
           <img
@@ -154,7 +155,7 @@ watch(() => [props.stats, props.mode], draw);
             <p class="wr-clamp">{{ row.book?.title ?? row.albumInfo?.name }}</p>
             <small>{{ readingTime(row.readTime) }}</small>
           </div>
-        </div>
+        </BookLink>
         <Empty v-if="!stats.readLongest?.length" description="暂无阅读排行" />
       </section>
     </div>

@@ -7,6 +7,17 @@ export function safeLink(value?: string) {
     return undefined;
   }
 }
+export function safeBookLink(value?: string) {
+  const link = safeLink(value);
+  if (!link) return undefined;
+  const url = new URL(link);
+  return !url.username &&
+    !url.password &&
+    (url.hostname === 'weread.qq.com' ||
+      url.hostname.endsWith('.weread.qq.com'))
+    ? link
+    : undefined;
+}
 export function readingTime(seconds?: number) {
   if (seconds == null) return '暂无数据';
   return seconds >= 3600

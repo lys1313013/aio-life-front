@@ -98,6 +98,13 @@ export async function getWereadNotes(bookId: string) {
     timeout: 120_000,
   });
 }
+export async function getWereadBookLink(bookId: string) {
+  return requestClient.get<{ deepLink: string }>('/weread/book-link', {
+    params: { bookId },
+    timeout: 30_000,
+  });
+}
+
 export async function getWereadProgress(bookId: string) {
   return requestClient.get<WereadProgress>('/weread/progress', {
     params: { bookId },

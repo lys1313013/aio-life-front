@@ -80,6 +80,25 @@
   margin-bottom: 18px;
 }
 
+.wr-rank-link {
+  width: 100%;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.wr-rank-link:hover,
+.wr-rank-link:focus-visible {
+  color: hsl(var(--primary));
+}
+
+.wr-rank-link:disabled {
+  cursor: wait;
+}
+
 .wr-rank > span {
   color: hsl(var(--muted-foreground));
 }
