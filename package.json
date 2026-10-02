@@ -64,7 +64,8 @@
     "icons:generate": "node scripts/icons/generate.mjs",
     "icons:check": "node scripts/icons/generate.mjs --check",
     "icons:check-db": "pnpm icons:check && python3 scripts/icons/check_database.py",
-    "prebuild": "pnpm icons:check"
+    "prebuild": "pnpm icons:check",
+    "test:critical": "vitest run apps/web-antd/src/router apps/web-antd/src/store/secondary-lock.test.ts apps/web-antd/src/views/_core/profile/secondary-password-setting.test.ts apps/web-antd/src/views/_core/profile/menu-display-setting.test.ts apps/web-antd/src/views/system/menu/index.test.ts apps/web-antd/src/views/system/bank-card-covers/index.test.ts apps/web-antd/src/views/system/storage/index.test.ts apps/web-antd/src/api/payload.test.ts apps/web-antd/src/api/query.test.ts apps/web-antd/src/components/app-modal/AppModal.test.ts apps/web-antd/src/adapter/modal.test.ts apps/web-antd/src/views/time/time-tracker/components/TimeSlotEditForm.test.ts apps/web-antd/src/utils/menu-visibility.test.ts"
   },
   "dependencies": {
     "gm-crypto": "^0.1.12",

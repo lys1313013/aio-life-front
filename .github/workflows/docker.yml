@@ -52,6 +52,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck application
+        run: pnpm --filter @vben/web-antd typecheck
+
+      - name: Test application boundaries
+        run: pnpm run test:critical
+
       - name: Build frontend
         run: pnpm run build --filter=@vben/web-antd
         env:
