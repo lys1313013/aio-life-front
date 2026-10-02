@@ -28,7 +28,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 28px 28px 24px;
+  padding: 30px 28px 24px;
 }
 
 .app-modal-footer,
@@ -188,7 +188,7 @@
 @media (max-width: 479px) {
   .app-modal-body,
   .app-vben-modal .app-modal-body {
-    padding: 24px 20px 20px;
+    padding: 30px 20px 20px;
   }
 
   .app-modal-footer,
