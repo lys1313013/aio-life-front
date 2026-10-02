@@ -9,6 +9,7 @@ const base = {
   bankId: '1',
   cardType: 'debit',
   status: 'normal',
+  cardNoFirst4: '6222',
   cardNoLast4: '1234',
   sortOrder: 0,
   tags: [{ id: 'a', name: '工资卡' }],

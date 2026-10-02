@@ -5,7 +5,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import {
   CopyOutlined,
-  CreditCardOutlined,
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
@@ -263,12 +262,22 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <main class="bank-page">
-    <header class="page-heading">
-      <div class="heading-label">
-        <CreditCardOutlined />
-        <h1>银行卡</h1>
-        <span class="card-count">{{ cards.length }}</span>
-      </div>
+    <div class="toolbar">
+      <Segmented
+        v-model:value="cardType"
+        :options="[
+          { label: '全部', value: 'all' },
+          { label: '储蓄卡', value: 'debit' },
+          { label: '信用卡', value: 'credit' },
+        ]"
+      /><Input
+        v-model:value="keyword"
+        allow-clear
+        placeholder="搜索名称或尾号"
+        class="search"
+      >
+        <template #prefix><SearchOutlined /></template>
+      </Input>
       <div class="heading-actions">
         <Button
           type="text"
@@ -297,23 +306,6 @@ onBeforeUnmount(() => {
           <PlusOutlined />
         </Button>
       </div>
-    </header>
-    <div class="toolbar">
-      <Segmented
-        v-model:value="cardType"
-        :options="[
-          { label: '全部', value: 'all' },
-          { label: '储蓄卡', value: 'debit' },
-          { label: '信用卡', value: 'credit' },
-        ]"
-      /><Input
-        v-model:value="keyword"
-        allow-clear
-        placeholder="搜索名称或尾号"
-        class="search"
-      >
-        <template #prefix><SearchOutlined /></template>
-      </Input>
     </div>
     <div class="filters">
       <Select
@@ -374,34 +366,16 @@ onBeforeUnmount(() => {
             :card-type="card.cardType"
             :color="card.coverColor"
             :file-id="card.coverFileIds[0]"
-          />
-          <div class="card-info">
-            <div
-              v-if="
-                card.alias ||
-                card.coverFileIds.length > 0 ||
-                card.status !== 'normal'
-              "
-              class="card-title"
-            >
-              <span>{{
-                card.alias ||
-                (card.coverFileIds.length > 0 ? card.bankName : '')
-              }}</span
-              ><span
-                v-if="card.status !== 'normal'"
-                class="status-label"
-                :class="`status-${card.status}`"
-                >{{
-                  STATUS_OPTIONS.find((s) => s.value === card.status)?.label
-                }}</span
-              >
-            </div>
-            <div class="number-row">
+          >
+            <template #number>
               <span class="card-number">{{
                 numbers[card.id]?.replace(/(.{4})/g, '$1 ').trim() ||
-                `•••• ${card.cardNoLast4}`
+                [card.cardNoFirst4, '••••', card.cardNoLast4]
+                  .filter(Boolean)
+                  .join(' ')
               }}</span>
+            </template>
+            <template #actions>
               <div class="card-actions">
                 <Popconfirm
                   :open="deleteConfirmId === card.id"
@@ -469,6 +443,39 @@ onBeforeUnmount(() => {
                   </Dropdown>
                 </Popconfirm>
               </div>
+            </template>
+          </CardFace>
+          <div
+            v-if="
+              card.alias ||
+              card.coverFileIds.length > 0 ||
+              card.status !== 'normal' ||
+              (card.cardType === 'credit' &&
+                (card.creditLimit !== null || card.repaymentDay)) ||
+              card.tags.length > 0
+            "
+            class="card-info"
+          >
+            <div
+              v-if="
+                card.alias ||
+                card.coverFileIds.length > 0 ||
+                card.status !== 'normal'
+              "
+              class="card-title"
+            >
+              <span>{{
+                card.alias ||
+                (card.coverFileIds.length > 0 ? card.bankName : '')
+              }}</span
+              ><span
+                v-if="card.status !== 'normal'"
+                class="status-label"
+                :class="`status-${card.status}`"
+                >{{
+                  STATUS_OPTIONS.find((s) => s.value === card.status)?.label
+                }}</span
+              >
             </div>
             <div
               v-if="
@@ -581,11 +588,8 @@ onBeforeUnmount(() => {
   margin: 0 auto;
   color: hsl(var(--foreground));
 }
-.page-heading,
-.heading-label,
 .heading-actions,
 .toolbar,
-.number-row,
 .card-actions,
 .card-title,
 .credit-meta,
@@ -598,30 +602,12 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
 }
-.page-heading {
-  justify-content: space-between;
-  margin-bottom: 26px;
-}
-.heading-label {
-  gap: 11px;
-}
-.heading-label > .anticon {
-  font-size: 23px;
-  color: hsl(var(--muted-foreground));
-}
-h1 {
-  margin: 0;
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-.card-count {
-  font-size: 13px;
-  color: hsl(var(--muted-foreground));
-  margin-left: 1px;
-}
 .heading-actions {
   gap: 6px;
+}
+.heading-actions :deep(.ant-btn) {
+  width: 32px;
+  padding-inline: 0;
 }
 .toolbar {
   justify-content: space-between;
@@ -629,6 +615,7 @@ h1 {
 }
 .search {
   width: 260px;
+  margin-left: auto;
 }
 .filters {
   display: flex;
@@ -673,30 +660,21 @@ h1 {
 .status-frozen {
   color: #bc7832;
 }
-.number-row {
-  justify-content: space-between;
-  gap: 4px;
-  flex-wrap: wrap;
-}
 .card-number {
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: clamp(12px, 1.1vw, 16px);
   letter-spacing: 0.07em;
-  min-height: 28px;
-  display: inline-flex;
-  align-items: center;
-}
-.card-actions {
-  margin-left: auto;
-  gap: 1px;
+  overflow-wrap: anywhere;
 }
 .card-actions :deep(.ant-btn) {
-  color: hsl(var(--muted-foreground));
+  color: inherit;
   width: 32px;
   height: 32px;
 }
-.card-actions :deep(.ant-btn:hover) {
-  color: hsl(var(--foreground));
+.card-actions :deep(.ant-btn:hover),
+.card-actions :deep(.ant-btn:focus-visible) {
+  color: inherit;
+  background: rgb(255 255 255 / 16%);
 }
 .credit-meta {
   justify-content: space-between;
@@ -775,14 +753,12 @@ h1 {
   }
   .search {
     width: 100%;
+    order: 1;
   }
 }
 @media (max-width: 420px) {
   .bank-page {
     padding: 18px 16px 30px;
-  }
-  .page-heading {
-    margin-bottom: 22px;
   }
   .card-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -796,13 +772,10 @@ h1 {
 }
 @media (prefers-reduced-motion: no-preference) {
   .bank-item :deep(.card-face) {
-    transition:
-      box-shadow 0.2s ease,
-      transform 0.2s ease;
+    transition: box-shadow 0.2s ease;
   }
   .bank-item:hover :deep(.card-face) {
     box-shadow: 0 10px 28px #00000014;
-    transform: translateY(-2px);
   }
 }
 </style>

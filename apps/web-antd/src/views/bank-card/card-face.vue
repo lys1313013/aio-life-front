@@ -21,7 +21,7 @@ const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
 <template>
   <div
     class="card-face"
-    :class="{ 'has-image': hasImage }"
+    :class="{ 'has-image': hasImage, 'has-actions': $slots.actions }"
     :style="{ '--card-color': color || defaultColor(bankCode) }"
     :aria-busy="loading"
   >
@@ -47,6 +47,12 @@ const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
       </div>
       <div class="face-orbit" aria-hidden="true"></div>
     </template>
+    <div v-if="$slots.number" class="face-number">
+      <slot name="number"></slot>
+    </div>
+    <div v-if="$slots.actions" class="face-actions">
+      <slot name="actions"></slot>
+    </div>
   </div>
 </template>
 <style scoped>
@@ -78,6 +84,40 @@ const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
   font-size: 16px;
   font-weight: 550;
   letter-spacing: 0.035em;
+}
+.has-actions .face-bank {
+  padding-right: 34px;
+}
+.face-bank > span:last-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.face-number {
+  position: absolute;
+  inset: 47% 23px auto 69px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 27px;
+  line-height: 20px;
+  text-align: right;
+}
+.face-actions {
+  position: absolute;
+  top: 23px;
+  right: 16px;
+}
+.has-image .face-number,
+.has-image .face-actions {
+  background: rgb(0 0 0 / 65%);
+  border-radius: 6px;
+}
+.has-image .face-number {
+  left: auto;
+  width: fit-content;
+  max-width: calc(100% - 46px);
+  padding: 0 6px;
 }
 .bank-mark {
   display: grid;
@@ -156,6 +196,13 @@ const hasImage = computed(() => props.fileId && blobUrl.value && !error.value);
 @media (max-width: 420px) {
   .card-face {
     padding: 20px;
+  }
+  .face-number {
+    inset-inline: 66px 20px;
+  }
+  .face-actions {
+    top: 20px;
+    right: 13px;
   }
   .face-bottom {
     inset-inline: 20px;
