@@ -1,5 +1,8 @@
 import type { ProgressStatus } from './core/progress-status';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -34,8 +37,6 @@ export namespace ReadRecordApi {
     startTime: string;
     finishTime: string;
     remark: string;
-    createTime: string;
-    updateTime: string;
   }
 
   export interface ReadRecordReq {
@@ -58,7 +59,7 @@ export namespace ReadRecordApi {
    * 分页查询
    */
   export function pageList(data: ReadRecordQuery) {
-    return getQuery<{ records: ReadRecordVO[]; total: number }>(
+    return getQuery<{ items: ReadRecordVO[]; total: number }>(
       '/read-record/page',
       data,
     );
@@ -67,15 +68,21 @@ export namespace ReadRecordApi {
   /**
    * 新增
    */
-  export function save(data: ReadRecordReq) {
-    return requestClient.post('/read-record', data);
+  export function save(data: ApiRequests['ReadRecordCreateReq']) {
+    return requestClient.post(
+      '/read-record',
+      pickPayload('ReadRecordCreateReq', data),
+    );
   }
 
   /**
    * 更新
    */
-  export function update(data: ReadRecordReq) {
-    return requestClient.put('/read-record', data);
+  export function update(data: ApiRequests['ReadRecordReq']) {
+    return requestClient.put(
+      '/read-record',
+      pickPayload('ReadRecordReq', data),
+    );
   }
 
   /**

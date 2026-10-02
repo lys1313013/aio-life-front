@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -34,22 +37,33 @@ export async function getAll(data: any) {
 /**
  * 新增运动记录
  */
-export async function add(data: any) {
-  return await requestClient.post('/exerciseRecord', data);
+export async function add(data: ApiRequests['ExerciseRecordCreateReq']) {
+  return await requestClient.post(
+    '/exerciseRecord',
+    pickPayload('ExerciseRecordCreateReq', data),
+  );
 }
 
 /**
  * 修改运动记录
  */
-export async function update(data: any) {
-  return await requestClient.put(`/exerciseRecord/${data.id}`, data);
+export async function update(
+  data: ApiRequests['ExerciseRecordUpdateReq'] & { id?: string },
+) {
+  return await requestClient.put(
+    `/exerciseRecord/${data.id}`,
+    pickPayload('ExerciseRecordUpdateReq', data),
+  );
 }
 
 /**
  * 批量删除运动记录
  */
-export async function deleteBatch(data: any) {
-  return await requestClient.post('/exerciseRecord/deleteBatch', data);
+export async function deleteBatch(data: ApiRequests['CommonReq']) {
+  return await requestClient.post(
+    '/exerciseRecord/deleteBatch',
+    pickPayload('CommonReq', data),
+  );
 }
 
 /**

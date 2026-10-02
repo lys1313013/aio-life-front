@@ -1,3 +1,4 @@
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export type ReadingMode = 'annually' | 'monthly' | 'overall' | 'weekly';
@@ -72,7 +73,7 @@ export async function getWereadConnection() {
 export async function saveWereadConnection(apiKey: string) {
   return requestClient.post<WereadConnection>(
     '/weread/connection',
-    { apiKey },
+    pickPayload('WereadConnectionReq', { apiKey }),
     { timeout: 30_000 },
   );
 }

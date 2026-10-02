@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -70,15 +73,23 @@ export async function getMembershipStats() {
 /**
  * 新增会员
  */
-export async function createMembership(data: MembershipReq) {
-  return await requestClient.post<MembershipVO>('/membership', data);
+export async function createMembership(
+  data: ApiRequests['MembershipCreateReq'],
+) {
+  return await requestClient.post<MembershipVO>(
+    '/membership',
+    pickPayload('MembershipCreateReq', data),
+  );
 }
 
 /**
  * 修改会员
  */
-export async function updateMembership(data: MembershipReq) {
-  return await requestClient.put<MembershipVO>('/membership', data);
+export async function updateMembership(data: ApiRequests['MembershipReq']) {
+  return await requestClient.put<MembershipVO>(
+    '/membership',
+    pickPayload('MembershipReq', data),
+  );
 }
 
 /**

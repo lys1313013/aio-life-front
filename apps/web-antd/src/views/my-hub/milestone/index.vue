@@ -34,7 +34,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 // Types
 // Frontend Milestone interface (transformed from backend entity)
 interface Milestone {
-  id: number;
+  id: string;
   title: string;
   date: string;
   endDate?: string;
@@ -44,7 +44,7 @@ interface Milestone {
 }
 
 interface FormState {
-  id?: number;
+  id?: string;
   title: string;
   date?: Dayjs;
   endDate?: Dayjs;
@@ -211,7 +211,7 @@ const handleEdit = (item: Milestone) => {
   modalVisible.value = true;
 };
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   try {
     await deleteMilestone([id]);
     loadData();

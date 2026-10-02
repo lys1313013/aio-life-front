@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -13,15 +16,24 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function add(data: any) {
-  return await requestClient.post('/device', data);
+export async function add(data: ApiRequests['DeviceCreateReq']) {
+  return await requestClient.post(
+    '/device',
+    pickPayload('DeviceCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function update(id: number | string, data: any) {
-  return await requestClient.put(`/device/${id}`, data);
+export async function update(
+  id: number | string,
+  data: ApiRequests['DeviceUpdateReq'],
+) {
+  return await requestClient.put(
+    `/device/${id}`,
+    pickPayload('DeviceUpdateReq', data),
+  );
 }
 
 /**

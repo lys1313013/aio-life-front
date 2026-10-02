@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface Message {
@@ -9,7 +12,6 @@ export interface Message {
   type: number;
   isRead: boolean;
   createTime: string;
-  updateTime: string;
   avatar?: string;
 }
 
@@ -33,13 +35,15 @@ export async function deleteMessageApi(id: string) {
   return requestClient.delete(`/message/${id}`);
 }
 
-export async function createMessageApi(data: Partial<Message>) {
-  return requestClient.post<Message[]>('/message', data);
+export async function createMessageApi(data: ApiRequests['MessageCreateReq']) {
+  return requestClient.post<Message>(
+    '/message',
+    pickPayload('MessageCreateReq', data),
+  );
 }
 
 export interface SendMessageParams {
   receiverId: string;
-  senderId?: string;
   title: string;
   content: string;
   type?: number;
@@ -47,10 +51,8 @@ export interface SendMessageParams {
 }
 
 export interface MessagePageResult {
-  records: Message[];
+  items: Message[];
   total: number;
-  current: number;
-  size: number;
 }
 
 export async function adminGetMessageListApi(params: {
@@ -63,8 +65,13 @@ export async function adminGetMessageListApi(params: {
   });
 }
 
-export async function adminSendMessageApi(data: SendMessageParams) {
-  return requestClient.post('/message/admin/send', data);
+export async function adminSendMessageApi(
+  data: ApiRequests['MessageCreateReq'],
+) {
+  return requestClient.post(
+    '/message/admin/send',
+    pickPayload('MessageCreateReq', data),
+  );
 }
 
 export async function adminDeleteMessageApi(id: string) {

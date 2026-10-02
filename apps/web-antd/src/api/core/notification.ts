@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface FeishuChannelConfig {
@@ -46,11 +49,11 @@ export async function getFeishuChannelConfigApi() {
 }
 
 export async function saveFeishuChannelConfigApi(
-  data: FeishuChannelSaveParams,
+  data: ApiRequests['FeishuChannelSaveReq'],
 ) {
   return await requestClient.put<FeishuChannelConfig>(
     '/notification/channels/feishu',
-    data,
+    pickPayload('FeishuChannelSaveReq', data),
   );
 }
 
@@ -79,10 +82,10 @@ export async function updateNotificationPreferencesApi(
 ) {
   return await requestClient.put<NotificationPreference[]>(
     '/notification/preferences',
-    {
+    pickPayload('NotificationPreferenceUpdateReq', {
       items: items.flatMap(({ bizType, channels }) =>
         channels.map(({ channel, enabled }) => ({ bizType, channel, enabled })),
       ),
-    },
+    }),
   );
 }

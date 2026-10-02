@@ -2,14 +2,17 @@ import { ref } from 'vue';
 
 import { defineStore } from 'pinia';
 
-import { getSecondaryLockMenusApi, saveSecondaryLockMenusApi } from '#/api/core/auth';
+import {
+  getSecondaryLockMenusApi,
+  saveSecondaryLockMenusApi,
+} from '#/api/core/auth';
 
 /**
  * 用户级二级锁状态管理。
  */
 export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   /** 用户锁定的菜单 ID 集合（从后端加载） */
-  const lockedMenuIds = ref<Set<number>>(new Set());
+  const lockedMenuIds = ref<Set<string>>(new Set());
 
   /** 已加载过锁定菜单列表 */
   const loaded = ref(false);
@@ -30,8 +33,8 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     if (loaded.value) return;
     try {
       const ids = await getSecondaryLockMenusApi();
-      // 后端 Long 序列化为字符串，统一转 number 存储
-      lockedMenuIds.value = new Set(ids.map(Number));
+      // 后端 Long 序列化为字符串，保留完整 ID。
+      lockedMenuIds.value = new Set(ids.map(String));
     } catch {
       // ignore
     } finally {
@@ -39,14 +42,17 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
     }
   }
 
-  async function saveLockedMenus(ids: number[], secondaryPassword: string) {
-    const uniqueIds = [...new Set(ids)];
+  async function saveLockedMenus(
+    ids: (number | string)[],
+    secondaryPassword: string,
+  ) {
+    const uniqueIds = [...new Set(ids.map(String))];
     await saveSecondaryLockMenusApi({ menuIds: uniqueIds, secondaryPassword });
     lockedMenuIds.value = new Set(uniqueIds);
   }
 
   function isMenuLocked(menuId: number | string): boolean {
-    return lockedMenuIds.value.has(Number(menuId));
+    return lockedMenuIds.value.has(String(menuId));
   }
 
   function isUnlocked(menuPath: string): boolean {

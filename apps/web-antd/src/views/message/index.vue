@@ -503,7 +503,7 @@ const handleAISendMessage = async () => {
 
   const userMessage: AIChatMessage = {
     id: Date.now().toString(),
-    userId: Number(myId.value),
+
     conversationId: selectedConversationId.value,
     role: 'user',
     content,
@@ -514,7 +514,7 @@ const handleAISendMessage = async () => {
 
   const aiMessage: AIChatMessage = {
     id: (Date.now() + 1).toString(),
-    userId: Number(myId.value),
+
     conversationId: selectedConversationId.value,
     role: 'assistant',
     content: '',
@@ -667,7 +667,7 @@ onUnmounted(() => {
             class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all"
             :class="
               activeMenu === item.key
-                ? 'bg-accent text-accent-foreground font-semibold'
+                ? 'bg-accent font-semibold text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent'
             "
             @click="handleMenuClick(item.key)"
@@ -684,17 +684,14 @@ onUnmounted(() => {
         :class="isMobile ? 'w-full flex-1' : 'w-72'"
       >
         <!-- Mobile Switcher -->
-        <div
-          v-if="isMobile"
-          class="flex border-b border-border bg-muted"
-        >
+        <div v-if="isMobile" class="flex border-b border-border bg-muted">
           <div
             v-for="item in menuItems"
             :key="item.key"
             class="flex flex-1 cursor-pointer items-center justify-center gap-2 py-3.5 text-center font-medium transition-all"
             :class="
               activeMenu === item.key
-                ? 'border-b-2 border-primary bg-card text-accent-foreground font-semibold'
+                ? 'border-b-2 border-primary bg-card font-semibold text-accent-foreground'
                 : 'text-muted-foreground hover:bg-accent'
             "
             @click="handleMenuClick(item.key)"

@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -11,15 +14,24 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function add(data: any) {
-  return await requestClient.post('/income', data);
+export async function add(data: ApiRequests['IncomeCreateReq']) {
+  return await requestClient.post(
+    '/income',
+    pickPayload('IncomeCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function update(incomeId: number | string, data: any) {
-  return await requestClient.put(`/income/${incomeId}`, data);
+export async function update(
+  incomeId: number | string,
+  data: ApiRequests['IncomeUpdateReq'],
+) {
+  return await requestClient.put(
+    `/income/${incomeId}`,
+    pickPayload('IncomeUpdateReq', data),
+  );
 }
 
 /**

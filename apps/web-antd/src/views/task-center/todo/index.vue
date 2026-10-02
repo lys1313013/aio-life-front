@@ -160,7 +160,7 @@ const submitNewColumn = async () => {
   if (!title || columnAddLoading.value) return;
   columnAddLoading.value = true;
   try {
-    const savedColumn = await saveColumn({ title, tasks: [] });
+    const savedColumn = await saveColumn({ title });
     columns.value.push({ ...savedColumn, tasks: [] });
     newColumnName.value = '';
     addingColumn.value = false;

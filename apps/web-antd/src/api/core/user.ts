@@ -1,6 +1,10 @@
 import type { UserInfo } from '@vben/types';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
+
 import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
@@ -33,8 +37,8 @@ export interface UpdateUserParams {
 /**
  * 更新用户信息
  */
-export async function updateUserInfoApi(params: UpdateUserParams) {
-  return requestClient.put('/users', params);
+export async function updateUserInfoApi(params: ApiRequests['UpdateUserReq']) {
+  return requestClient.put('/users', pickPayload('UpdateUserReq', params));
 }
 
 /**

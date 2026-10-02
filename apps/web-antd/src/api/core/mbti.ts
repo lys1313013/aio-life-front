@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface MbtiResult {
@@ -49,8 +52,11 @@ export async function checkMbtiResult(testId: string) {
   return await requestClient.get<CheckResult>(`/mbti/test/${testId}`);
 }
 
-export async function saveMbtiResult(result: Partial<MbtiResult>) {
-  return await requestClient.post<void>('/mbti/result', result);
+export async function saveMbtiResult(result: ApiRequests['MbtiResultSaveReq']) {
+  return await requestClient.post<void>(
+    '/mbti/result',
+    pickPayload('MbtiResultSaveReq', result),
+  );
 }
 
 export async function getMbtiHistory() {

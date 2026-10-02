@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -19,12 +22,20 @@ export async function getMemoListApi() {
   return res.items;
 }
 
-export async function createMemoApi(memo: Partial<Memo>) {
-  return requestClient.post<boolean>('/memo', memo);
+export async function createMemoApi(memo: ApiRequests['MemoCreateReq']) {
+  return requestClient.post<boolean>(
+    '/memo',
+    pickPayload('MemoCreateReq', memo),
+  );
 }
 
-export async function updateMemoApi(memo: Partial<Memo>) {
-  return requestClient.put<boolean>(`/memo/${memo.id}`, memo);
+export async function updateMemoApi(
+  memo: ApiRequests['MemoUpdateReq'] & { id?: string },
+) {
+  return requestClient.put<boolean>(
+    `/memo/${memo.id}`,
+    pickPayload('MemoUpdateReq', memo),
+  );
 }
 
 export async function deleteMemoApi(id: string) {

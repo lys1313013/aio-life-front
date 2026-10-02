@@ -16,13 +16,13 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ThinkModal from './ThinkModal.vue';
 
 interface Event {
-  id: number | string;
+  id: string;
   content: string;
   create_time: string;
 }
 
 interface Thought {
-  id: number | string;
+  id: string;
   content: string;
   events: Event[];
   likes: number;
@@ -35,14 +35,14 @@ const thoughts = ref<Thought[]>([]);
 const loading = ref(false);
 
 const thinkModalVisible = ref(false);
-const editingThoughtId = ref<null | number | string>(null);
+const editingThoughtId = ref<null | string>(null);
 
 function openAddModal() {
   editingThoughtId.value = null;
   thinkModalVisible.value = true;
 }
 
-function openEditModal(id: number | string) {
+function openEditModal(id: string) {
   editingThoughtId.value = id;
   thinkModalVisible.value = true;
 }
@@ -58,7 +58,7 @@ function onThoughtSaved(thought: any) {
   }
 }
 
-function onThoughtDeleted(id: number | string) {
+function onThoughtDeleted(id: string) {
   thoughts.value = thoughts.value.filter((t) => t.id !== id);
 }
 

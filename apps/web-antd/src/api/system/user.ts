@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -11,15 +14,15 @@ export async function getUserListApi(params: any) {
 /**
  * 新增用户
  */
-export async function addUserApi(data: any) {
-  return requestClient.post('/user-center', data);
+export async function addUserApi(data: ApiRequests['UserCreateReq']) {
+  return requestClient.post('/user-center', pickPayload('UserCreateReq', data));
 }
 
 /**
  * 修改用户
  */
-export async function updateUserApi(data: any) {
-  return requestClient.put('/user-center', data);
+export async function updateUserApi(data: ApiRequests['UserUpdateReq']) {
+  return requestClient.put('/user-center', pickPayload('UserUpdateReq', data));
 }
 
 /**

@@ -54,8 +54,7 @@ const loadData = async (isLoadMore = false) => {
 
   try {
     const res = await ReadRecordApi.pageList(queryForm.value);
-    // 假设返回结构为 { records: [], total: number }，如果不同请根据实际调整
-    const newRecords = (res as any).records || [];
+    const newRecords = res.items || [];
     const totalCount = Number((res as any).total) || 0;
     total.value = totalCount;
 

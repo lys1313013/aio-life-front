@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -10,7 +13,6 @@ export interface ExerciseDetail {
  * 时间记录实体接口
  */
 export interface TimeRecordEntity {
-  userId: number;
   categoryId: string;
   date: string;
   startTime: number;
@@ -20,9 +22,6 @@ export interface TimeRecordEntity {
   duration: number;
   isManual: number;
   id: string;
-  createUser: number;
-  createTime: string;
-  updateTime: string;
   exercises?: ExerciseDetail[]; // Allow sending exercises to backend
   relateId?: string;
   relateType?: number;
@@ -60,17 +59,25 @@ export async function getById(id: string): Promise<TimeRecordEntity> {
 /**
  * 更新数据
  */
-export async function update(data: Partial<TimeRecordEntity>): Promise<void> {
-  return await requestClient.put(`/timeRecord/${data.id}`, data);
+export async function update(
+  data: ApiRequests['TimeRecordSaveReq'] & { id?: string },
+): Promise<void> {
+  return await requestClient.put(
+    `/timeRecord/${data.id}`,
+    pickPayload('TimeRecordSaveReq', data),
+  );
 }
 
 /**
  * 保存数据
  */
 export async function save(
-  data: Omit<Partial<TimeRecordEntity>, 'id'>,
+  data: ApiRequests['TimeRecordSaveReq'],
 ): Promise<string> {
-  return await requestClient.post('/timeRecord', data);
+  return await requestClient.post(
+    '/timeRecord',
+    pickPayload('TimeRecordSaveReq', data),
+  );
 }
 
 /**
@@ -83,8 +90,13 @@ export async function deleteData(data: { id: string }): Promise<void> {
 /**
  * 删除数据
  */
-export async function deleteByDate(data: { date: string }): Promise<void> {
-  return await requestClient.post('/timeRecord/deleteByDate', data);
+export async function deleteByDate(
+  data: ApiRequests['TimeRecordDeleteByDateReq'],
+): Promise<void> {
+  return await requestClient.post(
+    '/timeRecord/deleteByDate',
+    pickPayload('TimeRecordDeleteByDateReq', data),
+  );
 }
 
 /**

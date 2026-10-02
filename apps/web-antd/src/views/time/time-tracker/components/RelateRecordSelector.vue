@@ -108,7 +108,7 @@ const loadData = async (loadMore = false) => {
 
     if (currentRequest !== requestSerial) return;
 
-    const records = response.records || [];
+    const records = response.items || [];
     if (loadMore) {
       const loadedIds = new Set(
         recordList.value.map((item) => String(item.id)),

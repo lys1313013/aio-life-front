@@ -38,13 +38,13 @@ import { fetchAuthImageUrl } from '#/utils/file';
 
 // Types
 interface Honor {
-  id: number;
+  id: string;
   title: string;
   description: string;
   honorDate: string;
   issuer: string;
   level: string;
-  categoryId?: number;
+  categoryId?: string;
   categoryName: string;
   customCategory?: string;
   tags: string[];
@@ -55,13 +55,13 @@ interface Honor {
 }
 
 interface FormState {
-  id?: number;
+  id?: string;
   title: string;
   description: string;
   honorDate?: Dayjs;
   issuer: string;
   level?: string;
-  categoryId?: number;
+  categoryId?: string;
   customCategory: string;
   tags: string;
   fileIds: string[];
@@ -76,7 +76,7 @@ const loading = ref(false);
 // Filters
 const filters = ref({
   keyword: '',
-  categoryId: undefined as number | undefined,
+  categoryId: undefined as string | undefined,
   level: undefined as string | undefined,
 });
 
@@ -150,7 +150,7 @@ const loadData = async () => {
     // Transform backend entity to frontend interface
     // 预加载所有认证图片 URL
     const authUrlPromises: Promise<string>[] = [];
-    const allFileIds: number[][] = [];
+    const allFileIds: string[][] = [];
 
     honorsRes.forEach((item) => {
       if (item.files) {
@@ -258,7 +258,7 @@ const handleEdit = (item: Honor) => {
 };
 
 const deleteLoading = ref(false);
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   if (deleteLoading.value) return;
   deleteLoading.value = true;
   try {

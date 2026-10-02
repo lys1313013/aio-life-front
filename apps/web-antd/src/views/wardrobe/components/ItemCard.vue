@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  delete: [id: number];
+  delete: [id: string];
   edit: [item: WardrobeItemVO];
 }>();
 
@@ -24,12 +24,12 @@ const { blobUrl: coverImage, loading: imageLoading } = useAuthImageUrl(
   <Card class="wardrobe-item-card" hoverable @click="emit('edit', item)">
     <template #cover>
       <div class="card-image">
-        <Image
-          v-if="coverImage"
-          :src="coverImage"
-          :preview="false"
-        />
-        <div v-else-if="imageLoading" class="image-skeleton" aria-label="loading">
+        <Image v-if="coverImage" :src="coverImage" :preview="false" />
+        <div
+          v-else-if="imageLoading"
+          class="image-skeleton"
+          aria-label="loading"
+        >
           <div class="shimmer"></div>
         </div>
         <div v-else class="no-image">
@@ -45,10 +45,7 @@ const { blobUrl: coverImage, loading: imageLoading } = useAuthImageUrl(
             <Tooltip title="编辑">
               <EditOutlined class="action-icon" @click="emit('edit', item)" />
             </Tooltip>
-            <Popconfirm
-              title="确定删除?"
-              @confirm="emit('delete', item.id!)"
-            >
+            <Popconfirm title="确定删除?" @confirm="emit('delete', item.id!)">
               <Tooltip title="删除">
                 <DeleteOutlined class="action-icon delete" />
               </Tooltip>

@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -24,18 +27,24 @@ export async function getAnniversaryRecords() {
  * 创建纪念日
  */
 export async function createAnniversaryRecord(
-  data: Partial<AnniversaryRecord>,
+  data: ApiRequests['AnniversaryRecordCreateReq'],
 ) {
-  return requestClient.post<AnniversaryRecord>('/anniversaryRecords', data);
+  return requestClient.post<AnniversaryRecord>(
+    '/anniversaryRecords',
+    pickPayload('AnniversaryRecordCreateReq', data),
+  );
 }
 
 /**
  * 更新纪念日
  */
 export async function updateAnniversaryRecord(
-  data: Partial<AnniversaryRecord>,
+  data: ApiRequests['AnniversaryRecordUpdateReq'],
 ) {
-  return requestClient.put<AnniversaryRecord>('/anniversaryRecords', data);
+  return requestClient.put<AnniversaryRecord>(
+    '/anniversaryRecords',
+    pickPayload('AnniversaryRecordUpdateReq', data),
+  );
 }
 
 /**

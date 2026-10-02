@@ -1,29 +1,26 @@
+import type { ApiRequests } from '#/api/payload';
+
 import { useAccessStore } from '@vben/stores';
 
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface LLMKey {
   id: string;
-  userId: number;
   modelName: string;
-  apiKey: string;
+  hasApiKey: boolean;
   baseUrl: string;
   isDefault: number;
-  createTime: string;
-  updateTime: string;
 }
 
 export interface ChatSession {
   id: string;
-  userId: number;
   title: string;
-  createTime: string;
   updateTime: string;
 }
 
 export interface ChatMessage {
   id: string;
-  userId: number;
   conversationId?: string;
   role: 'assistant' | 'user';
   content: string;
@@ -39,12 +36,12 @@ export async function getDefaultLLMKeyApi() {
   return requestClient.get<LLMKey>('/llm/key/default');
 }
 
-export async function saveLLMKeyApi(data: Partial<LLMKey>) {
-  return requestClient.post('/llm/key', data);
+export async function saveLLMKeyApi(data: ApiRequests['LLMKeyCreateReq']) {
+  return requestClient.post('/llm/key', pickPayload('LLMKeyCreateReq', data));
 }
 
-export async function updateLLMKeyApi(data: Partial<LLMKey>) {
-  return requestClient.put('/llm/key', data);
+export async function updateLLMKeyApi(data: ApiRequests['LLMKeyUpdateReq']) {
+  return requestClient.put('/llm/key', pickPayload('LLMKeyUpdateReq', data));
 }
 
 export async function deleteLLMKeyApi(id: string) {
@@ -57,14 +54,16 @@ export async function setDefaultLLMKeyApi(id: string) {
 
 export async function chatWithLLMApi(
   prompt: string,
-  context?: string,
+  _context?: string,
   conversationId?: string,
 ) {
-  return requestClient.post<string>('/llm/chat', {
-    prompt,
-    context,
-    conversationId,
-  });
+  return requestClient.post<string>(
+    '/llm/chat',
+    pickPayload('ChatReq', {
+      prompt,
+      conversationId,
+    }),
+  );
 }
 
 export async function summarizeTimeRecordsApi(type: 'today' | 'week') {
@@ -76,11 +75,17 @@ export async function getChatSessionsApi() {
 }
 
 export async function createChatSessionApi(title: string) {
-  return requestClient.post<ChatSession>('/llm/sessions', { title });
+  return requestClient.post<ChatSession>(
+    '/llm/sessions',
+    pickPayload('ChatSessionSaveReq', { title }),
+  );
 }
 
 export async function updateChatSessionApi(id: string, title: string) {
-  return requestClient.put(`/llm/sessions/${id}`, { title });
+  return requestClient.put(
+    `/llm/sessions/${id}`,
+    pickPayload('ChatSessionSaveReq', { title }),
+  );
 }
 
 export async function deleteChatSessionApi(id: string) {
@@ -101,7 +106,7 @@ export async function clearChatHistoryApi(conversationId?: string) {
 
 export function chatWithLLMStreamApi(
   prompt: string,
-  context?: string,
+  _context?: string,
   conversationId?: string,
   onData?: (token: string) => void,
   onDone?: () => void,
@@ -122,7 +127,7 @@ export function chatWithLLMStreamApi(
       fetch('/api/llm/chat/stream', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ prompt, context, conversationId }),
+        body: JSON.stringify({ prompt, conversationId }),
       })
         .then(async (response) => {
           if (!response.ok) {
@@ -144,8 +149,8 @@ export function chatWithLLMStreamApi(
             if (value) {
               buffer += decoder.decode(value, { stream: true });
 
-              let newlineIndex;
-              while ((newlineIndex = buffer.indexOf('\n\n')) !== -1) {
+              while (buffer.includes('\n\n')) {
+                const newlineIndex = buffer.indexOf('\n\n');
                 const eventStr = buffer.slice(0, newlineIndex);
                 buffer = buffer.slice(newlineIndex + 2);
 

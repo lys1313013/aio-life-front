@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -33,7 +36,6 @@ export interface GraphData {
  * 人物请求 DTO
  */
 export interface PersonReq {
-  id?: string;
   name: string;
   avatar?: string;
   category?: string;
@@ -61,12 +63,11 @@ export interface PersonBasicVO {
  * 关系详情
  */
 export interface RelationshipDetailVO {
-  id: number;
+  id: string;
   relationType: string;
   direction?: string;
   description?: string;
   tags?: string;
-  createdAt?: string;
   target: PersonBasicVO;
 }
 
@@ -75,7 +76,6 @@ export interface RelationshipDetailVO {
  */
 export interface PersonDetailVO {
   id: string;
-  userId: number;
   name: string;
   avatar?: string;
   category?: string;
@@ -87,8 +87,6 @@ export interface PersonDetailVO {
   school?: string;
   socialLinks?: string;
   notes?: string;
-  createdAt?: string;
-  updatedAt?: string;
   relationships: RelationshipDetailVO[];
 }
 
@@ -96,7 +94,7 @@ export interface PersonDetailVO {
  * 关系请求 DTO
  */
 export interface RelationshipReq {
-  id?: number;
+  id?: string;
   sourcePersonId: string;
   targetPersonId: string;
   relationType: string;
@@ -140,15 +138,21 @@ export async function searchPersons(keyword: string) {
 /**
  * 创建人物
  */
-export async function createPerson(data: PersonReq) {
-  return requestClient.post('/relationships/persons', data);
+export async function createPerson(data: ApiRequests['PersonReq']) {
+  return requestClient.post(
+    '/relationships/persons',
+    pickPayload('PersonReq', data),
+  );
 }
 
 /**
  * 更新人物
  */
-export async function updatePerson(id: string, data: PersonReq) {
-  return requestClient.put(`/relationships/persons/${id}`, data);
+export async function updatePerson(id: string, data: ApiRequests['PersonReq']) {
+  return requestClient.put(
+    `/relationships/persons/${id}`,
+    pickPayload('PersonReq', data),
+  );
 }
 
 /**
@@ -161,15 +165,24 @@ export async function deletePerson(id: string) {
 /**
  * 创建关系
  */
-export async function createRelationship(data: RelationshipReq) {
-  return requestClient.post('/relationships', data);
+export async function createRelationship(data: ApiRequests['RelationshipReq']) {
+  return requestClient.post(
+    '/relationships',
+    pickPayload('RelationshipReq', data),
+  );
 }
 
 /**
  * 更新关系
  */
-export async function updateRelationship(id: number, data: RelationshipReq) {
-  return requestClient.put(`/relationships/${id}`, data);
+export async function updateRelationship(
+  id: string,
+  data: ApiRequests['RelationshipUpdateReq'],
+) {
+  return requestClient.put(
+    `/relationships/${id}`,
+    pickPayload('RelationshipUpdateReq', data),
+  );
 }
 
 /**
@@ -181,5 +194,7 @@ export async function deleteRelationship(
     targetPersonId: string;
   },
 ) {
-  return requestClient.delete('/relationships', { data });
+  return requestClient.delete('/relationships', {
+    data: pickPayload('RelationshipDeleteReq', data),
+  });
 }

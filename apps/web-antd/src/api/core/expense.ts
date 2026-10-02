@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload, pickPayloadList } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -11,19 +14,28 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insertData(data: any) {
-  return await requestClient.post('/expense', data);
+export async function insertData(data: ApiRequests['ExpenseCreateReq']) {
+  return await requestClient.post(
+    '/expense',
+    pickPayload('ExpenseCreateReq', data),
+  );
 }
 
 /**
  * 修改
  */
-export async function updateData(data: any) {
-  return await requestClient.put('/expense', data);
+export async function updateData(data: ApiRequests['ExpenseUpdateReq']) {
+  return await requestClient.put(
+    '/expense',
+    pickPayload('ExpenseUpdateReq', data),
+  );
 }
 
-export async function saveBatch(dataList: any) {
-  return await requestClient.post('/expense/saveBatch', dataList);
+export async function saveBatch(dataList: ApiRequests['ExpenseCreateReq'][]) {
+  return await requestClient.post(
+    '/expense/saveBatch',
+    pickPayloadList('ExpenseCreateReq', dataList),
+  );
 }
 
 /**
@@ -33,8 +45,11 @@ export async function deleteData(data: any) {
   return await requestClient.delete(`/expense/${data.id}`);
 }
 
-export async function deleteBatch(data: any) {
-  return await requestClient.post('/expense/deleteBatch', data);
+export async function deleteBatch(data: ApiRequests['CommonReq']) {
+  return await requestClient.post(
+    '/expense/deleteBatch',
+    pickPayload('CommonReq', data),
+  );
 }
 
 /**

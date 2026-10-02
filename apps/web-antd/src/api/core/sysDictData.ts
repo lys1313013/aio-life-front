@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -11,15 +14,24 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function add(data: any) {
-  return await requestClient.post('/sysDictData', data);
+export async function add(data: ApiRequests['SysDictDataCreateReq']) {
+  return await requestClient.post(
+    '/sysDictData',
+    pickPayload('SysDictDataCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function update(dictCode: number | string, data: any) {
-  return await requestClient.put(`/sysDictData/${dictCode}`, data);
+export async function update(
+  dictCode: number | string,
+  data: ApiRequests['SysDictDataUpdateReq'],
+) {
+  return await requestClient.put(
+    `/sysDictData/${dictCode}`,
+    pickPayload('SysDictDataUpdateReq', data),
+  );
 }
 
 /**

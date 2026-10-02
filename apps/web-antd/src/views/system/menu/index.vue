@@ -330,7 +330,6 @@ const openEdit = (row: any) => {
   const r = row as SysMenuAdminItem;
   editingId.value = String(r.id);
   form.value = {
-    id: String(r.id),
     name: r.name,
     path: r.path,
     parentId: r.parentId ? String(r.parentId) : '0',

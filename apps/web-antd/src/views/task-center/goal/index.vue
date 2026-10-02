@@ -39,7 +39,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 dayjs.extend(quarterOfYear);
 
 interface FormState {
-  id?: number;
+  id?: string;
   title: string;
   type: number;
   status: ProgressStatus;
@@ -277,7 +277,7 @@ const handleEdit = (item: GoalEntity) => {
   modalVisible.value = true;
 };
 
-const deleteGoal = async (id: number) => {
+const deleteGoal = async (id: string) => {
   try {
     await deleteGoals([id]);
     message.success('删除成功');
@@ -287,7 +287,7 @@ const deleteGoal = async (id: number) => {
     console.error('Failed to delete goal:', error);
   }
 };
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   appDialog.confirm({
     title: '确定要删除这个目标吗？',
     okText: '删除',

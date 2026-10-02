@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface PasswordVault {
@@ -10,7 +13,6 @@ export interface PasswordVault {
   salt: string;
   remark: string;
   favorite: boolean;
-  createTime: string;
   updateTime: string;
 }
 
@@ -33,12 +35,23 @@ export async function getPasswordApi(id: string) {
   return requestClient.get<PasswordVault>(`/password/${id}`);
 }
 
-export async function createPasswordApi(data: PasswordVaultForm) {
-  return requestClient.post<boolean>('/password', data);
+export async function createPasswordApi(
+  data: ApiRequests['PasswordVaultCreateReq'],
+) {
+  return requestClient.post<boolean>(
+    '/password',
+    pickPayload('PasswordVaultCreateReq', data),
+  );
 }
 
-export async function updatePasswordApi(id: string, data: PasswordVaultForm) {
-  return requestClient.put<boolean>(`/password/${id}`, data);
+export async function updatePasswordApi(
+  id: string,
+  data: ApiRequests['PasswordVaultUpdateReq'],
+) {
+  return requestClient.put<boolean>(
+    `/password/${id}`,
+    pickPayload('PasswordVaultUpdateReq', data),
+  );
 }
 
 export async function deletePasswordApi(id: string) {

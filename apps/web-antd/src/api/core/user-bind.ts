@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface UserBindEntity {
@@ -23,12 +26,18 @@ export const getUserBindListApi = (includeToken?: boolean) => {
   });
 };
 
-export const addUserBindApi = (data: UserBindEntity) => {
-  return requestClient.post<boolean>('/userbinds', data);
+export const addUserBindApi = (data: ApiRequests['UserBindCreateReq']) => {
+  return requestClient.post<boolean>(
+    '/userbinds',
+    pickPayload('UserBindCreateReq', data),
+  );
 };
 
-export const updateUserBindApi = (data: UserBindEntity) => {
-  return requestClient.put<boolean>('/userbinds', data);
+export const updateUserBindApi = (data: ApiRequests['UserBindUpdateReq']) => {
+  return requestClient.put<boolean>(
+    '/userbinds',
+    pickPayload('UserBindUpdateReq', data),
+  );
 };
 
 export const deleteUserBindApi = (id: string) => {

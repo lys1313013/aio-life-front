@@ -9,18 +9,18 @@ import { Input, Select, SelectOption, Tag } from 'ant-design-vue';
 const props = defineProps<{
   categories: CategoryVO[];
   keyword?: string;
-  selectedCategoryId?: number;
+  selectedCategoryId?: string;
   selectedSeason?: string;
 }>();
 
 const emit = defineEmits<{
   'update:keyword': [value?: string];
-  'update:selectedCategoryId': [value?: number];
+  'update:selectedCategoryId': [value?: string];
   'update:selectedSeason': [value?: string];
 }>();
 
 const flatCategories = computed(() => {
-  const result: { id: number; name: string }[] = [];
+  const result: { id: string; name: string }[] = [];
   const flatten = (cats: CategoryVO[], prefix = '') => {
     for (const cat of cats) {
       result.push({ id: cat.id!, name: prefix + cat.name });
@@ -52,7 +52,7 @@ const handleSearch = () => {
         allow-clear
         @change="
           (val: any) =>
-            emit('update:selectedCategoryId', val as number | undefined)
+            emit('update:selectedCategoryId', val as string | undefined)
         "
       >
         <SelectOption

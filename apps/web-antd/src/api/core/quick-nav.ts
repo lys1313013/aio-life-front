@@ -1,3 +1,4 @@
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface QuickNavCandidate {
@@ -38,5 +39,8 @@ export async function getMyQuickNavApi() {
 }
 
 export async function saveMyQuickNavApi(items: QuickNavSaveItem[]) {
-  return requestClient.post<QuickNavItem[]>('/quick-nav/my', { items });
+  return requestClient.post<QuickNavItem[]>(
+    '/quick-nav/my',
+    pickPayload('QuickNavSaveReq', { items }),
+  );
 }

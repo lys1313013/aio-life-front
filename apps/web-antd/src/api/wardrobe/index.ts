@@ -1,13 +1,17 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
+
 import { FILE_BIZ_TYPE, uploadFile } from '../core/common';
 
 /**
  * 衣物请求 DTO
  */
 export interface WardrobeItemReq {
-  id?: number;
+  id?: string;
   name: string;
-  categoryId?: number;
+  categoryId?: string;
   color?: string;
   brand?: string;
   season?: string[];
@@ -22,9 +26,9 @@ export interface WardrobeItemReq {
  * 衣物 VO
  */
 export interface WardrobeItemVO {
-  id: number;
+  id: string;
   name: string;
-  categoryId?: number;
+  categoryId?: string;
   categoryName?: string;
   color?: string;
   brand?: string;
@@ -41,10 +45,10 @@ export interface WardrobeItemVO {
  * 分类请求 DTO
  */
 export interface CategoryReq {
-  id?: number;
+  id?: string;
   name: string;
   icon?: string;
-  parentId?: number;
+  parentId?: string;
   sort?: number;
 }
 
@@ -52,10 +56,10 @@ export interface CategoryReq {
  * 分类 VO
  */
 export interface CategoryVO {
-  id: number;
+  id: string;
   name: string;
   icon?: string;
-  parentId?: number;
+  parentId?: string;
   sort?: number;
   categoryType?: number;
   children?: CategoryVO[];
@@ -78,7 +82,7 @@ export interface WardrobeStatsVO {
  * 查询衣物列表
  */
 export async function getWardrobeItems(params: {
-  categoryId?: number;
+  categoryId?: string;
   keyword?: string;
   season?: string;
 }) {
@@ -88,28 +92,39 @@ export async function getWardrobeItems(params: {
 /**
  * 获取衣物详情
  */
-export async function getWardrobeItem(id: number) {
+export async function getWardrobeItem(id: string) {
   return requestClient.get<WardrobeItemVO>(`/wardrobe/items/${id}`);
 }
 
 /**
  * 保存衣物
  */
-export async function saveWardrobeItem(data: WardrobeItemReq) {
-  return requestClient.post('/wardrobe/items', data);
+export async function saveWardrobeItem(
+  data: ApiRequests['WardrobeItemSaveReq'],
+) {
+  return requestClient.post(
+    '/wardrobe/items',
+    pickPayload('WardrobeItemSaveReq', data),
+  );
 }
 
 /**
  * 更新衣物
  */
-export async function updateWardrobeItem(id: number, data: WardrobeItemReq) {
-  return requestClient.put(`/wardrobe/items/${id}`, data);
+export async function updateWardrobeItem(
+  id: string,
+  data: ApiRequests['WardrobeItemSaveReq'],
+) {
+  return requestClient.put(
+    `/wardrobe/items/${id}`,
+    pickPayload('WardrobeItemSaveReq', data),
+  );
 }
 
 /**
  * 删除衣物
  */
-export async function deleteWardrobeItem(id: number) {
+export async function deleteWardrobeItem(id: string) {
   return requestClient.delete(`/wardrobe/items/${id}`);
 }
 
@@ -139,20 +154,31 @@ export async function getCategories() {
 /**
  * 保存分类
  */
-export async function saveCategory(data: CategoryReq) {
-  return requestClient.post('/wardrobe/categories', data);
+export async function saveCategory(
+  data: ApiRequests['WardrobeCategorySaveReq'],
+) {
+  return requestClient.post(
+    '/wardrobe/categories',
+    pickPayload('WardrobeCategorySaveReq', data),
+  );
 }
 
 /**
  * 更新分类
  */
-export async function updateCategory(id: number, data: CategoryReq) {
-  return requestClient.put(`/wardrobe/categories/${id}`, data);
+export async function updateCategory(
+  id: string,
+  data: ApiRequests['WardrobeCategorySaveReq'],
+) {
+  return requestClient.put(
+    `/wardrobe/categories/${id}`,
+    pickPayload('WardrobeCategorySaveReq', data),
+  );
 }
 
 /**
  * 删除分类
  */
-export async function deleteCategory(id: number) {
+export async function deleteCategory(id: string) {
   return requestClient.delete(`/wardrobe/categories/${id}`);
 }

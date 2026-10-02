@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -11,15 +14,21 @@ export async function query(data: any) {
 /**
  * 新增
  */
-export async function insert(data: any) {
-  return await requestClient.post('/userDictData', data);
+export async function insert(data: ApiRequests['UserDictDataCreateReq']) {
+  return await requestClient.post(
+    '/userDictData',
+    pickPayload('UserDictDataCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function update(data: any) {
-  return await requestClient.put('/userDictData', data);
+export async function update(data: ApiRequests['UserDictDataUpdateReq']) {
+  return await requestClient.put(
+    '/userDictData',
+    pickPayload('UserDictDataUpdateReq', data),
+  );
 }
 
 /**
@@ -35,12 +44,22 @@ export async function adminQuery(data: any) {
   return await getQuery('/userDictData/admin/query', data);
 }
 
-export async function adminInsert(data: any) {
-  return await requestClient.post('/userDictData/admin', data);
+export async function adminInsert(
+  data: ApiRequests['UserDictDataAdminCreateReq'],
+) {
+  return await requestClient.post(
+    '/userDictData/admin',
+    pickPayload('UserDictDataAdminCreateReq', data),
+  );
 }
 
-export async function adminUpdate(data: any) {
-  return await requestClient.put(`/userDictData/admin/${data.id}`, data);
+export async function adminUpdate(
+  data: ApiRequests['UserDictDataAdminUpdateReq'] & { id?: string },
+) {
+  return await requestClient.put(
+    `/userDictData/admin/${data.id}`,
+    pickPayload('UserDictDataAdminUpdateReq', data),
+  );
 }
 
 export interface UserDictDataSortItem {
@@ -48,15 +67,10 @@ export interface UserDictDataSortItem {
   id: string;
 }
 
-export async function adminReSort(data: {
-  dictType: string;
-  dragId: string;
-  position: 'after' | 'before';
-  targetId: string;
-}) {
+export async function adminReSort(data: ApiRequests['UserDictDataReSortReq']) {
   return await requestClient.post<UserDictDataSortItem[]>(
     '/userDictData/admin/reSort',
-    data,
+    pickPayload('UserDictDataReSortReq', data),
   );
 }
 

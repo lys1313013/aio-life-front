@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface CbtiOption<T = number | string> {
@@ -13,7 +16,7 @@ export interface CbtiQuestion {
 }
 
 export interface CbtiHiddenQuestion {
-  id: number;
+  id: string;
   options: Array<CbtiOption<string>>;
   text: string;
   triggerPrev?: string;
@@ -37,7 +40,6 @@ export interface CbtiPersonality {
   code: string;
   color?: string;
   description?: string;
-  imageObject?: string;
   imageUrl?: string;
   isSpecial?: boolean;
   motto?: string;
@@ -88,7 +90,6 @@ export interface CbtiHistoryItem {
   color?: string;
   createTime: string;
   id: string;
-  imageObject?: string;
   imageUrl?: string;
   isSpecial?: boolean;
   motto?: string;
@@ -106,21 +107,20 @@ export interface CbtiHistoryDetail {
   personality: CbtiPersonality;
   personalityCode: string;
   similarity: number;
-  userId: string;
 }
 
 export interface CbtiAdminPersonality extends CbtiPersonality {
+  imageObject?: string;
   createTime?: string;
-  id: number;
+  id: string;
   updateTime?: string;
 }
 
 export interface CbtiPersonalitySaveReq {
+  imageObject?: string;
   code: string;
   color?: string;
   description?: string;
-  id?: number;
-  imageObject?: string;
   isSpecial?: boolean;
   motto?: string;
   name: string;
@@ -148,8 +148,11 @@ export async function getCbtiPersonalityApi(code: string) {
   return requestClient.get<CbtiPersonality>(`/cbti/personalities/${code}`);
 }
 
-export async function cbtiTestApi(data: CbtiTestReq) {
-  return requestClient.post<CbtiTestResult>('/cbti/test', data);
+export async function cbtiTestApi(data: ApiRequests['CbtiTestReq']) {
+  return requestClient.post<CbtiTestResult>(
+    '/cbti/test',
+    pickPayload('CbtiTestReq', data),
+  );
 }
 
 export async function getCbtiHistoryApi() {
@@ -168,24 +171,26 @@ export async function getCbtiAdminPersonalitiesApi() {
   return requestClient.get<CbtiAdminPersonality[]>('/cbti/admin/personalities');
 }
 
-export async function createCbtiPersonalityApi(data: CbtiPersonalitySaveReq) {
+export async function createCbtiPersonalityApi(
+  data: ApiRequests['CbtiPersonalitySaveReq'],
+) {
   return requestClient.post<CbtiAdminPersonality>(
     '/cbti/admin/personalities',
-    data,
+    pickPayload('CbtiPersonalitySaveReq', data),
   );
 }
 
 export async function updateCbtiPersonalityApi(
-  id: number,
-  data: CbtiPersonalitySaveReq,
+  id: string,
+  data: ApiRequests['CbtiPersonalitySaveReq'],
 ) {
   return requestClient.put<CbtiAdminPersonality>(
     `/cbti/admin/personalities/${id}`,
-    data,
+    pickPayload('CbtiPersonalitySaveReq', data),
   );
 }
 
-export async function deleteCbtiPersonalityApi(id: number) {
+export async function deleteCbtiPersonalityApi(id: string) {
   return requestClient.delete<boolean>(`/cbti/admin/personalities/${id}`);
 }
 

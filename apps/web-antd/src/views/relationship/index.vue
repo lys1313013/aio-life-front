@@ -114,7 +114,7 @@ const relationshipForm = ref<RelationshipReq>({
   description: '',
   tags: '',
 });
-const editingRelationshipId = ref<null | number>(null);
+const editingRelationshipId = ref<null | string>(null);
 
 // ==================== 计算属性 ====================
 const linkIdOf = (endpoint: any): string =>

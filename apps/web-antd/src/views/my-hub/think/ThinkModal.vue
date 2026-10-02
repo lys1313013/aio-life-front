@@ -30,7 +30,7 @@ import {
 } from '#/components/app-modal';
 
 interface Event {
-  id: number | string;
+  id: string;
   content: string;
   create_time: string;
 }
@@ -43,12 +43,12 @@ interface ThoughtForm {
 }
 
 const props = defineProps<{
-  thoughtId: null | number | string;
+  thoughtId: null | string;
   visible: boolean;
 }>();
 
 const emit = defineEmits<{
-  deleted: [id: number | string];
+  deleted: [id: string];
   saved: [thought: any];
   'update:visible': [value: boolean];
 }>();
@@ -59,7 +59,7 @@ const form = reactive<ThoughtForm>({
   hiddenContent: false,
   events: [
     {
-      id: 1,
+      id: '1',
       content: '',
       create_time: new Date().toISOString(),
     },
@@ -68,7 +68,7 @@ const form = reactive<ThoughtForm>({
 
 const saving = ref(false);
 const loading = ref(false);
-const currentEditId = ref<null | number | string>(null);
+const currentEditId = ref<null | string>(null);
 
 const modalTitle = computed(() => '');
 
@@ -78,7 +78,7 @@ function resetForm() {
   form.hiddenContent = false;
   form.events = [
     {
-      id: Date.now(),
+      id: String(Date.now()),
       content: '',
       create_time: new Date().toISOString(),
     },
@@ -86,7 +86,7 @@ function resetForm() {
   currentEditId.value = null;
 }
 
-async function loadThought(id: number | string) {
+async function loadThought(id: string) {
   loading.value = true;
   try {
     const res = await queryThink({ page: 1, pageSize: 1, condition: { id } });
@@ -110,7 +110,7 @@ async function loadThought(id: number | string) {
           }))
         : [
             {
-              id: Date.now(),
+              id: String(Date.now()),
               content: '',
               create_time: new Date().toISOString(),
             },
@@ -143,13 +143,13 @@ function close() {
 
 function addEvent() {
   form.events.push({
-    id: Date.now(),
+    id: String(Date.now()),
     content: '',
     create_time: new Date().toISOString(),
   });
 }
 
-function removeEventById(id: number | string) {
+function removeEventById(id: string) {
   const idx = form.events.findIndex((e) => e.id === id);
   if (idx !== -1) form.events.splice(idx, 1);
 }

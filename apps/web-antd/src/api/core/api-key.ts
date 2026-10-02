@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -11,11 +14,13 @@ export async function getApiKeyListApi() {
  * 生成 API Key
  * @param params { remark: string, expireDays: number }
  */
-export async function generateApiKeyApi(params: {
-  expireDays?: number;
-  remark?: string;
-}) {
-  return requestClient.post<any>('/api-key/generate', params);
+export async function generateApiKeyApi(
+  params: ApiRequests['ApiKeyGenerateReq'],
+) {
+  return requestClient.post<any>(
+    '/api-key/generate',
+    pickPayload('ApiKeyGenerateReq', params),
+  );
 }
 
 /**

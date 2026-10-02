@@ -1,5 +1,8 @@
+import type { ApiRequests } from '#/api/payload';
+
 import { useAccessStore } from '@vben/stores';
 
+import { pickPayload } from '#/api/payload';
 import { baseRequestClient, requestClient } from '#/api/request';
 
 export namespace AuthApi {
@@ -43,36 +46,48 @@ export namespace AuthApi {
 /**
  * 登录
  */
-export async function loginApi(data: AuthApi.LoginParams) {
-  return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+export async function loginApi(data: ApiRequests['LoginReq']) {
+  return requestClient.post<AuthApi.LoginResult>(
+    '/auth/login',
+    pickPayload('LoginReq', data),
+  );
 }
 
 /**
  * 注册
  */
-export async function registerApi(data: AuthApi.RegisterParams) {
-  return requestClient.post('/auth/register', data);
+export async function registerApi(data: ApiRequests['RegisterReq']) {
+  return requestClient.post('/auth/register', pickPayload('RegisterReq', data));
 }
 
 /**
  * 发送邮箱验证码
  */
 export async function sendEmailCodeApi(email: string) {
-  return requestClient.post('/auth/sendEmailCode', { email });
+  return requestClient.post(
+    '/auth/sendEmailCode',
+    pickPayload('SendEmailCodeReq', { email }),
+  );
 }
 
 /**
  * 发送重置密码验证码
  */
 export async function sendResetPasswordCodeApi(email: string) {
-  return requestClient.post('/auth/sendResetPasswordCode', { email });
+  return requestClient.post(
+    '/auth/sendResetPasswordCode',
+    pickPayload('SendEmailCodeReq', { email }),
+  );
 }
 
 /**
  * 重置密码
  */
-export async function resetPasswordApi(data: AuthApi.ResetPasswordParams) {
-  return requestClient.post('/auth/resetPassword', data);
+export async function resetPasswordApi(data: ApiRequests['ResetPasswordReq']) {
+  return requestClient.post(
+    '/auth/resetPassword',
+    pickPayload('ResetPasswordReq', data),
+  );
 }
 
 /**
@@ -107,8 +122,13 @@ export async function getAccessCodesApi() {
 /**
  * 修改密码
  */
-export async function changePasswordApi(data: AuthApi.ChangePasswordParams) {
-  return requestClient.post('/auth/change-password', data);
+export async function changePasswordApi(
+  data: ApiRequests['ChangePasswordReq'],
+) {
+  return requestClient.post(
+    '/auth/change-password',
+    pickPayload('ChangePasswordReq', data),
+  );
 }
 
 /** 二级锁相关接口 */
@@ -140,16 +160,24 @@ export async function getSecondaryPasswordStatusApi() {
  * 设置/修改二级密码
  */
 export async function setSecondaryPasswordApi(
-  data: SetSecondaryPasswordParams,
+  data: ApiRequests['SetSecondaryPasswordReq'],
 ) {
-  return requestClient.put('/auth/secondary-password', data);
+  return requestClient.put(
+    '/auth/secondary-password',
+    pickPayload('SetSecondaryPasswordReq', data),
+  );
 }
 
 /**
  * 验证二级密码，解锁菜单
  */
-export async function secondaryVerifyApi(data: SecondaryVerifyParams) {
-  return requestClient.post('/auth/secondary-verify', data);
+export async function secondaryVerifyApi(
+  data: ApiRequests['SecondaryVerifyReq'],
+) {
+  return requestClient.post(
+    '/auth/secondary-verify',
+    pickPayload('SecondaryVerifyReq', data),
+  );
 }
 
 export interface SaveSecondaryLockMenusParams {
@@ -169,9 +197,12 @@ export async function getSecondaryLockMenusApi() {
  * 保存当前用户锁定的菜单 ID 列表
  */
 export async function saveSecondaryLockMenusApi(
-  data: SaveSecondaryLockMenusParams,
+  data: ApiRequests['SaveSecondaryLockMenusReq'],
 ) {
-  return requestClient.put('/auth/secondary-lock/menus', data);
+  return requestClient.put(
+    '/auth/secondary-lock/menus',
+    pickPayload('SaveSecondaryLockMenusReq', data),
+  );
 }
 
 /**
@@ -191,7 +222,10 @@ export interface ResetSecondaryPasswordParams {
  * 通过邮箱验证码重置二级密码
  */
 export async function resetSecondaryPasswordApi(
-  data: ResetSecondaryPasswordParams,
+  data: ApiRequests['ResetSecondaryPasswordReq'],
 ) {
-  return requestClient.post('/auth/reset-secondary-password', data);
+  return requestClient.post(
+    '/auth/reset-secondary-password',
+    pickPayload('ResetSecondaryPasswordReq', data),
+  );
 }

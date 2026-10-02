@@ -1,5 +1,8 @@
 import type { RouteRecordStringComponent } from '@vben/types';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -25,9 +28,12 @@ export async function getMenuPreferencesApi() {
 }
 
 export async function saveMenuPreferencesApi(menuIds: string[]) {
-  return requestClient.put<UserMenuPreference>('/menu/preferences', {
-    menuIds,
-  });
+  return requestClient.put<UserMenuPreference>(
+    '/menu/preferences',
+    pickPayload('UserMenuHiddenSaveReq', {
+      menuIds,
+    }),
+  );
 }
 
 export async function resetMenuPreferencesApi() {
@@ -50,7 +56,6 @@ export interface SysMenuAdminItem {
 
 export interface SysMenuSaveReq {
   component?: string;
-  id?: string;
   meta?: Record<string, any>;
   name: string;
   parentId?: string;
@@ -69,24 +74,39 @@ export async function getMenuRoleOptionsApi() {
   return requestClient.get<string[]>('/menu/admin/role-options');
 }
 
-export async function createMenuApi(data: SysMenuSaveReq) {
-  return requestClient.post<SysMenuAdminItem>('/menu/admin', data);
+export async function createMenuApi(data: ApiRequests['MenuSaveReq']) {
+  return requestClient.post<SysMenuAdminItem>(
+    '/menu/admin',
+    pickPayload('MenuSaveReq', data),
+  );
 }
 
-export async function updateMenuApi(id: string, data: SysMenuSaveReq) {
-  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}`, data);
+export async function updateMenuApi(
+  id: string,
+  data: ApiRequests['MenuSaveReq'],
+) {
+  return requestClient.put<SysMenuAdminItem>(
+    `/menu/admin/${id}`,
+    pickPayload('MenuSaveReq', data),
+  );
 }
 
 export async function updateMenuStatusApi(id: string, status: number) {
-  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/status`, {
-    status,
-  });
+  return requestClient.put<SysMenuAdminItem>(
+    `/menu/admin/${id}/status`,
+    pickPayload('MenuStatusUpdateReq', {
+      status,
+    }),
+  );
 }
 
 export async function updateMenuSortApi(id: string, sort: number) {
-  return requestClient.put<SysMenuAdminItem>(`/menu/admin/${id}/sort`, {
-    sort,
-  });
+  return requestClient.put<SysMenuAdminItem>(
+    `/menu/admin/${id}/sort`,
+    pickPayload('MenuSortUpdateReq', {
+      sort,
+    }),
+  );
 }
 
 export async function deleteMenuApi(id: string) {

@@ -37,11 +37,6 @@ export interface FileVO {
   fileUrl: string;
   fileSize: string;
   fileType: string;
-  hashValue: string;
-  bizType: string;
-  bizId?: string;
-  isPublic: number;
-  createTime: string;
 }
 
 export const FILE_BIZ_TYPE = {

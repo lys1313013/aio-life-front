@@ -23,8 +23,8 @@ describe('gET 查询参数', () => {
     const original = structuredClone(data);
     const result = { items: [], total: 0 };
     vi.mocked(requestClient.get).mockResolvedValue(result);
-    expect(await getQuery('/expense/query', data)).toBe(result);
-    expect(requestClient.get).toHaveBeenCalledWith('/expense/query', {
+    expect(await getQuery('/fixture/query', data)).toBe(result);
+    expect(requestClient.get).toHaveBeenCalledWith('/fixture/query', {
       params: {
         page: 2,
         pageSize: 20,
@@ -36,6 +36,24 @@ describe('gET 查询参数', () => {
       paramsSerializer: 'repeat',
     });
     expect(data).toEqual(original);
+  });
+
+  it('真实查询只发送支持的分页与筛选字段', async () => {
+    await getQuery('/expense/query', {
+      page: 1,
+      pageSize: 20,
+      condition: {
+        expTypeId: '9007199254740993',
+        userId: '1',
+        isDeleted: 1,
+        createTime: 'ignored',
+        unused: false,
+      },
+    });
+    expect(requestClient.get).toHaveBeenLastCalledWith('/expense/query', {
+      params: { page: 1, pageSize: 20, expTypeId: '9007199254740993' },
+      paramsSerializer: 'repeat',
+    });
   });
 
   it('枚举数组使用重复参数，无筛选时不发送请求体', async () => {

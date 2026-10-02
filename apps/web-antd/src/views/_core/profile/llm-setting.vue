@@ -166,7 +166,7 @@ const handleAdd = () => {
 };
 
 const handleEdit = (key: any) => {
-  Object.assign(formData, key);
+  Object.assign(formData, key, { apiKey: '' });
   formData.isDefault = !!key.isDefault;
   formVisible.value = true;
 };
@@ -254,7 +254,7 @@ const getModelLinks = (record: any) => {
       >
         <template #bodyCell="{ column, record, text }">
           <template v-if="column.key === 'apiKey'">
-            {{ record.apiKey ? '******' : '' }}
+            {{ record.hasApiKey ? '******' : '' }}
           </template>
           <template v-else-if="column.key === 'isDefault'">
             <span
@@ -399,10 +399,10 @@ const getModelLinks = (record: any) => {
             </a>
           </div>
         </Form.Item>
-        <Form.Item label="API Key" required>
+        <Form.Item label="API Key" :required="!formData.id">
           <Input.Password
             v-model:value="formData.apiKey"
-            placeholder="请输入 API Key"
+            :placeholder="formData.id ? '留空保留原密钥' : '请输入 API Key'"
           />
           <div v-if="currentPreset?.apiKeyUrl" class="mt-1 text-xs">
             <a

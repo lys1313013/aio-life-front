@@ -89,7 +89,7 @@ const loadData = async (isLoadMore = false) => {
 
   try {
     const res = await MovieApi.pageList(queryForm.value);
-    const newRecords = (res as any).records || [];
+    const newRecords = res.items || [];
     const totalCount = Number((res as any).total) || 0;
     total.value = totalCount;
 

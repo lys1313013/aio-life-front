@@ -1,7 +1,11 @@
 import type { FileVO } from './common';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
+
+import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 export interface PerformanceEntity {
   id?: string;
@@ -29,15 +33,25 @@ export async function queryPerformances(params: {
 /**
  * 新增
  */
-export async function createPerformance(data: PerformanceEntity) {
-  return await requestClient.post('/performance', data);
+export async function createPerformance(
+  data: ApiRequests['PerformanceCreateReq'],
+) {
+  return await requestClient.post(
+    '/performance',
+    pickPayload('PerformanceCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function updatePerformance(data: PerformanceEntity) {
-  return await requestClient.put('/performance', data);
+export async function updatePerformance(
+  data: ApiRequests['PerformanceUpdateReq'],
+) {
+  return await requestClient.put(
+    '/performance',
+    pickPayload('PerformanceUpdateReq', data),
+  );
 }
 
 /**

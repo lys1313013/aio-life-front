@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -38,17 +41,24 @@ export async function getPasswordVault(id: number) {
 /**
  * 创建密码
  */
-export async function createPasswordVault(data: PasswordVaultEntity) {
-  return await requestClient.post<PasswordVaultEntity>('/password', data);
+export async function createPasswordVault(
+  data: ApiRequests['PasswordVaultCreateReq'],
+) {
+  return await requestClient.post<PasswordVaultEntity>(
+    '/password',
+    pickPayload('PasswordVaultCreateReq', data),
+  );
 }
 
 /**
  * 更新密码
  */
-export async function updatePasswordVault(data: PasswordVaultEntity) {
+export async function updatePasswordVault(
+  data: ApiRequests['PasswordVaultUpdateReq'] & { id?: string },
+) {
   return await requestClient.put<PasswordVaultEntity>(
     `/password/${data.id}`,
-    data,
+    pickPayload('PasswordVaultUpdateReq', data),
   );
 }
 

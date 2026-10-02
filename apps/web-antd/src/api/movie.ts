@@ -1,5 +1,8 @@
 import type { ProgressStatus } from './core/progress-status';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -34,8 +37,6 @@ export namespace MovieApi {
     finishTime: string;
     rating?: number;
     remark: string;
-    createTime: string;
-    updateTime: string;
   }
 
   export interface MovieReq {
@@ -109,21 +110,21 @@ export namespace MovieApi {
    * 分页查询
    */
   export function pageList(data: MovieQuery) {
-    return getQuery<{ records: MovieVO[]; total: number }>('/movie/page', data);
+    return getQuery<{ items: MovieVO[]; total: number }>('/movie/page', data);
   }
 
   /**
    * 新增
    */
-  export function save(data: MovieReq) {
-    return requestClient.post('/movie', data);
+  export function save(data: ApiRequests['MovieCreateReq']) {
+    return requestClient.post('/movie', pickPayload('MovieCreateReq', data));
   }
 
   /**
    * 更新
    */
-  export function update(data: MovieReq) {
-    return requestClient.put('/movie', data);
+  export function update(data: ApiRequests['MovieReq']) {
+    return requestClient.put('/movie', pickPayload('MovieReq', data));
   }
 
   /**
@@ -142,15 +143,20 @@ export namespace MovieApi {
     });
   }
 
-  export function previewDoubanImport(data: DoubanImportRequest) {
+  export function previewDoubanImport(
+    data: ApiRequests['DoubanMovieImportReq'],
+  ) {
     return requestClient.post<DoubanImportPreview>(
       '/movie/import/douban/preview',
-      data,
+      pickPayload('DoubanMovieImportReq', data),
     );
   }
 
-  export function importDouban(data: DoubanImportRequest) {
-    return requestClient.post<DoubanImportResult>('/movie/import/douban', data);
+  export function importDouban(data: ApiRequests['DoubanMovieImportReq']) {
+    return requestClient.post<DoubanImportResult>(
+      '/movie/import/douban',
+      pickPayload('DoubanMovieImportReq', data),
+    );
   }
 
   /**

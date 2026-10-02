@@ -60,7 +60,7 @@ const watchedLoading = ref(true);
 const pinnedThoughts = ref<any[]>([]);
 const thoughtsLoading = ref(true);
 const thinkModalVisible = ref(false);
-const editingThoughtId = ref<null | number | string>(null);
+const editingThoughtId = ref<null | string>(null);
 const timeTrackerModalRef = ref();
 // 上次时迹记录末分钟结束后的边界（分钟数，0 表示今日无记录）
 const timeTrackerLastEnd = ref(0);

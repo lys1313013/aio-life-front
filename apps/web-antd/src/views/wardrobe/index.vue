@@ -38,7 +38,7 @@ const categories = ref<CategoryVO[]>([]);
 const stats = ref<null | WardrobeStatsVO>(null);
 
 // 筛选条件
-const selectedCategoryId = ref<number>();
+const selectedCategoryId = ref<string>();
 const selectedSeason = ref<string>();
 const keyword = ref<string>();
 
@@ -94,7 +94,7 @@ const handleEdit = (item: WardrobeItemVO) => {
   formVisible.value = true;
 };
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   try {
     await deleteWardrobeItem(id);
     message.success('删除成功');

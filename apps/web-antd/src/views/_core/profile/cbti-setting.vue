@@ -347,7 +347,7 @@ const adminImagePreviewTitle = ref('图片预览');
 
 const adminEditVisible = ref(false);
 const adminSaving = ref(false);
-const adminEditingId = ref<null | number>(null);
+const adminEditingId = ref<null | string>(null);
 const adminForm = ref<CbtiPersonalitySaveReq>({
   code: '',
   name: '',
@@ -534,7 +534,6 @@ const openEditPersonality = (row: any) => {
   const r = row as CbtiAdminPersonality;
   adminEditingId.value = r.id;
   adminForm.value = {
-    id: r.id,
     code: r.code,
     name: r.name,
     motto: r.motto,

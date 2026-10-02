@@ -1,6 +1,10 @@
 import type { FileVO } from './common';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
+
 import { FILE_BIZ_TYPE, uploadFile } from './common';
 
 /**
@@ -86,8 +90,11 @@ export interface FeedbackAdminQuery {
 /**
  * 提交反馈
  */
-export async function createFeedback(data: FeedbackCreateReq) {
-  return await requestClient.post<FeedbackVO>('/feedback', data);
+export async function createFeedback(data: ApiRequests['FeedbackCreateReq']) {
+  return await requestClient.post<FeedbackVO>(
+    '/feedback',
+    pickPayload('FeedbackCreateReq', data),
+  );
 }
 
 /**
@@ -116,11 +123,11 @@ export async function getMyFeedbackDetail(id: string) {
  */
 export async function addFeedbackComment(
   feedbackId: string,
-  data: FeedbackCommentCreateReq,
+  data: ApiRequests['FeedbackCommentCreateReq'],
 ) {
   return await requestClient.post<FeedbackCommentVO>(
     `/feedback/${feedbackId}/comment`,
-    data,
+    pickPayload('FeedbackCommentCreateReq', data),
   );
 }
 
@@ -180,11 +187,11 @@ export async function getAdminFeedbackDetail(id: string) {
  */
 export async function adminReplyFeedback(
   feedbackId: string,
-  data: FeedbackCommentCreateReq,
+  data: ApiRequests['FeedbackCommentCreateReq'],
 ) {
   return await requestClient.post<FeedbackCommentVO>(
     `/feedback/admin/${feedbackId}/reply`,
-    data,
+    pickPayload('FeedbackCommentCreateReq', data),
   );
 }
 
@@ -197,7 +204,7 @@ export async function adminUpdateFeedbackStatus(
 ) {
   return await requestClient.put<FeedbackVO>(
     `/feedback/admin/${feedbackId}/status`,
-    { status },
+    pickPayload('FeedbackStatusUpdateReq', { status }),
   );
 }
 
@@ -205,10 +212,13 @@ export async function adminUpdateFeedbackStatus(
  * 管理员：批量操作
  */
 export async function adminBatchFeedback(idList: number[], action: string) {
-  return await requestClient.post<void>('/feedback/admin/batch', {
-    idList,
-    action,
-  });
+  return await requestClient.post<void>(
+    '/feedback/admin/batch',
+    pickPayload('FeedbackBatchReq', {
+      idList,
+      action,
+    }),
+  );
 }
 
 /**

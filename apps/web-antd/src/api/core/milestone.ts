@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -5,8 +8,7 @@ import { requestClient } from '#/api/request';
  * 对应后端 MilestoneEntity
  */
 export interface MilestoneEntity {
-  id?: number;
-  userId?: number;
+  id?: string;
   title: string;
   description?: string;
   date: string;
@@ -15,9 +17,6 @@ export interface MilestoneEntity {
   tags?: string; // JSON string
   createTime?: string;
   updateTime?: string;
-  createUser?: number;
-  updateUser?: number;
-  isDeleted?: number;
 }
 
 /**
@@ -30,20 +29,29 @@ export async function queryMilestone() {
 /**
  * 创建
  */
-export async function createMilestone(data: MilestoneEntity) {
-  return await requestClient.post<MilestoneEntity>('/milestones', data);
+export async function createMilestone(data: ApiRequests['MilestoneCreateReq']) {
+  return await requestClient.post<MilestoneEntity>(
+    '/milestones',
+    pickPayload('MilestoneCreateReq', data),
+  );
 }
 
 /**
  * 更新
  */
-export async function updateMilestone(data: MilestoneEntity) {
-  return await requestClient.put<MilestoneEntity>('/milestones', data);
+export async function updateMilestone(data: ApiRequests['MilestoneUpdateReq']) {
+  return await requestClient.put<MilestoneEntity>(
+    '/milestones',
+    pickPayload('MilestoneUpdateReq', data),
+  );
 }
 
 /**
  * 批量删除
  */
-export async function deleteMilestone(idList: number[]) {
-  return await requestClient.post<void>('/milestones/batchDelete', { idList });
+export async function deleteMilestone(idList: string[]) {
+  return await requestClient.post<void>(
+    '/milestones/batchDelete',
+    pickPayload('CommonReq', { idList }),
+  );
 }

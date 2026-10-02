@@ -1,5 +1,8 @@
 import type { ProgressStatus } from './progress-status';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
@@ -74,15 +77,24 @@ export async function getStatusCount(data: any) {
 /**
  * 新增学习视频
  */
-export async function insertBVideo(data: BilibiliVideo) {
-  return await requestClient.post('/b-video', data);
+export async function insertBVideo(data: ApiRequests['BVideoCreateReq']) {
+  return await requestClient.post(
+    '/b-video',
+    pickPayload('BVideoCreateReq', data),
+  );
 }
 
 /**
  * 更新学习视频
  */
-export async function updateBiVideo(id: string, data: BilibiliVideo) {
-  return await requestClient.put(`/b-video/${id}`, data);
+export async function updateBiVideo(
+  id: string,
+  data: ApiRequests['BVideoUpdateReq'],
+) {
+  return await requestClient.put(
+    `/b-video/${id}`,
+    pickPayload('BVideoUpdateReq', data),
+  );
 }
 
 /**

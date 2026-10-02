@@ -1,9 +1,12 @@
 import type { ProgressStatus } from './progress-status';
 
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 export interface GoalEntity {
-  id?: number;
+  id?: string;
   title: string;
   type: number; // 1: 年, 2: 月, 3: 日
   status: ProgressStatus;
@@ -34,20 +37,29 @@ export async function getGoalList(params?: GoalQueryParams) {
 /**
  * 新增目标
  */
-export async function createGoal(data: GoalEntity) {
-  return requestClient.post<GoalEntity>('/goals', data);
+export async function createGoal(data: ApiRequests['GoalCreateReq']) {
+  return requestClient.post<GoalEntity>(
+    '/goals',
+    pickPayload('GoalCreateReq', data),
+  );
 }
 
 /**
  * 更新目标
  */
-export async function updateGoal(data: GoalEntity) {
-  return requestClient.put<GoalEntity>('/goals', data);
+export async function updateGoal(data: ApiRequests['GoalUpdateReq']) {
+  return requestClient.put<GoalEntity>(
+    '/goals',
+    pickPayload('GoalUpdateReq', data),
+  );
 }
 
 /**
  * 批量删除目标
  */
-export async function deleteGoals(ids: number[]) {
-  return requestClient.post<void>('/goals/batchDelete', { idList: ids });
+export async function deleteGoals(ids: string[]) {
+  return requestClient.post<void>(
+    '/goals/batchDelete',
+    pickPayload('CommonReq', { idList: ids }),
+  );
 }

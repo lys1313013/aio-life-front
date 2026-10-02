@@ -176,7 +176,7 @@ export function mergeCategoriesWithOverrides(
   publicCategories.forEach((pubCat) => {
     const override = overrideMap.get(pubCat.id!);
 
-    if (override?.isDeleted === 1) {
+    if (override?.isHidden === true) {
       // 公共分类被用户隐藏，生成隐藏标记
       result.push({
         id: pubCat.id!,
@@ -193,7 +193,7 @@ export function mergeCategoriesWithOverrides(
       return;
     }
 
-    const isOverridden = !!override && override.isDeleted !== 1;
+    const isOverridden = !!override;
 
     result.push({
       id: pubCat.id!,
@@ -252,7 +252,7 @@ export function generateOverrideRecord(
     description: changes.description ?? publicCategory.description,
     isTrackTime: changes.isTrackTime ?? publicCategory.isTrackTime,
     sort: changes.sort,
-    isDeleted: 0,
+    isHidden: false,
   };
 }
 
@@ -268,6 +268,6 @@ export function generateHideRecord(
     color: publicCategory.color,
     description: publicCategory.description,
     isTrackTime: publicCategory.isTrackTime,
-    isDeleted: 1,
+    isHidden: true,
   };
 }

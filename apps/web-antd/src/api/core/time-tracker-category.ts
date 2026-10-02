@@ -1,3 +1,6 @@
+import type { ApiRequests } from '#/api/payload';
+
+import { pickPayload, pickPayloadList } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
 /**
@@ -14,8 +17,8 @@ export interface TimeTrackerCategoryEntity {
   description?: string;
   isTrackTime?: number;
   sort?: number;
-  isDeleted?: number;
   isEnabled?: number;
+  isHidden?: boolean;
   timeType?: 1 | 2 | 3; // 时间类型: 1-必须, 2-积极, 3-休闲
   // 客户端计算字段（不发送到后端）
   _categoryType?: 'override' | 'private' | 'public';
@@ -47,18 +50,24 @@ export async function listHiddenCategories(): Promise<
  * 保存分类
  */
 export async function saveCategory(
-  data: TimeTrackerCategoryEntity,
+  data: ApiRequests['TimeTrackerCategoryCreateReq'],
 ): Promise<boolean> {
-  return await requestClient.post('/timeTrackerCategory', data);
+  return await requestClient.post(
+    '/timeTrackerCategory',
+    pickPayload('TimeTrackerCategoryCreateReq', data),
+  );
 }
 
 /**
  * 更新分类
  */
 export async function updateCategory(
-  data: TimeTrackerCategoryEntity,
+  data: ApiRequests['TimeTrackerCategoryUpdateReq'],
 ): Promise<boolean> {
-  return await requestClient.put('/timeTrackerCategory', data);
+  return await requestClient.put(
+    '/timeTrackerCategory',
+    pickPayload('TimeTrackerCategoryUpdateReq', data),
+  );
 }
 
 /**
@@ -72,9 +81,12 @@ export async function deleteCategory(id: string): Promise<boolean> {
  * 拖拽排序
  */
 export async function reSortCategories(
-  list: { id?: string; sort?: number; templateId?: null | string }[],
+  list: ApiRequests['TimeTrackerCategorySortReq'][],
 ): Promise<void> {
-  return await requestClient.post('/timeTrackerCategory/reSort', list);
+  return await requestClient.post(
+    '/timeTrackerCategory/reSort',
+    pickPayloadList('TimeTrackerCategorySortReq', list),
+  );
 }
 
 // ================= 管理员 API =================
@@ -86,15 +98,21 @@ export async function adminListCategories(): Promise<
 }
 
 export async function adminSaveCategory(
-  data: TimeTrackerCategoryEntity,
+  data: ApiRequests['TimeTrackerCategoryAdminCreateReq'],
 ): Promise<boolean> {
-  return await requestClient.post('/timeTrackerCategory/admin', data);
+  return await requestClient.post(
+    '/timeTrackerCategory/admin',
+    pickPayload('TimeTrackerCategoryAdminCreateReq', data),
+  );
 }
 
 export async function adminUpdateCategory(
-  data: TimeTrackerCategoryEntity,
+  data: ApiRequests['TimeTrackerCategoryAdminUpdateReq'] & { id?: string },
 ): Promise<boolean> {
-  return await requestClient.put(`/timeTrackerCategory/admin/${data.id}`, data);
+  return await requestClient.put(
+    `/timeTrackerCategory/admin/${data.id}`,
+    pickPayload('TimeTrackerCategoryAdminUpdateReq', data),
+  );
 }
 
 export async function adminDeleteCategory(id: string): Promise<boolean> {

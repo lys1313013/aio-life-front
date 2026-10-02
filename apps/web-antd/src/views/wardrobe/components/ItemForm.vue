@@ -51,7 +51,7 @@ const formData = ref<WardrobeItemReq>({
 });
 
 const flatCategories = computed(() => {
-  const result: { id: number; name: string; parentId?: number }[] = [];
+  const result: { id: string; name: string; parentId?: string }[] = [];
   const flatten = (cats: CategoryVO[], prefix = '') => {
     for (const cat of cats) {
       result.push({
