@@ -54,6 +54,7 @@ import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaCh
 import TimeTrackerModal from './components/TimeTrackerModal.vue';
 import TimeTypePieChart from './components/TimeTypePieChart.vue';
 import { defaultConfig } from './config';
+import { createDaySwipe, daySwipeStyle } from './day-swipe';
 import {
   formatDuration,
   formatSlotTime,
@@ -474,8 +475,10 @@ onDeactivated(() => {
   dragOperation.value = null;
 });
 
-// 数据管理
+// 数据管理：连续切日时只接收最新请求，避免旧日期覆盖当前视图。
+let loadGeneration = 0;
 const loadData = async () => {
+  const generation = ++loadGeneration;
   try {
     loading.value = true; // 开始加载
 
@@ -527,6 +530,7 @@ const loadData = async () => {
     }
 
     const [currentResponse, prevResponse] = await Promise.all(promises);
+    if (generation !== loadGeneration) return;
 
     // Process Current Response
     if (Array.isArray(currentResponse)) {
@@ -546,14 +550,17 @@ const loadData = async () => {
       previousPeriodTimeSlots.value = [];
     }
   } catch (error) {
+    if (generation !== loadGeneration) return;
     console.error('加载数据失败:', error);
     // 全局拦截器已提示
     timeSlots.value = [];
     previousPeriodTimeSlots.value = [];
   } finally {
-    loading.value = false; // 结束加载
-    trendRefreshKey.value++;
-    nextTick(() => syncTimelineHeight());
+    if (generation === loadGeneration) {
+      loading.value = false; // 结束加载
+      trendRefreshKey.value++;
+      nextTick(() => syncTimelineHeight());
+    }
   }
 };
 
@@ -601,6 +608,22 @@ const goToNextPeriod = () => {
   }
   loadData();
 };
+
+const swipeOffset = ref(0);
+const swipeDragging = ref(false);
+const daySwipe = createDaySwipe(
+  () => statMode.value === 'day' && !loading.value && !dragOperation.value,
+  (offset) => (offset > 0 ? goToNextPeriod() : goToPreviousPeriod()),
+  (offset, dragging) => {
+    swipeOffset.value = offset;
+    swipeDragging.value = dragging;
+  },
+);
+function preventSwipeClick(event: MouseEvent) {
+  if (!daySwipe.ignoreClick()) return;
+  event.preventDefault();
+  event.stopPropagation();
+}
 
 // 选择星期几
 const selectWeekDay = (index: number) => {
@@ -1224,8 +1247,21 @@ const getDaySlots = (date: string): TimeSlot[] => {
     </div>
 
     <div class="content-layout">
-      <div class="left-panel">
-        <Spin :spinning="loading" :size="isMobile ? 'small' : 'large'">
+      <div
+        class="left-panel"
+        :class="{ 'day-swipe-panel': statMode === 'day' }"
+        @touchstart="daySwipe.touchStart"
+        @touchmove="daySwipe.touchMove"
+        @touchend="daySwipe.touchEnd"
+        @touchcancel="daySwipe.cancel"
+        @click.capture="preventSwipeClick"
+      >
+        <Spin
+          class="day-swipe-surface"
+          :style="daySwipeStyle(swipeOffset, swipeDragging)"
+          :spinning="loading"
+          :size="isMobile ? 'small' : 'large'"
+        >
           <template v-if="viewMode === 'card'">
             <div class="card-view-container">
               <div
@@ -1787,6 +1823,17 @@ const getDaySlots = (date: string): TimeSlot[] => {
 </template>
 
 <style scoped>
+.day-swipe-panel {
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-swipe-surface {
+    transition: none !important;
+  }
+}
+
 .time-tracker {
   max-width: none;
   padding: 20px;
