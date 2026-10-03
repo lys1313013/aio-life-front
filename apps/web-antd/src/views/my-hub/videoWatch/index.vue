@@ -1,4 +1,5 @@
 <script>
+import VideoCover from './VideoCover.vue';
 import {
   CaretRightOutlined,
   ClockCircleOutlined,
@@ -22,6 +23,8 @@ import {
 } from 'ant-design-vue';
 
 import {
+  queryVideoCovers,
+  retryVideoCover,
   deleteBilibiliVideo,
   getStatusCount,
   insertBVideo,
@@ -36,6 +39,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 export default {
   components: {
+    VideoCover,
     AButton: Button,
     AModal: Modal,
     AForm: Form,
@@ -61,6 +65,10 @@ export default {
   data() {
     return {
       videos: [],
+      coverTimer: null,
+      coverRevision: 0,
+      queryRevision: 0,
+      coverActive: true,
       visible: false,
       isParsing: false,
       saving: false,
@@ -114,8 +122,62 @@ export default {
   async mounted() {
     await this.query();
   },
+  activated() {
+    this.coverActive = true;
+    this.pollCovers();
+  },
+  deactivated() {
+    this.coverActive = false;
+    this.stopCovers();
+    this.queryRevision++;
+  },
+  beforeUnmount() {
+    this.coverActive = false;
+    this.stopCovers();
+    this.queryRevision++;
+  },
   methods: {
+    stopCovers() {
+      this.coverRevision++;
+      clearTimeout(this.coverTimer);
+    },
+    pollCovers() {
+      clearTimeout(this.coverTimer);
+      const ids = this.videos
+        .filter((v) => v.coverState === 'PENDING')
+        .map((v) => v.id);
+      if (!this.coverActive || !ids.length) return;
+      const revision = this.coverRevision;
+      this.coverTimer = setTimeout(async () => {
+        try {
+          const covers = await queryVideoCovers(ids);
+          if (!this.coverActive || revision !== this.coverRevision) return;
+          for (const cover of covers) {
+            const video = this.videos.find((v) => v.id === cover.id);
+            if (video) {
+              video.coverFileId = cover.coverFileId;
+              video.coverState = cover.coverState;
+            }
+          }
+          this.pollCovers();
+        } catch {
+          /* 保留已显示的封面，重新进入时恢复轮询。 */
+        }
+      }, 3000);
+    },
+    async retryCover(video) {
+      if (video.coverState !== 'FAILED') return;
+      video.coverState = 'PENDING';
+      try {
+        await retryVideoCover(video.id);
+        this.pollCovers();
+      } catch {
+        video.coverState = 'FAILED';
+      }
+    },
     async query() {
+      this.stopCovers();
+      const revision = ++this.queryRevision;
       const res = await query({
         page: 1,
         pageSize: 50,
@@ -123,7 +185,9 @@ export default {
           status: this.tabKey === 'all' ? undefined : this.tabKey,
         },
       });
+      if (revision !== this.queryRevision) return;
       this.videos = res.items || [];
+      this.pollCovers();
       await this.updateVideoCounts();
     },
 
@@ -162,28 +226,6 @@ export default {
           );
         }
       }
-    },
-
-    getImageUrl(coverUrl) {
-      if (!coverUrl) return '';
-      if (coverUrl.includes('bilibili.com') || coverUrl.includes('hdslb.com')) {
-        return `https://images.weserv.nl/?url=${encodeURIComponent(coverUrl)}&w=300&h=200&fit=cover`;
-      }
-      return coverUrl;
-    },
-
-    handleImageError(event) {
-      event.target.style.display = 'none';
-      const fallback =
-        event.target.parentElement.querySelector('.fallback-icon');
-      if (fallback) fallback.style.display = 'flex';
-    },
-
-    handleImageLoad(event) {
-      event.target.style.display = 'block';
-      const fallback =
-        event.target.parentElement.querySelector('.fallback-icon');
-      if (fallback) fallback.style.display = 'none';
     },
 
     showModal() {
@@ -541,30 +583,20 @@ export default {
               class="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
             >
               <div
-                v-for="(video, index) in videos"
-                :key="index"
+                v-for="video in videos"
+                :key="video.id"
                 class="hover:-translate-y-0.1 group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
                 @click="showEditModal(video)"
               >
                 <!-- 封面图区域 -->
                 <div class="relative aspect-[16/10] overflow-hidden">
-                  <img
-                    v-if="video.cover"
-                    :src="getImageUrl(video.cover)"
-                    :alt="video.title"
-                    class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    @error="handleImageError"
-                    @load="handleImageLoad"
+                  <VideoCover
+                    :file-id="video.coverFileId"
+                    :state="video.coverState"
+                    :title="video.title"
+                    @retry="retryCover(video)"
                     @click.stop="goToBilibiliVideo(video)"
                   />
-                  <div
-                    class="fallback-icon flex h-full w-full items-center justify-center bg-muted/30"
-                    @click.stop="goToBilibiliVideo(video)"
-                  >
-                    <VideoCameraOutlined
-                      class="text-3xl text-muted-foreground opacity-20 sm:text-4xl"
-                    />
-                  </div>
 
                   <!-- 底部渐变遮罩 -->
                   <div

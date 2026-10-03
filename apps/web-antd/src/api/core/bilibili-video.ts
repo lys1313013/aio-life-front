@@ -13,6 +13,8 @@ export interface BilibiliVideo {
   id?: string;
   title: string; // 视频标题
   url: string; // B站视频URL
+  coverFileId?: string;
+  coverState?: 'NONE' | 'PENDING' | 'READY' | 'FAILED';
   cover?: string; // 视频封面
   duration?: number; // 视频时长
   watchedDuration?: number; // 已学习时长
@@ -440,7 +442,7 @@ async function parseWithCorsProxy(bvid: string, aid: string): Promise<any> {
 function formatVideoInfo(data: any) {
   return {
     title: data.title || '',
-    cover: data.pic || 'https://via.placeholder.com/300x200?text=B站视频封面',
+    cover: data.pic || '',
     duration: data.duration || 0,
     episodes: data.videos || 1,
     // 添加更多API返回的信息
@@ -473,4 +475,13 @@ function formatVideoInfo(data: any) {
     dimension: data.dimension || null,
     pages: data.pages || [],
   };
+}
+
+export async function queryVideoCovers(ids: string[]) {
+  return requestClient.get<
+    Array<Pick<BilibiliVideo, 'id' | 'coverFileId' | 'coverState'>>
+  >('/b-video/covers', { params: { ids: ids.join(',') } });
+}
+export async function retryVideoCover(id: string) {
+  return requestClient.post(`/b-video/${id}/cover/retry`);
 }
