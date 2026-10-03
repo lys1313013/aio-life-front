@@ -5,7 +5,16 @@ import type { BankOption } from '#/api/bank-card';
 import type { CoverTemplate } from '#/api/bank-card/covers';
 import type { ApiRequests } from '#/api/payload';
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 
 import {
   DeleteOutlined,
@@ -39,9 +48,17 @@ import CoverPicker from '#/views/bank-card/cover-picker.vue';
 import CoverPreview from './cover-preview.vue';
 
 const banks = ref<BankOption[]>([]);
+const loadingBanks = ref(true);
 const items = ref<CoverTemplate[]>([]);
 const failed = ref(false);
 const loading = ref(false);
+const loadingMore = ref(false);
+const hasMore = ref(true);
+const sentinel = ref<HTMLElement>();
+const pageSize = 24;
+let page = 0;
+let observer: IntersectionObserver | undefined;
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
 const open = ref(false);
 const saving = ref(false);
 const uploading = ref(false);
@@ -51,6 +68,7 @@ const enabledFilter = ref<number>();
 const search = ref('');
 const typeFilter = ref<string>();
 const editing = ref<CoverTemplate>();
+const editingInUse = computed(() => Number(editing.value?.usageCount ?? 0) > 0);
 const formRef = ref<FormInstance>();
 function empty(): ApiRequests['BankCardCoverTemplateReq'] {
   return {
@@ -91,24 +109,51 @@ const filtered = computed(() =>
 let generation = 0;
 let mutationVersion = 0;
 let disposed = false;
+let active = true;
 const mutations = new Map<string, { item?: CoverTemplate; version: number }>();
 
 function recordMutation(id: string, item?: CoverTemplate) {
   mutations.set(id, { item, version: ++mutationVersion });
 }
 
-async function load() {
-  const request = ++generation;
+function observeBottom() {
+  observer?.disconnect();
+  if (active && sentinel.value && hasMore.value && !failed.value) {
+    observer?.observe(sentinel.value);
+  }
+}
+
+async function load(reset = true) {
+  if (disposed || !active) return;
+  if (reset) {
+    clearTimeout(searchTimer);
+    generation++;
+    page = 0;
+    hasMore.value = true;
+    loadingMore.value = false;
+  } else if (loading.value || loadingMore.value || !hasMore.value) {
+    return;
+  }
+  const request = generation;
+  const nextPage = reset ? 1 : page + 1;
   const version = mutationVersion;
-  loading.value = true;
+  if (reset) loading.value = true;
+  else loadingMore.value = true;
   failed.value = false;
   try {
-    const [templates, bankList] = await Promise.all([
-      listCoverTemplates(),
-      listCoverBanks(),
-    ]);
+    const result = await listCoverTemplates({
+      page: nextPage,
+      size: pageSize,
+      keyword: search.value.trim() || undefined,
+      bankId: bankFilter.value,
+      cardType: typeFilter.value,
+      isEnabled: enabledFilter.value,
+    });
     if (disposed || request !== generation) return;
-    const latest = new Map(templates.map((item) => [item.id, item]));
+    const latest = new Map(
+      (reset ? [] : items.value).map((item) => [item.id, item]),
+    );
+    for (const item of result.items) latest.set(item.id, item);
     // 保留该查询发出后已成功的写入，避免慢响应复活删除项或回滚启停状态。
     for (const [id, mutation] of mutations) {
       if (mutation.version <= version) continue;
@@ -116,13 +161,35 @@ async function load() {
       else latest.delete(id);
     }
     items.value = [...latest.values()];
-    banks.value = bankList;
+    page = nextPage;
+    hasMore.value =
+      result.items.length === pageSize &&
+      BigInt(nextPage * pageSize) < BigInt(result.total);
   } catch {
     if (!disposed && request === generation) failed.value = true;
   } finally {
-    if (!disposed && request === generation) loading.value = false;
+    if (!disposed && request === generation) {
+      loading.value = false;
+      loadingMore.value = false;
+      await nextTick();
+      observeBottom();
+    }
   }
 }
+function resetFilters(delay = 0) {
+  clearTimeout(searchTimer);
+  generation++;
+  page = 0;
+  items.value = [];
+  failed.value = false;
+  loadingMore.value = false;
+  loading.value = true;
+  observer?.disconnect();
+  if (delay) searchTimer = setTimeout(() => void load(), delay);
+  else void load();
+}
+watch([bankFilter, typeFilter, enabledFilter], () => resetFilters());
+watch(search, () => resetFilters(250));
 function edit(item?: CoverTemplate) {
   editing.value = item;
   form.value = item
@@ -181,10 +248,44 @@ async function remove(item: CoverTemplate) {
     busy.value[item.id] = false;
   }
 }
-onMounted(load);
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting) && !failed.value) {
+        void load(false);
+      }
+    },
+    { rootMargin: '120px' },
+  );
+  void load();
+  void listCoverBanks()
+    .then((result) => {
+      if (!disposed) banks.value = result;
+    })
+    .catch(() => {})
+    .finally(() => {
+      if (!disposed) loadingBanks.value = false;
+    });
+});
 onBeforeUnmount(() => {
   disposed = true;
   generation++;
+  clearTimeout(searchTimer);
+  observer?.disconnect();
+});
+onDeactivated(() => {
+  active = false;
+  generation++;
+  clearTimeout(searchTimer);
+  loading.value = false;
+  loadingMore.value = false;
+  observer?.disconnect();
+});
+onActivated(() => {
+  if (!active) {
+    active = true;
+    void load();
+  }
 });
 </script>
 <template>
@@ -199,6 +300,7 @@ onBeforeUnmount(() => {
       />
       <Select
         v-model:value="bankFilter"
+        :loading="loadingBanks"
         :options="banks.map((b) => ({ value: b.id, label: b.name }))"
         show-search
         option-filter-prop="label"
@@ -227,7 +329,7 @@ onBeforeUnmount(() => {
         class="cover-filter"
       />
       <div class="cover-toolbar-actions">
-        <Button aria-label="刷新卡面" :loading="loading" @click="load">
+        <Button aria-label="刷新卡面" :loading="loading" @click="load()">
           <ReloadOutlined />
         </Button>
         <Button
@@ -242,9 +344,8 @@ onBeforeUnmount(() => {
     </div>
     <Spin :spinning="loading">
       <div class="cover-content">
-        <Button v-if="failed" @click="load">加载失败，重试</Button>
         <Empty
-          v-else-if="!loading && filtered.length === 0"
+          v-if="!failed && !loading && filtered.length === 0"
           description="暂无卡面"
         />
         <div class="cover-grid">
@@ -276,7 +377,7 @@ onBeforeUnmount(() => {
               />
               <Popconfirm
                 :title="`删除${item.name}？`"
-                :disabled="item.usageCount > 0 || busy[item.id]"
+                :disabled="Number(item.usageCount) > 0 || busy[item.id]"
                 @confirm="remove(item)"
               >
                 <Button
@@ -284,7 +385,7 @@ onBeforeUnmount(() => {
                   danger
                   :aria-label="`删除${item.name}`"
                   class="cover-delete"
-                  :disabled="item.usageCount > 0"
+                  :disabled="Number(item.usageCount) > 0"
                   :loading="busy[item.id]"
                 >
                   <DeleteOutlined />
@@ -292,6 +393,21 @@ onBeforeUnmount(() => {
               </Popconfirm>
             </div>
           </div>
+        </div>
+        <div ref="sentinel" class="cover-load-status">
+          <Button
+            v-if="failed"
+            aria-label="重试加载卡面"
+            @click="load(page === 0)"
+          >
+            加载失败，重试
+          </Button>
+          <Spin
+            v-else-if="loadingMore"
+            size="small"
+            role="status"
+            aria-label="加载更多卡面"
+          />
         </div>
       </div>
     </Spin>
@@ -354,7 +470,7 @@ onBeforeUnmount(() => {
               :options="bankOptions"
               show-search
               option-filter-prop="label"
-              :disabled="!!editing?.usageCount"
+              :disabled="editingInUse"
             />
           </FormItem>
           <FormItem label="银行卡类型" name="cardType">
@@ -362,7 +478,7 @@ onBeforeUnmount(() => {
               :value="form.cardType ?? undefined"
               @update:value="form.cardType = String($event)"
               :options="types"
-              :disabled="!!editing?.usageCount"
+              :disabled="editingInUse"
             />
           </FormItem>
         </div>
@@ -428,6 +544,12 @@ onBeforeUnmount(() => {
 .cover-content {
   min-height: 240px;
 }
+.cover-load-status {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+}
 .cover-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
@@ -475,6 +597,17 @@ onBeforeUnmount(() => {
   grid-column: 3;
   width: 44px;
   height: 44px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cover-delete {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .cover-item:hover .cover-delete,
+  .cover-item:focus-within .cover-delete {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 @media (max-width: 767px) {
   .cover-page {

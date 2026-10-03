@@ -17,11 +17,24 @@ export interface CoverTemplate extends CoverOption {
   sourceUrl: null | string;
   isEnabled: number;
   sortOrder: number;
-  usageCount: number;
+  // 后端 long 序列化为字符串，同时兼容数字响应。
+  usageCount: number | string;
 }
 const path = '/system/bank-card-covers';
-export const listCoverTemplates = () =>
-  requestClient.get<CoverTemplate[]>(path);
+export interface CoverTemplateQuery {
+  page: number;
+  size: number;
+  keyword?: string;
+  bankId?: string;
+  cardType?: string;
+  isEnabled?: number;
+}
+export interface CoverTemplatePage {
+  items: CoverTemplate[];
+  total: string;
+}
+export const listCoverTemplates = (params: CoverTemplateQuery) =>
+  requestClient.get<CoverTemplatePage>(`${path}/page`, { params });
 export const listCoverBanks = () =>
   requestClient.get<BankOption[]>(`${path}/banks`);
 export const listCoverOptions = (bankId: string, cardType: string) =>
