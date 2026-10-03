@@ -674,7 +674,7 @@ onBeforeUnmount(() => {
   border-radius: 5px;
   font-size: 11px;
 }
-:global(.dark) .tag-list :deep(.ant-tag) {
+.dark .tag-list :deep(.ant-tag) {
   color: color-mix(in srgb, var(--tag-color) 55%, #fff);
 }
 .empty-state {
