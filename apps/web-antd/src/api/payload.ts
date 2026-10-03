@@ -909,7 +909,7 @@ export interface ToolCallRequest {
 export interface UpdateUserReq {
   nickname?: null | string;
   introduction?: null | string;
-  avatar?: null | string;
+  avatarFileId?: null | string;
 }
 
 export interface UserBindCreateReq {
@@ -931,7 +931,7 @@ export interface UserCreateReq {
   username?: null | string;
   password?: null | string;
   nickname?: null | string;
-  avatar?: null | string;
+  avatarFileId?: null | string;
   email?: null | string;
   role?: null | string;
   introduction?: null | string;
@@ -1011,7 +1011,7 @@ export interface UserUpdateReq {
   id?: null | string;
   username?: null | string;
   nickname?: null | string;
-  avatar?: null | string;
+  avatarFileId?: null | string;
   email?: null | string;
   role?: null | string;
   introduction?: null | string;
@@ -1992,7 +1992,7 @@ const fields: Record<string, Record<string, null | string>> = {
   UpdateUserReq: {
     nickname: null,
     introduction: null,
-    avatar: null,
+    avatarFileId: null,
   },
   UserBindCreateReq: {
     platform: null,
@@ -2011,7 +2011,7 @@ const fields: Record<string, Record<string, null | string>> = {
     username: null,
     password: null,
     nickname: null,
-    avatar: null,
+    avatarFileId: null,
     email: null,
     role: null,
     introduction: null,
@@ -2084,7 +2084,7 @@ const fields: Record<string, Record<string, null | string>> = {
     id: null,
     username: null,
     nickname: null,
-    avatar: null,
+    avatarFileId: null,
     email: null,
     role: null,
     introduction: null,
@@ -2161,6 +2161,14 @@ const queryFields: Record<string, string[]> = {
   '/bank-cards/{id}': [],
   '/bank-cards/tags': [],
   '/system/bank-card-covers': [],
+  '/system/bank-card-covers/page': [
+    'bankId',
+    'cardType',
+    'isEnabled',
+    'keyword',
+    'page',
+    'size',
+  ],
   '/system/bank-card-covers/banks': [],
   '/docs/catalog': [],
   '/docs/operations': ['keyword', 'module', 'page', 'pageSize'],
@@ -2199,6 +2207,7 @@ const queryFields: Record<string, string[]> = {
   '/anniversaryRecords': [],
   '/anniversaryRecords/{id}': [],
   '/b-video/query': ['page', 'pageSize', 'status'],
+  '/b-video/covers': ['ids'],
   '/b-video/getStatusCount': [],
   '/b-video/statistics': [],
   '/cbti/admin/personalities': [],
