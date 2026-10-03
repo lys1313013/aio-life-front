@@ -48,7 +48,7 @@ pnpm run test:e2e       # 运行端到端测试
 - 使用 `#/api/request` 中的 `requestClient`（基于 `@vben/request` 配置的请求客户端）
 - API 函数均为具名 async 导出，读取使用 `requestClient.get()`，新增使用 `requestClient.post()`，更新使用 `requestClient.put()`，删除按接口使用 `requestClient.post()` 或 `requestClient.delete()`
 - 响应格式：`{ rscode: '0', data: ... }`，成功码为 `'0'`
-- 注意：后端返回的 ID 为 **string** 类型
+- 后端 `Long/long` 响应字段默认均为 **string**，包括 ID、计数和分页总数；处理规则见下文“Long 响应与数值判断”。
 
 ### 路由（`router/routes/modules/`）
 
@@ -67,7 +67,7 @@ pnpm run test:e2e       # 运行端到端测试
 3. **遵守 ESLint 规则** — 遵循现有 lint 配置
 4. **Loading 最小作用域** — 调用后端接口时必须有可感知的 loading 反馈，并尽可能绑定到实际受影响的最小 UI 单元（按钮、单行或若干行、卡片、局部容器）；只有页面首屏加载或整页数据不可用时才使用全局或整表 loading。局部增删改、排序成功后优先使用接口返回结果更新局部状态，避免无必要的整表或整页刷新；失败时可按数据一致性需要重新查询
 5. **Loading 提示语** — 提示语应尽可能简洁、抽象；spinner 或按钮状态足以表达进度时不显示文字，确需文字时优先使用“加载中”“处理中”“保存中”等通用短语，避免“设备加载中”等重复业务对象的描述
-6. **后端 ID 为 string** — 后端返回的 ID 类型为 string，不要当作 number 使用
+6. **按实际 JSON 声明类型** — 后端 `Long/long` 响应字段默认序列化为 string，不限于 ID；ID 全程保留字符串，计数字段须显式解析后判断，禁止用真假值判断数量。具体见“Long 响应与数值判断”
 7. **界面简洁、图标优先** — 图标已能清楚表达含义时，只展示图标，不再重复显示按钮文字、平台名称、状态文案或解释性说明。确需解释时，优先收进问号图标的按需提示中，不常驻展示文字。具体约定见下文
 8. 确认弹窗尽可能在按钮旁边弹出
 9. 编辑弹窗要上下居中（出一些场景要跟手外），编辑弹窗可以没有 title
@@ -142,7 +142,17 @@ export async function uploadHonorAttachment(file: File) {
 ```
 
 - `FileVO` 类型定义在 `api/core/common.ts`，各模块通过 `import type { FileVO } from './common'` 复用
-- 注意：后端 ID 是 **string** 类型
+- ID 全程保留 **string**；非 ID 的 `Long/long` 字段同样遵守下述规则。
+
+### Long 响应与数值判断
+
+- **先核对序列化契约**：后端 `aio-life-server/src/main/java/top/aiolife/config/JsonConfig.java` 为 `Long.class` 和 `Long.TYPE` 注册了 `ToStringSerializer`。因此没有字段级覆盖时，所有 `Long/long` 响应字段都返回字符串，`0` 也返回 `"0"`；不仅是 ID，`usageCount`、分页 `total` 等也适用。`Integer/int` 不受这条配置影响，不能仅凭字段名推断类型。
+- **类型声明不等于运行时转换**：原始响应类型按实际 JSON 声明为 `string`，可空字段另加 `null`；只有确实需要兼容数字响应时才用 `string | number`，并明确兼容原因。`requestClient.get<T>()` 和 TypeScript 类型断言不会把 `"0"` 转成 `0`。需要数值模型时，在 API 适配层统一解析，区分原始响应和解析后的类型。
+- **ID 不转数字**：ID 在接口、路由、表单、组件 key、比较和提交过程中始终使用字符串，不使用 `Number()`、`parseInt()` 或一元 `+`，避免大整数精度丢失。
+- **数量不按真假值判断**：禁止用 `!!count`、`Boolean(count)`、`if (count)` 或 `v-if="count"` 判断是否有记录，因为 `"0"` 为真。先解析再比较 `> 0` 或 `=== 0`；也不要直接对原始字符串相加、排序或与数字严格相等比较。
+- **转换有边界**：计数转成 number 前校验非负整数格式，转换后检查 `Number.isSafeInteger()` 和非负范围；不能用 `Number(value) || 0` 把异常、缺失或空值静默当成零。只有接口明确约定时才把 `null` / 缺失视为零。可能超过安全整数范围且需要精确比较或运算时，保留字符串并使用经校验的 `BigInt` 或项目适用的大整数工具；不要将 `BigInt` 直接放进 JSON 请求。
+- **限制由真实数量决定**：例如公共卡面的银行、类型和删除限制，应依据使用次数是否大于零；`"0"` 必须允许未使用卡面的操作，正数才限制。前端用于交互提示，后端仍按实时引用关系校验。
+- **测试使用真实响应形态**：涉及计数、分页或操作限制时，模拟接口必须覆盖字符串 `"0"`、`"1"` 和正数字符串；若兼容 number，同时覆盖数字 `0`、`1`。解析层还须覆盖非法值、可空语义和安全整数边界，ID 测试使用超过 JavaScript 安全整数范围的字符串。不能只用数字 fixture 证明字符串契约正确。
 
 ### 接口出入参规范（新模块强制）
 
@@ -150,7 +160,7 @@ export async function uploadHonorAttachment(file: File) {
 
 - **Entity**：纯表映射，不加瞬态字段；仅在持久化场景使用
 - **`XxxRequest`**：请求 DTO，仅含业务入参字段（创建时不含 `id` / `createTime` 等系统字段；更新时按需携带 `id`）
-- **`XxxVO`**：响应 VO，含 Entity 字段 + 关联数据（如 `files: FileVO[]`、`commentCount: number`、`userName: string`）
+- **`XxxVO`**：响应 VO，含 Entity 字段 + 关联数据（如 `files: FileVO[]`、`userName: string`）；计数字段按实际 JSON 声明，后端 `long commentCount` 对应 `commentCount: string`，不能默认写成 number
 - **详情 VO**：字段多时可单独定义 `XxxDetailVO extends XxxVO`，携带嵌套列表（如 `comments: XxxCommentVO[]`）
 
 前端 API 文件也要对应拆分类型：
