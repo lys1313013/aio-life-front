@@ -179,11 +179,13 @@ function coverChange(id?: string) {
   form.value.coverSourceUrl = null;
 }
 async function submit() {
+  if (saving.value || uploading.value) return;
   try {
     await formRef.value?.validate();
   } catch {
     return;
   }
+  if (saving.value || uploading.value) return;
   saving.value = true;
   try {
     const ids: string[] = [];
@@ -226,9 +228,9 @@ async function submit() {
     :width="760"
     :confirm-loading="saving"
     :ok-button-props="{ disabled: uploading }"
-    :cancel-button-props="{ disabled: saving || uploading }"
-    :closable="!saving && !uploading"
-    :keyboard="!saving && !uploading"
+    :cancel-button-props="{ disabled: saving }"
+    :closable="!saving"
+    :keyboard="!saving"
     @cancel="emit('update:open', false)"
     @ok="submit"
   >
@@ -246,7 +248,7 @@ async function submit() {
           :active="open && !saving"
           :file-id="templateFileId || form.coverFileIds[0]"
           @change="coverChange"
-          @busy="uploading = $event"
+          @pending="uploading = $event"
         />
         <div class="mt-3 flex items-center justify-center gap-1">
           <Button
@@ -292,7 +294,7 @@ async function submit() {
         :model="form"
         layout="vertical"
         class="editor-form"
-        :disabled="saving || uploading"
+        :disabled="saving"
       >
         <FormItem
           label="银行"

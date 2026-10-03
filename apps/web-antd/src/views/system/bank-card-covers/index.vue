@@ -151,6 +151,7 @@ async function save() {
   } catch {
     return;
   }
+  if (saving.value || uploading.value) return;
   saving.value = true;
   try {
     replace(await saveCoverTemplate(form.value, editing.value?.id));
@@ -301,18 +302,13 @@ onBeforeUnmount(() => {
       :width="620"
       :confirm-loading="saving"
       :ok-button-props="{ disabled: uploading }"
-      :cancel-button-props="{ disabled: saving || uploading }"
-      :closable="!saving && !uploading"
-      :mask-closable="!saving && !uploading"
-      :keyboard="!saving && !uploading"
+      :cancel-button-props="{ disabled: saving }"
+      :closable="!saving"
+      :mask-closable="!saving"
+      :keyboard="!saving"
       @ok="save"
     >
-      <Form
-        ref="formRef"
-        :model="form"
-        layout="vertical"
-        :disabled="saving || uploading"
-      >
+      <Form ref="formRef" :model="form" layout="vertical" :disabled="saving">
         <div class="mx-auto mb-4 max-w-80">
           <CoverPreview
             :file-id="form.fileId || undefined"
@@ -327,7 +323,7 @@ onBeforeUnmount(() => {
               :file-id="form.fileId || undefined"
               :upload-fn="uploadTemplateCover"
               @change="form.fileId = $event || ''"
-              @busy="uploading = $event"
+              @pending="uploading = $event"
             />
           </FormItem>
         </div>
@@ -406,6 +402,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .cover-page {
   padding: 24px;
+  color: hsl(var(--foreground));
 }
 .cover-toolbar {
   display: flex;
@@ -446,7 +443,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0 8px;
+  gap: 2px 12px;
   margin-top: 6px;
 }
 .cover-info :deep(.ant-switch) {
@@ -457,7 +454,11 @@ onBeforeUnmount(() => {
   grid-row: 1;
   grid-column: 1;
   overflow: hidden;
+  min-width: 0;
+  color: hsl(var(--foreground));
+  font-size: 14px;
   font-weight: 500;
+  line-height: 22px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -472,6 +473,8 @@ onBeforeUnmount(() => {
 .cover-delete {
   grid-row: 1;
   grid-column: 3;
+  width: 44px;
+  height: 44px;
 }
 @media (max-width: 767px) {
   .cover-page {
@@ -494,8 +497,7 @@ onBeforeUnmount(() => {
   .cover-toolbar-actions {
     justify-self: end;
   }
-  .cover-toolbar-actions :deep(.ant-btn),
-  .cover-delete {
+  .cover-toolbar-actions :deep(.ant-btn) {
     width: 44px;
     height: 44px;
   }

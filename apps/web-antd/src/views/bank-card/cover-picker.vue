@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
-import { PictureOutlined, UndoOutlined } from '@ant-design/icons-vue';
+import {
+  PictureOutlined,
+  ReloadOutlined,
+  UndoOutlined,
+} from '@ant-design/icons-vue';
 import { Button, message, Radio, RadioGroup, Slider } from 'ant-design-vue';
 
 import { uploadCover } from '#/api/bank-card';
@@ -12,11 +16,33 @@ const props = defineProps<{
   fileId?: string;
   uploadFn?: (file: File) => Promise<{ id: string }>;
 }>();
-const emit = defineEmits<{ busy: [value: boolean]; change: [id?: string] }>();
+const emit = defineEmits<{
+  change: [id?: string];
+  pending: [value: boolean];
+}>();
 const input = ref<HTMLInputElement>();
 const source = ref('');
 const cropOpen = ref(false);
 const busy = ref(false);
+const failed = ref(false);
+let pendingFile: File | undefined;
+let generation = 0;
+function resetUpload() {
+  generation++;
+  pendingFile = undefined;
+  busy.value = false;
+  failed.value = false;
+  cropOpen.value = false;
+  emit('pending', false);
+  cleanup();
+}
+watch(
+  () => props.active,
+  (active) => {
+    if (!active) resetUpload();
+  },
+  { flush: 'sync' },
+);
 const mode = ref<'contain' | 'cover'>('contain');
 const zoom = ref(1);
 const imageStyle = computed(() => ({
@@ -34,7 +60,7 @@ function selectFile(event: Event) {
   openFile(file);
 }
 function openFile(file: File) {
-  if (!props.active || busy.value || cropOpen.value) return;
+  if (!props.active || busy.value || failed.value || cropOpen.value) return;
   if (
     !['image/jpeg', 'image/png'].includes(file.type) ||
     file.size > 5 * 1024 * 1024
@@ -49,7 +75,13 @@ function openFile(file: File) {
   cropOpen.value = true;
 }
 function handlePaste(event: ClipboardEvent) {
-  if (!props.active || busy.value || cropOpen.value || event.defaultPrevented)
+  if (
+    !props.active ||
+    busy.value ||
+    failed.value ||
+    cropOpen.value ||
+    event.defaultPrevented
+  )
     return;
   const items = event.clipboardData?.items;
   if (!items) return;
@@ -63,8 +95,13 @@ function handlePaste(event: ClipboardEvent) {
   }
 }
 async function confirm() {
+  if (!props.active || busy.value || !source.value) return;
+  const request = ++generation;
+  const selectedMode = mode.value;
+  const selectedZoom = zoom.value;
   busy.value = true;
-  emit('busy', true);
+  emit('pending', true);
+  let file: File;
   try {
     const img = new Image();
     img.src = source.value;
@@ -77,8 +114,8 @@ async function confirm() {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('无法处理图片');
     const scale =
-      mode.value === 'cover'
-        ? Math.max(960 / img.width, 605 / img.height) * zoom.value
+      selectedMode === 'cover'
+        ? Math.max(960 / img.width, 605 / img.height) * selectedZoom
         : Math.min(960 / img.width, 605 / img.height);
     const width = img.width * scale;
     const height = img.height * scale;
@@ -98,24 +135,48 @@ async function confirm() {
     // 校验自动缩放后的实际文件大小，原图仍允许最大 5MB。
     if (blob.size > 3 * 1024 * 1024)
       throw new Error('处理后的卡面不能超过3MB，请选择更小的图片');
-    const result = await (props.uploadFn || uploadCover)(
-      new File([blob], 'card-cover.png', { type: 'image/png' }),
-    );
-    emit('change', result.id);
-    cropOpen.value = false;
-    cleanup();
+    file = new File([blob], 'card-cover.png', { type: 'image/png' });
   } catch (error) {
-    if (error instanceof Error && !('response' in error))
-      message.error(error.message);
-  } finally {
+    if (request !== generation) return;
+    if (error instanceof Error) message.error(error.message);
     busy.value = false;
-    emit('busy', false);
+    emit('pending', false);
+    return;
   }
+  if (request !== generation) return;
+  pendingFile = file;
+  // 本地处理完成就返回表单，网络上传只占用卡面操作区域。
+  cropOpen.value = false;
+  await sendFile(file, request);
+}
+async function sendFile(file: File, request: number) {
+  busy.value = true;
+  failed.value = false;
+  emit('pending', true);
+  try {
+    const result = await (props.uploadFn || uploadCover)(file);
+    if (request !== generation) return;
+    pendingFile = undefined;
+    emit('change', result.id);
+    emit('pending', false);
+  } catch {
+    // API 错误由请求层提示；保留处理好的文件供重试，避免保存旧卡面。
+    if (request === generation) failed.value = true;
+  } finally {
+    if (request === generation) busy.value = false;
+  }
+}
+function retryUpload() {
+  if (!props.active || busy.value || !pendingFile) return;
+  void sendFile(pendingFile, ++generation);
+}
+function afterClose() {
+  if (!cropOpen.value) cleanup();
 }
 onMounted(() => document.addEventListener('paste', handlePaste));
 onBeforeUnmount(() => {
   document.removeEventListener('paste', handlePaste);
-  cleanup();
+  resetUpload();
 });
 </script>
 <template>
@@ -132,18 +193,21 @@ onBeforeUnmount(() => {
       size="small"
       :loading="busy"
       :disabled="!active"
-      @click="input?.click()"
+      @click="failed ? retryUpload() : input?.click()"
     >
-      <template #icon><PictureOutlined /></template
-      >{{ props.fileId ? '更换卡面' : '上传卡面' }}
+      <template #icon>
+        <ReloadOutlined v-if="failed" />
+        <PictureOutlined v-else />
+      </template>
+      {{ failed ? '上传失败，重试' : props.fileId ? '更换卡面' : '上传卡面' }}
     </Button>
     <Button
-      v-if="props.fileId"
+      v-if="props.fileId || failed"
       size="small"
       type="text"
-      aria-label="恢复默认卡面"
+      :aria-label="failed ? '放弃本次上传' : '恢复默认卡面'"
       :disabled="!active || busy"
-      @click="emit('change', undefined)"
+      @click="failed ? resetUpload() : emit('change', undefined)"
     >
       <UndoOutlined />
     </Button>
@@ -159,13 +223,13 @@ onBeforeUnmount(() => {
     :keyboard="!busy"
     :cancel-button-props="{ disabled: busy }"
     @ok="confirm"
-    @after-close="cleanup"
+    @after-close="afterClose"
   >
     <div class="crop-stage">
       <img :src="source" alt="卡面预览" :style="imageStyle" />
     </div>
     <div class="crop-options">
-      <RadioGroup v-model:value="mode">
+      <RadioGroup v-model:value="mode" :disabled="busy">
         <Radio value="contain">完整显示</Radio
         ><Radio value="cover">居中裁剪</Radio>
       </RadioGroup>
@@ -173,6 +237,7 @@ onBeforeUnmount(() => {
     <Slider
       v-if="mode === 'cover'"
       v-model:value="zoom"
+      :disabled="busy"
       :min="1"
       :max="2"
       :step="0.01"

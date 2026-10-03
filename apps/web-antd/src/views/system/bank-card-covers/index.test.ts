@@ -2,8 +2,11 @@ import type { CoverTemplate } from '#/api/bank-card/covers';
 
 import { flushPromises, shallowMount } from '@vue/test-utils';
 
-import { Popconfirm, Switch } from 'ant-design-vue';
+import { Form, Popconfirm, Switch } from 'ant-design-vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AppModal } from '#/components/app-modal';
+import CoverPicker from '#/views/bank-card/cover-picker.vue';
 
 import CoverPage from './index.vue';
 
@@ -48,6 +51,14 @@ async function render() {
     global: {
       renderStubDefaultSlot: true,
       stubs: {
+        AForm: {
+          props: ['disabled', 'model'],
+          methods: {
+            clearValidate: vi.fn(),
+            validate: vi.fn().mockResolvedValue(undefined),
+          },
+          template: '<form><slot /></form>',
+        },
         APopconfirm: {
           inheritAttrs: false,
           emits: ['confirm'],
@@ -139,5 +150,26 @@ describe('公共卡面查询与修改交错', () => {
     expect(wrapper.text()).toContain('加载失败');
     deletion.resolve();
     await flushPromises();
+  });
+});
+
+describe('公共卡面上传期间的表单', () => {
+  it('允许继续填写和取消，仅阻止最终保存', async () => {
+    const wrapper = await render();
+    await wrapper.get('[aria-label="新增公共卡面"]').trigger('click');
+    wrapper.findComponent(CoverPicker).vm.$emit('pending', true);
+    await flushPromises();
+    const modal = wrapper.findComponent(AppModal);
+    expect(wrapper.findComponent(Form).props('disabled')).toBe(false);
+    expect(modal.props('okButtonProps')).toEqual({ disabled: true });
+    expect(modal.props('cancelButtonProps')).toEqual({ disabled: false });
+    modal.vm.$emit('ok');
+    await flushPromises();
+    expect(api.saveCoverTemplate).not.toHaveBeenCalled();
+    modal.vm.$emit('update:open', false);
+    await flushPromises();
+    expect(wrapper.findComponent(CoverPicker).attributes('active')).toBe(
+      'false',
+    );
   });
 });
