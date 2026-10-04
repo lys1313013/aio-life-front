@@ -14,6 +14,17 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'lucide:crown',
+          title: '会员平台',
+          authority: ['admin'],
+        },
+        name: 'MembershipProviderAdmin',
+        path: '/system/membership-providers',
+        component: () =>
+          import('#/views/system/membership-providers/index.vue'),
+      },
+      {
+        meta: {
           icon: 'lucide:credit-card',
           title: '银行卡卡面',
           authority: ['admin'],

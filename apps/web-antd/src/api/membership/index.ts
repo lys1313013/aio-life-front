@@ -11,6 +11,7 @@ export interface MembershipReq {
   name: string;
   category?: string;
   provider?: string;
+  providerId?: null | string;
   icon?: string;
   color?: string;
   startDate?: string;
@@ -30,6 +31,7 @@ export interface MembershipVO {
   name: string;
   category?: string;
   provider?: string;
+  providerId?: null | string;
   icon?: string;
   color?: string;
   startDate?: string;
@@ -39,6 +41,8 @@ export interface MembershipVO {
   monthlyAmount?: number;
   autoRenew?: number;
   note?: string;
+  providerName?: string;
+  providerIconKey?: null | string;
   /** active-生效中 expiring-即将到期 expired-已过期 */
   status: 'active' | 'expired' | 'expiring';
   /** 剩余天数，已过期为负数 */

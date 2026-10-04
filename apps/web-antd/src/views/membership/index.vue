@@ -1,101 +1,27 @@
 <script setup lang="ts">
-import type { Rule } from 'ant-design-vue/es/form';
-
-import type {
-  MembershipReq,
-  MembershipStatsVO,
-  MembershipVO,
-} from '#/api/membership';
+import type { MembershipStatsVO, MembershipVO } from '#/api/membership';
 
 import { computed, onMounted, ref } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
-import { usePreferences } from '@vben/preferences';
 
 import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
-  DatePicker as ADatePicker,
   Empty as AEmpty,
-  Form as AForm,
-  FormItem as AFormItem,
   Input as AInput,
-  InputNumber as AInputNumber,
   Select as ASelect,
   SelectOption as ASelectOption,
-  Switch as ASwitch,
   Tag as ATag,
-  Textarea as ATextarea,
-  message,
 } from 'ant-design-vue';
-import dayjs, { Dayjs } from 'dayjs';
 
-import {
-  createMembership,
-  deleteMembership,
-  getMembershipStats,
-  queryMemberships,
-  updateMembership,
-} from '#/api/membership';
-import { AppModal as AModal, AppModalDelete } from '#/components/app-modal';
+import { getMembershipStats, queryMemberships } from '#/api/membership';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
-const { isMobile } = usePreferences();
-
-interface FormState {
-  id?: string;
-  name: string;
-  category?: string;
-  provider?: string;
-  color?: string;
-  startDate?: Dayjs;
-  expiryDate?: Dayjs;
-  price?: number;
-  billingCycle: string;
-  monthlyAmount?: number;
-  autoRenew: boolean;
-  note?: string;
-}
-
-// 分类预设
-const CATEGORIES = [
-  { value: 'video', label: '视频', icon: 'mdi:movie-open-outline' },
-  { value: 'music', label: '音乐', icon: 'mdi:music-note-eighth' },
-  { value: 'shopping', label: '购物', icon: 'mdi:shopping-outline' },
-  { value: 'cloud', label: '云盘', icon: 'mdi:cloud-outline' },
-  { value: 'study', label: '学习', icon: 'mdi:book-open-outline' },
-  { value: 'game', label: '游戏', icon: 'mdi:gamepad-variant-outline' },
-  { value: 'other', label: '其他', icon: 'mdi:shape-outline' },
-];
-
-const COLOR_PRESETS = [
-  '#1677ff',
-  '#52c41a',
-  '#faad14',
-  '#f5222d',
-  '#722ed1',
-  '#13c2c2',
-  '#eb2f96',
-  '#8c8c8c',
-];
-
-// 到期日期快捷选项（基于开通日期计算，未填开通日期则基于今天）
-const QUICK_DATES = [
-  { label: '1月', getDate: (base: Dayjs) => base.add(1, 'month') },
-  { label: '1季度', getDate: (base: Dayjs) => base.add(3, 'month') },
-  { label: '半年', getDate: (base: Dayjs) => base.add(6, 'month') },
-  { label: '1年', getDate: (base: Dayjs) => base.add(1, 'year') },
-];
-
-const BILLING_CYCLES = [
-  { value: 'week', label: '周' },
-  { value: 'two_weeks', label: '两周' },
-  { value: 'month', label: '月' },
-  { value: 'quarter', label: '季' },
-  { value: 'half_year', label: '半年' },
-  { value: 'year', label: '年' },
-];
+import { BILLING_CYCLES, CATEGORIES } from './constants';
+import MembershipFormModal from './form-modal.vue';
+import MembershipLogo from './MembershipLogo.vue';
 
 const STATUS_META: Record<string, { color: string; label: string }> = {
   active: { label: '生效中', color: 'success' },
@@ -121,34 +47,8 @@ const filters = ref({
   category: undefined as string | undefined,
 });
 
-// Modal & Form
 const modalVisible = ref(false);
-const formRef = ref();
-const modalTitle = ref('添加会员');
-const submitLoading = ref(false);
-
-const emptyForm = (): FormState => ({
-  name: '',
-  category: undefined,
-  provider: '',
-  color: COLOR_PRESETS[0],
-  startDate: undefined,
-  expiryDate: undefined,
-  price: undefined,
-  billingCycle: 'month',
-  monthlyAmount: undefined,
-  autoRenew: false,
-  note: '',
-});
-
-const formState = ref<FormState>(emptyForm());
-
-const rules: Record<string, Rule[]> = {
-  name: [{ required: true, message: '请输入会员名称', trigger: 'blur' }],
-  expiryDate: [
-    { required: true, message: '请选择到期日期', trigger: 'change' },
-  ],
-};
+const currentMember = ref<MembershipVO>();
 
 // Computed
 const filteredMembers = computed(() => {
@@ -157,7 +57,9 @@ const filteredMembers = computed(() => {
       if (filters.value.keyword) {
         const kw = filters.value.keyword.toLowerCase();
         const matchName = item.name.toLowerCase().includes(kw);
-        const matchProvider = (item.provider || '').toLowerCase().includes(kw);
+        const matchProvider = (item.providerName || item.provider || '')
+          .toLowerCase()
+          .includes(kw);
         if (!matchName && !matchProvider) return false;
       }
       if (filters.value.category && item.category !== filters.value.category)
@@ -211,120 +113,30 @@ onMounted(() => {
   loadStats();
 });
 
-// Methods
 const handleAdd = () => {
-  modalTitle.value = '添加会员';
-  formState.value = emptyForm();
+  currentMember.value = undefined;
   modalVisible.value = true;
 };
 
 const handleEdit = (item: MembershipVO) => {
-  modalTitle.value = '编辑会员';
-  formState.value = {
-    id: item.id,
-    name: item.name,
-    category: item.category,
-    provider: item.provider || '',
-    color: item.color || COLOR_PRESETS[0],
-    startDate: item.startDate ? dayjs(item.startDate) : undefined,
-    expiryDate: item.expiryDate ? dayjs(item.expiryDate) : undefined,
-    price: item.price,
-    billingCycle: item.billingCycle || 'month',
-    monthlyAmount: item.monthlyAmount ?? item.price,
-    autoRenew: item.autoRenew === 1,
-    note: item.note || '',
-  };
+  currentMember.value = item;
   modalVisible.value = true;
 };
 
-const handleDelete = async (id: string) => {
-  try {
-    await deleteMembership(id);
-    message.success('删除成功');
-    loadData();
-    loadStats();
-  } catch (error) {
-    console.error('Failed to delete membership:', error);
-    // 全局拦截器已提示
-  }
+const handleSaved = (item: MembershipVO) => {
+  const index = members.value.findIndex((member) => member.id === item.id);
+  if (index === -1) members.value.unshift(item);
+  else members.value.splice(index, 1, item);
+  loadStats();
 };
 
-const handleSave = async () => {
-  try {
-    await formRef.value.validate();
-    submitLoading.value = true;
-
-    const payload: MembershipReq = {
-      id: formState.value.id,
-      name: formState.value.name,
-      category: formState.value.category || 'other',
-      provider: formState.value.provider || undefined,
-      color: formState.value.color,
-      startDate: formState.value.startDate?.format('YYYY-MM-DD'),
-      expiryDate: formState.value.expiryDate!.format('YYYY-MM-DD'),
-      price: formState.value.price,
-      billingCycle: formState.value.billingCycle,
-      monthlyAmount: formState.value.monthlyAmount,
-      autoRenew: formState.value.autoRenew ? 1 : 0,
-      note: formState.value.note || undefined,
-    };
-
-    if (formState.value.id) {
-      await updateMembership(payload);
-    } else {
-      await createMembership(payload);
-    }
-
-    modalVisible.value = false;
-    loadData();
-    loadStats();
-  } catch (error) {
-    console.error('Validate Failed:', error);
-  } finally {
-    submitLoading.value = false;
-  }
+const handleDeleted = (id: string) => {
+  members.value = members.value.filter((member) => member.id !== id);
+  loadStats();
 };
 
 const clearFilters = () => {
   filters.value = { keyword: '', category: undefined };
-};
-
-const applyQuickDate = (opt: { getDate: (base: Dayjs) => Dayjs }) => {
-  const base = formState.value.startDate || dayjs();
-  formState.value.expiryDate = opt.getDate(base);
-};
-
-const recalculateMonthlyAmount = () => {
-  const price = formState.value.price;
-  if (price === undefined || price === null) {
-    formState.value.monthlyAmount = undefined;
-    return;
-  }
-
-  const amount = (() => {
-    switch (formState.value.billingCycle) {
-      case 'half_year': {
-        return price / 6;
-      }
-      case 'quarter': {
-        return price / 3;
-      }
-      case 'two_weeks': {
-        return (price / 14) * 30;
-      }
-      case 'week': {
-        return (price / 7) * 30;
-      }
-      case 'year': {
-        return price / 12;
-      }
-      default: {
-        return price;
-      }
-    }
-  })();
-
-  formState.value.monthlyAmount = Math.round(amount * 100) / 100;
 };
 
 const getBillingCycleLabel = (value?: string) => {
@@ -432,7 +244,12 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
           class="group relative cursor-pointer rounded-2xl border border-border bg-card p-3 transition-colors duration-200 hover:border-border/60 hover:shadow-sm sm:p-5"
           @click="handleEdit(item)"
         >
-          <div class="mb-3 flex items-center gap-2 sm:gap-3">
+          <div class="mb-3 flex flex-wrap items-center gap-2 sm:gap-3">
+            <MembershipLogo
+              :icon-key="item.providerIconKey"
+              :category="item.category"
+              :name="item.providerName || item.provider || item.name"
+            />
             <div class="min-w-0 flex-1">
               <h3
                 class="truncate text-base font-bold text-card-foreground sm:text-lg"
@@ -441,10 +258,12 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
                 {{ item.name }}
               </h3>
               <p
-                v-if="item.provider"
+                v-if="
+                  !item.providerIconKey && (item.providerName || item.provider)
+                "
                 class="truncate text-xs text-muted-foreground"
               >
-                {{ item.provider }}
+                {{ item.providerName || item.provider }}
               </p>
             </div>
             <span v-if="item.autoRenew === 1" class="shrink-0">
@@ -523,176 +342,13 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
       </div>
     </template>
 
-    <!-- Add/Edit Modal -->
-    <AModal
+    <MembershipFormModal
       v-model:open="modalVisible"
-      :confirm-loading="submitLoading"
-      :width="isMobile ? '92vw' : 600"
-      :centered="true"
-      :closable="false"
-      @ok="handleSave"
-    >
-      <template #footer-leading>
-        <AppModalDelete
-          v-if="formState.id"
-          :disabled="submitLoading"
-          title="确定删除该会员吗？"
-          :action="() => handleDelete(formState.id!)"
-        />
-      </template>
-      <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
-        <AFormItem label="名称" name="name">
-          <AInput
-            v-model:value="formState.name"
-            placeholder="请输入会员名称"
-            allow-clear
-          />
-        </AFormItem>
-
-        <div class="flex flex-col sm:flex-row sm:gap-4">
-          <AFormItem label="分类" name="category" class="flex-1">
-            <ASelect
-              v-model:value="formState.category"
-              placeholder="请选择分类"
-            >
-              <ASelectOption
-                v-for="cat in CATEGORIES"
-                :key="cat.value"
-                :value="cat.value"
-              >
-                <span class="inline-flex items-center gap-1">
-                  <IconifyIcon :icon="cat.icon" />
-                  {{ cat.label }}
-                </span>
-              </ASelectOption>
-            </ASelect>
-          </AFormItem>
-
-          <AFormItem label="平台/服务商" name="provider" class="flex-1">
-            <AInput
-              v-model:value="formState.provider"
-              placeholder="平台/服务商名称"
-              allow-clear
-            />
-          </AFormItem>
-        </div>
-
-        <div class="flex flex-col sm:flex-row sm:gap-4">
-          <AFormItem label="开通日期" name="startDate" class="flex-1">
-            <ADatePicker
-              v-model:value="formState.startDate"
-              class="w-full"
-              placeholder="选择日期"
-            />
-          </AFormItem>
-
-          <AFormItem label="到期日期" name="expiryDate" class="flex-1">
-            <ADatePicker
-              v-model:value="formState.expiryDate"
-              class="w-full"
-              placeholder="选择日期"
-            />
-          </AFormItem>
-        </div>
-
-        <div class="mb-3 flex flex-wrap items-center gap-1.5 sm:mb-4">
-          <span class="mr-1 text-xs text-muted-foreground">从开通日算起：</span>
-          <button
-            v-for="opt in QUICK_DATES"
-            :key="opt.label"
-            type="button"
-            class="cursor-pointer rounded-full bg-secondary px-2.5 py-0.5 text-xs text-secondary-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-            @click="applyQuickDate(opt)"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-
-        <div class="flex flex-col sm:flex-row sm:gap-4">
-          <AFormItem label="支付金额" name="price" class="flex-1">
-            <AInputNumber
-              v-model:value="formState.price"
-              class="w-full"
-              :min="0"
-              :precision="2"
-              placeholder="￥"
-              @change="recalculateMonthlyAmount()"
-            />
-          </AFormItem>
-
-          <AFormItem label="计费周期" name="billingCycle" class="flex-1">
-            <ASelect
-              v-model:value="formState.billingCycle"
-              @change="recalculateMonthlyAmount()"
-            >
-              <ASelectOption
-                v-for="cycle in BILLING_CYCLES"
-                :key="cycle.value"
-                :value="cycle.value"
-              >
-                {{ cycle.label }}
-              </ASelectOption>
-            </ASelect>
-          </AFormItem>
-        </div>
-
-        <AFormItem label="每月金额" name="monthlyAmount">
-          <AInputNumber
-            v-model:value="formState.monthlyAmount"
-            class="w-full"
-            :min="0"
-            :precision="2"
-            placeholder="选择周期后自动计算，也可以手动修改"
-          />
-        </AFormItem>
-
-        <AFormItem label="颜色" name="color">
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="c in COLOR_PRESETS"
-              :key="c"
-              class="h-6 w-6 cursor-pointer rounded-full border-2 transition-transform hover:scale-110"
-              :class="
-                formState.color === c ? 'border-black/40' : 'border-transparent'
-              "
-              :style="{ background: c }"
-              @click="formState.color = c"
-            ></span>
-          </div>
-        </AFormItem>
-
-        <AFormItem label="自动续费" name="autoRenew">
-          <div class="flex items-center gap-2">
-            <ASwitch v-model:checked="formState.autoRenew" />
-            <span class="text-sm text-muted-foreground">
-              {{
-                formState.autoRenew
-                  ? '到期后自动扣费续期'
-                  : '到期后需要手动续费'
-              }}
-            </span>
-          </div>
-        </AFormItem>
-
-        <AFormItem label="备注" name="note">
-          <ATextarea
-            v-model:value="formState.note"
-            :rows="2"
-            placeholder="备注..."
-            allow-clear
-          />
-        </AFormItem>
-      </AForm>
-    </AModal>
+      :values="currentMember"
+      @saved="handleSaved"
+      @deleted="handleDeleted"
+    />
 
     <GlobalFloatBtn @click="handleAdd" />
   </div>
 </template>
-
-<style scoped>
-@media (max-width: 767.98px) {
-  :deep(.ant-form-item) {
-    margin-bottom: 12px;
-  }
-}
-</style>
