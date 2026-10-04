@@ -22,6 +22,7 @@ const api = vi.hoisted(() => ({
   createMenuApi: vi.fn(),
   updateMenuApi: vi.fn(),
   updateMenuStatusApi: vi.fn(),
+  updateMenuMobileStatusApi: vi.fn(),
   updateMenuSortApi: vi.fn(),
   deleteMenuApi: vi.fn(),
 }));
@@ -47,7 +48,15 @@ vi.mock('#/router/navigation', () => ({
 
 const parentId = '90071992547409930';
 function menu(id: string, parent = '0', sort = 0): SysMenuAdminItem {
-  return { id, parentId: parent, name: id, path: `/${id}`, sort, status: 1 };
+  return {
+    id,
+    parentId: parent,
+    name: id,
+    path: `/${id}`,
+    sort,
+    status: 1,
+    mobileStatus: 1,
+  };
 }
 function fixture(): SysMenuAdminItem[] {
   return [
@@ -81,6 +90,7 @@ async function mountPage() {
           template: `<div>
             <div v-for="record in dataSource" :key="record.id">
               <slot name="bodyCell" :column="{ key: 'status' }" :record="record" />
+              <slot name="bodyCell" :column="{ key: 'mobileStatus' }" :record="record" />
               <slot name="bodyCell" :column="{ key: 'action' }" :record="record" />
             </div>
           </div>`,
@@ -207,6 +217,43 @@ describe('菜单树与明细联动', () => {
     expect(wrapper.findComponent(Tree).props('selectedKeys')).toEqual([
       parentId,
     ]);
+  });
+
+  it('移动端开关只调用独立接口，等待时仅该开关加载并保留 Web 和子菜单', async () => {
+    const wrapper = await mountPage();
+    await select(wrapper, parentId);
+    let resolve!: (value: SysMenuAdminItem) => void;
+    api.updateMenuMobileStatusApi.mockReturnValue(
+      new Promise((yes) => {
+        resolve = yes;
+      }),
+    );
+    const switches = wrapper.findAllComponents(Switch);
+    switches[1]!.vm.$emit('change', false);
+    await flushPromises();
+    expect(api.updateMenuMobileStatusApi).toHaveBeenCalledWith(parentId, 0);
+    expect(api.updateMenuStatusApi).not.toHaveBeenCalled();
+    expect(switches[1]!.props('loading')).toBe(true);
+    expect(switches[0]!.props('loading')).toBe(false);
+    resolve({ ...menu(parentId), mobileStatus: 0 });
+    await flushPromises();
+    const parent = wrapper.findComponent(Table).props('dataSource')?.[0];
+    expect(parent.status).toBe(1);
+    expect(parent.mobileStatus).toBe(0);
+    expect(parent.children).toHaveLength(2);
+    expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(1);
+  });
+
+  it('移动端切换失败后重新读取权威状态', async () => {
+    const wrapper = await mountPage();
+    await select(wrapper, parentId);
+    api.updateMenuMobileStatusApi.mockRejectedValue(new Error('failed'));
+    wrapper.findAllComponents(Switch)[1]!.vm.$emit('change', false);
+    await flushPromises();
+    expect(
+      wrapper.findComponent(Table).props('dataSource')?.[0]?.mobileStatus,
+    ).toBe(1);
+    expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(2);
   });
 
   it('删除选中的叶子节点后返回父节点，并从树中移除该菜单', async () => {

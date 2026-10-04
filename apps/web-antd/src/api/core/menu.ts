@@ -53,6 +53,7 @@ export interface SysMenuAdminItem {
   roles?: string;
   sort?: number;
   status?: number;
+  mobileStatus?: number;
 }
 
 export interface SysMenuSaveReq {
@@ -66,6 +67,7 @@ export interface SysMenuSaveReq {
   roles?: string;
   sort?: number;
   status?: number;
+  mobileStatus?: number;
 }
 
 export async function getMenuAdminTreeApi() {
@@ -99,6 +101,13 @@ export async function updateMenuStatusApi(id: string, status: number) {
     pickPayload('MenuStatusUpdateReq', {
       status,
     }),
+  );
+}
+
+export async function updateMenuMobileStatusApi(id: string, status: number) {
+  return requestClient.put<SysMenuAdminItem>(
+    `/menu/admin/${id}/mobile-status`,
+    pickPayload('MenuStatusUpdateReq', { status }),
   );
 }
 

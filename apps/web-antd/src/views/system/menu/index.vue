@@ -31,6 +31,7 @@ import {
   getMenuAdminTreeApi,
   getMenuRoleOptionsApi,
   updateMenuApi,
+  updateMenuMobileStatusApi,
   updateMenuSortApi,
   updateMenuStatusApi,
 } from '#/api/core/menu';
@@ -74,7 +75,7 @@ const treeData = computed(() => {
       title: node.meta?.title || node.name,
       iconName: node.meta?.icon,
       iconColor: node.iconColor,
-      inactive: node.status !== 1,
+      inactive: node.status !== 1 && node.mobileStatus !== 1,
       children: node.children?.length ? build(node.children) : undefined,
     }));
   return build(list.value);
@@ -88,6 +89,7 @@ const handleSelect: TreeProps['onSelect'] = (_keys, { node }) => {
 };
 const isBusy = (id: string) =>
   statusChanging.value[id] === true ||
+  mobileStatusChanging.value[id] === true ||
   deletingIds.value.includes(id) ||
   sortingIds.value.includes(id);
 
@@ -132,6 +134,7 @@ const editVisible = ref(false);
 const saving = ref(false);
 const editingId = ref<null | string>(null);
 const statusChanging = ref<Record<string, boolean>>({});
+const mobileStatusChanging = ref<Record<string, boolean>>({});
 const userStore = useUserStore();
 const authStore = useAuthStore();
 
@@ -140,6 +143,7 @@ const form = ref<SysMenuSaveReq>({
   path: '',
   parentId: '0',
   status: 1,
+  mobileStatus: 1,
   sort: 0,
   roles: '',
   component: '',
@@ -192,10 +196,17 @@ const columns: any[] = [
   },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 64, align: 'center' },
   {
-    title: '启用',
+    title: 'Web 启用',
     dataIndex: 'status',
     key: 'status',
-    width: 68,
+    width: 96,
+    align: 'center',
+  },
+  {
+    title: '移动端启用',
+    dataIndex: 'mobileStatus',
+    key: 'mobileStatus',
+    width: 100,
     align: 'center',
   },
   { title: '操作', key: 'action', width: 88, align: 'center' },
@@ -304,6 +315,7 @@ const openCreate = (parentId = '0') => {
     path: '',
     parentId,
     status: 1,
+    mobileStatus: 1,
     sort: 0,
     roles: '',
     component: '',
@@ -326,6 +338,7 @@ const openEdit = (row: any) => {
     path: r.path,
     parentId: r.parentId ? String(r.parentId) : '0',
     status: r.status ?? 1,
+    mobileStatus: r.mobileStatus ?? r.status ?? 1,
     sort: r.sort ?? 0,
     roles: r.roles ?? '',
     component: r.component ?? '',
@@ -385,6 +398,7 @@ const save = async () => {
     };
     if (isProtectedMenu(payload)) {
       payload.status = 1;
+      payload.mobileStatus = 1;
     }
     if (!payload.name || !payload.path) {
       message.error('name/path 不能为空');
@@ -417,19 +431,27 @@ const save = async () => {
   }
 };
 
-const toggleStatus = async (row: Record<string, any>, status: number) => {
+const toggleStatus = async (
+  row: Record<string, any>,
+  status: number,
+  mobile = false,
+) => {
   const id = String(row.id);
-  statusChanging.value = { ...statusChanging.value, [id]: true };
+  if (isBusy(id)) return;
+  const changing = mobile ? mobileStatusChanging : statusChanging;
+  changing.value = { ...changing.value, [id]: true };
   try {
-    const saved = await updateMenuStatusApi(id, status);
+    const saved = await (
+      mobile ? updateMenuMobileStatusApi : updateMenuStatusApi
+    )(id, status);
     applyMenu(saved);
     message.success(status === 1 ? '已启用' : '已禁用');
-    await refreshAccessibleMenus();
+    if (!mobile) await refreshAccessibleMenus();
   } catch {
     // 全局拦截器已提示
     await load();
   } finally {
-    statusChanging.value = { ...statusChanging.value, [id]: false };
+    changing.value = { ...changing.value, [id]: false };
   }
 };
 
@@ -704,10 +726,20 @@ onMounted(() => {
               </template>
               <template v-else-if="column.key === 'status'">
                 <Switch
+                  :aria-label="`${record.meta?.title ?? record.name} Web 启用`"
                   :checked="record.status === 1"
                   :loading="statusChanging[record.id] === true"
                   :disabled="isProtectedMenu(record) || isBusy(record.id)"
                   @change="toggleStatus(record, $event ? 1 : 0)"
+                />
+              </template>
+              <template v-else-if="column.key === 'mobileStatus'">
+                <Switch
+                  :aria-label="`${record.meta?.title ?? record.name} 移动端启用`"
+                  :checked="record.mobileStatus === 1"
+                  :loading="mobileStatusChanging[record.id] === true"
+                  :disabled="isProtectedMenu(record) || isBusy(record.id)"
+                  @change="toggleStatus(record, $event ? 1 : 0, true)"
                 />
               </template>
               <template v-else-if="column.key === 'sort'">
@@ -861,9 +893,21 @@ onMounted(() => {
                 :max="9999"
               />
             </Form.Item>
-            <Form.Item label="启用状态">
+            <Form.Item label="Web 启用">
               <Switch
+                aria-label="Web 启用"
                 v-model:checked="form.status"
+                :checked-value="1"
+                :un-checked-value="0"
+                :disabled="isProtectedEditing"
+                checked-children="启用"
+                un-checked-children="禁用"
+              />
+            </Form.Item>
+            <Form.Item label="移动端启用">
+              <Switch
+                aria-label="移动端启用"
+                v-model:checked="form.mobileStatus"
                 :checked-value="1"
                 :un-checked-value="0"
                 :disabled="isProtectedEditing"
