@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 
-import {
-  BankOutlined,
-  LoadingOutlined,
-  ReloadOutlined,
-} from '@ant-design/icons-vue';
+import { BankOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 
 import { useAuthImageUrl } from '#/composables/useAuthImageUrl';
 import { clearImageCache } from '#/utils/file';
@@ -65,11 +61,26 @@ const hasImage = computed(
       </template>
       <div
         v-if="loading"
-        class="image-state"
+        class="image-loading"
         role="status"
         aria-label="加载卡面"
       >
-        <LoadingOutlined spin />
+        <svg
+          class="image-loading-ring"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-dasharray="47 63"
+          />
+        </svg>
       </div>
       <button
         v-else-if="error"
@@ -112,6 +123,37 @@ const hasImage = computed(
   </div>
 </template>
 <style scoped>
+.image-loading {
+  position: absolute;
+  right: 23px;
+  bottom: 60px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  color: inherit;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.image-loading-ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: card-image-spin 0.9s linear infinite;
+}
+
+@keyframes card-image-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-loading-ring {
+    animation: none;
+  }
+}
+
 .image-state {
   position: absolute;
   right: 8px;
@@ -292,6 +334,10 @@ const hasImage = computed(
     0 0 0 62px #ffffff03;
 }
 @media (max-width: 420px) {
+  .image-loading {
+    right: 20px;
+  }
+
   .card-face {
     padding: 20px;
   }
