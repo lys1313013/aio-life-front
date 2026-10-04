@@ -8,7 +8,6 @@ import { useUserStore } from '@vben/stores';
 import ApiKeySetting from './api-key-setting.vue';
 import ProfileBase from './base-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
-import LLMSetting from './llm-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import MenuDisplaySetting from './menu-display-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
@@ -19,16 +18,6 @@ import UserBindSetting from './user-bind.vue';
 
 const route = useRoute();
 const userStore = useUserStore();
-
-const tabsValue = ref<string>((route.query.tab as string) || 'basic');
-
-watch(tabsValue, (val) => {
-  if (route.query.tab !== val) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', val);
-    window.history.replaceState({}, '', url.toString());
-  }
-});
 
 const tabs = ref([
   {
@@ -56,10 +45,6 @@ const tabs = ref([
     value: 'api-key',
   },
   {
-    label: '大模型配置',
-    value: 'llm',
-  },
-  {
     label: 'MBTI测试',
     value: 'mbti',
   },
@@ -76,6 +61,22 @@ const tabs = ref([
     value: 'system',
   },
 ]);
+const requestedTab = route.query.tab;
+const tabsValue = ref(
+  tabs.value.find((tab) => tab.value === requestedTab)?.value || 'basic',
+);
+
+watch(
+  tabsValue,
+  (val) => {
+    if (route.query.tab !== val) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', val);
+      window.history.replaceState({}, '', url.toString());
+    }
+  },
+  { immediate: true },
+);
 </script>
 <template>
   <Profile
@@ -91,7 +92,6 @@ const tabs = ref([
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
       <MenuDisplaySetting v-if="tabsValue === 'menu-display'" />
       <ApiKeySetting v-if="tabsValue === 'api-key'" />
-      <LLMSetting v-if="tabsValue === 'llm'" />
       <MbtiSetting v-if="tabsValue === 'mbti'" />
       <CbtiSetting v-if="tabsValue === 'cbti'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />

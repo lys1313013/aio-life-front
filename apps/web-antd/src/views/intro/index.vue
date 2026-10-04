@@ -51,13 +51,6 @@ const features = [
     visual: 'graph',
   },
   {
-    icon: 'mdi:robot-outline',
-    title: 'AI 智能助理',
-    desc: 'LangChain4j + OpenAI 接入，API Key 自主管理，支持 MCP 协议扩展工具能力。',
-    span: 2,
-    visual: 'orb',
-  },
-  {
     icon: 'mdi:shield-key-outline',
     title: '密码管理',
     desc: '加密存储账号密码，敏感数据不上云。',
@@ -175,8 +168,8 @@ onBeforeUnmount(() => observer?.disconnect());
         <span>时迹</span>
       </div>
       <div class="float-chip chip-b" aria-hidden="true">
-        <IconifyIcon icon="mdi:robot-outline" />
-        <span>AI 助理</span>
+        <IconifyIcon icon="mdi:target" />
+        <span>任务中心</span>
       </div>
       <div class="float-chip chip-c" aria-hidden="true">
         <IconifyIcon icon="mdi:graph-outline" />
@@ -188,7 +181,7 @@ onBeforeUnmount(() => observer?.disconnect());
     <section id="features" class="section">
       <div class="section-head" data-reveal>
         <h2 class="section-title">一个系统，装下全部生活</h2>
-        <p class="section-desc">九大功能模块，覆盖记录、管理与分析的完整闭环</p>
+        <p class="section-desc">八大功能模块，覆盖记录、管理与分析的完整闭环</p>
       </div>
 
       <div class="bento">
@@ -285,12 +278,6 @@ onBeforeUnmount(() => observer?.disconnect());
             <circle cx="165" cy="18" r="5" class="node" />
             <circle cx="170" cy="66" r="5" class="node" />
           </svg>
-
-          <!-- AI：光球 -->
-          <div v-else-if="f.visual === 'orb'" class="v-orb" aria-hidden="true">
-            <div class="orb"></div>
-            <div class="orb-ring"></div>
-          </div>
 
           <!-- 生活记录：标签 -->
           <div v-if="f.tags" class="v-tags">
@@ -833,45 +820,6 @@ onBeforeUnmount(() => observer?.disconnect());
   }
 }
 
-.v-orb {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 5.5rem;
-  margin-top: 1rem;
-}
-
-.orb {
-  width: 3.2rem;
-  height: 3.2rem;
-  background: conic-gradient(
-    from 0deg,
-    hsl(var(--primary)),
-    #8b5cf6,
-    #22d3ee,
-    hsl(var(--primary))
-  );
-  border-radius: 50%;
-  filter: blur(2px);
-  animation: orb-spin 6s linear infinite;
-}
-
-.orb-ring {
-  position: absolute;
-  width: 4.6rem;
-  height: 4.6rem;
-  border: 1px dashed hsl(var(--primary) / 45%);
-  border-radius: 50%;
-  animation: orb-spin 12s linear infinite reverse;
-}
-
-@keyframes orb-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .v-tags {
   display: flex;
   flex-wrap: wrap;
@@ -991,8 +939,6 @@ onBeforeUnmount(() => observer?.disconnect());
 @media (prefers-reduced-motion: reduce) {
   .aurora,
   .float-chip,
-  .orb,
-  .orb-ring,
   .kicker-dot,
   .v-graph .node-main {
     animation: none;
