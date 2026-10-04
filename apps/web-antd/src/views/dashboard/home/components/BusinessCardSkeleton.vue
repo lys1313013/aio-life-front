@@ -11,19 +11,20 @@ withDefaults(
 <template>
   <div
     class="animate-pulse motion-reduce:animate-none"
+    :class="{ 'media-row-grid media-skeleton': media }"
     role="status"
     :aria-label="label"
   >
     <div
       v-for="row in count"
       :key="row"
-      class="flex items-center gap-3 px-1 py-2"
-      :class="media ? 'min-h-[76px]' : 'min-h-16'"
+      class="flex min-h-16 items-center px-1 py-2"
+      :class="media ? 'gap-2.5' : 'gap-3'"
       aria-hidden="true"
     >
       <span
         class="shrink-0 bg-muted-foreground/20"
-        :class="media ? 'h-[60px] w-10 rounded-md' : 'size-9 rounded-xl'"
+        :class="media ? 'h-12 w-8 rounded-md' : 'size-9 rounded-xl'"
       ></span>
       <span class="flex min-w-0 flex-1 flex-col gap-2.5">
         <span
@@ -35,3 +36,15 @@ withDefaults(
     </div>
   </div>
 </template>
+
+<style scoped>
+.media-skeleton > :nth-child(n + 4) {
+  display: none;
+}
+
+@container business-card (min-width: 380px) {
+  .media-skeleton > :nth-child(n + 4) {
+    display: flex;
+  }
+}
+</style>

@@ -24,7 +24,7 @@ watch(blobUrl, () => {
 
 <template>
   <span
-    class="flex h-[60px] w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary text-muted-foreground"
+    class="flex h-12 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary text-muted-foreground"
   >
     <img
       v-if="blobUrl && !failed"

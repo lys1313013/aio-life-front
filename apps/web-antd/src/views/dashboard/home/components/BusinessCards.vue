@@ -71,8 +71,17 @@ const editingRecord = ref<unknown>();
 const editorOpen = ref(false);
 const pendingPinnedEdit = ref(false);
 
-function progress(current?: number, total?: number) {
-  return total && total > 0 ? `${current ?? 0} / ${total}` : '';
+function goalProgress(goal: GoalEntity) {
+  if (goal.targetValue != null && goal.targetValue > 0) {
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(((goal.currentValue ?? 0) / goal.targetValue) * 100),
+      ),
+    );
+  }
+  return goal.status === 'completed' ? 100 : 0;
 }
 
 const goalStatus: Record<string, string> = {
@@ -96,8 +105,9 @@ const configurations = [
         items: rows.map((row) => ({
           id: row.id!,
           title: row.title,
-          subtitle: `${goalStatus[row.status] || row.status} · ${progress(row.currentValue, row.targetValue) || `${row.status === 'completed' ? 100 : 0}%`}`,
-          detail: row.endDate ? `截止 ${row.endDate.slice(0, 10)}` : '',
+          subtitle: goalStatus[row.status] || row.status,
+          progressPercent: goalProgress(row),
+          dueDate: row.endDate?.slice(0, 10),
           record: row,
         })),
       };
@@ -132,29 +142,37 @@ const configurations = [
     icon: 'mdi:book-open-page-variant',
     paths: ['/record/read', '/my-hub/read-record'],
     async fetchPage(page: number): Promise<BusinessCardPage> {
-      const result = await ReadRecordApi.pageList({
-        activeOnly: true,
-        inProgressFirst: true,
-        current: page,
-        size: BUSINESS_CARD_PAGE_SIZE,
-      });
-      return {
-        hasMore: hasMoreRecords(
-          result.total,
-          page,
-          BUSINESS_CARD_PAGE_SIZE,
-          result.items.length,
+      // Fetch both statuses from page one so a long in-progress list cannot hide wanted books.
+      const results = await Promise.all(
+        (['in_progress', 'not_started'] as const).map((status) =>
+          ReadRecordApi.pageList({
+            status,
+            current: page,
+            size: BUSINESS_CARD_PAGE_SIZE,
+          }),
         ),
-        items: result.items.map((row) => ({
-          id: row.id,
-          title: row.title,
-          subtitle: row.status === 'in_progress' ? '在读' : '想读',
-          inProgress: row.status === 'in_progress',
-          fileId: row.fileId,
-          coverUrl: row.coverImgUrl,
-          media: true,
-          record: row,
-        })),
+      );
+      return {
+        hasMore: results.some((result) =>
+          hasMoreRecords(
+            result.total,
+            page,
+            BUSINESS_CARD_PAGE_SIZE,
+            result.items.length,
+          ),
+        ),
+        items: results
+          .flatMap((result) => result.items)
+          .map((row) => ({
+            id: row.id,
+            title: row.title,
+            subtitle: row.status === 'in_progress' ? '在读' : '想读',
+            inProgress: row.status === 'in_progress',
+            fileId: row.fileId,
+            coverUrl: row.coverImgUrl,
+            media: true,
+            record: row,
+          })),
       };
     },
   },
@@ -315,11 +333,13 @@ const membershipRecord = computed(
       :title="card.title"
       :icon="card.icon"
       :media="card.key === 'reading' || card.key === 'movie'"
+      :reading-shelves="card.key === 'reading'"
       :icon-color="card.iconColor"
       :locked="card.locked"
       :fetch-page="card.fetchPage"
       :unpin="card.unpin"
       :reorder="card.reorder"
+      :drag-order="card.key === 'goal'"
       @navigate="router.push(card.path)"
       @unlock="locks.triggerUnlock(card.unlockPath, false)"
       @access-denied="accessDenied(card.path)"

@@ -172,16 +172,17 @@ describe('业务首页卡片请求与滚动', () => {
       props: {
         title: '目标',
         icon: 'target',
+        dragOrder: true,
         fetchPage,
         reorder,
         unpin: vi.fn(),
       },
     });
     await flushPromises();
+    expect(wrapper.find('[aria-label="记录 1操作"]').exists()).toBe(false);
     await wrapper
-      .findAll('button')
-      .find((button) => button.text() === '下移')!
-      .trigger('click');
+      .get('[aria-label="编辑记录 1"]')
+      .trigger('keydown', { key: 'ArrowDown', altKey: true });
     expect(reorder).toHaveBeenCalledWith(['2', '1']);
     await wrapper.vm.reload();
     mutation.resolve();
@@ -261,5 +262,101 @@ describe('业务首页卡片请求与滚动', () => {
     await flushPromises();
     expect(wrapper.find('[aria-label="加载更多"]').exists()).toBe(false);
     expect(wrapper.text()).toContain('记录 3');
+  });
+});
+
+describe('阅读双排书架', () => {
+  it.each([true, false])(
+    '隐藏空分组且仅保留封面，仍可通过可访问名称编辑：%s',
+    async (inProgress) => {
+      const wrapper = mount(BusinessListCard, {
+        props: {
+          title: '阅读',
+          icon: 'book',
+          media: true,
+          readingShelves: true,
+          fetchPage: vi.fn().mockResolvedValue({
+            items: [{ ...row('1'), inProgress }],
+            hasMore: false,
+          }),
+        },
+      });
+      await flushPromises();
+      expect(
+        wrapper
+          .find(`section[aria-label="${inProgress ? '在读' : '想读'}"]`)
+          .exists(),
+      ).toBe(true);
+      expect(
+        wrapper
+          .find(`section[aria-label="${inProgress ? '想读' : '在读'}"]`)
+          .exists(),
+      ).toBe(false);
+      expect(wrapper.text()).not.toContain('记录 1');
+      expect(wrapper.text()).not.toContain('暂无');
+      await wrapper.get('[aria-label="编辑记录 1"]').trigger('click');
+      expect(wrapper.emitted('edit')?.[0]?.[0]).toMatchObject({ id: '1' });
+    },
+  );
+
+  it('按状态分排，横向触边去重加载，失败保留书籍并重试原页', async () => {
+    const first = deferred<{
+      hasMore: boolean;
+      items: (ReturnType<typeof row> & { inProgress: boolean })[];
+    }>();
+    const fetchPage = vi
+      .fn()
+      .mockReturnValueOnce(first.promise)
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({
+        items: [{ ...row('3'), inProgress: false }],
+        hasMore: false,
+      });
+    const wrapper = mount(BusinessListCard, {
+      props: {
+        title: '阅读',
+        icon: 'book',
+        media: true,
+        readingShelves: true,
+        fetchPage,
+      },
+    });
+    await flushPromises();
+    const shelf = wrapper.get('[aria-label="想读书籍"]');
+    Object.defineProperties(shelf.element, {
+      scrollWidth: { configurable: true, value: 600 },
+      clientWidth: { configurable: true, value: 300 },
+      scrollLeft: { configurable: true, value: 300 },
+    });
+    first.resolve({
+      items: [
+        { ...row('1'), inProgress: true },
+        { ...row('2'), inProgress: false },
+      ],
+      hasMore: true,
+    });
+    await flushPromises();
+    expect(
+      wrapper
+        .get('[aria-label="在读书籍"]')
+        .find('[aria-label="编辑记录 1"]')
+        .exists(),
+    ).toBe(true);
+    expect(shelf.find('[aria-label="编辑记录 2"]').exists()).toBe(true);
+    expect(shelf.find('[aria-label="编辑记录 1"]').exists()).toBe(false);
+    expect(fetchPage).toHaveBeenCalledTimes(1);
+    await shelf.trigger('scroll');
+    await shelf.trigger('scroll');
+    await flushPromises();
+    expect(fetchPage.mock.calls.map((call) => call[0])).toEqual([1, 2]);
+    expect(shelf.find('[aria-label="编辑记录 2"]').exists()).toBe(true);
+    await wrapper.get('[aria-label="阅读加载失败，重试"]').trigger('click');
+    await flushPromises();
+    expect(fetchPage.mock.calls.map((call) => call[0])).toEqual([1, 2, 2]);
+    expect(shelf.find('[aria-label="编辑记录 3"]').exists()).toBe(true);
+    await shelf.trigger('scroll');
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+    await wrapper.get('[aria-label="编辑记录 3"]').trigger('click');
+    expect(wrapper.emitted('edit')?.[0]?.[0]).toMatchObject({ id: '3' });
   });
 });

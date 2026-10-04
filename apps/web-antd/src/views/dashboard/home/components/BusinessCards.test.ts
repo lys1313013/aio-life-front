@@ -6,6 +6,7 @@ import BusinessCards from './BusinessCards.vue';
 import BusinessListCard from './BusinessListCard.vue';
 
 const mocks = vi.hoisted(() => ({
+  goals: vi.fn(),
   memberships: vi.fn(),
   readPage: vi.fn(),
   moviePage: vi.fn(),
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@vben/stores', () => ({
   useAccessStore: () => ({
     accessMenus: [
+      { path: '/task/goal', menuId: '5', icon: 'mdi:target' },
       { path: '/membership', menuId: '4', icon: 'ant-design:gift-outlined' },
       {
         path: '/record',
@@ -106,7 +108,7 @@ vi.mock('./BusinessCardCover.vue', () => ({
   default: { template: '<span />' },
 }));
 vi.mock('#/api/core/goal', () => ({
-  getGoalList: async () => [],
+  getGoalList: mocks.goals,
   setGoalPinned: vi.fn(),
   updateGoalPinnedOrder: vi.fn(),
 }));
@@ -158,6 +160,7 @@ const movie = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.goals.mockResolvedValue([]);
   mocks.memberships.mockResolvedValue([]);
   mocks.readPage.mockResolvedValue({ items: [read], total: '1' });
   mocks.moviePage.mockResolvedValue({ items: [movie], total: '1' });
@@ -177,16 +180,19 @@ describe('首页复用阅读观影编辑器闭环', () => {
     async (label, title, page, update, record) => {
       const wrapper = mount(BusinessCards);
       await flushPromises();
-      expect(page).toHaveBeenCalledWith({
-        activeOnly: true,
-        inProgressFirst: true,
-        current: 1,
-        size: 20,
-      });
-      await wrapper
-        .findAll('.line-clamp-2')
-        .find((node) => node.text() === title)!
-        .trigger('click');
+      if (label === '阅读') {
+        for (const status of ['in_progress', 'not_started']) {
+          expect(page).toHaveBeenCalledWith({ status, current: 1, size: 20 });
+        }
+      } else {
+        expect(page).toHaveBeenCalledWith({
+          activeOnly: true,
+          inProgressFirst: true,
+          current: 1,
+          size: 20,
+        });
+      }
+      await wrapper.get(`[aria-label="编辑${title}"]`).trigger('click');
       await vi.waitFor(() =>
         expect(wrapper.find('select[aria-label="状态"]').exists()).toBe(true),
       );
@@ -206,6 +212,57 @@ describe('首页复用阅读观影编辑器闭环', () => {
 });
 
 describe('首页卡片显示规则', () => {
+  it('目标以百分比展示量化进度，保留状态、截止日期和编辑操作', async () => {
+    const goal = {
+      id: '9007199254740995',
+      title: '俯卧撑一次性50个',
+      isPinned: 1,
+      status: 'in_progress',
+      currentValue: 31,
+      targetValue: 50,
+      endDate: '2026-12-31T00:00:00',
+    };
+    mocks.goals.mockResolvedValue([goal]);
+    const wrapper = mount(BusinessCards, { props: { only: 'goal' } });
+    await flushPromises();
+    expect(mocks.goals).toHaveBeenCalledWith({ isPinned: 1 });
+    expect(
+      wrapper.get('[role="progressbar"]').attributes('aria-valuenow'),
+    ).toBe('62');
+    expect(wrapper.text()).toContain('62%');
+    expect(wrapper.text()).not.toContain('31 / 50');
+    expect(wrapper.text()).toContain('进行中');
+    expect(wrapper.get('[aria-label="截止 2026-12-31"]').text()).toContain(
+      '2026-12-31',
+    );
+    const card = wrapper.getComponent(BusinessListCard);
+    await card.get('[aria-label="编辑俯卧撑一次性50个"]').trigger('click');
+    expect(card.emitted('edit')?.[0]?.[0]).toMatchObject({ record: goal });
+    expect(card.find('[aria-label="俯卧撑一次性50个操作"]').exists()).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    { currentValue: 0, targetValue: 50, status: 'in_progress', expected: 0 },
+    { currentValue: 80, targetValue: 50, status: 'in_progress', expected: 100 },
+    { currentValue: -1, targetValue: 50, status: 'in_progress', expected: 0 },
+    { targetValue: 0, status: 'in_progress', expected: 0 },
+    { status: 'completed', expected: 100 },
+  ])(
+    '目标边界进度 $expected%：$status / $currentValue / $targetValue',
+    async ({ expected, ...goal }) => {
+      mocks.goals.mockResolvedValue([
+        { id: '1', title: '目标', isPinned: 1, ...goal },
+      ]);
+      const wrapper = mount(BusinessCards, { props: { only: 'goal' } });
+      await flushPromises();
+      expect(
+        wrapper.get('[role="progressbar"]').attributes('aria-valuenow'),
+      ).toBe(String(expected));
+    },
+  );
+
   it('复用各自菜单图标与颜色，阅读和观影隐藏进度但保留状态', async () => {
     const wrapper = mount(BusinessCards);
     await flushPromises();

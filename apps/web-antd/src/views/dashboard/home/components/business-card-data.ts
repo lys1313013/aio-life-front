@@ -7,11 +7,20 @@ import dayjs from 'dayjs';
 export const BUSINESS_CARD_MAX_HEIGHT = 280;
 export const BUSINESS_CARD_PAGE_SIZE = 20;
 
+// 配色 A：按完成进度分段，Web 与 mobile 保持一致。
+export function goalProgressColor(percent: number) {
+  if (percent <= 33) return '#788faf';
+  if (percent <= 66) return '#618f9d';
+  return '#69957a';
+}
+
 export interface BusinessCardItem {
   id: string;
   title: string;
   subtitle: string;
   detail?: string;
+  progressPercent?: number;
+  dueDate?: string;
   icon?: string;
   emoji?: string;
   fileId?: string;
