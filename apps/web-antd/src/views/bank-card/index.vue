@@ -346,9 +346,10 @@ onBeforeUnmount(() => {
       </div>
       <div v-else class="card-grid">
         <article
-          v-for="card in visibleCards"
+          v-for="(card, index) in visibleCards"
           :key="card.id"
           class="bank-item"
+          :style="{ animationDelay: `${Math.min(index * 0.06, 0.72)}s` }"
           :aria-label="
             card.cardNoLast4
               ? `${card.bankName} 尾号 ${card.cardNoLast4}`
@@ -621,6 +622,21 @@ onBeforeUnmount(() => {
 .bank-item {
   min-width: 0;
   max-width: 440px;
+  animation: bank-card-enter 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes bank-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.9);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.025);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .card-info {
   padding: 13px 3px 0;
@@ -748,6 +764,11 @@ onBeforeUnmount(() => {
   }
   .bank-item:hover :deep(.card-face) {
     box-shadow: 0 10px 28px #00000014;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bank-item {
+    animation: none;
   }
 }
 </style>
