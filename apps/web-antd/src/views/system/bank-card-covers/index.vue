@@ -68,7 +68,7 @@ let searchTimer: ReturnType<typeof setTimeout> | undefined;
 const open = ref(false);
 const saving = ref(false);
 const uploading = ref(false);
-const busy = ref<Record<string, boolean>>({});
+const busy = ref<Record<string, 'delete' | 'toggle' | undefined>>({});
 const bankFilter = ref<string>();
 const enabledFilter = ref<number>();
 const search = ref('');
@@ -258,23 +258,23 @@ async function save() {
 }
 async function toggle(item: CoverTemplate) {
   if (busy.value[item.id]) return;
-  busy.value[item.id] = true;
+  busy.value[item.id] = 'toggle';
   try {
     replace(await setCoverEnabled(item.id, item.isEnabled === 1 ? 0 : 1));
   } finally {
-    busy.value[item.id] = false;
+    delete busy.value[item.id];
   }
 }
 async function remove(item: CoverTemplate) {
   if (busy.value[item.id]) return;
-  busy.value[item.id] = true;
+  busy.value[item.id] = 'delete';
   try {
     await deleteCoverTemplate(item.id);
     if (disposed) return;
     recordMutation(item.id);
     items.value = items.value.filter((row) => row.id !== item.id);
   } finally {
-    busy.value[item.id] = false;
+    delete busy.value[item.id];
   }
 }
 onMounted(() => {
@@ -409,13 +409,14 @@ onActivated(() => {
               </div>
               <Switch
                 :checked="item.isEnabled === 1"
-                :loading="busy[item.id]"
+                :loading="busy[item.id] === 'toggle'"
+                :disabled="!!busy[item.id]"
                 :aria-label="`${item.isEnabled ? '停用' : '启用'}${item.name}`"
                 @change="toggle(item)"
               />
               <Popconfirm
                 :title="`删除${item.name}？`"
-                :disabled="Number(item.usageCount) > 0 || busy[item.id]"
+                :disabled="Number(item.usageCount) > 0 || !!busy[item.id]"
                 @confirm="remove(item)"
               >
                 <Button
@@ -423,10 +424,10 @@ onActivated(() => {
                   danger
                   :aria-label="`删除${item.name}`"
                   class="cover-delete"
-                  :disabled="Number(item.usageCount) > 0"
-                  :loading="busy[item.id]"
+                  :disabled="Number(item.usageCount) > 0 || !!busy[item.id]"
+                  :loading="busy[item.id] === 'delete'"
                 >
-                  <DeleteOutlined />
+                  <template #icon><DeleteOutlined /></template>
                 </Button>
               </Popconfirm>
             </div>
@@ -673,6 +674,7 @@ onActivated(() => {
     opacity: 0;
     pointer-events: none;
   }
+  .cover-delete.ant-btn-loading,
   .cover-item:hover .cover-delete,
   .cover-item:focus-within .cover-delete {
     opacity: 1;

@@ -1,8 +1,8 @@
 import type { CoverTemplate, CoverTemplatePage } from '#/api/bank-card/covers';
 
-import { flushPromises, shallowMount } from '@vue/test-utils';
+import { flushPromises, mount, shallowMount } from '@vue/test-utils';
 
-import { Form, Popconfirm, Select, Switch } from 'ant-design-vue';
+import { Button, Form, Popconfirm, Select, Switch } from 'ant-design-vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppModal } from '#/components/app-modal';
@@ -53,11 +53,12 @@ function deferred<T>() {
   });
   return { promise, resolve, reject };
 }
-async function render() {
-  const wrapper = shallowMount(CoverPage, {
+async function render(realButtons = false) {
+  const wrapper = (realButtons ? mount : shallowMount)(CoverPage, {
     global: {
       renderStubDefaultSlot: true,
       stubs: {
+        AppModal: true,
         AForm: {
           props: ['disabled', 'model'],
           methods: {
@@ -80,10 +81,12 @@ async function render() {
           inheritAttrs: false,
           template: '<div />',
         },
-        AButton: {
-          emits: ['click'],
-          template: '<button @click="$emit(\'click\')"><slot /></button>',
-        },
+        AButton: realButtons
+          ? false
+          : {
+              emits: ['click'],
+              template: '<button @click="$emit(\'click\')"><slot /></button>',
+            },
       },
     },
   });
@@ -118,6 +121,58 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+describe('公共卡面操作 loading', () => {
+  it('启停只在开关显示 loading，同时阻止删除和重复启停', async () => {
+    const wrapper = await render(true);
+    const update = deferred<CoverTemplate>();
+    api.setCoverEnabled.mockReturnValueOnce(update.promise);
+    const toggle = wrapper.findComponent(Switch);
+    toggle.vm.$emit('change', false);
+    await flushPromises();
+    const deletion = wrapper
+      .findAllComponents(Button)
+      .find((button) => button.attributes('aria-label') === '删除原卡面')!;
+    expect(toggle.props('loading')).toBe(true);
+    expect(toggle.props('disabled')).toBe(true);
+    expect(deletion.props('loading')).toBe(false);
+    expect(deletion.props('disabled')).toBe(true);
+    expect(deletion.find('[role="img"][aria-label="delete"]').exists()).toBe(
+      true,
+    );
+    toggle.vm.$emit('change', false);
+    wrapper.findComponent(Popconfirm).vm.$emit('confirm');
+    expect(api.setCoverEnabled).toHaveBeenCalledTimes(1);
+    expect(api.deleteCoverTemplate).not.toHaveBeenCalled();
+    update.resolve({ ...original, isEnabled: 0 });
+    await flushPromises();
+    expect(toggle.props('loading')).toBe(false);
+    expect(toggle.props('disabled')).toBe(false);
+    expect(deletion.props('disabled')).toBe(false);
+  });
+
+  it('删除时 spinner 替换删除图标，开关只禁用且不显示 loading', async () => {
+    const wrapper = await render(true);
+    const pending = deferred<void>();
+    api.deleteCoverTemplate.mockReturnValueOnce(pending.promise);
+    wrapper.findComponent(Popconfirm).vm.$emit('confirm');
+    await flushPromises();
+    const deletion = wrapper.get('.cover-delete');
+    expect(deletion.classes()).toContain('ant-btn-loading');
+    expect(deletion.classes()).toContain('ant-btn-icon-only');
+    expect(deletion.findAll('svg')).toHaveLength(1);
+    expect(deletion.find('[aria-label="loading"]').exists()).toBe(true);
+    expect(deletion.find('[aria-label="delete"]').exists()).toBe(false);
+    const toggle = wrapper.findComponent(Switch);
+    expect(toggle.props('loading')).toBe(false);
+    expect(toggle.props('disabled')).toBe(true);
+    toggle.vm.$emit('change', false);
+    expect(api.setCoverEnabled).not.toHaveBeenCalled();
+    pending.resolve();
+    await flushPromises();
+    expect(wrapper.find('.cover-item').exists()).toBe(false);
+  });
+});
+
 describe('公共卡面查询与修改交错', () => {
   it('删除期间刷新得到的旧列表不能复活删除项', async () => {
     const wrapper = await render();
