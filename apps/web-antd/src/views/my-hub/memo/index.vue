@@ -47,7 +47,7 @@ const { isMobile } = usePreferences();
 
 const modalWidth = computed(() => {
   if (isMobile.value) return 'calc(100vw - 32px)';
-  return modalWidthPx.value ?? '70%';
+  return modalWidthPx.value ?? 'min(860px, calc(100vw - 48px))';
 });
 
 const modalStyle = computed<CSSProperties>(() =>
@@ -63,23 +63,18 @@ const modalBodyStyle = computed<CSSProperties>(() => ({
   flexDirection: 'column',
   height:
     !isMobile.value && modalHeightPx.value
-      ? `${Math.max(160, modalHeightPx.value - 116)}px`
-      : undefined,
-  maxHeight: isMobile.value ? '80dvh' : '85dvh',
-  overflow: 'auto',
+      ? `${Math.max(200, modalHeightPx.value - 82)}px`
+      : isMobile.value
+        ? 'clamp(260px, 52dvh, 420px)'
+        : 'clamp(260px, 42dvh, 420px)',
+  maxHeight: 'calc(100dvh - 114px)',
+  overflow: 'hidden',
 }));
 
 const editorStyle = computed<CSSProperties>(() => ({
   alignSelf: 'stretch',
-  flex: !isMobile.value && modalHeightPx.value ? '1 1 auto' : '0 0 auto',
-  minHeight: isMobile.value ? '30dvh' : '160px',
-  height:
-    !isMobile.value && modalHeightPx.value
-      ? undefined
-      : isMobile.value
-        ? '40dvh'
-        : '50dvh',
-  maxHeight: !isMobile.value && modalHeightPx.value ? undefined : '75dvh',
+  flex: '1 1 auto',
+  minHeight: 0,
   resize: 'none',
   width: '100%',
 }));
@@ -264,6 +259,7 @@ const windowWidth = ref(window.innerWidth);
 
 const onResize = () => {
   windowWidth.value = window.innerWidth;
+  resetModalSize();
 };
 
 const columnCount = computed(() => {
@@ -389,7 +385,7 @@ onUnmounted(() => {
       :mask-closable="false"
       :submit-on-enter="false"
       @ok="handleOk"
-      @after-close="resetModalSize"
+      :after-close="resetModalSize"
       :width="modalWidth"
       :centered="true"
       :body-style="modalBodyStyle"
@@ -413,31 +409,35 @@ onUnmounted(() => {
       <Input
         v-model:value="formState.title"
         placeholder="标题"
-        class="!mb-2 !border-0 !px-0 !text-lg !font-bold focus:!shadow-none"
+        class="memo-editor-title"
+        aria-label="笔记标题"
         :bordered="false"
         style="flex-shrink: 0"
       />
       <Input.TextArea
         v-model:value="formState.content"
         placeholder="记下你的想法..."
-        class="!border-0 !px-0 !text-base !leading-relaxed focus:!shadow-none"
+        class="memo-editor-content"
+        aria-label="笔记正文"
         :bordered="false"
         :style="editorStyle"
       />
-      <div
-        class="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800"
-        style="flex-shrink: 0"
-      >
-        <Tooltip :title="formState.hiddenContent ? '显示内容' : '隐藏内容'">
+      <template #footer-leading>
+        <Tooltip
+          :title="
+            formState.hiddenContent ? '在列表中显示正文' : '在列表中隐藏正文'
+          "
+        >
           <Button
             type="text"
             shape="circle"
-            @click="formState.hiddenContent = !formState.hiddenContent"
-            :class="
-              formState.hiddenContent
-                ? '!text-slate-400'
-                : '!text-slate-600 dark:!text-slate-300'
+            class="memo-visibility-button"
+            :aria-label="
+              formState.hiddenContent ? '在列表中显示正文' : '在列表中隐藏正文'
             "
+            :aria-pressed="formState.hiddenContent"
+            :disabled="confirmLoading"
+            @click="formState.hiddenContent = !formState.hiddenContent"
           >
             <template #icon>
               <EyeOutlined v-if="formState.hiddenContent" />
@@ -445,7 +445,7 @@ onUnmounted(() => {
             </template>
           </Button>
         </Tooltip>
-      </div>
+      </template>
     </Modal>
 
     <GlobalFloatBtn @click="handleAdd" />
@@ -459,8 +459,88 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
+:global(.memo-modal .app-modal-body) {
+  gap: 12px;
+  padding: 28px 32px 12px;
+}
+
+:global(.memo-modal .app-modal-footer) {
+  padding: 16px 32px 20px;
+}
+
+:global(.memo-modal .app-modal-toolbar),
 .memo-modal-title {
-  padding-right: 32px;
+  display: contents;
+}
+
+:global(.memo-modal .ant-input) {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--foreground));
+  box-shadow: none;
+}
+
+:global(.memo-modal .ant-input:hover),
+:global(.memo-modal .ant-input:focus) {
+  border: 0;
+  box-shadow: none;
+}
+
+:global(.memo-modal .ant-input::placeholder) {
+  color: hsl(var(--muted-foreground));
+}
+
+:global(.memo-modal .memo-editor-title) {
+  min-height: 36px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+:global(.memo-modal .memo-editor-content) {
+  overflow-y: auto;
+  font-size: 16px;
+  line-height: 1.85;
+  scrollbar-width: thin;
+}
+
+:global(.memo-modal .app-modal-footer .memo-visibility-button) {
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  color: hsl(var(--muted-foreground));
+  font-size: 18px;
+}
+
+:global(.memo-modal .memo-visibility-button[aria-pressed='true']) {
+  color: hsl(var(--primary));
+}
+
+:global(.memo-modal .memo-visibility-button:focus-visible) {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  :global(.memo-modal .app-modal-body) {
+    padding: 22px 20px 8px;
+  }
+
+  :global(.memo-modal .app-modal-footer) {
+    padding: 12px 20px 18px;
+  }
+
+  :global(.memo-modal .memo-editor-title) {
+    font-size: 20px;
+  }
+}
+
+@media (max-height: 480px) {
+  :global(.memo-modal .app-modal-body) {
+    padding-top: 16px;
+  }
 }
 
 .memo-resize-handle {
