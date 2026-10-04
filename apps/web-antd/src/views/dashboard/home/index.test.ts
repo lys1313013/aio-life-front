@@ -3,7 +3,7 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import AnalysisCard from './components/analysis-card.vue';
-import Home from './index.vue';
+import Home from './home-content.vue';
 
 const mocks = vi.hoisted(() => ({
   detail: vi.fn(),
@@ -18,10 +18,20 @@ vi.mock('#/api/core/dashboard', () => ({
 vi.mock('#/api/core/think', () => ({ getPinnedThoughts: async () => [] }));
 vi.mock('#/api/core/todo', () => ({ updateTaskDetail: vi.fn() }));
 vi.mock('#/api/core/user-bind', () => ({ getUserBindListApi: async () => [] }));
+vi.mock('#/store/home-cards', () => ({
+  useHomeCardsStore: () => ({
+    enabled: () => true,
+    order: () => 0,
+    sections: [],
+  }),
+}));
 vi.mock('#/store/quick-nav', () => ({
   useQuickNavStore: () => ({ load: vi.fn() }),
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('@vben/stores', () => ({
+  useUserStore: () => ({ userInfo: { id: 'fixture' } }),
+}));
 vi.mock('@vben/common-ui', () => ({ VbenIcon: { template: '<i />' } }));
 vi.mock('@vben/utils', () => ({ openWindow: vi.fn() }));
 vi.mock('ant-design-vue', () => ({
@@ -39,6 +49,9 @@ vi.mock('../../time/time-tracker/components/TimeTrackerModal.vue', () => ({
 }));
 vi.mock('./analytics-time-tracker.vue', () => ({
   default: { template: '<div />', methods: { loadData: vi.fn() } },
+}));
+vi.mock('./components/BusinessCards.vue', () => ({
+  default: { template: '<div />' },
 }));
 vi.mock('./components/ExerciseSummaryCard.vue', () => ({
   default: { template: '<div />' },

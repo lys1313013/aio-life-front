@@ -8,6 +8,8 @@ import { requestClient } from '#/api/request';
  */
 export interface AnniversaryRecord {
   id?: string;
+  isPinned?: 0 | 1;
+  pinnedSort?: number;
   title: string;
   targetDate: string; // ISO string, e.g., 'YYYY-MM-DD'
   type: 'anniversary' | 'countdown';
@@ -19,8 +21,10 @@ export interface AnniversaryRecord {
 /**
  * 获取所有纪念日
  */
-export async function getAnniversaryRecords() {
-  return requestClient.get<AnniversaryRecord[]>('/anniversaryRecords');
+export async function getAnniversaryRecords(params?: { isPinned?: 0 | 1 }) {
+  return requestClient.get<AnniversaryRecord[]>('/anniversaryRecords', {
+    params,
+  });
 }
 
 /**
@@ -54,4 +58,18 @@ export async function deleteAnniversaryRecords(idList: string[]) {
   return requestClient.post<void>(`/anniversaryRecords/batchDelete`, {
     idList,
   });
+}
+
+export async function setAnniversaryPinned(id: string, isPinned: 0 | 1) {
+  return requestClient.put<AnniversaryRecord>(
+    `/anniversaryRecords/${id}/pin`,
+    pickPayload('HomePinReq', { isPinned }),
+  );
+}
+
+export async function updateAnniversaryPinnedOrder(ids: string[]) {
+  return requestClient.put<void>(
+    '/anniversaryRecords/pinned-order',
+    pickPayload('HomePinnedOrderReq', { ids }),
+  );
 }

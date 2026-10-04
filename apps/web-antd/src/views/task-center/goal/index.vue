@@ -1,56 +1,37 @@
 <script setup lang="ts">
-import type { Rule } from 'ant-design-vue/es/form';
-
 import type { GoalEntity, GoalQueryParams } from '#/api/core/goal';
 import type { ProgressStatus } from '#/api/core/progress-status';
 
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 
-import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import {
+  CalendarOutlined,
+  PushpinFilled,
+  PushpinOutlined,
+  SearchOutlined,
+} from '@ant-design/icons-vue';
 import {
   Button as AButton,
-  DatePicker as ADatePicker,
   Empty as AEmpty,
-  Form as AForm,
-  FormItem as AFormItem,
   Input as AInput,
-  InputNumber as AInputNumber,
   Progress as AProgress,
   Select as ASelect,
   SelectOption as ASelectOption,
   Tag as ATag,
   message,
 } from 'ant-design-vue';
-import dayjs, { Dayjs } from 'dayjs';
-import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import dayjs from 'dayjs';
 
 import { appDialog } from '#/adapter/modal-dialog';
-import {
-  createGoal,
-  deleteGoals,
-  getGoalList,
-  updateGoal,
-} from '#/api/core/goal';
+import { deleteGoals, getGoalList, setGoalPinned } from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
-import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
-dayjs.extend(quarterOfYear);
+import GoalEditor from './GoalEditor.vue';
 
-interface FormState {
-  id?: string;
-  title: string;
-  type: number;
-  status: ProgressStatus;
-  progress: number;
-  targetValue?: number;
-  currentValue?: number;
-  startDate?: Dayjs;
-  endDate?: Dayjs;
-  description: string;
-  tags: string;
-}
+const editorRef = ref<InstanceType<typeof GoalEditor>>();
+const pinLoading = ref(new Set<string>());
 
 // Data
 const goals = ref<GoalEntity[]>([]);
@@ -62,31 +43,6 @@ const filters = ref<GoalQueryParams>({
   type: undefined,
   status: undefined,
 });
-
-// Modal & Form
-const modalVisible = ref(false);
-const formRef = ref();
-const modalTitle = ref('添加');
-const submitLoading = ref(false);
-
-const formState = ref<FormState>({
-  title: '',
-  type: 1,
-  status: PROGRESS_STATUS.NOT_STARTED,
-  progress: 0,
-  targetValue: undefined,
-  currentValue: undefined,
-  startDate: undefined,
-  endDate: undefined,
-  description: '',
-  tags: '',
-});
-
-const rules: Record<string, Rule[]> = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
-};
 
 // Computed properties for UI mapping
 const typeMap: Record<number, { color: string; label: string }> = {
@@ -108,93 +64,6 @@ const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
   [PROGRESS_STATUS.COMPLETED]: { label: '已完成', color: 'success' },
   [PROGRESS_STATUS.ON_HOLD]: { label: '搁置', color: 'warning' },
 };
-
-const autoCalculateDates = (type: number) => {
-  const now = dayjs();
-  let startDate: Dayjs | undefined;
-  let endDate: Dayjs | undefined;
-
-  switch (type) {
-    case 1: {
-      // 日目标
-      startDate = now.startOf('day');
-      endDate = now.endOf('day');
-      break;
-    }
-    case 2: {
-      // 周目标
-      startDate = now.startOf('week');
-      endDate = now.endOf('week');
-      break;
-    }
-    case 3: {
-      // 月度目标
-      startDate = now.startOf('month');
-      endDate = now.endOf('month');
-      break;
-    }
-    case 4: {
-      // 季度目标
-      startDate = now.startOf('quarter');
-      endDate = now.endOf('quarter');
-      break;
-    }
-    case 5: {
-      // 半年目标
-      const isFirstHalf = now.month() < 6;
-      startDate = isFirstHalf
-        ? now.month(0).startOf('month')
-        : now.month(6).startOf('month');
-      endDate = isFirstHalf
-        ? now.month(5).endOf('month')
-        : now.month(11).endOf('month');
-      break;
-    }
-    case 6: {
-      // 年度目标
-      startDate = now.startOf('year');
-      endDate = now.endOf('year');
-      break;
-    }
-    case 7: {
-      // 三年目标
-      startDate = now.startOf('day');
-      endDate = now.add(3, 'year').endOf('day');
-      break;
-    }
-    case 8: {
-      // 五年目标
-      startDate = now.startOf('day');
-      endDate = now.add(5, 'year').endOf('day');
-      break;
-    }
-    case 9: {
-      // 十年目标
-      startDate = now.startOf('day');
-      endDate = now.add(10, 'year').endOf('day');
-      break;
-    }
-    case 10: {
-      // 人生目标
-      break;
-    }
-    default: {
-      return;
-    }
-  }
-
-  formState.value.startDate = startDate;
-  formState.value.endDate = endDate;
-};
-
-watch(
-  () => formState.value.type,
-  (newType) => {
-    if (newType && modalVisible.value) {
-      autoCalculateDates(newType);
-    }
-  },
-);
 
 // Load Data
 const loadData = async () => {
@@ -230,111 +99,53 @@ const clearFilters = () => {
   loadData();
 };
 
-const handleAdd = () => {
-  modalTitle.value = '添加';
-  formState.value = {
-    title: '',
-    type: 1,
-    status: PROGRESS_STATUS.IN_PROGRESS,
-    progress: 0,
-    targetValue: undefined,
-    currentValue: undefined,
-    startDate: undefined,
-    endDate: undefined,
-    description: '',
-    tags: '',
-  };
-  modalVisible.value = true;
-};
-
-const handleEdit = (item: GoalEntity) => {
-  modalTitle.value = '编辑';
-
-  // Parse tags if stored as JSON array string, else split by comma
-  let tagsStr = '';
-  try {
-    if (item.tags) {
-      const parsed = JSON.parse(item.tags);
-      tagsStr = Array.isArray(parsed) ? parsed.join(', ') : item.tags;
-    }
-  } catch {
-    tagsStr = item.tags || '';
+const handleAdd = () => editorRef.value?.open();
+const handleEdit = (item: GoalEntity) => editorRef.value?.open(item);
+const handleSaved = (record: GoalEntity) => {
+  const index = goals.value.findIndex((item) => item.id === record.id);
+  const { keyword, status, type } = filters.value;
+  const matches =
+    (!status || record.status === status) &&
+    (!type || record.type === type) &&
+    (!keyword ||
+      [record.title, record.description, record.tags].some((value) =>
+        value?.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()),
+      ));
+  if (!matches) {
+    if (index !== -1) goals.value.splice(index, 1);
+    return;
   }
-
-  formState.value = {
-    id: item.id,
-    title: item.title,
-    type: item.type,
-    status: item.status,
-    progress: item.progress || 0,
-    targetValue: item.targetValue,
-    currentValue: item.currentValue,
-    startDate: item.startDate ? dayjs(item.startDate) : undefined,
-    endDate: item.endDate ? dayjs(item.endDate) : undefined,
-    description: item.description || '',
-    tags: tagsStr,
-  };
-  modalVisible.value = true;
-};
-
-const deleteGoal = async (id: string) => {
-  try {
-    await deleteGoals([id]);
-    message.success('删除成功');
-    modalVisible.value = false;
-    loadData();
-  } catch (error) {
-    console.error('Failed to delete goal:', error);
+  if (index === -1) {
+    goals.value.unshift(record);
+  } else {
+    goals.value.splice(index, 1, record);
   }
 };
-const handleDelete = async (id: string) => {
+const handleDeleted = (id: string) => {
+  goals.value = goals.value.filter((item) => item.id !== id);
+};
+const handleDelete = (id: string) => {
   appDialog.confirm({
     title: '确定要删除这个目标吗？',
     okText: '删除',
     cancelText: '取消',
     okType: 'danger',
-    onOk: () => deleteGoal(id),
+    onOk: async () => {
+      await deleteGoals([id]);
+      handleDeleted(id);
+      message.success('删除成功');
+    },
   });
 };
-
-const handleSave = async () => {
+const handlePin = async (item: GoalEntity) => {
+  if (!item.id || pinLoading.value.has(item.id)) return;
+  pinLoading.value.add(item.id);
   try {
-    await formRef.value.validate();
-    submitLoading.value = true;
-
-    // Convert tags string to JSON array string
-    const tagsArray = formState.value.tags
-      .split(/[,，]/)
-      .map((t) => t.trim())
-      .filter(Boolean);
-
-    const payload: GoalEntity = {
-      id: formState.value.id,
-      title: formState.value.title,
-      type: formState.value.type,
-      status: formState.value.status,
-      progress: formState.value.progress,
-      targetValue: formState.value.targetValue,
-      currentValue: formState.value.currentValue,
-      startDate: formState.value.startDate?.format('YYYY-MM-DD HH:mm:ss'),
-      endDate: formState.value.endDate?.format('YYYY-MM-DD HH:mm:ss'),
-      description: formState.value.description,
-      tags: JSON.stringify(tagsArray),
-    };
-
-    if (formState.value.id) {
-      await updateGoal(payload);
-    } else {
-      await createGoal(payload);
-      message.success('创建成功');
-    }
-
-    modalVisible.value = false;
-    loadData();
-  } catch (error) {
-    console.error('Validate Failed:', error);
+    handleSaved(await setGoalPinned(item.id, item.isPinned === 1 ? 0 : 1));
+  } catch {
+    // 请求客户端统一提示错误，保留原固定状态。
   } finally {
-    submitLoading.value = false;
+    pinLoading.value.delete(item.id);
   }
 };
 
@@ -345,7 +156,7 @@ const calculateProgress = (item: GoalEntity) => {
       Math.round(((item.currentValue || 0) / item.targetValue) * 100),
     );
   }
-  return 0;
+  return item.status === PROGRESS_STATUS.COMPLETED ? 100 : 0;
 };
 
 // Helper methods for UI
@@ -469,6 +280,22 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
                 {{ typeMap[item.type]?.label }}
               </ATag>
               <div class="flex items-center gap-1.5">
+                <AButton
+                  type="text"
+                  class="!h-11 !w-11"
+                  :loading="pinLoading.has(item.id!)"
+                  :aria-label="
+                    item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
+                  "
+                  :aria-pressed="item.isPinned === 1"
+                  @click.stop="handlePin(item)"
+                >
+                  <template #icon>
+                    <PushpinFilled v-if="item.isPinned === 1" /><PushpinOutlined
+                      v-else
+                    />
+                  </template>
+                </AButton>
                 <div
                   class="h-2 w-2 rounded-full"
                   :class="getStatusBadgeColor(item.status)"
@@ -554,132 +381,7 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
       </div>
     </template>
 
-    <!-- Add/Edit Modal -->
-    <Modal
-      v-model:open="modalVisible"
-      :confirm-loading="submitLoading"
-      @ok="handleSave"
-      width="600px"
-    >
-      <template #footer-leading>
-        <AppModalDelete
-          v-if="modalTitle === '编辑'"
-          :disabled="submitLoading"
-          title="确定删除这个目标吗？"
-          :action="() => deleteGoal(formState.id!)"
-        />
-      </template>
-      <AForm ref="formRef" :model="formState" :rules="rules" layout="vertical">
-        <AFormItem label="目标标题" name="title">
-          <AInput
-            v-model:value="formState.title"
-            placeholder="请输入目标标题"
-            allow-clear
-          />
-        </AFormItem>
-
-        <div class="flex gap-4">
-          <AFormItem label="类型" name="type" class="flex-1">
-            <ASelect v-model:value="formState.type" placeholder="请选择">
-              <ASelectOption :value="1">日</ASelectOption>
-              <ASelectOption :value="2">周</ASelectOption>
-              <ASelectOption :value="3">月</ASelectOption>
-              <ASelectOption :value="4">季度</ASelectOption>
-              <ASelectOption :value="5">半年</ASelectOption>
-              <ASelectOption :value="6">年度</ASelectOption>
-              <ASelectOption :value="7">三年</ASelectOption>
-              <ASelectOption :value="8">五年</ASelectOption>
-              <ASelectOption :value="9">十年</ASelectOption>
-              <ASelectOption :value="10">终生</ASelectOption>
-            </ASelect>
-          </AFormItem>
-
-          <AFormItem label="状态" name="status" class="flex-1">
-            <ASelect v-model:value="formState.status" placeholder="请选择">
-              <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
-                <span class="flex items-center gap-2">
-                  <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-                  待开始
-                </span>
-              </ASelectOption>
-              <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
-                <span class="flex items-center gap-2">
-                  <span class="h-2 w-2 rounded-full bg-blue-500"></span>
-                  进行中
-                </span>
-              </ASelectOption>
-              <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
-                <span class="flex items-center gap-2">
-                  <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                  已完成
-                </span>
-              </ASelectOption>
-              <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">
-                <span class="flex items-center gap-2">
-                  <span class="h-2 w-2 rounded-full bg-orange-500"></span>
-                  搁置
-                </span>
-              </ASelectOption>
-            </ASelect>
-          </AFormItem>
-        </div>
-
-        <div class="flex gap-4">
-          <AFormItem label="当前值" name="currentValue" class="flex-1">
-            <AInputNumber
-              v-model:value="formState.currentValue"
-              :min="0"
-              placeholder="当前值"
-              class="w-full"
-            />
-          </AFormItem>
-          <AFormItem label="目标值" name="targetValue" class="flex-1">
-            <AInputNumber
-              v-model:value="formState.targetValue"
-              :min="0"
-              placeholder="目标值"
-              class="w-full"
-            />
-          </AFormItem>
-        </div>
-
-        <div class="flex gap-4">
-          <AFormItem label="开始" name="startDate" class="flex-1">
-            <ADatePicker
-              v-model:value="formState.startDate"
-              class="w-full"
-              placeholder="可选"
-              show-time
-            />
-          </AFormItem>
-
-          <AFormItem label="结束" name="endDate" class="flex-1">
-            <ADatePicker
-              v-model:value="formState.endDate"
-              class="w-full"
-              placeholder="可选"
-              show-time
-            />
-          </AFormItem>
-        </div>
-
-        <AFormItem label="标签" name="tags">
-          <AInput
-            v-model:value="formState.tags"
-            placeholder="多个标签用逗号分隔"
-            allow-clear
-          />
-        </AFormItem>
-
-        <AFormItem label="描述" name="description">
-          <AInput
-            v-model:value="formState.description"
-            placeholder="请输入描述..."
-            allow-clear
-          />
-        </AFormItem>
-      </AForm>
-    </Modal>
+    <GoalEditor ref="editorRef" @saved="handleSaved" @deleted="handleDeleted" />
 
     <GlobalFloatBtn @click="handleAdd" />
   </div>

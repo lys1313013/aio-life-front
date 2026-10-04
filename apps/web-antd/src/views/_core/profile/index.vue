@@ -8,6 +8,7 @@ import { useUserStore } from '@vben/stores';
 import ApiKeySetting from './api-key-setting.vue';
 import ProfileBase from './base-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
+import HomeCardSetting from './home-card-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import MenuDisplaySetting from './menu-display-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
@@ -35,6 +36,10 @@ const tabs = ref([
   {
     label: '菜单显示',
     value: 'menu-display',
+  },
+  {
+    label: '首页卡片',
+    value: 'home-cards',
   },
   {
     label: '菜单锁',
@@ -91,6 +96,7 @@ watch(
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
       <MenuDisplaySetting v-if="tabsValue === 'menu-display'" />
+      <HomeCardSetting v-if="tabsValue === 'home-cards'" />
       <ApiKeySetting v-if="tabsValue === 'api-key'" />
       <MbtiSetting v-if="tabsValue === 'mbti'" />
       <CbtiSetting v-if="tabsValue === 'cbti'" />

@@ -23,9 +23,9 @@ const typeOptions = [
 ];
 
 const statusOptions = [
-  { label: '想看', value: PROGRESS_STATUS.NOT_STARTED },
-  { label: '在看', value: PROGRESS_STATUS.IN_PROGRESS },
-  { label: '看过', value: PROGRESS_STATUS.COMPLETED },
+  { label: '想读', value: PROGRESS_STATUS.NOT_STARTED },
+  { label: '在读', value: PROGRESS_STATUS.IN_PROGRESS },
+  { label: '读完', value: PROGRESS_STATUS.COMPLETED },
   { label: '搁置', value: PROGRESS_STATUS.ON_HOLD },
 ];
 

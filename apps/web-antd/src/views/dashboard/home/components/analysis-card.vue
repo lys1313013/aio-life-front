@@ -8,7 +8,7 @@ import { VbenIcon } from '@vben/common-ui';
 
 import { Card } from 'ant-design-vue';
 
-import RefreshButton from './RefreshButton.vue';
+import CardHeader from './CardHeader.vue';
 
 interface Props {
   error?: boolean;
@@ -98,7 +98,12 @@ function handleTitleClick(e: MouseEvent) {
     </div>
 
     <div class="flex min-h-[80px] flex-col p-2.5 sm:min-h-[92px] sm:p-3">
-      <div class="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
+      <CardHeader
+        class="min-w-0 gap-2 sm:gap-3"
+        :label="error ? `${title}加载失败，重试` : `刷新${title}`"
+        :loading="isUpdating"
+        :refresh="() => emit('retry')"
+      >
         <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <span
             v-if="icon"
@@ -135,18 +140,8 @@ function handleTitleClick(e: MouseEvent) {
           >
             {{ (loading && !value) || (error && value === '') ? '—' : value }}
           </span>
-          <RefreshButton
-            v-if="error"
-            :disabled="isUpdating"
-            :aria-label="`${title}加载失败，重试`"
-            title="加载失败，点击重试"
-            class="shrink-0 disabled:cursor-wait"
-            @mousedown.stop
-            @touchstart.stop
-            @click.stop="emit('retry')"
-          />
         </div>
-      </div>
+      </CardHeader>
       <div
         v-if="totalTitle || diffValue || isUpdating"
         class="mt-auto flex min-w-0 items-end justify-between gap-2 pt-2 text-[10px] text-muted-foreground sm:text-xs"

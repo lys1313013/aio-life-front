@@ -7,81 +7,33 @@ import {
   DeleteOutlined,
   EditOutlined,
   MoreOutlined,
+  PushpinFilled,
+  PushpinOutlined,
 } from '@ant-design/icons-vue';
 import {
-  DatePicker,
+  Button,
   Dropdown,
   Empty,
-  Form,
-  FormItem,
-  Input,
   Menu,
   MenuItem,
   message,
 } from 'ant-design-vue';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 
 import {
-  createAnniversaryRecord,
   deleteAnniversaryRecords,
   getAnniversaryRecords,
-  updateAnniversaryRecord,
+  setAnniversaryPinned,
 } from '#/api/my-hub/anniversary';
-import { AppModalFooter, AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
-const anniversaries = ref<AnniversaryRecord[]>([]);
-const modalVisible = ref(false);
-const isEdit = ref(false);
-const formRef = ref();
+import AnniversaryEditor from './AnniversaryEditor.vue';
+
+const editorRef = ref<InstanceType<typeof AnniversaryEditor>>();
+const pinLoading = ref(new Set<string>());
 const loading = ref(false);
-const submitLoading = ref(false);
-
-const formState = ref<{
-  color: string;
-  icon: string;
-  id?: string;
-  note: string;
-  targetDate: Dayjs | undefined;
-  title: string;
-}>({
-  title: '',
-  targetDate: undefined,
-  note: '',
-  color: 'from-pink-400 to-rose-500',
-  icon: '🎉',
-});
-
-const rules: Record<string, any> = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  targetDate: [{ required: true, message: '请选择日期', trigger: 'change' }],
-};
-
-const bgOptions = [
-  { label: '浪漫粉', value: 'from-pink-400 to-rose-500' },
-  { label: '清新蓝', value: 'from-cyan-400 to-blue-500' },
-  { label: '活力橙', value: 'from-orange-400 to-red-500' },
-  { label: '神秘紫', value: 'from-purple-400 to-indigo-500' },
-  { label: '自然绿', value: 'from-emerald-400 to-teal-500' },
-  { label: '暗夜黑', value: 'from-gray-700 to-gray-900' },
-];
-
-const emojiOptions = [
-  '🎉',
-  '🎂',
-  '❤️',
-  '💍',
-  '🎓',
-  '👶',
-  '🏠',
-  '🚗',
-  '✈️',
-  '💼',
-  '💪',
-  '🌟',
-];
-
+const anniversaries = ref<AnniversaryRecord[]>([]);
 // 加载数据
 const loadData = async () => {
   try {
@@ -118,65 +70,27 @@ const getDayCount = (dateStr: string) => {
   return Math.abs(getDays(dateStr));
 };
 
-const openModal = (item?: AnniversaryRecord) => {
-  if (item) {
-    isEdit.value = true;
-    formState.value = {
-      id: item.id,
-      title: item.title,
-      targetDate: dayjs(item.targetDate),
-      note: item.note || '',
-      color: item.color || bgOptions[0]?.value || 'from-pink-400 to-rose-500',
-      icon: item.icon || '🎉',
-    };
+const openModal = (item?: AnniversaryRecord) => editorRef.value?.open(item);
+const handleSaved = (record: AnniversaryRecord) => {
+  const index = anniversaries.value.findIndex((item) => item.id === record.id);
+  if (index === -1) {
+    anniversaries.value.unshift(record);
   } else {
-    isEdit.value = false;
-    formState.value = {
-      title: '',
-      targetDate: dayjs(),
-      note: '',
-      color: bgOptions[0]?.value || 'from-pink-400 to-rose-500',
-      icon: '🎉',
-    };
+    anniversaries.value.splice(index, 1, record);
   }
-  modalVisible.value = true;
 };
-
-const handleOk = async () => {
+const handleDeleted = (id: string) => {
+  anniversaries.value = anniversaries.value.filter((item) => item.id !== id);
+};
+const handlePin = async (item: AnniversaryRecord) => {
+  if (!item.id || pinLoading.value.has(item.id)) return;
+  pinLoading.value.add(item.id);
   try {
-    await formRef.value.validate();
-    const dateStr = formState.value.targetDate!.format('YYYY-MM-DD');
-    const type = dayjs(dateStr).isAfter(dayjs()) ? 'countdown' : 'anniversary';
-
-    submitLoading.value = true;
-    if (isEdit.value && formState.value.id) {
-      await updateAnniversaryRecord({
-        id: formState.value.id,
-        title: formState.value.title,
-        targetDate: dateStr,
-        type,
-        note: formState.value.note,
-        color: formState.value.color,
-        icon: formState.value.icon,
-      });
-      message.success('修改成功');
-    } else {
-      await createAnniversaryRecord({
-        title: formState.value.title,
-        targetDate: dateStr,
-        type,
-        note: formState.value.note,
-        color: formState.value.color,
-        icon: formState.value.icon,
-      });
-      message.success('添加成功');
-    }
-    modalVisible.value = false;
-    loadData();
-  } catch (error) {
-    console.error(error);
+    handleSaved(
+      await setAnniversaryPinned(item.id, item.isPinned === 1 ? 0 : 1),
+    );
   } finally {
-    submitLoading.value = false;
+    pinLoading.value.delete(item.id);
   }
 };
 
@@ -184,7 +98,7 @@ const handleDelete = async (id: string) => {
   try {
     await deleteAnniversaryRecords([id]);
     message.success('删除成功');
-    loadData();
+    handleDeleted(id);
   } catch (error) {
     console.error('Delete failed', error);
   }
@@ -197,14 +111,6 @@ const sortedAnniversaries = computed(() => {
     return diffA - diffB;
   });
 });
-
-const selectEmoji = (emoji: string) => {
-  formState.value.icon = emoji;
-};
-
-const selectColor = (color: string) => {
-  formState.value.color = color;
-};
 </script>
 
 <template>
@@ -260,27 +166,45 @@ const selectColor = (color: string) => {
                   {{ item.icon || '🎉' }}
                 </div>
 
-                <Dropdown :trigger="['click']">
-                  <div
-                    class="cursor-pointer rounded-full p-2 opacity-0 transition-colors hover:bg-white/20 group-hover:opacity-100"
+                <div class="flex items-center">
+                  <Button
+                    type="text"
+                    class="!h-11 !w-11 !text-white"
+                    :loading="pinLoading.has(item.id!)"
+                    :aria-label="
+                      item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
+                    "
+                    :aria-pressed="item.isPinned === 1"
+                    @click="handlePin(item)"
                   >
-                    <MoreOutlined class="text-xl text-white" />
-                  </div>
-                  <template #overlay>
-                    <Menu>
-                      <MenuItem key="edit" @click="openModal(item)">
-                        <EditOutlined /> 编辑
-                      </MenuItem>
-                      <MenuItem
-                        key="delete"
-                        @click="handleDelete(item.id!)"
-                        class="text-red-500"
-                      >
-                        <DeleteOutlined /> 删除
-                      </MenuItem>
-                    </Menu>
-                  </template>
-                </Dropdown>
+                    <template #icon>
+                      <PushpinFilled
+                        v-if="item.isPinned === 1"
+                      /><PushpinOutlined v-else />
+                    </template>
+                  </Button>
+                  <Dropdown :trigger="['click']">
+                    <div
+                      class="cursor-pointer rounded-full p-2 opacity-0 transition-colors hover:bg-white/20 group-hover:opacity-100"
+                    >
+                      <MoreOutlined class="text-xl text-white" />
+                    </div>
+                    <template #overlay>
+                      <Menu>
+                        <MenuItem key="edit" @click="openModal(item)">
+                          <EditOutlined /> 编辑
+                        </MenuItem>
+                        <MenuItem
+                          key="delete"
+                          @click="handleDelete(item.id!)"
+                          class="text-red-500"
+                        >
+                          <DeleteOutlined /> 删除
+                        </MenuItem>
+                      </Menu>
+                    </template>
+                  </Dropdown>
+                </div>
               </div>
 
               <div class="mt-4 text-center md:mt-6">
@@ -329,112 +253,11 @@ const selectColor = (color: string) => {
         </div>
       </template>
 
-      <Modal
-        v-model:open="modalVisible"
-        :title="null"
-        :footer="null"
-        width="420px"
-      >
-        <div class="relative">
-          <div
-            :class="`h-24 bg-gradient-to-r ${formState.color} relative flex items-center justify-center transition-colors duration-500`"
-          >
-            <div
-              class="animate-bounce-slow translate-y-8 transform text-5xl drop-shadow-lg filter"
-            >
-              {{ formState.icon }}
-            </div>
-          </div>
-
-          <div class="pt-12">
-            <Form
-              ref="formRef"
-              :model="formState"
-              :rules="rules"
-              layout="vertical"
-            >
-              <FormItem name="title" class="mb-4">
-                <Input
-                  v-model:value="formState.title"
-                  placeholder="给这个日子起个名字"
-                  class="rounded-xl border-gray-200 px-4 py-2 text-center text-lg font-medium transition-all focus:border-pink-500 focus:ring-2 focus:ring-pink-200"
-                  :bordered="false"
-                  style="background: #f3f4f6"
-                />
-              </FormItem>
-
-              <FormItem name="targetDate" class="mb-6">
-                <DatePicker
-                  v-model:value="formState.targetDate"
-                  class="w-full rounded-xl border-none bg-gray-100 py-2 dark:bg-gray-700"
-                  :bordered="false"
-                  style="background: #f3f4f6"
-                  placeholder="选择日期"
-                />
-              </FormItem>
-
-              <!-- Emoji 选择 -->
-              <div class="mb-4">
-                <label class="mb-2 block text-sm font-medium text-gray-500"
-                  >选择图标</label
-                >
-                <div
-                  class="flex flex-wrap justify-center gap-2 rounded-xl bg-gray-50 p-3 dark:bg-gray-700/50"
-                >
-                  <button
-                    v-for="emoji in emojiOptions"
-                    :key="emoji"
-                    @click="selectEmoji(emoji)"
-                    class="rounded-lg p-1 text-2xl transition-transform hover:scale-125 hover:bg-white dark:hover:bg-gray-600"
-                    :class="{
-                      'scale-110 bg-white shadow-sm': formState.icon === emoji,
-                    }"
-                  >
-                    {{ emoji }}
-                  </button>
-                </div>
-              </div>
-
-              <!-- 颜色选择 -->
-              <div class="mb-6">
-                <label class="mb-2 block text-sm font-medium text-gray-500"
-                  >选择主题色</label
-                >
-                <div class="flex flex-wrap justify-center gap-3">
-                  <button
-                    v-for="opt in bgOptions"
-                    :key="opt.value"
-                    @click="selectColor(opt.value)"
-                    :class="`h-8 w-8 rounded-full bg-gradient-to-br ${opt.value} transform ring-2 ring-offset-2 transition-all hover:scale-110`"
-                    :style="{
-                      '--tw-ring-color':
-                        formState.color === opt.value
-                          ? '#3b82f6'
-                          : 'transparent',
-                    }"
-                  ></button>
-                </div>
-              </div>
-
-              <FormItem name="note">
-                <Input.TextArea
-                  v-model:value="formState.note"
-                  placeholder="写下这一刻的心情..."
-                  :rows="2"
-                  class="rounded-xl border-none bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                  style="resize: none"
-                />
-              </FormItem>
-
-              <AppModalFooter
-                :confirm-loading="submitLoading"
-                @cancel="modalVisible = false"
-                @confirm="handleOk"
-              />
-            </Form>
-          </div>
-        </div>
-      </Modal>
+      <AnniversaryEditor
+        ref="editorRef"
+        @saved="handleSaved"
+        @deleted="handleDeleted"
+      />
 
       <GlobalFloatBtn @click="openModal()" />
     </div>

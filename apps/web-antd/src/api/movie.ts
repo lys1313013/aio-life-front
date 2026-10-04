@@ -18,6 +18,7 @@ export namespace MovieApi {
     status?: ProgressStatus;
     statuses?: ProgressStatus[];
     activeOnly?: boolean;
+    inProgressFirst?: boolean;
     current?: number;
     size?: number;
   }
@@ -86,7 +87,7 @@ export namespace MovieApi {
   }
 
   export interface DoubanImportPreview {
-    total: number;
+    total: string;
     newCount: number;
     duplicateCount: number;
     errorCount: number;
@@ -110,7 +111,7 @@ export namespace MovieApi {
    * 分页查询
    */
   export function pageList(data: MovieQuery) {
-    return getQuery<{ items: MovieVO[]; total: number }>('/movie/page', data);
+    return getQuery<{ items: MovieVO[]; total: string }>('/movie/page', data);
   }
 
   /**

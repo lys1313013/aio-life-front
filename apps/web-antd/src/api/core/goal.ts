@@ -7,6 +7,8 @@ import { requestClient } from '#/api/request';
 
 export interface GoalEntity {
   id?: string;
+  isPinned?: 0 | 1;
+  pinnedSort?: number;
   title: string;
   type: number; // 1: 年, 2: 月, 3: 日
   status: ProgressStatus;
@@ -22,6 +24,7 @@ export interface GoalEntity {
 }
 
 export interface GoalQueryParams {
+  isPinned?: 0 | 1;
   type?: number;
   status?: ProgressStatus;
   keyword?: string;
@@ -61,5 +64,19 @@ export async function deleteGoals(ids: string[]) {
   return requestClient.post<void>(
     '/goals/batchDelete',
     pickPayload('CommonReq', { idList: ids }),
+  );
+}
+
+export async function setGoalPinned(id: string, isPinned: 0 | 1) {
+  return requestClient.put<GoalEntity>(
+    `/goals/${id}/pin`,
+    pickPayload('HomePinReq', { isPinned }),
+  );
+}
+
+export async function updateGoalPinnedOrder(ids: string[]) {
+  return requestClient.put<void>(
+    '/goals/pinned-order',
+    pickPayload('HomePinnedOrderReq', { ids }),
   );
 }

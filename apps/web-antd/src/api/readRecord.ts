@@ -59,7 +59,7 @@ export namespace ReadRecordApi {
    * 分页查询
    */
   export function pageList(data: ReadRecordQuery) {
-    return getQuery<{ items: ReadRecordVO[]; total: number }>(
+    return getQuery<{ items: ReadRecordVO[]; total: string }>(
       '/read-record/page',
       data,
     );

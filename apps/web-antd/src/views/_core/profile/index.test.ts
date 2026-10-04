@@ -23,6 +23,9 @@ vi.mock('./api-key-setting.vue', () => ({
 }));
 vi.mock('./cbti-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./mbti-setting.vue', () => ({ default: { template: '<div />' } }));
+vi.mock('./home-card-setting.vue', () => ({
+  default: { template: '<div>首页卡片设置</div>' },
+}));
 vi.mock('./menu-display-setting.vue', () => ({
   default: { template: '<div />' },
 }));
