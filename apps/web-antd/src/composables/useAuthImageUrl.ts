@@ -3,7 +3,8 @@ import { ref, watchEffect } from 'vue';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 export function useAuthImageUrl(
-  source: () => number | string | null | undefined,
+  source: () => null | number | string | undefined,
+  publicSource?: () => null | string | undefined,
 ) {
   const blobUrl = ref('');
   const loading = ref(false);
@@ -16,6 +17,32 @@ export function useAuthImageUrl(
     });
 
     const id = source();
+    const publicUrl = publicSource?.();
+    blobUrl.value = '';
+    error.value = false;
+    if (publicUrl) {
+      loading.value = true;
+      const image = new Image();
+      image.onload = () => {
+        if (!cancelled) {
+          blobUrl.value = publicUrl;
+          loading.value = false;
+        }
+      };
+      image.onerror = () => {
+        if (!cancelled) {
+          error.value = true;
+          loading.value = false;
+        }
+      };
+      image.src = publicUrl;
+      onCleanup(() => {
+        cancelled = true;
+        image.onload = null;
+        image.onerror = null;
+      });
+      return;
+    }
     if (!id) {
       blobUrl.value = '';
       loading.value = false;

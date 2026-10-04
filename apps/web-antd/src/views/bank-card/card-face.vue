@@ -19,12 +19,16 @@ const props = defineProps<{
   cardType?: string;
   color?: null | string;
   fileId?: string;
+  publicUrl?: null | string;
 }>();
 const retry = ref(0);
-const { blobUrl, error, loading } = useAuthImageUrl(() => {
-  void retry.value;
-  return props.fileId;
-});
+const { blobUrl, error, loading } = useAuthImageUrl(
+  () => {
+    void retry.value;
+    return props.fileId;
+  },
+  () => props.publicUrl,
+);
 const hasImage = computed(
   () => props.fileId && blobUrl.value && !error.value && !loading.value,
 );

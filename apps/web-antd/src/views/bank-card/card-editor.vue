@@ -77,6 +77,7 @@ const form = ref(empty());
 const bankText = ref('');
 const templateOpen = ref(false);
 const templateFileId = ref<string>();
+const templatePublicUrl = ref<null | string>();
 const templateBank = ref<null | string>();
 const templateType = ref<string>();
 function selectTemplate(item: CoverOption) {
@@ -84,6 +85,7 @@ function selectTemplate(item: CoverOption) {
   form.value.coverFileIds = [];
   form.value.coverSourceUrl = null;
   templateFileId.value = item.fileId;
+  templatePublicUrl.value = item.publicUrl;
   templateBank.value = form.value.bankId;
   templateType.value = form.value.cardType;
 }
@@ -152,6 +154,7 @@ watch(
       : empty();
     templateOpen.value = false;
     templateFileId.value = props.card?.coverTemplateFileId || undefined;
+    templatePublicUrl.value = props.card?.coverTemplatePublicUrl;
     templateBank.value = form.value.bankId;
     templateType.value = form.value.cardType;
     bankText.value = props.card?.bankName ?? '';
@@ -175,6 +178,7 @@ function changeType(type: unknown) {
 function coverChange(id?: string) {
   form.value.coverTemplateId = null;
   templateFileId.value = undefined;
+  templatePublicUrl.value = undefined;
   form.value.coverFileIds = id ? [id] : [];
   form.value.coverSourceUrl = null;
 }
@@ -243,10 +247,12 @@ async function submit() {
           :card-type="form.cardType"
           :color="form.coverColor"
           :file-id="templateFileId || form.coverFileIds[0]"
+          :public-url="templatePublicUrl"
         />
         <CoverPicker
           :active="open && !saving"
           :file-id="templateFileId || form.coverFileIds[0]"
+          :public-url="templatePublicUrl"
           @change="coverChange"
           @pending="uploading = $event"
         />

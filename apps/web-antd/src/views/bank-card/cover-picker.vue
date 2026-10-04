@@ -17,6 +17,7 @@ import { fetchAuthImageUrl } from '#/utils/file';
 const props = defineProps<{
   active: boolean;
   fileId?: string;
+  publicUrl?: null | string;
   uploadFn?: (file: File) => Promise<{ id: string }>;
 }>();
 const emit = defineEmits<{
@@ -110,7 +111,7 @@ async function editExisting() {
   loadingExisting.value = true;
   emit('pending', true);
   try {
-    const url = await fetchAuthImageUrl(props.fileId);
+    const url = props.publicUrl || (await fetchAuthImageUrl(props.fileId));
     if (request !== generation) return;
     if (!url) throw new Error('卡面加载失败');
     // 鉴权图片 URL 由共享缓存管理，关闭调整窗不能撤销它。
@@ -158,6 +159,8 @@ async function confirm() {
   let file: File;
   try {
     const img = new Image();
+    if (props.publicUrl && source.value === props.publicUrl)
+      img.crossOrigin = 'anonymous';
     img.src = source.value;
     await img.decode();
     if (img.naturalWidth * img.naturalHeight > 16_000_000)

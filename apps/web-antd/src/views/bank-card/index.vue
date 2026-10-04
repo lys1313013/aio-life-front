@@ -367,6 +367,7 @@ onBeforeUnmount(() => {
             :card-type="card.cardType"
             :color="card.coverColor"
             :file-id="card.coverTemplateFileId || card.coverFileIds[0]"
+            :public-url="card.coverTemplatePublicUrl"
             @click="openEditor(card)"
             @keydown.enter.self.prevent="openEditor(card)"
             @keydown.space.self.prevent="openEditor(card)"

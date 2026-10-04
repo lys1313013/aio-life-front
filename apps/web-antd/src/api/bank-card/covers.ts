@@ -9,6 +9,7 @@ export interface CoverOption {
   id: string;
   name: string;
   fileId: string;
+  publicUrl?: null | string;
 }
 export interface CoverTemplate extends CoverOption {
   bankId: string;

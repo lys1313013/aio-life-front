@@ -35,6 +35,7 @@ export interface BankCard {
   repaymentDay: null | number;
   coverTemplateId?: null | string;
   coverTemplateFileId?: null | string;
+  coverTemplatePublicUrl?: null | string;
   coverTemplateName?: null | string;
   coverColor: null | string;
   coverSourceUrl: null | string;
@@ -51,6 +52,7 @@ export type BankCardInput = Omit<
   | 'cardNoLast4'
   | 'coverTemplateFileId'
   | 'coverTemplateName'
+  | 'coverTemplatePublicUrl'
   | 'id'
   | 'tags'
 > & { cardNo?: string; tagIds: string[] };

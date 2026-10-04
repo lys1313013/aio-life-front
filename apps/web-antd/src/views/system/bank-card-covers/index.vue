@@ -360,7 +360,11 @@ onActivated(() => {
               @keydown.enter.self.prevent="!busy[item.id] && edit(item)"
               @keydown.space.self.prevent="!busy[item.id] && edit(item)"
             >
-              <CoverPreview :file-id="item.fileId" :name="item.name" />
+              <CoverPreview
+                :file-id="item.fileId"
+                :public-url="item.publicUrl"
+                :name="item.name"
+              />
             </div>
             <div class="cover-info">
               <div class="cover-name" :title="item.name">{{ item.name }}</div>
@@ -428,6 +432,9 @@ onActivated(() => {
         <div class="mx-auto mb-4 max-w-80">
           <CoverPreview
             :file-id="form.fileId || undefined"
+            :public-url="
+              form.fileId === editing?.fileId ? editing?.publicUrl : undefined
+            "
             :name="form.name || '卡面预览'"
           />
           <FormItem
@@ -437,6 +444,9 @@ onActivated(() => {
             <CoverPicker
               :active="open && !saving"
               :file-id="form.fileId || undefined"
+              :public-url="
+                form.fileId === editing?.fileId ? editing?.publicUrl : undefined
+              "
               :upload-fn="uploadTemplateCover"
               @change="form.fileId = $event || ''"
               @pending="uploading = $event"

@@ -83,6 +83,7 @@ watch(() => [props.open, props.bankId, props.cardType], load);
           >
             <CardFace
               :file-id="item.fileId"
+              :public-url="item.publicUrl"
               :bank-name="bankName"
               :card-type="cardType"
               :card-name="item.name"

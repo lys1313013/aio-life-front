@@ -2285,6 +2285,7 @@ const queryFields: Record<string, string[]> = {
   '/password/{id}': [],
   '/password/categories': [],
   '/performance': ['page', 'pageSize'],
+  '/public/images/{id:[a-fA-F0-9]{32}}.{extension:png|jpg|webp|gif|bmp}': [],
   '/read-record/page': [
     'activeOnly',
     'current',

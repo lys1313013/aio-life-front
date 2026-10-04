@@ -10,12 +10,19 @@ import {
 import { useAuthImageUrl } from '#/composables/useAuthImageUrl';
 import { clearImageCache } from '#/utils/file';
 
-const props = defineProps<{ fileId?: string; name: string }>();
+const props = defineProps<{
+  fileId?: string;
+  name: string;
+  publicUrl?: null | string;
+}>();
 const retry = ref(0);
-const { blobUrl, error, loading } = useAuthImageUrl(() => {
-  void retry.value;
-  return props.fileId;
-});
+const { blobUrl, error, loading } = useAuthImageUrl(
+  () => {
+    void retry.value;
+    return props.fileId;
+  },
+  () => props.publicUrl,
+);
 function retryImage() {
   clearImageCache(props.fileId);
   retry.value++;
