@@ -113,7 +113,11 @@ beforeEach(() => {
     isEnabled,
   }));
 });
-afterEach(() => wrappers.splice(0).forEach((w) => w.unmount()));
+afterEach(() => {
+  wrappers.splice(0).forEach((w) => w.unmount());
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 describe('公共卡面查询与修改交错', () => {
   it('删除期间刷新得到的旧列表不能复活删除项', async () => {
     const wrapper = await render();
@@ -252,6 +256,77 @@ describe('公共卡面使用次数与编辑限制', () => {
 });
 
 describe('公共卡面滚动分页', () => {
+  function mockLayout(columns: number, height = 700) {
+    vi.stubGlobal('innerHeight', height);
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      gridTemplateColumns: Array.from({ length: columns }, () => '280px').join(
+        ' ',
+      ),
+      rowGap: '28px',
+    } as CSSStyleDeclaration);
+  }
+  it.each([
+    [1, 24],
+    [2, 24],
+    [3, 24],
+    [5, 25],
+    [6, 24],
+    [7, 28],
+  ])('%i 列布局首批按整行请求 %i 张', async (columns, size) => {
+    mockLayout(columns);
+    const pending = deferred<CoverTemplatePage>();
+    api.listCoverTemplates.mockReturnValueOnce(pending.promise);
+    const wrapper = await render();
+    expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, size }),
+    );
+    expect(wrapper.findAll('.cover-placeholder')).toHaveLength(size);
+    pending.resolve(pageResult([{ ...original }]));
+    await flushPromises();
+    expect(wrapper.findAll('.cover-placeholder')).toHaveLength(0);
+  });
+  it('高屏首批覆盖可视区域，并遵守接口每页上限', async () => {
+    mockLayout(5, 1800);
+    const wrapper = await render();
+    expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
+      expect.objectContaining({ size: 40 }),
+    );
+    vi.stubGlobal('innerHeight', 10_000);
+    await wrapper.get('[aria-label="刷新卡面"]').trigger('click');
+    expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
+      expect.objectContaining({ size: 100 }),
+    );
+  });
+  it('窗口变宽后分页仍使用原批量，刷新才重新计算', async () => {
+    mockLayout(5);
+    api.listCoverTemplates.mockResolvedValueOnce(
+      pageResult(
+        Array.from({ length: 25 }, (_, i) => ({ ...original, id: String(i) })),
+        100,
+      ),
+    );
+    const wrapper = await render();
+    mockLayout(6);
+    const pending = deferred<CoverTemplatePage>();
+    api.listCoverTemplates.mockReturnValueOnce(pending.promise);
+    reachBottom();
+    reachBottom();
+    await flushPromises();
+    expect(api.listCoverTemplates).toHaveBeenCalledTimes(2);
+    expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 2, size: 25 }),
+    );
+    expect(wrapper.findAll('.cover-item')).toHaveLength(25);
+    expect(wrapper.findAll('.cover-placeholder')).toHaveLength(25);
+    pending.reject(new Error('offline'));
+    await flushPromises();
+    expect(wrapper.findAll('.cover-placeholder')).toHaveLength(0);
+    expect(wrapper.findAll('.cover-item')).toHaveLength(25);
+    await wrapper.get('[aria-label="刷新卡面"]').trigger('click');
+    expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, size: 24 }),
+    );
+  });
   const firstPage = Array.from({ length: 24 }, (_, index) => ({
     ...original,
     id: String(index + 1),

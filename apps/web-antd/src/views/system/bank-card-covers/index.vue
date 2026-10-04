@@ -55,7 +55,13 @@ const loading = ref(false);
 const loadingMore = ref(false);
 const hasMore = ref(true);
 const sentinel = ref<HTMLElement>();
-const pageSize = 24;
+const grid = ref<HTMLElement>();
+const pageSize = ref(24);
+const placeholderCount = computed(() =>
+  loadingMore.value || (loading.value && items.value.length === 0)
+    ? pageSize.value
+    : 0,
+);
 let page = 0;
 let observer: IntersectionObserver | undefined;
 let searchTimer: ReturnType<typeof setTimeout> | undefined;
@@ -123,12 +129,35 @@ function observeBottom() {
   }
 }
 
+function measurePageSize() {
+  if (!grid.value) return 24;
+  const style = getComputedStyle(grid.value);
+  const tracks = style.gridTemplateColumns.match(/[\d.]+px/g);
+  if (!tracks?.length) return 24;
+  const columns = tracks.length;
+  const cardWidth = Math.min(Number.parseFloat(tracks[0]!), 320);
+  // 图片比例与下方信息区的高度，首屏额外预取一行。
+  const rowHeight =
+    cardWidth / 1.586 + 70 + (Number.parseFloat(style.rowGap) || 0);
+  const visibleHeight = Math.max(
+    0,
+    window.innerHeight - grid.value.getBoundingClientRect().top,
+  );
+  const rows = Math.max(
+    Math.ceil(24 / columns),
+    Math.ceil(visibleHeight / rowHeight) + 1,
+  );
+  return Math.min(rows, Math.floor(100 / columns)) * columns;
+}
+
 async function load(reset = true) {
   if (disposed || !active) return;
   if (reset) {
     clearTimeout(searchTimer);
     generation++;
     page = 0;
+    // 同一轮分页固定大小，避免窗口变化后偏移量改变而漏掉卡面。
+    pageSize.value = measurePageSize();
     hasMore.value = true;
     loadingMore.value = false;
   } else if (loading.value || loadingMore.value || !hasMore.value) {
@@ -143,7 +172,7 @@ async function load(reset = true) {
   try {
     const result = await listCoverTemplates({
       page: nextPage,
-      size: pageSize,
+      size: pageSize.value,
       keyword: search.value.trim() || undefined,
       bankId: bankFilter.value,
       cardType: typeFilter.value,
@@ -163,8 +192,8 @@ async function load(reset = true) {
     items.value = [...latest.values()];
     page = nextPage;
     hasMore.value =
-      result.items.length === pageSize &&
-      BigInt(nextPage * pageSize) < BigInt(result.total);
+      result.items.length === pageSize.value &&
+      BigInt(nextPage * pageSize.value) < BigInt(result.total);
   } catch {
     if (!disposed && request === generation) failed.value = true;
   } finally {
@@ -342,13 +371,18 @@ onActivated(() => {
         </Button>
       </div>
     </div>
-    <Spin :spinning="loading">
+    <Spin :spinning="loading && items.length > 0">
       <div class="cover-content">
         <Empty
           v-if="!failed && !loading && filtered.length === 0"
           description="暂无卡面"
         />
-        <div class="cover-grid">
+        <div
+          ref="grid"
+          class="cover-grid"
+          :aria-busy="loading || loadingMore"
+          aria-label="银行卡面列表"
+        >
           <div v-for="item in filtered" :key="item.id" class="cover-item">
             <div
               role="button"
@@ -397,6 +431,16 @@ onActivated(() => {
               </Popconfirm>
             </div>
           </div>
+          <div
+            v-for="index in placeholderCount"
+            :key="`placeholder-${index}`"
+            class="cover-placeholder"
+            aria-hidden="true"
+          >
+            <div class="cover-placeholder-image"></div>
+            <div class="cover-placeholder-name"></div>
+            <div class="cover-placeholder-meta"></div>
+          </div>
         </div>
         <div ref="sentinel" class="cover-load-status">
           <Button
@@ -406,12 +450,6 @@ onActivated(() => {
           >
             加载失败，重试
           </Button>
-          <Spin
-            v-else-if="loadingMore"
-            size="small"
-            role="status"
-            aria-label="加载更多卡面"
-          />
         </div>
       </div>
     </Spin>
@@ -566,10 +604,32 @@ onActivated(() => {
   gap: 28px 24px;
   align-items: start;
 }
-.cover-item {
+.cover-item,
+.cover-placeholder {
   width: 100%;
   min-width: 0;
   max-width: 320px;
+}
+.cover-placeholder-image,
+.cover-placeholder-name,
+.cover-placeholder-meta {
+  border-radius: 6px;
+  background: hsl(var(--muted) / 50%);
+}
+.cover-placeholder-image {
+  aspect-ratio: 1.586;
+  border-radius: 12px;
+}
+.cover-placeholder-name {
+  width: 65%;
+  height: 18px;
+  margin-top: 19px;
+}
+.cover-placeholder-meta {
+  width: 80%;
+  height: 14px;
+  margin-top: 13px;
+  margin-bottom: 6px;
 }
 .cover-info {
   display: grid;
