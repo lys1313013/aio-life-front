@@ -113,7 +113,7 @@ const tableReload = () => {
             @click="openFormDrawer(item)"
           >
             <div
-              class="aspect-[2/3] overflow-hidden rounded-lg bg-secondary/50 transition-shadow duration-200 group-hover:shadow-md"
+              class="activity-cover aspect-[2/3] overflow-hidden rounded-lg bg-secondary/50 transition-shadow duration-200 group-hover:shadow-md"
             >
               <AuthImage
                 v-if="item.files && item.files.length > 0"
@@ -200,6 +200,55 @@ const tableReload = () => {
 </template>
 
 <style scoped>
+.activity-cover :deep(.auth-image-placeholder) {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--secondary));
+}
+
+.activity-cover :deep(.auth-image-placeholder.loading) {
+  animation: none;
+}
+
+.activity-cover :deep(.auth-image-placeholder.loading)::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 45%),
+    transparent
+  );
+  animation: activity-image-shimmer 1.4s infinite;
+}
+
+.dark .activity-cover :deep(.auth-image-placeholder.loading)::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 8%),
+    transparent
+  );
+}
+
+@keyframes activity-image-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-cover :deep(.auth-image-placeholder.loading)::after,
+  .activity-cover :deep(.auth-image-img) {
+    animation: none;
+  }
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   overflow: hidden;
