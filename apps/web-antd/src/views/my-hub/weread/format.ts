@@ -11,12 +11,22 @@ export function safeBookLink(value?: string) {
   const link = safeLink(value);
   if (!link) return undefined;
   const url = new URL(link);
-  return !url.username &&
-    !url.password &&
-    (url.hostname === 'weread.qq.com' ||
-      url.hostname.endsWith('.weread.qq.com'))
-    ? link
-    : undefined;
+  if (
+    url.username ||
+    url.password ||
+    (url.hostname !== 'weread.qq.com' &&
+      !url.hostname.endsWith('.weread.qq.com'))
+  ) {
+    return undefined;
+  }
+  // 接口返回的详情页链接在 Web 端转换为可直接阅读的地址。
+  if (url.pathname === '/book-detail') {
+    const readerId = url.searchParams.get('v');
+    return readerId
+      ? `https://weread.qq.com/web/reader/${encodeURIComponent(readerId)}`
+      : undefined;
+  }
+  return link;
 }
 export function readingTime(seconds?: number) {
   if (seconds == null) return '暂无数据';

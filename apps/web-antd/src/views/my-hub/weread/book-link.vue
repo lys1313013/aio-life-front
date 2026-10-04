@@ -1,21 +1,30 @@
 <script setup lang="ts">
 import type { WereadBook } from '#/api/core/weread';
 
-import { computed, onBeforeUnmount, onDeactivated, ref } from 'vue';
+import { computed, onBeforeUnmount, onDeactivated, ref, watch } from 'vue';
 
 import { Spin } from 'ant-design-vue';
 
 import { getWereadBookLink } from '#/api/core/weread';
 
+import { isMobileBrowser, wereadBrowserLink } from './app-link';
 import { safeBookLink } from './format';
 
-const props = defineProps<{ book?: WereadBook }>();
+const props = defineProps<{ book?: WereadBook; compact?: boolean }>();
+const mobile = isMobileBrowser(navigator.userAgent, navigator.maxTouchPoints);
+const attempted = ref(false);
 const resolvedLink = ref('');
 const loading = ref(false);
 const error = ref('');
-const href = computed(
+const webHref = computed(
   () => safeBookLink(props.book?.deepLink) || resolvedLink.value,
 );
+const appHref = computed(() =>
+  mobile
+    ? wereadBrowserLink(props.book?.bookId, navigator.userAgent, webHref.value)
+    : undefined,
+);
+const href = computed(() => appHref.value || webHref.value);
 let pendingWindow: null | Window = null;
 let revision = 0;
 function cancelPending() {
@@ -26,6 +35,15 @@ function cancelPending() {
 }
 onBeforeUnmount(cancelPending);
 onDeactivated(cancelPending);
+watch(
+  () => props.book?.bookId,
+  () => {
+    cancelPending();
+    resolvedLink.value = '';
+    error.value = '';
+    attempted.value = false;
+  },
+);
 async function resolveLink() {
   if (!props.book?.bookId || loading.value) return;
   const current = ++revision;
@@ -65,10 +83,13 @@ async function resolveLink() {
 <template>
   <component
     :is="href ? 'a' : book?.bookId ? 'button' : 'div'"
-    class="wr-rank"
-    :class="{ 'wr-rank-link': href || book?.bookId }"
+    :class="
+      compact
+        ? undefined
+        : { 'wr-rank': true, 'wr-rank-link': href || book?.bookId }
+    "
     :href="href || undefined"
-    :target="href ? '_blank' : undefined"
+    :target="href && !appHref ? '_blank' : undefined"
     :rel="href ? 'noopener noreferrer' : undefined"
     :type="!href && book?.bookId ? 'button' : undefined"
     :disabled="loading || undefined"
@@ -76,10 +97,29 @@ async function resolveLink() {
     :aria-label="
       href || book?.bookId ? `在微信读书打开：${book?.title}` : undefined
     "
-    @click="!href && resolveLink()"
+    @click="appHref ? (attempted = true) : !href && resolveLink()"
   >
     <slot></slot>
     <Spin v-if="loading" size="small" />
     <small v-if="error" role="alert">{{ error }}</small>
   </component>
+  <template v-if="appHref && attempted">
+    <a
+      v-if="webHref"
+      :href="webHref"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex min-h-11 items-center text-sm text-primary"
+      >网页版阅读</a
+    >
+    <button
+      v-else
+      type="button"
+      class="inline-flex min-h-11 items-center text-sm text-primary"
+      :disabled="loading"
+      @click="resolveLink"
+    >
+      网页版阅读
+    </button>
+  </template>
 </template>

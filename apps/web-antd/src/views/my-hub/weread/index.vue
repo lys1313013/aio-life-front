@@ -34,6 +34,7 @@ import {
 } from '#/api/core/weread';
 import { AppModal as Modal } from '#/components/app-modal';
 
+import BookLink from './book-link.vue';
 import Dashboard from './dashboard.vue';
 import { readingDate, readingTime, safeLink } from './format';
 import Notes from './notes.vue';
@@ -376,13 +377,7 @@ onBeforeUnmount(() => {
         </Spin>
         <div class="mt-4 flex flex-wrap items-center gap-4">
           <Button @click="showNotes">查看笔记 </Button>
-          <a
-            v-if="safeLink(detailBook.deepLink)"
-            :href="safeLink(detailBook.deepLink)"
-            target="_blank"
-            rel="noopener noreferrer"
-            >在微信读书打开 ↗</a
-          >
+          <BookLink :book="detailBook" compact>在微信读书打开 ↗</BookLink>
         </div>
       </template>
     </Modal>
