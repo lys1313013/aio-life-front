@@ -717,7 +717,7 @@ onUnmounted(() => {
                   }}</span>
                 </template>
                 <template v-else>
-                  <span class="placeholder-text">选择运动类型</span>
+                  <span class="placeholder-text">运动类型</span>
                 </template>
                 <RightOutlined class="trigger-arrow" />
               </button>
@@ -912,8 +912,7 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.category-inline-trigger:hover,
-.exercise-type-trigger:hover {
+.category-inline-trigger:hover {
   border-color: v-bind('token.colorPrimary');
 }
 
@@ -1085,7 +1084,7 @@ onUnmounted(() => {
   padding: 4px 12px;
   text-align: left;
   background: transparent;
-  border: 1px solid v-bind('token.colorBorder');
+  border: 0;
   border-radius: 10px;
   cursor: pointer;
 }
