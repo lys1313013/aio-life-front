@@ -90,6 +90,13 @@ const coreRoutes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'AppQrCodeLogin',
+        path: 'app-qrcode-login',
+        component: () =>
+          import('#/views/_core/authentication/app-qrcode-login.vue'),
+        meta: { title: 'App 扫码登录' },
+      },
+      {
         name: 'QrCodeLogin',
         path: 'qrcode-login',
         component: () =>
