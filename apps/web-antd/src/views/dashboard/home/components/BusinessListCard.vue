@@ -253,7 +253,9 @@ watch(
           container.insertBefore(item, container.children[oldIndex] ?? null);
         }
         if (
-          event.originalEvent?.type.endsWith('cancel') ||
+          ('originalEvent' in event &&
+            event.originalEvent instanceof Event &&
+            event.originalEvent.type.endsWith('cancel')) ||
           version !== generation ||
           ids.join(',') !== items.value.map((row) => row.id).join(',')
         )
