@@ -532,23 +532,8 @@ const loadData = async () => {
     const [currentResponse, prevResponse] = await Promise.all(promises);
     if (generation !== loadGeneration) return;
 
-    // Process Current Response
-    if (Array.isArray(currentResponse)) {
-      timeSlots.value = currentResponse;
-    } else if (currentResponse && (currentResponse as any).items) {
-      timeSlots.value = (currentResponse as any).items || [];
-    } else {
-      timeSlots.value = [];
-    }
-
-    // Process Previous Response
-    if (Array.isArray(prevResponse)) {
-      previousPeriodTimeSlots.value = prevResponse;
-    } else if (prevResponse && (prevResponse as any).items) {
-      previousPeriodTimeSlots.value = (prevResponse as any).items || [];
-    } else {
-      previousPeriodTimeSlots.value = [];
-    }
+    timeSlots.value = currentResponse;
+    previousPeriodTimeSlots.value = prevResponse;
   } catch (error) {
     if (generation !== loadGeneration) return;
     console.error('加载数据失败:', error);

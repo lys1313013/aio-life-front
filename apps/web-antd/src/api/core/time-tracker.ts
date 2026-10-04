@@ -27,18 +27,10 @@ export interface TimeRecordEntity {
   relateType?: number;
 }
 
-/**
- * 查询响应数据接口
- */
-export interface QueryResponse {
-  items: TimeRecordEntity[];
-  total: number;
-}
-
-/**
- * 查询数据
- */
-export async function query(data: any): Promise<QueryResponse> {
+/** 查询指定日期的完整记录，不分页。 */
+export async function query(data: {
+  condition: { date: string };
+}): Promise<TimeRecordEntity[]> {
   return await getQuery('/timeRecord/query', data);
 }
 

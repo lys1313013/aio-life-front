@@ -162,23 +162,8 @@ const loadData = async () => {
 
     const [res, prevRes] = await Promise.all(promises);
 
-    // Process Current Period
-    if (Array.isArray(res)) {
-      timeSlots.value = res;
-    } else if (res && (res as any).items) {
-      timeSlots.value = (res as any).items;
-    } else {
-      timeSlots.value = [];
-    }
-
-    // Process Previous Period
-    if (Array.isArray(prevRes)) {
-      previousPeriodTimeSlots.value = prevRes;
-    } else if (prevRes && (prevRes as any).items) {
-      previousPeriodTimeSlots.value = (prevRes as any).items;
-    } else {
-      previousPeriodTimeSlots.value = [];
-    }
+    timeSlots.value = res;
+    previousPeriodTimeSlots.value = prevRes;
   } catch (error) {
     console.error('加载看板数据失败:', error);
   } finally {

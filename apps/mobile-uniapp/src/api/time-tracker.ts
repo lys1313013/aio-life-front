@@ -23,7 +23,7 @@ export interface TimeRecordEntity {
 }
 
 export async function queryTimeTrackerByDate(date: string) {
-  return await getQuery<any>("/timeRecord/query", { condition: { date } });
+  return await getQuery<TimeRecordEntity[]>("/timeRecord/query", { condition: { date } });
 }
 
 export async function saveTimeRecord(data: Partial<TimeRecordEntity>) {

@@ -2317,7 +2317,7 @@ const queryFields: Record<string, string[]> = {
     'pageSize',
   ],
   '/thought/dashboard': [],
-  '/timeRecord/query': ['date', 'page', 'pageSize'],
+  '/timeRecord/query': ['date'],
   '/timeRecord/queryByDateRange': ['endDate', 'page', 'pageSize', 'startDate'],
   '/timeRecord/queryByDateRangeForAI': [],
   '/timeRecord/{id}': [],

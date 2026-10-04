@@ -177,7 +177,7 @@ const open = async (
     promises.push(
       query({ condition: { date: targetDate } })
         .then((res) => {
-          existingSlots.value = Array.isArray(res) ? res : res.items || [];
+          existingSlots.value = res;
         })
         .catch((error) => {
           console.error('获取已有记录失败:', error);

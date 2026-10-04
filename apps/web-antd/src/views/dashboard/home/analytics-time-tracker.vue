@@ -27,7 +27,6 @@ const chartRef = ref<EchartsUIType>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 const loading = ref(false);
-const RECENT_RECORD_LIMIT = 6;
 
 interface RecentRecord {
   id: string;
@@ -66,37 +65,35 @@ const loadData = async () => {
     ]);
 
     const categories = categoriesRes || [];
-    const records = recordsRes.items || [];
+    const records = recordsRes || [];
     existingSlots.value = records;
 
-    // 处理最新记录
+    // 今日全部明细按开始时间倒序展示，由列表独立滚动。
     const sortedRecords = [...records].sort(
       (a, b) => b.startTime - a.startTime,
     );
-    recentRecords.value = sortedRecords
-      .slice(0, RECENT_RECORD_LIMIT)
-      .map((record) => {
-        const category = categories.find((c) => c.id === record.categoryId);
-        const duration = getSlotDuration(record);
-        const h = Math.floor(duration / 60);
-        const m = duration % 60;
-        let durationStr = '';
-        if (h > 0 && m > 0) {
-          durationStr = `${h}h${m}m`;
-        } else if (h > 0) {
-          durationStr = `${h}h`;
-        } else {
-          durationStr = `${m}m`;
-        }
+    recentRecords.value = sortedRecords.map((record) => {
+      const category = categories.find((c) => c.id === record.categoryId);
+      const duration = getSlotDuration(record);
+      const h = Math.floor(duration / 60);
+      const m = duration % 60;
+      let durationStr = '';
+      if (h > 0 && m > 0) {
+        durationStr = `${h}h${m}m`;
+      } else if (h > 0) {
+        durationStr = `${h}h`;
+      } else {
+        durationStr = `${m}m`;
+      }
 
-        return {
-          id: record.id || Math.random().toString(),
-          categoryName: categoryPath(record.categoryId, categories),
-          categoryColor: category?.color || '#ccc',
-          timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
-          originalRecord: record as TimeSlot,
-        };
-      });
+      return {
+        id: record.id || Math.random().toString(),
+        categoryName: categoryPath(record.categoryId, categories),
+        categoryColor: category?.color || '#ccc',
+        timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
+        originalRecord: record as TimeSlot,
+      };
+    });
 
     // 闭区间末分钟结束后的边界，用于计算距离上次记录已过去多久；0 表示无记录
     const lastEndTime =
@@ -349,18 +346,23 @@ defineExpose({
         <EchartsUI ref="chartRef" height="100%" width="100%" />
       </div>
 
-      <!-- 最新记录列表：整体居中、固定行距，避免少量记录被拉开 -->
+      <!-- 少量明细居中，溢出时从顶部开始滚动，避免首尾记录被裁切。 -->
       <div
-        class="flex h-[160px] w-[42%] min-w-0 shrink-0 flex-col overflow-y-auto py-1 sm:h-[180px]"
+        class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain py-1 sm:h-[180px]"
+        role="region"
+        aria-label="今日时迹明细"
+        tabindex="0"
       >
         <div
           v-if="recentRecords.length > 0"
-          class="flex h-full flex-col justify-center gap-3 sm:gap-4"
+          class="flex min-h-full flex-col justify-center"
         >
-          <div
+          <button
             v-for="record in recentRecords"
             :key="record.id"
-            class="flex cursor-pointer items-center justify-end gap-1.5 font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 sm:gap-2 sm:text-[11px]"
+            type="button"
+            class="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-end gap-1.5 rounded-sm font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:gap-2 sm:text-[11px]"
+            :aria-label="`编辑时迹 ${record.timeRangeStr} ${record.categoryName}`"
             :style="{ color: record.categoryColor }"
             @click="handleEditRecord(record.originalRecord)"
           >
@@ -372,7 +374,7 @@ defineExpose({
             <span class="min-w-0 truncate">
               {{ record.categoryName }}
             </span>
-          </div>
+          </button>
         </div>
         <div
           v-else
