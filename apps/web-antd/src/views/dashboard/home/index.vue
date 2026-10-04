@@ -559,7 +559,7 @@ function navTo(nav: { url?: string }) {
 </script>
 
 <template>
-  <div class="p-2 sm:p-4">
+  <div class="dashboard-home p-2 sm:p-4">
     <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
       <template v-if="loading && overviewItems.length === 0">
         <AnalysisCard v-for="i in 5" :key="i" loading class="min-w-0" />
@@ -967,14 +967,29 @@ function navTo(nav: { url?: string }) {
 </template>
 
 <style scoped>
+/* 首页保留页面和卡片滚动，仅隐藏原生滚动条。 */
+.dashboard-home :deep(.overflow-y-auto),
+:global(html:has(.dashboard-home)),
+:global(body:has(.dashboard-home)) {
+  scrollbar-width: none;
+}
+
+.dashboard-home :deep(.overflow-y-auto::-webkit-scrollbar),
+:global(html:has(.dashboard-home)::-webkit-scrollbar),
+:global(body:has(.dashboard-home)::-webkit-scrollbar) {
+  display: none;
+}
+
 .dashboard-section {
   max-height: 240px;
 }
+
 @media (min-width: 640px) {
   .dashboard-section {
     max-height: 250px;
   }
 }
+
 @media (min-width: 1024px) {
   .dashboard-section {
     max-height: 280px;

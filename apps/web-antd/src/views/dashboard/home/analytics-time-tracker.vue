@@ -24,6 +24,7 @@ const emit = defineEmits<{
 }>();
 
 const chartRef = ref<EchartsUIType>();
+const recentRecordScrollRef = ref<HTMLDivElement>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
 const loading = ref(false);
@@ -282,6 +283,30 @@ const loadData = async () => {
   }
 };
 
+const handleRecordWheel = (event: WheelEvent) => {
+  const list = recentRecordScrollRef.value;
+  if (!list || event.ctrlKey || event.deltaY === 0) return;
+
+  const maxScrollTop = list.scrollHeight - list.clientHeight;
+  if (maxScrollTop <= 0) return;
+
+  const unit =
+    event.deltaMode === 1
+      ? list.clientHeight / 5
+      : event.deltaMode === 2
+        ? list.clientHeight
+        : 1;
+  const nextScrollTop = Math.max(
+    0,
+    Math.min(maxScrollTop, list.scrollTop + event.deltaY * unit),
+  );
+  // 还能滚动明细时，饼图和列表区域统一带动明细；边界交还页面滚动。
+  if (nextScrollTop === list.scrollTop) return;
+  event.preventDefault();
+  event.stopPropagation();
+  list.scrollTop = nextScrollTop;
+};
+
 const handleEditRecord = (record: TimeSlot) => {
   timeTrackerModalRef.value?.open(record, undefined, existingSlots.value);
 };
@@ -306,6 +331,7 @@ defineExpose({
       class: '!bg-transparent dark:!bg-transparent',
     }"
     class="flex h-full w-full flex-row p-2 sm:py-4"
+    @wheel.capture="handleRecordWheel"
   >
     <!-- 最左侧竖向时间轴 (固定宽度，绝不被挤压) -->
     <div
@@ -346,9 +372,10 @@ defineExpose({
         <EchartsUI ref="chartRef" height="100%" width="100%" />
       </div>
 
-      <!-- 少量明细居中，溢出时从顶部开始滚动，避免首尾记录被裁切。 -->
+      <!-- 同时完整显示五条；少量明细居中，更多记录从顶部开始滚动。 -->
       <div
-        class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain py-1 sm:h-[180px]"
+        ref="recentRecordScrollRef"
+        class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain sm:h-[180px]"
         role="region"
         aria-label="今日时迹明细"
         tabindex="0"
@@ -361,7 +388,7 @@ defineExpose({
             v-for="record in recentRecords"
             :key="record.id"
             type="button"
-            class="flex min-h-11 w-full shrink-0 cursor-pointer items-center justify-end gap-1.5 rounded-sm font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:gap-2 sm:text-[11px]"
+            class="flex h-8 w-full shrink-0 cursor-pointer items-center justify-end gap-1.5 rounded-sm font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:h-9 sm:gap-2 sm:text-[11px]"
             :aria-label="`编辑时迹 ${record.timeRangeStr} ${record.categoryName}`"
             :style="{ color: record.categoryColor }"
             @click="handleEditRecord(record.originalRecord)"
