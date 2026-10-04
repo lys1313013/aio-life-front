@@ -238,46 +238,30 @@ describe('录入日期选择', () => {
     records: endTime === undefined ? [] : [{ startTime: 0, endTime }],
   });
 
-  it('昨天末尾剩余 61 分钟时优先补昨天，无需查询今天', async () => {
-    mocks.recommendNext.mockResolvedValue(dayResult('2026-09-21', 1378));
+  it('首页新增只查询今天并使用今天的日期', async () => {
+    mocks.recommendNext.mockResolvedValue(dayResult('2026-09-22'));
     const wrapper = mount(TimeTrackerModal);
     await wrapper.vm.open();
     expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({
-      date: '2026-09-21',
+      date: '2026-09-22',
     });
     expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
-      '2026-09-21',
+      '2026-09-22',
     );
     wrapper.unmount();
   });
 
-  it.each([undefined, 1379, 1380, 1439])(
-    '昨天结束于 %s 时默认今天',
-    async (endTime) => {
-      mocks.recommendNext
-        .mockResolvedValueOnce(dayResult('2026-09-21', endTime))
-        .mockResolvedValueOnce(dayResult('2026-09-22'));
+  it.each(['2026-09-21', '2026-09-22', '2026-08-31'])(
+    '指定日期 %s 时只查询并录入该日期',
+    async (date) => {
+      mocks.recommendNext.mockResolvedValue(dayResult(date));
       const wrapper = mount(TimeTrackerModal);
-      await wrapper.vm.open();
-      expect(mocks.recommendNext).toHaveBeenNthCalledWith(2, {
-        date: '2026-09-22',
-      });
-      expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
-        '2026-09-22',
-      );
+      await wrapper.vm.open(undefined, date);
+      expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({ date });
+      expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(date);
       wrapper.unmount();
     },
   );
-
-  it('明确指定日期时不自动切到昨天', async () => {
-    mocks.recommendNext.mockResolvedValue(dayResult('2026-09-22'));
-    const wrapper = mount(TimeTrackerModal);
-    await wrapper.vm.open(undefined, '2026-09-22');
-    expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({
-      date: '2026-09-22',
-    });
-    wrapper.unmount();
-  });
 
   it('切换日期后使用新日期的推荐、冲突记录和保存日期', async () => {
     mocks.recommendNext

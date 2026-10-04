@@ -104,8 +104,7 @@ const open = async (
   loading.value = true;
   isEditMode.value = !!slot;
 
-  const today = dayjs();
-  let targetDate = slot?.date || date || today.format('YYYY-MM-DD');
+  const targetDate = slot?.date || date || dayjs().format('YYYY-MM-DD');
 
   // 新增先检查剩余时间，避免全天已满或请求失败时展示默认表单。
   if (!slot) {
@@ -118,22 +117,7 @@ const open = async (
       style: centeredMessageStyle,
     });
     try {
-      let result;
-      if (!date) {
-        const yesterday = today.subtract(1, 'day').format('YYYY-MM-DD');
-        const previousDay = await recommendNext({ date: yesterday });
-        // 时间记录使用闭区间：22:59 结束时仅剩 60 分钟，不满足超过一小时。
-        if (
-          previousDay.records.length > 0 &&
-          previousDay.recommend &&
-          Math.max(...previousDay.records.map((record) => record.endTime)) <
-            1439 - 60
-        ) {
-          targetDate = yesterday;
-          result = previousDay;
-        }
-      }
-      result ??= await recommendNext({ date: targetDate });
+      const result = await recommendNext({ date: targetDate });
       if (!result.recommend) {
         message.info({
           content: '该天已录入完毕',
