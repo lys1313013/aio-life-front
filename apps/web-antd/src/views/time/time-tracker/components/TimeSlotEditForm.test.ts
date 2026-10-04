@@ -86,6 +86,20 @@ describe('时迹编辑器的闭区间输入', () => {
   it('修改结束时间后按闭区间实时显示时长', async () => {
     const wrapper = mountForm(540, 540);
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
+    const [start, end] = wrapper.findAllComponents(TimeWheelPicker);
+    end!.vm.$emit('preview', dayjs('2026-09-12T10:00:00'));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1小时1分');
+    expect(getEndTimeValue(wrapper)).toBe('09:00');
+    end!.vm.$emit('preview', undefined);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
+    start!.vm.$emit('preview', dayjs('2026-09-12T00:00:00'));
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('9小时1分');
+    start!.vm.$emit('preview', undefined);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
     wrapper
       .findAllComponents(TimeWheelPicker)[1]!
       .vm.$emit('update:value', dayjs('2026-09-12T09:29:00'));

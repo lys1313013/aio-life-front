@@ -21,7 +21,10 @@ const props = withDefaults(
   }>(),
   { min: 0, max: 1439, value: undefined },
 );
-const emit = defineEmits<{ 'update:value': [value: Dayjs] }>();
+const emit = defineEmits<{
+  preview: [value: Dayjs | undefined];
+  'update:value': [value: Dayjs];
+}>();
 const open = ref(false);
 const selected = ref(0);
 const inputText = ref('');
@@ -56,25 +59,44 @@ function alignColumns() {
   if (minuteColumn.value)
     minuteColumn.value.scrollTop = selected.value * rowHeight;
 }
+function preview(value: number) {
+  if (!open.value || !available.value) return;
+  emit(
+    'preview',
+    (props.value || dayjs())
+      .startOf('day')
+      .add(clampTimeSelection(value, props.min, props.max), 'minute'),
+  );
+}
 function select(value: number) {
   clearTimeout(scrollTimer);
   pendingValue = undefined;
   if (!available.value) return;
   selected.value = clampTimeSelection(value, props.min, props.max);
+  preview(selected.value);
   alignColumns();
 }
 function selectHour(hour: number) {
   if (!hourDisabled(hour)) select(hour * 60 + (selected.value % 60));
 }
 function onScroll(field: 'hour' | 'minute', event: Event) {
+  if (!open.value) return;
   const column = event.target as HTMLElement;
   const expected =
     (field === 'hour' ? Math.floor(selected.value / 60) : selected.value) *
     rowHeight;
-  if (Math.abs(column.scrollTop - expected) < 1) return;
+  if (Math.abs(column.scrollTop - expected) < 1) {
+    if (pendingValue !== undefined) {
+      clearTimeout(scrollTimer);
+      pendingValue = undefined;
+      preview(selected.value);
+    }
+    return;
+  }
   clearTimeout(scrollTimer);
   const index = Math.round(column.scrollTop / rowHeight);
   pendingValue = field === 'hour' ? index * 60 + (selected.value % 60) : index;
+  preview(pendingValue);
   scrollTimer = setTimeout(() => {
     if (open.value && pendingValue !== undefined) select(pendingValue);
   }, 100);
@@ -123,7 +145,10 @@ watch(open, async (visible) => {
   clearTimeout(scrollTimer);
   clearInterval(clockTimer);
   pendingValue = undefined;
-  if (!visible) return;
+  if (!visible) {
+    emit('preview', undefined);
+    return;
+  }
   updateClock();
   clockTimer = setInterval(updateClock, 1000);
   selected.value = clampTimeSelection(

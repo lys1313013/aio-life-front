@@ -84,14 +84,32 @@ describe('时迹时间滚轮', () => {
     const column = wrapper.get('[aria-label="分钟"]');
     (column.element as HTMLElement).scrollTop = 600 * 44;
     await column.trigger('scroll');
+    expect(
+      (wrapper.emitted('preview')!.at(-1)![0] as dayjs.Dayjs).format('HH:mm'),
+    ).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
     await wrapper.findAll('.time-wheel-toolbar button')[2]!.trigger('click');
     expect(
       (wrapper.emitted('update:value')![0]![0] as dayjs.Dayjs).format('HH:mm'),
     ).toBe('10:00');
+    expect(wrapper.emitted('preview')!.at(-1)).toEqual([undefined]);
     wrapper.unmount();
     const cancelled = await openPicker();
     await scrollMinute(cancelled, 610);
+    expect(
+      (cancelled.emitted('preview')!.at(-1)![0] as dayjs.Dayjs).format('HH:mm'),
+    ).toBe('10:10');
     await cancelled.findAll('.time-wheel-toolbar button')[0]!.trigger('click');
+    expect(cancelled.emitted('update:value')).toBeUndefined();
+    expect(cancelled.emitted('preview')!.at(-1)).toEqual([undefined]);
+    await cancelled.get('input').trigger('click');
+    await cancelled
+      .get('[aria-label="分钟"]')
+      .trigger('keydown', { key: 'ArrowUp' });
+    await cancelled
+      .get('[role="dialog"]')
+      .trigger('keydown', { key: 'Escape' });
+    expect(cancelled.emitted('preview')!.at(-1)).toEqual([undefined]);
     expect(cancelled.emitted('update:value')).toBeUndefined();
     cancelled.unmount();
   });

@@ -129,6 +129,9 @@ interface LocalFormState {
 }
 
 const formRef = ref<FormInstance>();
+// 滚轮预览只影响时长，完成选择后才写入表单。
+const previewStartTime = ref<dayjs.Dayjs>();
+const previewEndTime = ref<dayjs.Dayjs>();
 const formState = ref<LocalFormState>({
   id: '',
   startTime: undefined,
@@ -238,10 +241,12 @@ onMounted(() => {
 
 // 计算时长
 const duration = computed(() => {
-  if (!formState.value.startTime || !formState.value.endTime) return 0;
+  const startTime = previewStartTime.value ?? formState.value.startTime;
+  const endTime = previewEndTime.value ?? formState.value.endTime;
+  if (!startTime || !endTime) return 0;
 
-  const startMinutes = timeToMinutes(formState.value.startTime.format('HH:mm'));
-  const endMinutes = timeToMinutes(formState.value.endTime.format('HH:mm'));
+  const startMinutes = timeToMinutes(startTime.format('HH:mm'));
+  const endMinutes = timeToMinutes(endTime.format('HH:mm'));
 
   return Math.max(
     0,
@@ -297,6 +302,8 @@ const minutesToTimePickerValue = (minutes: number) => {
 
 // 初始化表单
 const initializeForm = (slot: TimeSlot) => {
+  previewStartTime.value = undefined;
+  previewEndTime.value = undefined;
   let exercises: ExerciseDetail[] = [];
   if (slot.exercises && slot.exercises.length > 0) {
     // Deep copy to avoid reference issues
@@ -348,6 +355,7 @@ watch(
           newSlot.date !== oldSlot.date ||
           newSlot.startTime !== oldSlot.startTime
         ) {
+          previewStartTime.value = undefined;
           formState.value.startTime = minutesToTimePickerValue(
             newSlot.startTime,
           );
@@ -356,6 +364,7 @@ watch(
           newSlot.date !== oldSlot.date ||
           newSlot.endTime !== oldSlot.endTime
         ) {
+          previewEndTime.value = undefined;
           formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
         }
         // 同步更新关联记录
@@ -597,6 +606,7 @@ onUnmounted(() => {
           <TimeWheelPicker
             :id="startInputId"
             v-model:value="formState.startTime"
+            @preview="previewStartTime = $event"
             label="开始时间"
             class="time-value-picker"
             :min="selectionBounds.startTime.min"
@@ -617,6 +627,7 @@ onUnmounted(() => {
           <TimeWheelPicker
             :id="endInputId"
             v-model:value="formState.endTime"
+            @preview="previewEndTime = $event"
             label="结束时间"
             class="time-value-picker"
             :min="selectionBounds.endTime.min"
