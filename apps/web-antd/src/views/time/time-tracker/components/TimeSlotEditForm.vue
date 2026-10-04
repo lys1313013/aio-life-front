@@ -28,7 +28,6 @@ import {
   Spin,
   Textarea,
   theme,
-  TimePicker,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -42,6 +41,7 @@ import {
 
 import { categoryPath, orderCategoryTree } from '../category-tree';
 import { getCategoryColor, getCategoryIconById } from '../config';
+import { timeSelectionBounds } from '../time-selection';
 import {
   getSlotDuration,
   isValidSlot,
@@ -49,6 +49,7 @@ import {
   timeToMinutes,
 } from '../utils';
 import RelateRecordSelector from './RelateRecordSelector.vue';
+import TimeWheelPicker from './TimeWheelPicker.vue';
 
 interface Props {
   slot: TimeSlot;
@@ -70,12 +71,6 @@ const endInputId = useId();
 
 const { useToken } = theme;
 const { token } = useToken();
-
-const timePickerDropdownAlign = {
-  points: ['tc', 'bc'],
-  offset: [0, 4],
-  overflow: { adjustX: 1, adjustY: 1 },
-};
 
 // 分类计算属性
 const visibleCategories = computed(() =>
@@ -532,28 +527,26 @@ const handleDelete = () => {
   }
 };
 
-// TimePicker 展开时将选中项滚动到列中央
-// Ant Design 内部也会在 popup 渲染后执行 scrollIntoView，因此延迟后再覆盖一次
-const scrollTimePanelToCenter = () => {
-  document
-    .querySelectorAll('.ant-picker-time-panel-cell-selected')
-    .forEach((cell) => {
-      const column = cell.closest<HTMLElement>('.ant-picker-time-panel-column');
-      if (!column) return;
-      const cellTop =
-        cell.getBoundingClientRect().top -
-        column.getBoundingClientRect().top +
-        column.scrollTop;
-      column.scrollTop = cellTop - column.clientHeight / 2;
-    });
-};
-
-const handleTimePickerOpenChange = (open: boolean) => {
-  if (!open) return;
-  // 覆盖 Ant Design 内部的 scrollIntoView，确保选中项居中
-  setTimeout(() => requestAnimationFrame(scrollTimePanelToCenter), 30);
-  setTimeout(() => requestAnimationFrame(scrollTimePanelToCenter), 180);
-};
+const selectionBounds = computed(() => {
+  const record = {
+    id: formState.value.id,
+    date: props.slot.date,
+    startTime: formState.value.startTime
+      ? timeToMinutes(formState.value.startTime.format('HH:mm'))
+      : 0,
+    endTime: formState.value.endTime
+      ? timeToMinutes(formState.value.endTime.format('HH:mm'))
+      : 1439,
+  };
+  return {
+    startTime: timeSelectionBounds(
+      record,
+      props.existingSlots || [],
+      'startTime',
+    ),
+    endTime: timeSelectionBounds(record, props.existingSlots || [], 'endTime'),
+  };
+});
 
 // 组件卸载时清理监听
 onUnmounted(() => {
@@ -601,19 +594,16 @@ onUnmounted(() => {
       <div class="compact-time-range">
         <Form.Item name="startTime" class="compact-time-field">
           <label :for="startInputId" class="compact-time-label">开始</label>
-          <TimePicker
+          <TimeWheelPicker
             :id="startInputId"
             v-model:value="formState.startTime"
-            aria-label="开始时间"
-            format="HH:mm"
+            label="开始时间"
             class="time-value-picker"
-            :allow-clear="false"
-            :bordered="false"
-            :suffix-icon="null"
-            :dropdown-align="timePickerDropdownAlign"
+            :min="selectionBounds.startTime.min"
+            :max="selectionBounds.startTime.max"
+            :show-now="false"
             :input-read-only="isMobile"
             :disabled="busy"
-            @open-change="handleTimePickerOpenChange"
           />
         </Form.Item>
         <div class="compact-time-summary">
@@ -624,19 +614,16 @@ onUnmounted(() => {
         </div>
         <Form.Item name="endTime" class="compact-time-field">
           <label :for="endInputId" class="compact-time-label">结束</label>
-          <TimePicker
+          <TimeWheelPicker
             :id="endInputId"
             v-model:value="formState.endTime"
-            aria-label="结束时间"
-            format="HH:mm"
+            label="结束时间"
             class="time-value-picker"
-            :allow-clear="false"
-            :bordered="false"
-            :suffix-icon="null"
-            :dropdown-align="timePickerDropdownAlign"
+            :min="selectionBounds.endTime.min"
+            :max="selectionBounds.endTime.max"
+            :show-now="true"
             :input-read-only="isMobile"
             :disabled="busy"
-            @open-change="handleTimePickerOpenChange"
           />
         </Form.Item>
       </div>
@@ -789,14 +776,6 @@ onUnmounted(() => {
           <Button
             type="primary"
             class="compact-save"
-            :style="{
-              '--save-color': `color-mix(in srgb, ${token.colorPrimary} 65%, ${token.colorText})`,
-              '--save-background': `color-mix(in srgb, ${token.colorPrimary} 14%, ${token.colorBgContainer})`,
-              '--save-hover-background': `color-mix(in srgb, ${token.colorPrimary} 20%, ${token.colorBgContainer})`,
-              '--save-active-background': `color-mix(in srgb, ${token.colorPrimary} 26%, ${token.colorBgContainer})`,
-              '--save-disabled-color': token.colorTextDisabled,
-              '--save-disabled-background': token.colorFillTertiary,
-            }"
             data-modal-confirm
             :loading="busy"
             :disabled="busy"
@@ -1005,7 +984,7 @@ onUnmounted(() => {
   border-radius: 8px;
 }
 
-.compact-time-range :deep(.time-value-picker input) {
+.compact-time-range :deep(input.time-value-picker) {
   color: v-bind('token.colorText');
   font-size: clamp(24px, 6vw, 28px);
   font-weight: 300;
@@ -1070,32 +1049,11 @@ onUnmounted(() => {
 
 .compact-actions :deep(.ant-btn) {
   min-width: 44px;
-  height: 44px;
 }
 
 .compact-actions .compact-save {
-  flex: 1;
-  height: 44px;
-  color: var(--save-color);
-  background: var(--save-background);
-  border-color: transparent;
-  border-radius: 12px;
-  box-shadow: none;
-}
-
-.compact-actions .compact-save:not(:disabled):hover {
-  color: var(--save-color);
-  background: var(--save-hover-background);
-}
-
-.compact-actions .compact-save:not(:disabled):active {
-  color: var(--save-color);
-  background: var(--save-active-background);
-}
-
-.compact-actions .compact-save:disabled {
-  color: var(--save-disabled-color);
-  background: var(--save-disabled-background);
+  min-width: 80px;
+  margin-left: auto;
 }
 
 .exercise-type-control {

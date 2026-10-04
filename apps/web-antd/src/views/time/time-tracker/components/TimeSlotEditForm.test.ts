@@ -2,12 +2,13 @@ import type { TimeSlot } from '../types';
 
 import { shallowMount } from '@vue/test-utils';
 
-import { Button, Form, TimePicker } from 'ant-design-vue';
+import { Button, Form } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { describe, expect, it, vi } from 'vitest';
 
 import TimeSlotEditForm from './TimeSlotEditForm.vue';
+import TimeWheelPicker from './TimeWheelPicker.vue';
 
 vi.mock('#/api/core/time-tracker', () => ({ getRelateTypes: async () => [] }));
 vi.mock('#/api/core/userDictType', () => ({
@@ -50,22 +51,48 @@ function mountForm(
 }
 
 function getEndTimeValue(wrapper: ReturnType<typeof mountForm>): string {
-  const value = wrapper.findAllComponents(TimePicker)[1]!.props('value');
+  const value = wrapper.findAllComponents(TimeWheelPicker)[1]!.props('value');
   if (!dayjs.isDayjs(value)) throw new Error('结束时间应为 Dayjs');
   return value.format('HH:mm');
 }
 
 describe('时迹编辑器的闭区间输入', () => {
+  it('开始与结束选择器使用当前表单和相邻记录计算禁选范围', async () => {
+    const wrapper = mountForm(600, 659, [
+      {
+        id: 'previous',
+        date: '2026-09-12',
+        categoryId: 'read',
+        startTime: 540,
+        endTime: 599,
+      },
+      {
+        id: 'next',
+        date: '2026-09-12',
+        categoryId: 'read',
+        startTime: 680,
+        endTime: 700,
+      },
+    ]);
+    const [start, end] = wrapper.findAllComponents(TimeWheelPicker);
+    expect([start!.props('min'), start!.props('max')]).toEqual([600, 659]);
+    expect([end!.props('min'), end!.props('max')]).toEqual([600, 679]);
+    end!.vm.$emit('update:value', dayjs('2026-09-12T11:10:00'));
+    await wrapper.vm.$nextTick();
+    expect(start!.props('max')).toBe(670);
+    wrapper.unmount();
+  });
+
   it('修改结束时间后按闭区间实时显示时长', async () => {
     const wrapper = mountForm(540, 540);
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
     wrapper
-      .findAllComponents(TimePicker)[1]!
+      .findAllComponents(TimeWheelPicker)[1]!
       .vm.$emit('update:value', dayjs('2026-09-12T09:29:00'));
     await wrapper.vm.$nextTick();
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('30分');
     wrapper
-      .findAllComponents(TimePicker)[1]!
+      .findAllComponents(TimeWheelPicker)[1]!
       .vm.$emit('update:value', dayjs('2026-09-12T10:00:00'));
     await wrapper.vm.$nextTick();
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1小时1分');
@@ -75,7 +102,7 @@ describe('时迹编辑器的闭区间输入', () => {
   it('切换日期时重置手动修改的时间，即使两天推荐时间相同', async () => {
     const wrapper = mountForm(540, 569);
     wrapper
-      .findAllComponents(TimePicker)[1]!
+      .findAllComponents(TimeWheelPicker)[1]!
       .vm.$emit('update:value', dayjs('2026-09-12T11:00:00'));
     await wrapper.vm.$nextTick();
     expect(getEndTimeValue(wrapper)).toBe('11:00');
