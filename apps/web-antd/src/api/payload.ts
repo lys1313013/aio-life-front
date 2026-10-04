@@ -1,5 +1,6 @@
 /** 自动生成：运行 scripts/generate-api-contracts.py；ID 为字符串，显式 null 保留清空语义。 */
 export interface AnniversaryRecordCreateReq {
+  isPinned?: null | number;
   title?: null | string;
   targetDate?: null | string;
   type?: null | string;
@@ -9,6 +10,7 @@ export interface AnniversaryRecordCreateReq {
 }
 
 export interface AnniversaryRecordUpdateReq {
+  isPinned?: null | number;
   id?: null | string;
   title?: null | string;
   targetDate?: null | string;
@@ -86,6 +88,12 @@ export interface BankCardCoverTemplateReq {
   isEnabled?: null | number;
   sortOrder?: null | number;
   fileId?: null | string;
+}
+
+export interface BankCardMoveReq {
+  id?: null | string;
+  targetId?: null | string;
+  after?: boolean | null;
 }
 
 export interface BankCardReq {
@@ -269,6 +277,7 @@ export interface FeishuChannelSaveReq {
 }
 
 export interface GoalCreateReq {
+  isPinned?: null | number;
   type?: null | number;
   title?: null | string;
   description?: null | string;
@@ -286,6 +295,7 @@ export interface GoalCreateReq {
 }
 
 export interface GoalUpdateReq {
+  isPinned?: null | number;
   id?: null | string;
   type?: null | number;
   title?: null | string;
@@ -301,6 +311,23 @@ export interface GoalUpdateReq {
   startDate?: null | string;
   endDate?: null | string;
   tags?: null | string;
+}
+
+export interface HomeCardOrderReq {
+  group?: null | string;
+  keys?: Array<unknown> | null;
+}
+
+export interface HomeCardToggleReq {
+  enabled?: boolean | null;
+}
+
+export interface HomePinReq {
+  isPinned?: null | number;
+}
+
+export interface HomePinnedOrderReq {
+  ids?: Array<string> | null;
 }
 
 export interface HonorRecordCreateReq {
@@ -369,6 +396,7 @@ export interface MembershipCreateReq {
   name?: null | string;
   category?: null | string;
   provider?: null | string;
+  providerId?: null | string;
   icon?: null | string;
   color?: null | string;
   startDate?: null | string;
@@ -380,11 +408,21 @@ export interface MembershipCreateReq {
   note?: null | string;
 }
 
+export interface MembershipProviderReq {
+  name?: null | string;
+  code?: null | string;
+  category?: null | string;
+  iconKey?: null | string;
+  sortOrder?: null | number;
+  isEnabled?: null | number;
+}
+
 export interface MembershipReq {
   id?: null | string;
   name?: null | string;
   category?: null | string;
   provider?: null | string;
+  providerId?: null | string;
   icon?: null | string;
   color?: null | string;
   startDate?: null | string;
@@ -419,6 +457,7 @@ export interface MenuSaveReq {
   roles?: null | string;
   sort?: null | number;
   status?: null | number;
+  mobileStatus?: null | number;
 }
 
 export interface MenuSortUpdateReq {
@@ -567,6 +606,22 @@ export interface PersonReq {
   school?: null | string;
   socialLinks?: null | string;
   notes?: null | string;
+}
+
+export interface QrLoginModels_BrowserRequest {
+  id?: null | string;
+  browserSecret?: null | string;
+}
+
+export interface QrLoginModels_DecisionRequest {
+  id?: null | string;
+  ticket?: null | string;
+  approve?: boolean | null;
+}
+
+export interface QrLoginModels_ScanRequest {
+  id?: null | string;
+  ticket?: null | string;
 }
 
 export interface QuickNavSaveReq {
@@ -1032,6 +1087,24 @@ export interface WechatAuthRequests_PhoneLogin {
   phoneCode?: null | string;
 }
 
+export interface WechatAuthRequests_Register {
+  loginTicket?: null | string;
+}
+
+export interface WechatWebLoginController_BrowserRequest {
+  scene?: null | string;
+  browserSecret?: null | string;
+}
+
+export interface WechatWebLoginController_ConfirmRequest {
+  scene?: null | string;
+  loginCode?: null | string;
+}
+
+export interface WechatWebLoginController_ScanRequest {
+  scene?: null | string;
+}
+
 export interface WereadConnectionReq {
   apiKey?: null | string;
 }
@@ -1045,6 +1118,7 @@ export interface ApiRequests {
   BVideoUpdateReq: BVideoUpdateReq;
   BankCardCoverEnabledReq: BankCardCoverEnabledReq;
   BankCardCoverTemplateReq: BankCardCoverTemplateReq;
+  BankCardMoveReq: BankCardMoveReq;
   BankCardReq: BankCardReq;
   BankCardTagReq: BankCardTagReq;
   CbtiPersonalitySaveReq: CbtiPersonalitySaveReq;
@@ -1066,6 +1140,10 @@ export interface ApiRequests {
   FeishuChannelSaveReq: FeishuChannelSaveReq;
   GoalCreateReq: GoalCreateReq;
   GoalUpdateReq: GoalUpdateReq;
+  HomeCardOrderReq: HomeCardOrderReq;
+  HomeCardToggleReq: HomeCardToggleReq;
+  HomePinReq: HomePinReq;
+  HomePinnedOrderReq: HomePinnedOrderReq;
   HonorRecordCreateReq: HonorRecordCreateReq;
   HonorRecordUpdateReq: HonorRecordUpdateReq;
   IncomeCreateReq: IncomeCreateReq;
@@ -1073,6 +1151,7 @@ export interface ApiRequests {
   LoginReq: LoginReq;
   MbtiResultSaveReq: MbtiResultSaveReq;
   MembershipCreateReq: MembershipCreateReq;
+  MembershipProviderReq: MembershipProviderReq;
   MembershipReq: MembershipReq;
   MemoCreateReq: MemoCreateReq;
   MemoUpdateReq: MemoUpdateReq;
@@ -1091,6 +1170,9 @@ export interface ApiRequests {
   PerformanceCreateReq: PerformanceCreateReq;
   PerformanceUpdateReq: PerformanceUpdateReq;
   PersonReq: PersonReq;
+  QrLoginModels_BrowserRequest: QrLoginModels_BrowserRequest;
+  QrLoginModels_DecisionRequest: QrLoginModels_DecisionRequest;
+  QrLoginModels_ScanRequest: QrLoginModels_ScanRequest;
   QuickNavSaveReq: QuickNavSaveReq;
   QuickNavSaveReq_Item: QuickNavSaveReq_Item;
   ReadRecordCreateReq: ReadRecordCreateReq;
@@ -1149,11 +1231,16 @@ export interface ApiRequests {
   WechatAuthRequests_InitializePassword: WechatAuthRequests_InitializePassword;
   WechatAuthRequests_Login: WechatAuthRequests_Login;
   WechatAuthRequests_PhoneLogin: WechatAuthRequests_PhoneLogin;
+  WechatAuthRequests_Register: WechatAuthRequests_Register;
+  WechatWebLoginController_BrowserRequest: WechatWebLoginController_BrowserRequest;
+  WechatWebLoginController_ConfirmRequest: WechatWebLoginController_ConfirmRequest;
+  WechatWebLoginController_ScanRequest: WechatWebLoginController_ScanRequest;
   WereadConnectionReq: WereadConnectionReq;
 }
 
 const fields: Record<string, Record<string, null | string>> = {
   AnniversaryRecordCreateReq: {
+    isPinned: null,
     title: null,
     targetDate: null,
     type: null,
@@ -1162,6 +1249,7 @@ const fields: Record<string, Record<string, null | string>> = {
     icon: null,
   },
   AnniversaryRecordUpdateReq: {
+    isPinned: null,
     id: null,
     title: null,
     targetDate: null,
@@ -1233,6 +1321,11 @@ const fields: Record<string, Record<string, null | string>> = {
     isEnabled: null,
     sortOrder: null,
     fileId: null,
+  },
+  BankCardMoveReq: {
+    id: null,
+    targetId: null,
+    after: null,
   },
   BankCardReq: {
     bankId: null,
@@ -1396,6 +1489,7 @@ const fields: Record<string, Record<string, null | string>> = {
     openId: null,
   },
   GoalCreateReq: {
+    isPinned: null,
     type: null,
     title: null,
     description: null,
@@ -1412,6 +1506,7 @@ const fields: Record<string, Record<string, null | string>> = {
     tags: null,
   },
   GoalUpdateReq: {
+    isPinned: null,
     id: null,
     type: null,
     title: null,
@@ -1427,6 +1522,19 @@ const fields: Record<string, Record<string, null | string>> = {
     startDate: null,
     endDate: null,
     tags: null,
+  },
+  HomeCardOrderReq: {
+    group: null,
+    keys: null,
+  },
+  HomeCardToggleReq: {
+    enabled: null,
+  },
+  HomePinReq: {
+    isPinned: null,
+  },
+  HomePinnedOrderReq: {
+    ids: null,
   },
   HonorRecordCreateReq: {
     title: null,
@@ -1488,6 +1596,7 @@ const fields: Record<string, Record<string, null | string>> = {
     name: null,
     category: null,
     provider: null,
+    providerId: null,
     icon: null,
     color: null,
     startDate: null,
@@ -1498,11 +1607,20 @@ const fields: Record<string, Record<string, null | string>> = {
     autoRenew: null,
     note: null,
   },
+  MembershipProviderReq: {
+    name: null,
+    code: null,
+    category: null,
+    iconKey: null,
+    sortOrder: null,
+    isEnabled: null,
+  },
   MembershipReq: {
     id: null,
     name: null,
     category: null,
     provider: null,
+    providerId: null,
     icon: null,
     color: null,
     startDate: null,
@@ -1534,6 +1652,7 @@ const fields: Record<string, Record<string, null | string>> = {
     roles: null,
     sort: null,
     status: null,
+    mobileStatus: null,
   },
   MenuSortUpdateReq: {
     sort: null,
@@ -1668,6 +1787,19 @@ const fields: Record<string, Record<string, null | string>> = {
     school: null,
     socialLinks: null,
     notes: null,
+  },
+  QrLoginModels_BrowserRequest: {
+    id: null,
+    browserSecret: null,
+  },
+  QrLoginModels_DecisionRequest: {
+    id: null,
+    ticket: null,
+    approve: null,
+  },
+  QrLoginModels_ScanRequest: {
+    id: null,
+    ticket: null,
   },
   QuickNavSaveReq: {
     items: 'QuickNavSaveReq_Item',
@@ -2074,6 +2206,20 @@ const fields: Record<string, Record<string, null | string>> = {
     loginTicket: null,
     phoneCode: null,
   },
+  WechatAuthRequests_Register: {
+    loginTicket: null,
+  },
+  WechatWebLoginController_BrowserRequest: {
+    scene: null,
+    browserSecret: null,
+  },
+  WechatWebLoginController_ConfirmRequest: {
+    scene: null,
+    loginCode: null,
+  },
+  WechatWebLoginController_ScanRequest: {
+    scene: null,
+  },
   WereadConnectionReq: {
     apiKey: null,
   },
@@ -2152,7 +2298,10 @@ const queryFields: Record<string, string[]> = {
   '/membership/list': [],
   '/membership/stats': [],
   '/membership/{id}': [],
-  '/anniversaryRecords': [],
+  '/system/membership-providers': [],
+  '/membership/providers': [],
+  '/membership/provider-icons': [],
+  '/anniversaryRecords': ['isPinned'],
   '/anniversaryRecords/{id}': [],
   '/b-video/query': ['page', 'pageSize', 'status'],
   '/b-video/covers': ['ids'],
@@ -2194,7 +2343,7 @@ const queryFields: Record<string, string[]> = {
   '/expense/statisticsByYear': [],
   '/expense/statisticsByMonth': [],
   '/github/recent-commits': ['page', 'perPage'],
-  '/goals': ['keyword', 'status', 'type'],
+  '/goals': ['isPinned', 'keyword', 'status', 'type'],
   '/honorCategories': [],
   '/honorRecords': [],
   '/honorRecords/{id}': [],
@@ -2217,6 +2366,7 @@ const queryFields: Record<string, string[]> = {
     'activeOnly',
     'current',
     'director',
+    'inProgressFirst',
     'size',
     'status',
     'statuses',
@@ -2309,6 +2459,7 @@ const queryFields: Record<string, string[]> = {
   '/message/list': ['isRead'],
   '/message/unread-count': [],
   '/message/admin/list': ['current', 'size', 'userId'],
+  '/auth/qr-login/{id}/status': ['secret'],
   '/user-center/list': ['keyword', 'page', 'pageSize'],
   '/auth/info': [],
   '/user/info': [],
@@ -2317,6 +2468,7 @@ const queryFields: Record<string, string[]> = {
   '/auth/secondary-password/status': [],
   '/auth/secondary-lock/menus': [],
   '/auth/wechat/mini/capabilities': [],
+  '/auth/wechat/web/capabilities': [],
   '/system/logs/{type:operation|access}': [
     'endDate',
     'page',
@@ -2331,17 +2483,18 @@ const queryFields: Record<string, string[]> = {
     'startDate',
     'username',
   ],
+  '/home/cards': [],
   '/menu/admin/tree': [],
   '/menu/admin/role-options': [],
-  '/menu/all': [],
-  '/quick-nav/candidates': [],
-  '/quick-nav/my': [],
+  '/menu/all': ['client'],
+  '/quick-nav/candidates': ['client'],
+  '/quick-nav/my': ['client'],
   '/system/storage/objects': ['cursor', 'pageSize', 'prefix'],
   '/system/storage/preview': ['key'],
   '/system/storage/download': ['key'],
   '/system-config/list': ['keyPrefix'],
   '/system-config/{key}': [],
-  '/menu/preferences': [],
+  '/menu/preferences': ['client'],
   '/wardrobe/items': ['categoryId', 'keyword', 'season'],
   '/wardrobe/items/{id}': [],
   '/wardrobe/stats': [],
@@ -2354,6 +2507,12 @@ const requestModels: Array<{
   model: keyof ApiRequests;
   path: string;
 }> = [
+  {
+    method: 'PUT',
+    path: '/bank-cards/order',
+    model: 'BankCardMoveReq',
+    list: false,
+  },
   { method: 'POST', path: '/bank-cards', model: 'BankCardReq', list: false },
   {
     method: 'PUT',
@@ -2371,6 +2530,12 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/bank-cards/tags/{id}',
     model: 'BankCardTagReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/system/bank-card-covers/order',
+    model: 'BankCardMoveReq',
     list: false,
   },
   {
@@ -2436,6 +2601,18 @@ const requestModels: Array<{
   { method: 'PUT', path: '/membership', model: 'MembershipReq', list: false },
   {
     method: 'POST',
+    path: '/system/membership-providers',
+    model: 'MembershipProviderReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/system/membership-providers/{id}',
+    model: 'MembershipProviderReq',
+    list: false,
+  },
+  {
+    method: 'POST',
     path: '/anniversaryRecords',
     model: 'AnniversaryRecordCreateReq',
     list: false,
@@ -2450,6 +2627,18 @@ const requestModels: Array<{
     method: 'POST',
     path: '/anniversaryRecords/batchDelete',
     model: 'CommonReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/anniversaryRecords/{id}/pin',
+    model: 'HomePinReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/anniversaryRecords/pinned-order',
+    model: 'HomePinnedOrderReq',
     list: false,
   },
   { method: 'POST', path: '/b-video', model: 'BVideoCreateReq', list: false },
@@ -2529,6 +2718,13 @@ const requestModels: Array<{
     method: 'POST',
     path: '/goals/batchDelete',
     model: 'CommonReq',
+    list: false,
+  },
+  { method: 'PUT', path: '/goals/{id}/pin', model: 'HomePinReq', list: false },
+  {
+    method: 'PUT',
+    path: '/goals/pinned-order',
+    model: 'HomePinnedOrderReq',
     list: false,
   },
   {
@@ -2873,6 +3069,30 @@ const requestModels: Array<{
     model: 'MessageCreateReq',
     list: false,
   },
+  {
+    method: 'POST',
+    path: '/auth/qr-login/scan',
+    model: 'QrLoginModels_ScanRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/qr-login/decision',
+    model: 'QrLoginModels_DecisionRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/qr-login/consume',
+    model: 'QrLoginModels_BrowserRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/qr-login/cancel',
+    model: 'QrLoginModels_BrowserRequest',
+    list: false,
+  },
   { method: 'POST', path: '/user-center', model: 'UserCreateReq', list: false },
   { method: 'PUT', path: '/user-center', model: 'UserUpdateReq', list: false },
   { method: 'POST', path: '/auth/login', model: 'LoginReq', list: false },
@@ -2915,6 +3135,12 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
+    path: '/auth/wechat/mini/register',
+    model: 'WechatAuthRequests_Register',
+    list: false,
+  },
+  {
+    method: 'POST',
     path: '/auth/wechat/mini/phone-login',
     model: 'WechatAuthRequests_PhoneLogin',
     list: false,
@@ -2931,6 +3157,54 @@ const requestModels: Array<{
     model: 'WechatAuthRequests_InitializePassword',
     list: false,
   },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/status',
+    model: 'WechatWebLoginController_BrowserRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/exchange',
+    model: 'WechatWebLoginController_BrowserRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/revoke',
+    model: 'WechatWebLoginController_BrowserRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/scan',
+    model: 'WechatWebLoginController_ScanRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/confirm',
+    model: 'WechatWebLoginController_ConfirmRequest',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/wechat/web/cancel',
+    model: 'WechatWebLoginController_ScanRequest',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/home/cards/order',
+    model: 'HomeCardOrderReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/home/cards/{key}',
+    model: 'HomeCardToggleReq',
+    list: false,
+  },
   { method: 'POST', path: '/menu/admin', model: 'MenuSaveReq', list: false },
   {
     method: 'PUT',
@@ -2941,6 +3215,12 @@ const requestModels: Array<{
   {
     method: 'PUT',
     path: '/menu/admin/{id}/status',
+    model: 'MenuStatusUpdateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/menu/admin/{id}/mobile-status',
     model: 'MenuStatusUpdateReq',
     list: false,
   },

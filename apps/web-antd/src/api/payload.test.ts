@@ -8,6 +8,107 @@ import {
 } from './payload';
 
 describe('最小请求契约', () => {
+  it('会员平台关联保留字符串 ID 和解除语义，去除只读平台信息', () => {
+    const id = '9007199254740993';
+    for (const providerId of [id, null]) {
+      expect(
+        pickPayload('MembershipReq', {
+          id,
+          providerId,
+          providerName: '腾讯视频',
+          providerIconKey: 'tencent_video',
+          providerIdProvided: true,
+        }),
+      ).toEqual({ id, providerId });
+    }
+    expect(pickPayload('MembershipReq', { id, providerId: undefined })).toEqual(
+      { id },
+    );
+    expect(
+      minimalRequestPayload(`/system/membership-providers/${id}`, 'PUT', {
+        name: '腾讯视频',
+        code: 'tencent_video',
+        category: 'video',
+        iconKey: null,
+        sortOrder: 0,
+        isEnabled: 0,
+        id,
+        createUser: '1',
+      }),
+    ).toEqual({
+      name: '腾讯视频',
+      code: 'tencent_video',
+      category: 'video',
+      iconKey: null,
+      sortOrder: 0,
+      isEnabled: 0,
+    });
+  });
+
+  it('卡片移动保留长 ID 和前后位置，移除归属与卡号', () => {
+    for (const path of [
+      '/bank-cards/order',
+      '/system/bank-card-covers/order',
+    ]) {
+      expect(
+        minimalRequestPayload(path, 'PUT', {
+          id: '9007199254740993',
+          targetId: '9007199254740994',
+          after: false,
+          userId: '1',
+          cardNo: 'secret',
+        }),
+      ).toEqual({
+        id: '9007199254740993',
+        targetId: '9007199254740994',
+        after: false,
+      });
+    }
+  });
+
+  it('首页固定保留取消值与长 ID，排序不允许回传归属或派生字段', () => {
+    const ids = ['9007199254740993', '9223372036854775806'];
+    for (const path of ['/goals', '/anniversaryRecords']) {
+      expect(
+        minimalRequestPayload(`${path}/${ids[0]}/pin`, 'PUT', {
+          isPinned: 0,
+          pinnedSort: -99,
+          userId: 'other',
+        }),
+      ).toEqual({ isPinned: 0 });
+      expect(
+        minimalRequestPayload(`${path}/pinned-order`, 'PUT', {
+          ids,
+          userId: 'other',
+          isDeleted: 1,
+        }),
+      ).toEqual({ ids });
+      expect(pickQuery(path, { isPinned: 1, userId: 'other' })).toEqual({
+        isPinned: 1,
+      });
+      expect(
+        minimalRequestPayload(path, 'PUT', {
+          id: ids[0],
+          isPinned: 0,
+          pinnedSort: -99,
+          userId: 'other',
+        }),
+      ).toEqual({ id: ids[0], isPinned: 0 });
+    }
+  });
+
+  it('首页阅读和观影保留服务端状态排序条件', () => {
+    for (const path of ['/read-record/page', '/movie/page']) {
+      const query = {
+        current: 2,
+        size: 20,
+        activeOnly: true,
+        inProgressFirst: true,
+      };
+      expect(pickQuery(path, { ...query, userId: 'other' })).toEqual(query);
+    }
+  });
+
   it('创建移除 ID 与审计字段，更新由 URL 指定 ID', () => {
     const record = {
       id: '9007199254740993',
