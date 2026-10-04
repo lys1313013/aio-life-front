@@ -18,6 +18,7 @@ import {
 
 import {
   DeleteOutlined,
+  LoadingOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from '@ant-design/icons-vue';
@@ -42,7 +43,9 @@ import {
   setCoverEnabled,
   uploadTemplateCover,
 } from '#/api/bank-card/covers';
+import { moveBankCardCover } from '#/api/bank-card/order';
 import { AppModal as Modal } from '#/components/app-modal';
+import { useCardOrder } from '#/composables/useCardOrder';
 import CoverPicker from '#/views/bank-card/cover-picker.vue';
 
 import CoverPreview from './cover-preview.vue';
@@ -110,7 +113,11 @@ const filtered = computed(() =>
         (enabledFilter.value === undefined ||
           item.isEnabled === enabledFilter.value),
     )
-    .toSorted((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id)),
+    .toSorted(
+      (a, b) =>
+        a.sortOrder - b.sortOrder ||
+        a.id.localeCompare(b.id, undefined, { numeric: true }),
+    ),
 );
 let generation = 0;
 let mutationVersion = 0;
@@ -122,9 +129,42 @@ function recordMutation(id: string, item?: CoverTemplate) {
   mutations.set(id, { item, version: ++mutationVersion });
 }
 
+const {
+  busyId: sortingId,
+  dragging,
+  keyboard: sortKeyboard,
+  guardClick,
+} = useCardOrder({
+  container: grid,
+  items,
+  visible: filtered,
+  disabled: computed(
+    () =>
+      loading.value ||
+      loadingMore.value ||
+      open.value ||
+      Object.keys(busy.value).length > 0 ||
+      !active ||
+      failed.value,
+  ),
+  save: moveBankCardCover,
+  changed: (item) => recordMutation(item.id, item),
+});
+watch([sortingId, dragging], async () => {
+  await nextTick();
+  observeBottom();
+});
+
 function observeBottom() {
   observer?.disconnect();
-  if (active && sentinel.value && hasMore.value && !failed.value) {
+  if (
+    !sortingId.value &&
+    !dragging.value &&
+    active &&
+    sentinel.value &&
+    hasMore.value &&
+    !failed.value
+  ) {
     observer?.observe(sentinel.value);
   }
 }
@@ -151,7 +191,7 @@ function measurePageSize() {
 }
 
 async function load(reset = true) {
-  if (disposed || !active) return;
+  if (disposed || !active || sortingId.value || dragging.value) return;
   if (reset) {
     clearTimeout(searchTimer);
     generation++;
@@ -220,6 +260,7 @@ function resetFilters(delay = 0) {
 watch([bankFilter, typeFilter, enabledFilter], () => resetFilters());
 watch(search, () => resetFilters(250));
 function edit(item?: CoverTemplate) {
+  if (sortingId.value || dragging.value) return;
   editing.value = item;
   form.value = item
     ? {
@@ -257,7 +298,7 @@ async function save() {
   }
 }
 async function toggle(item: CoverTemplate) {
-  if (busy.value[item.id]) return;
+  if (busy.value[item.id] || sortingId.value) return;
   busy.value[item.id] = 'toggle';
   try {
     replace(await setCoverEnabled(item.id, item.isEnabled === 1 ? 0 : 1));
@@ -266,7 +307,7 @@ async function toggle(item: CoverTemplate) {
   }
 }
 async function remove(item: CoverTemplate) {
-  if (busy.value[item.id]) return;
+  if (busy.value[item.id] || sortingId.value) return;
   busy.value[item.id] = 'delete';
   try {
     await deleteCoverTemplate(item.id);
@@ -322,6 +363,7 @@ onActivated(() => {
     <div class="cover-toolbar">
       <Input
         v-model:value="search"
+        :disabled="!!sortingId || dragging"
         aria-label="搜索卡面"
         placeholder="搜索卡面"
         class="cover-search"
@@ -329,6 +371,7 @@ onActivated(() => {
       />
       <Select
         v-model:value="bankFilter"
+        :disabled="!!sortingId || dragging"
         :loading="loadingBanks"
         :options="banks.map((b) => ({ value: b.id, label: b.name }))"
         show-search
@@ -340,6 +383,7 @@ onActivated(() => {
       />
       <Select
         v-model:value="typeFilter"
+        :disabled="!!sortingId || dragging"
         :options="types"
         allow-clear
         placeholder="全部类型"
@@ -348,6 +392,7 @@ onActivated(() => {
       />
       <Select
         v-model:value="enabledFilter"
+        :disabled="!!sortingId || dragging"
         :options="[
           { value: 1, label: '启用' },
           { value: 0, label: '停用' },
@@ -358,13 +403,18 @@ onActivated(() => {
         class="cover-filter"
       />
       <div class="cover-toolbar-actions">
-        <Button aria-label="刷新卡面" :loading="loading" @click="load()">
+        <Button
+          aria-label="刷新卡面"
+          :disabled="!!sortingId || dragging"
+          :loading="loading"
+          @click="load()"
+        >
           <ReloadOutlined />
         </Button>
         <Button
           type="primary"
           aria-label="新增公共卡面"
-          :disabled="loading || failed"
+          :disabled="loading || failed || !!sortingId || dragging"
           @click="edit()"
         >
           <PlusOutlined />
@@ -380,16 +430,32 @@ onActivated(() => {
         <div
           ref="grid"
           class="cover-grid"
-          :aria-busy="loading || loadingMore"
+          :aria-busy="loading || loadingMore || !!sortingId"
+          @click.capture="guardClick"
           aria-label="银行卡面列表"
         >
-          <div v-for="item in filtered" :key="item.id" class="cover-item">
+          <div
+            v-for="item in filtered"
+            :key="item.id"
+            class="cover-item"
+            :data-card-id="item.id"
+            :aria-busy="sortingId === item.id"
+          >
+            <span
+              v-if="sortingId === item.id"
+              class="card-sort-loading"
+              role="status"
+              aria-label="保存中"
+            >
+              <LoadingOutlined spin />
+            </span>
             <div
               role="button"
               :tabindex="busy[item.id] ? -1 : 0"
               :aria-label="`编辑${item.name}`"
               :aria-disabled="!!busy[item.id]"
               class="cursor-pointer rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              @keydown.self="sortKeyboard($event, item.id)"
               @click="!busy[item.id] && edit(item)"
               @keydown.enter.self.prevent="!busy[item.id] && edit(item)"
               @keydown.space.self.prevent="!busy[item.id] && edit(item)"
@@ -410,13 +476,15 @@ onActivated(() => {
               <Switch
                 :checked="item.isEnabled === 1"
                 :loading="busy[item.id] === 'toggle'"
-                :disabled="!!busy[item.id]"
+                :disabled="!!busy[item.id] || !!sortingId"
                 :aria-label="`${item.isEnabled ? '停用' : '启用'}${item.name}`"
                 @change="toggle(item)"
               />
               <Popconfirm
                 :title="`删除${item.name}？`"
-                :disabled="Number(item.usageCount) > 0 || !!busy[item.id]"
+                :disabled="
+                  Number(item.usageCount) > 0 || !!busy[item.id] || !!sortingId
+                "
                 @confirm="remove(item)"
               >
                 <Button
@@ -424,7 +492,11 @@ onActivated(() => {
                   danger
                   :aria-label="`删除${item.name}`"
                   class="cover-delete"
-                  :disabled="Number(item.usageCount) > 0 || !!busy[item.id]"
+                  :disabled="
+                    Number(item.usageCount) > 0 ||
+                    !!busy[item.id] ||
+                    !!sortingId
+                  "
                   :loading="busy[item.id] === 'delete'"
                 >
                   <template #icon><DeleteOutlined /></template>
@@ -565,6 +637,23 @@ onActivated(() => {
 </template>
 
 <style scoped>
+.cover-item {
+  position: relative;
+}
+.card-sort-loading {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: hsl(var(--background) / 85%);
+  color: hsl(var(--foreground));
+  pointer-events: none;
+}
 .cover-page {
   padding: 24px;
   color: hsl(var(--foreground));

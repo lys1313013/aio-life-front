@@ -39,7 +39,9 @@ import {
   revealNumber,
   saveTag,
 } from '#/api/bank-card';
+import { moveBankCard } from '#/api/bank-card/order';
 import { AppModal as Modal } from '#/components/app-modal';
+import { useCardOrder } from '#/composables/useCardOrder';
 
 import CardEditor from './card-editor.vue';
 import CardFace from './card-face.vue';
@@ -73,6 +75,28 @@ const visibleCards = computed(() =>
     filterTags.value,
   ),
 );
+const grid = ref<HTMLElement>();
+const {
+  busyId: sortingId,
+  keyboard: sortKeyboard,
+  guardClick,
+} = useCardOrder({
+  container: grid,
+  items: cards,
+  visible: visibleCards,
+  disabled: computed(
+    () =>
+      loading.value ||
+      failed.value ||
+      !!deleting.value ||
+      editorOpen.value ||
+      !!numberBusy.value ||
+      !!deleteConfirmId.value ||
+      !!menuCardId.value,
+  ),
+  descendingId: true,
+  save: moveBankCard,
+});
 const tagManager = ref(false);
 const tagBusy = ref('');
 const tagName = ref('');
@@ -109,7 +133,7 @@ async function load() {
   }
 }
 function openEditor(card?: BankCard) {
-  if (card && deleting.value === card.id) return;
+  if (sortingId.value || (card && deleting.value === card.id)) return;
   menuCardId.value = '';
   deleteConfirmId.value = '';
   clearNumbers();
@@ -130,6 +154,7 @@ function upsertTag(tag: CardTag) {
   });
 }
 async function cardAction(card: BankCard, action: string) {
+  if (sortingId.value) return;
   menuCardId.value = '';
   if (action === 'delete') {
     await nextTick();
@@ -139,6 +164,7 @@ async function cardAction(card: BankCard, action: string) {
   }
 }
 async function remove(card: BankCard) {
+  if (sortingId.value || deleting.value) return;
   deleting.value = card.id;
   try {
     await deleteCard(card.id);
@@ -344,11 +370,13 @@ onBeforeUnmount(() => {
           </Button>
         </Empty>
       </div>
-      <div v-else class="card-grid">
+      <div v-else ref="grid" class="card-grid" @click.capture="guardClick">
         <article
           v-for="(card, index) in visibleCards"
           :key="card.id"
           class="bank-item"
+          :data-card-id="card.id"
+          :aria-busy="sortingId === card.id"
           :style="{ animationDelay: `${Math.min(index * 0.06, 0.72)}s` }"
           :aria-label="
             card.cardNoLast4
@@ -369,6 +397,7 @@ onBeforeUnmount(() => {
             :color="card.coverColor"
             :file-id="card.coverTemplateFileId || card.coverFileIds[0]"
             :public-url="card.coverTemplatePublicUrl"
+            @keydown.self="sortKeyboard($event, card.id)"
             @click="openEditor(card)"
             @keydown.enter.self.prevent="openEditor(card)"
             @keydown.space.self.prevent="openEditor(card)"
@@ -406,6 +435,7 @@ onBeforeUnmount(() => {
                     :trigger="['click']"
                     placement="bottomRight"
                     :disabled="
+                      !!sortingId ||
                       numberBusy === card.id ||
                       deleting === card.id ||
                       deleteConfirmId === card.id
@@ -422,7 +452,11 @@ onBeforeUnmount(() => {
                       aria-label="银行卡更多操作"
                       aria-haspopup="menu"
                       :aria-expanded="menuCardId === card.id"
-                      :loading="numberBusy === card.id || deleting === card.id"
+                      :loading="
+                        sortingId === card.id ||
+                        numberBusy === card.id ||
+                        deleting === card.id
+                      "
                     >
                       <EllipsisOutlined />
                     </Button>

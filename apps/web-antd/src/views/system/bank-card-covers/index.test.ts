@@ -11,6 +11,7 @@ import CoverPicker from '#/views/bank-card/cover-picker.vue';
 import CoverPage from './index.vue';
 
 const api = vi.hoisted(() => ({
+  moveBankCardCover: vi.fn(),
   listCoverTemplates: vi.fn(),
   listCoverBanks: vi.fn(),
   deleteCoverTemplate: vi.fn(),
@@ -19,6 +20,9 @@ const api = vi.hoisted(() => ({
   uploadTemplateCover: vi.fn(),
 }));
 vi.mock('#/api/bank-card/covers', () => api);
+vi.mock('#/api/bank-card/order', () => ({
+  moveBankCardCover: api.moveBankCardCover,
+}));
 vi.mock('./cover-preview.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('#/views/bank-card/cover-picker.vue', () => ({
   default: { template: '<div />' },
@@ -458,5 +462,41 @@ describe('公共卡面滚动分页', () => {
     await flushPromises();
     reachBottom();
     expect(api.listCoverTemplates).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('公共卡面排序保存', () => {
+  it('方向键触发排序，保存时暂停分页并显示局部 loading，失败恢复', async () => {
+    api.listCoverTemplates.mockResolvedValueOnce(
+      pageResult([
+        { ...original, id: '9007199254740993', name: '卡面甲', sortOrder: 0 },
+        { ...original, id: '9007199254740994', name: '卡面乙', sortOrder: 10 },
+      ]),
+    );
+    const wrapper = await render();
+    const request = deferred<[]>();
+    api.moveBankCardCover.mockReturnValueOnce(request.promise);
+    await wrapper
+      .findAll('.cover-item [role="button"]')[0]!
+      .trigger('keydown', { key: 'ArrowDown' });
+    expect(api.moveBankCardCover).toHaveBeenCalledWith({
+      id: '9007199254740993',
+      targetId: '9007199254740994',
+      after: true,
+    });
+    expect(wrapper.findAll('.cover-name').map((node) => node.text())).toEqual([
+      '卡面乙',
+      '卡面甲',
+    ]);
+    expect(wrapper.find('.cover-item[aria-busy="true"]').exists()).toBe(true);
+    reachBottom();
+    expect(api.listCoverTemplates).toHaveBeenCalledTimes(1);
+    request.reject(new Error('offline'));
+    await flushPromises();
+    expect(wrapper.findAll('.cover-name').map((node) => node.text())).toEqual([
+      '卡面甲',
+      '卡面乙',
+    ]);
+    expect(wrapper.find('.cover-item[aria-busy="true"]').exists()).toBe(false);
   });
 });
