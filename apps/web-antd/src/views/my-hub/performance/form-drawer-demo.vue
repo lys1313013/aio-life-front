@@ -82,7 +82,6 @@ const [Form, formApi] = useAppForm({
       componentProps: { placeholder: '参与人' },
       fieldName: 'performer',
       label: '参与人',
-      rules: 'required',
     },
     {
       component: 'DatePicker',
@@ -249,7 +248,7 @@ const handleDelete = async () => {
 .performance-cover :deep(.ant-upload-select),
 .performance-cover :deep(.ant-upload-list-item-container) {
   width: 96px !important;
-  height: 68px !important;
+  height: 144px !important;
   margin: 0 !important;
   border-radius: 10px !important;
 }

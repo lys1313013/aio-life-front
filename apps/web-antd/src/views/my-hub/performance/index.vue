@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue';
 import {
   CalendarOutlined,
   EnvironmentOutlined,
+  PictureOutlined,
   UserOutlined,
 } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
@@ -18,7 +19,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import FormDrawerDemo from './form-drawer-demo.vue';
 
 interface RowType {
-  id: any;
+  id: string;
   performanceName: string;
   performer: string;
   performanceType: string;
@@ -101,82 +102,76 @@ const tableReload = () => {
 
         <div
           v-else
-          class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+          class="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
         >
-          <div
-            v-for="(item, index) in dataSource"
-            :key="index"
-            class="group cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"
+          <button
+            v-for="item in dataSource"
+            :key="item.id"
+            type="button"
+            :aria-label="`编辑活动：${item.performanceName}`"
+            class="group min-w-0 self-start rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             @click="openFormDrawer(item)"
           >
-            <div class="relative aspect-[16/10] overflow-hidden">
+            <div
+              class="aspect-[2/3] overflow-hidden rounded-lg bg-secondary/50 transition-shadow duration-200 group-hover:shadow-md"
+            >
               <AuthImage
                 v-if="item.files && item.files.length > 0"
                 :file-id="item.files[0]?.id"
                 :alt="item.performanceName"
-                class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                class="h-full w-full object-contain"
               />
               <div
                 v-else
-                class="flex h-full w-full items-center justify-center"
+                class="flex h-full w-full items-center justify-center text-muted-foreground/40"
               >
-                <span class="text-4xl opacity-30">🎵</span>
-              </div>
-
-              <div
-                class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-1/2 bg-gradient-to-t from-black/60 via-black/20 to-transparent"
-              ></div>
-
-              <div
-                class="absolute left-2 top-2 z-20 rounded px-2 py-1 text-xs font-bold shadow backdrop-blur-sm"
-                :class="
-                  item.performanceType === '1'
-                    ? 'bg-primary/80 text-primary-foreground'
-                    : 'bg-orange-500/80 text-white'
-                "
-              >
-                {{ getPerformanceTypeLabel(item.performanceType) }}
-              </div>
-
-              <div class="absolute bottom-2 left-2 right-2 z-20">
-                <h3
-                  class="line-clamp-2 text-sm font-bold leading-tight text-white drop-shadow-lg sm:text-base"
-                >
-                  {{ item.performanceName }}
-                </h3>
+                <PictureOutlined class="text-3xl" />
               </div>
             </div>
 
-            <div class="p-3 sm:p-4">
-              <div
-                class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground sm:text-sm"
+            <div class="pt-2.5">
+              <h3
+                class="line-clamp-2 text-sm font-semibold leading-5 text-foreground"
+                :title="item.performanceName"
               >
-                <div v-if="item.performer" class="flex items-center gap-1.5">
-                  <UserOutlined class="text-[10px]" />
-                  <span class="max-w-[80px] truncate">{{
-                    item.performer
-                  }}</span>
+                {{ item.performanceName }}
+              </h3>
+              <div
+                class="mt-1.5 flex flex-col gap-1 text-xs leading-5 text-muted-foreground"
+              >
+                <div class="flex min-w-0 items-center gap-1.5">
+                  <template v-if="item.performer">
+                    <UserOutlined class="shrink-0 text-[10px]" />
+                    <span class="truncate">{{ item.performer }}</span>
+                  </template>
+                  <span
+                    v-if="item.performanceType"
+                    class="ml-auto shrink-0 text-[11px]"
+                    >{{ getPerformanceTypeLabel(item.performanceType) }}</span
+                  >
                 </div>
                 <div
                   v-if="item.performanceDate"
                   class="flex items-center gap-1.5"
                 >
-                  <CalendarOutlined class="text-[10px]" />
+                  <CalendarOutlined class="shrink-0 text-[10px]" />
                   <span>{{ item.performanceDate }}</span>
                 </div>
                 <div
                   v-if="item.city || item.venue"
-                  class="flex items-center gap-1.5"
+                  class="flex min-w-0 items-center gap-1.5"
                 >
-                  <EnvironmentOutlined class="text-[10px]" />
-                  <span class="max-w-[100px] truncate"
+                  <EnvironmentOutlined class="shrink-0 text-[10px]" />
+                  <span
+                    class="truncate"
+                    :title="[item.city, item.venue].filter(Boolean).join(' · ')"
                     >{{ item.city
                     }}{{ item.venue ? ` · ${item.venue}` : '' }}</span
                   >
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
     </template>
