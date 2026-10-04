@@ -88,7 +88,7 @@ const handleGenerate = async () => {
   }
 };
 
-const handleDelete = async (id: number) => {
+const handleDelete = async (id: string) => {
   try {
     await deleteApiKeyApi(id);
     message.success('删除成功');

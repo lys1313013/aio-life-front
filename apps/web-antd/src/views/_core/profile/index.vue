@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
-import ApiKeySetting from './api-key-setting.vue';
 import ProfileBase from './base-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
 import HomeCardSetting from './home-card-setting.vue';
@@ -18,6 +17,7 @@ import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 
 const tabs = ref([
@@ -46,10 +46,6 @@ const tabs = ref([
     value: 'secondary-password',
   },
   {
-    label: 'API Key',
-    value: 'api-key',
-  },
-  {
     label: 'MBTI测试',
     value: 'mbti',
   },
@@ -72,9 +68,17 @@ const tabsValue = ref(
 );
 
 watch(
+  () => route.query.tab,
+  (tab) => {
+    if (tab === 'api-key') void router.replace('/mcp/api-keys');
+  },
+  { immediate: true },
+);
+
+watch(
   tabsValue,
   (val) => {
-    if (route.query.tab !== val) {
+    if (route.query.tab !== 'api-key' && route.query.tab !== val) {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', val);
       window.history.replaceState({}, '', url.toString());
@@ -85,6 +89,7 @@ watch(
 </script>
 <template>
   <Profile
+    v-if="route.query.tab !== 'api-key'"
     v-model:model-value="tabsValue"
     title="个人中心"
     :user-info="userStore.userInfo"
@@ -97,7 +102,6 @@ watch(
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
       <MenuDisplaySetting v-if="tabsValue === 'menu-display'" />
       <HomeCardSetting v-if="tabsValue === 'home-cards'" />
-      <ApiKeySetting v-if="tabsValue === 'api-key'" />
       <MbtiSetting v-if="tabsValue === 'mbti'" />
       <CbtiSetting v-if="tabsValue === 'cbti'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />

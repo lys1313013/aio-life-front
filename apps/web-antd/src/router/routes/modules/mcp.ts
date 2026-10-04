@@ -6,19 +6,28 @@ const routes: RouteRecordRaw[] = [
       icon: 'carbon:tools',
       keepAlive: true,
       order: 5,
-      title: 'MCP',
+      title: 'AI 接入',
     },
     name: 'MCP',
-    path: '/mcp',
+    path: '/ai',
     children: [
       {
         meta: {
           icon: 'carbon:cube',
-          title: '工具列表',
+          title: '连接器（MCP）',
         },
         name: 'mcpTools',
         path: '/mcp/tools',
         component: () => import('#/views/mcp/tools/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'ant-design:key-outlined',
+          title: 'API Key 管理',
+        },
+        name: 'mcpApiKeys',
+        path: '/mcp/api-keys',
+        component: () => import('#/views/mcp/api-keys/index.vue'),
       },
     ],
   },

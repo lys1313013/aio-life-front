@@ -1,18 +1,23 @@
 <script lang="ts" setup>
 import type { McpToolInfo } from '#/api/core/mcp';
 
-import { h, onMounted, ref } from 'vue';
+import { computed, h, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import {
-  CaretRightOutlined,
+  AppstoreOutlined,
+  BookOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  CodeOutlined,
   CopyOutlined,
+  KeyOutlined,
+  PlayCircleOutlined,
   SearchOutlined,
+  SettingOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
-  Card,
-  Collapse,
   Empty,
   Form,
   Input,
@@ -29,47 +34,78 @@ import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
 import { AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 
+import { toolGroups, toolPresentation } from './presentation';
+
 const tools = ref<McpToolInfo[]>([]);
 const loading = ref(true);
+const loadError = ref(false);
 const searchText = ref('');
-const filteredTools = ref<McpToolInfo[]>([]);
-const showGuide = ref(true);
-
-// 弹窗状态
-const modalVisible = ref(false);
-const modalTool = ref<McpToolInfo | null>(null);
-const modalFormValues = ref<Record<string, any>>({});
-const modalResult = ref('');
-const modalCalling = ref(false);
-const modalIsError = ref(false);
-
-// MCP 配置信息
+const activeGroup = ref('all');
+const showGuide = ref(false);
+const groups = computed(() =>
+  toolGroups.filter(
+    (group) =>
+      group.value === 'all' ||
+      tools.value.some((tool) => toolPresentation(tool).group === group.value),
+  ),
+);
+const filteredTools = computed(() => {
+  const keyword = searchText.value.trim().toLowerCase();
+  return tools.value.filter((tool) => {
+    const info = toolPresentation(tool);
+    return (
+      (activeGroup.value === 'all' || info.group === activeGroup.value) &&
+      `${info.title} ${tool.name} ${tool.description}`
+        .toLowerCase()
+        .includes(keyword)
+    );
+  });
+});
+const groupIcons = {
+  time: ClockCircleOutlined,
+  plan: CheckOutlined,
+  learn: BookOutlined,
+  life: AppstoreOutlined,
+  other: CodeOutlined,
+};
+const toolIcon = (tool: McpToolInfo) =>
+  groupIcons[toolPresentation(tool).group as keyof typeof groupIcons];
 const router = useRouter();
 const mcpUrl = `${window.location.origin}/api/mcp`;
-const mcpAuthPlaceholder = 'Bearer <your-api-key>';
-
-const copyUrl = async () => {
+const clientConfig = JSON.stringify(
+  {
+    mcpServers: {
+      'aio-life': {
+        type: 'streamable-http',
+        url: mcpUrl,
+        headers: { Authorization: 'Bearer <your-api-key>' },
+      },
+    },
+  },
+  null,
+  2,
+);
+const copyText = async (value: string) => {
   try {
-    await navigator.clipboard.writeText(mcpUrl);
+    await navigator.clipboard.writeText(value);
     message.success('已复制到剪贴板');
   } catch {
     message.error('复制失败，请手动复制');
   }
 };
 
-// API Key 生成
 const apiKeyModalVisible = ref(false);
 const apiKeyGenerating = ref(false);
 const apiKeyForm = ref({ remark: 'MCP 客户端', expireDays: 0 });
 const generatedApiKey = ref('');
-
 const openApiKeyModal = () => {
+  showGuide.value = false;
   apiKeyForm.value = { remark: 'MCP 客户端', expireDays: 0 };
   generatedApiKey.value = '';
   apiKeyModalVisible.value = true;
 };
-
 const handleGenerateApiKey = async () => {
+  if (apiKeyGenerating.value) return;
   apiKeyGenerating.value = true;
   try {
     const data = await generateApiKeyApi(apiKeyForm.value);
@@ -78,132 +114,90 @@ const handleGenerateApiKey = async () => {
     apiKeyGenerating.value = false;
   }
 };
-
-const copyApiKey = async () => {
-  try {
-    await navigator.clipboard.writeText(generatedApiKey.value);
-    message.success('已复制到剪贴板');
-  } catch {
-    message.error('复制失败，请手动复制');
-  }
-};
-
-const filterTools = () => {
-  const keyword = searchText.value.toLowerCase();
-  if (!keyword) {
-    filteredTools.value = tools.value;
-    return;
-  }
-  filteredTools.value = tools.value.filter(
-    (t) =>
-      t.name.toLowerCase().includes(keyword) ||
-      t.description.toLowerCase().includes(keyword),
-  );
-};
-
+const copyApiKey = () => copyText(generatedApiKey.value);
 const loadTools = async () => {
+  if (loading.value && tools.value.length > 0) return;
   loading.value = true;
+  loadError.value = false;
   try {
-    const res = await getMcpToolsApi();
-    tools.value = res;
-    filterTools();
-  } catch (error: any) {
-    message.error(error?.message || '加载 MCP 工具失败');
+    tools.value = await getMcpToolsApi();
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
 };
 
-const getProperties = (tool: McpToolInfo) => {
-  const props = tool.inputSchema?.properties;
-  if (!props) return [];
-  return Object.entries(props).map(([key, val]: [string, any]) => ({
-    name: key,
-    type: val.type || 'unknown',
-    description: val.description || '',
-    required: tool.inputSchema?.required?.includes(key) || false,
-    enum: val.enum,
+const modalVisible = ref(false);
+const modalTool = ref<McpToolInfo | null>(null);
+const modalFormValues = ref<Record<string, any>>({});
+const modalResult = ref('');
+const modalCalling = ref(false);
+const modalIsError = ref(false);
+const getProperties = (tool: McpToolInfo) =>
+  Object.entries(tool.inputSchema?.properties || {}).map(([name, value]) => ({
+    name,
+    type: value.type || 'unknown',
+    description: value.description || '',
+    required: tool.inputSchema?.required?.includes(name) || false,
+    enum: value.enum,
   }));
-};
-
 const openCallModal = (tool: McpToolInfo) => {
   modalTool.value = tool;
-
-  // 初始化表单值
   const values: Record<string, any> = {};
-  const props = tool.inputSchema?.properties;
-  if (props) {
-    for (const [key, val] of Object.entries<any>(props)) {
-      if (val.enum?.length) {
-        values[key] = val.enum[0];
-      } else
-        switch (val.type) {
-          case 'array': {
-            values[key] = ''; // 用户可以输入 JSON 字符串
-
-            break;
-          }
-          case 'boolean': {
-            values[key] = false;
-
-            break;
-          }
-          case 'integer':
-          case 'number': {
-            values[key] = undefined;
-
-            break;
-          }
-          default: {
-            values[key] = '';
-          }
-        }
-    }
+  for (const [key, value] of Object.entries(
+    tool.inputSchema?.properties || {},
+  )) {
+    values[key] = value.enum?.length
+      ? value.enum[0]
+      : value.type === 'boolean'
+        ? false
+        : '';
   }
   modalFormValues.value = values;
-
   modalResult.value = '';
-  modalCalling.value = false;
   modalIsError.value = false;
   modalVisible.value = true;
 };
-
 const callTool = async () => {
   const tool = modalTool.value;
-  if (!tool) return;
+  if (!tool || modalCalling.value) return;
+  const args: Record<string, any> = {};
+  for (const prop of getProperties(tool)) {
+    const value = modalFormValues.value[prop.name];
+    if (value === undefined || value === null || value === '') {
+      if (prop.required) {
+        message.warning(`请填写 ${prop.name}`);
+        return;
+      }
+      continue;
+    }
+    if (prop.type === 'array' || prop.type === 'object') {
+      try {
+        args[prop.name] = typeof value === 'string' ? JSON.parse(value) : value;
+      } catch {
+        message.warning(`${prop.name} 需要有效的 JSON`);
+        return;
+      }
+    } else {
+      args[prop.name] = value;
+    }
+  }
   modalCalling.value = true;
   modalResult.value = '';
   modalIsError.value = false;
   try {
-    const args: Record<string, any> = {};
-    for (const prop of getProperties(tool)) {
-      const val = modalFormValues.value[prop.name];
-      if (val !== undefined && val !== '') {
-        if (prop.type === 'array' || prop.type === 'object') {
-          try {
-            args[prop.name] = typeof val === 'string' ? JSON.parse(val) : val;
-          } catch {
-            args[prop.name] = val; // 解析失败则直接传字符串
-          }
-        } else {
-          args[prop.name] = val;
-        }
-      }
-    }
     const res = await callMcpToolApi(tool.name, args);
-    const text =
+    modalResult.value =
       res.content
-        ?.map((c) => {
+        ?.map((item) => {
           try {
-            // 尝试格式化 JSON 字符串
-            const jsonObj = JSON.parse(c.text);
-            return JSON.stringify(jsonObj, null, 2);
+            return JSON.stringify(JSON.parse(item.text), null, 2);
           } catch {
-            return c.text;
+            return item.text;
           }
         })
         .join('\n') || '无返回内容';
-    modalResult.value = text;
     modalIsError.value = res.isError;
   } catch (error: any) {
     modalResult.value = error?.message || '调用失败';
@@ -212,266 +206,202 @@ const callTool = async () => {
     modalCalling.value = false;
   }
 };
-
-const getTypeColor = (type: string) => {
-  const map: Record<string, string> = {
-    string: 'blue',
-    integer: 'green',
-    number: 'orange',
-    boolean: 'purple',
-    array: 'cyan',
-    object: 'geekblue',
-  };
-  return map[type] || 'default';
-};
-
-onMounted(() => {
-  loadTools();
-});
+onMounted(loadTools);
 </script>
 
 <template>
   <div class="mcp-tools-page">
-    <div class="page-header">
+    <header class="page-header">
       <div class="header-info">
         <h2>MCP 工具</h2>
-        <span class="tool-count text-gray-400"
-          >共 {{ filteredTools.length }} 个工具</span
-        >
+        <span class="tool-count text-muted-foreground">{{ tools.length }}</span>
       </div>
-      <Input
-        v-model:value="searchText"
-        placeholder="搜索工具名称或描述"
-        allow-clear
-        style="width: 240px"
-        size="small"
-        @input="filterTools"
-      >
-        <template #prefix>
-          <SearchOutlined />
-        </template>
-      </Input>
-    </div>
+    </header>
 
-    <!-- 配置指南 -->
-    <Card v-if="showGuide" class="guide-card" size="small" :bordered="true">
-      <template #title>
-        <div class="guide-title-row">
-          <span class="guide-title">配置指南</span>
-          <Tag color="green">MCP 服务端</Tag>
-        </div>
-      </template>
-      <template #extra>
-        <Button type="link" size="small" @click="showGuide = false">
-          收起
-        </Button>
-      </template>
-
-      <div class="guide-body">
-        <!-- 基本连接信息 -->
-        <div class="guide-section">
-          <div class="guide-item">
-            <span class="guide-label text-gray-500">服务地址</span>
-            <div class="guide-url">
-              <code class="guide-code bg-gray-100 dark:bg-gray-800">{{
-                mcpUrl
-              }}</code>
-              <Tooltip title="复制地址">
-                <Button
-                  type="link"
-                  size="small"
-                  :icon="h(CopyOutlined)"
-                  @click="copyUrl"
-                />
-              </Tooltip>
-            </div>
-          </div>
-          <div class="guide-item">
-            <span class="guide-label text-gray-500">传输类型</span>
-            <Tag color="blue">Streamable HTTP</Tag>
-          </div>
-          <div class="guide-item">
-            <span class="guide-label text-gray-500">认证方式</span>
-            <div class="guide-auth">
-              <code class="guide-code bg-gray-100 dark:bg-gray-800"
-                >Authorization: Bearer &lt;API Key&gt;</code
-              >
-              <div class="guide-hint text-gray-400">
-                <Button
-                  type="link"
-                  size="small"
-                  class="guide-generate-btn"
-                  @click="openApiKeyModal"
-                >
-                  生成密钥
-                </Button>
-                <span
-                  >或前往
-                  <span
-                    class="guide-link text-blue-600 dark:text-blue-400"
-                    @click="router.push('/profile')"
-                    >个人中心</span
-                  >
-                  管理</span
-                >
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 客户端配置示例 -->
-        <div class="guide-section">
-          <div class="guide-section-title text-gray-800 dark:text-gray-200">
-            客户端配置
-          </div>
-          <pre
-            class="guide-config-json border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-            >{{
-              JSON.stringify(
-                {
-                  mcpServers: {
-                    'aio-life': {
-                      type: 'streamable-http',
-                      url: mcpUrl,
-                      headers: {
-                        Authorization: mcpAuthPlaceholder,
-                      },
-                    },
-                  },
-                },
-                null,
-                2,
-              )
-            }}</pre
-          >
-        </div>
+    <section class="connection-bar bg-card">
+      <div class="connection-icon text-primary"><CodeOutlined /></div>
+      <div class="connection-info">
+        <span class="connection-name"
+          >AIO Life
+          <span class="connection-protocol text-muted-foreground"
+            >Streamable HTTP</span
+          ></span
+        ><code class="connection-url text-muted-foreground">{{ mcpUrl }}</code>
       </div>
-    </Card>
-
-    <div
-      v-if="!showGuide"
-      class="guide-collapsed bg-gray-50 text-gray-500 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
-      @click="showGuide = true"
-    >
-      <span>配置指南</span>
-      <Tag color="green" size="small">MCP 服务端</Tag>
-      <span class="guide-expand-link text-blue-600 dark:text-blue-400"
-        >展开</span
-      >
-    </div>
-
-    <ContentLoading v-if="loading" min-height="360px" />
-    <template v-else>
-      <Empty
-        v-if="!loading && filteredTools.length === 0"
-        description="暂无 MCP 工具"
+      <Button
+        type="text"
+        class="icon-button"
+        aria-label="复制服务地址"
+        :icon="h(CopyOutlined)"
+        @click="copyText(mcpUrl)"
       />
+      <Button
+        class="icon-button"
+        aria-label="连接配置"
+        :icon="h(SettingOutlined)"
+        @click="showGuide = true"
+      />
+    </section>
 
-      <div v-else class="tools-grid">
-        <Card
+    <section class="tools-section">
+      <div class="tools-toolbar">
+        <div class="group-tabs" role="group" aria-label="工具分类">
+          <button
+            v-for="group in groups"
+            :key="group.value"
+            type="button"
+            class="group-tab"
+            :class="{ 'group-tab-active': activeGroup === group.value }"
+            :aria-pressed="activeGroup === group.value"
+            @click="activeGroup = group.value"
+          >
+            {{ group.label }}
+          </button>
+        </div>
+        <Input
+          v-model:value="searchText"
+          class="tool-search"
+          aria-label="搜索工具"
+          placeholder="搜索名称或描述"
+          allow-clear
+        >
+          <template #prefix>
+            <SearchOutlined class="text-muted-foreground" />
+          </template>
+        </Input>
+      </div>
+      <div class="list-caption text-muted-foreground">
+        <span>工具目录</span><span>{{ filteredTools.length }} 个工具</span>
+      </div>
+      <ContentLoading v-if="loading && tools.length === 0" min-height="280px" />
+      <div v-else-if="loadError" class="load-error">
+        <span>工具加载失败</span
+        ><Button :loading="loading" @click="loadTools">重试</Button>
+      </div>
+      <Empty
+        v-else-if="filteredTools.length === 0"
+        :description="tools.length > 0 ? '没有匹配的工具' : '暂无 MCP 工具'"
+        class="empty-state"
+      >
+        <Button
+          v-if="tools.length > 0"
+          @click="
+            searchText = '';
+            activeGroup = 'all';
+          "
+        >
+          清除筛选
+        </Button>
+      </Empty>
+      <div v-else class="tool-list bg-card">
+        <button
           v-for="tool in filteredTools"
           :key="tool.name"
-          class="tool-card"
-          :bordered="true"
-          size="small"
+          type="button"
+          class="tool-row"
+          :aria-label="`输入参数并调用 ${tool.name}`"
+          @click="openCallModal(tool)"
         >
-          <template #title>
-            <div class="tool-title">
-              <code
-                class="tool-name bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                >{{ tool.name }}</code
-              >
-            </div>
-          </template>
-          <template #extra>
-            <Tag color="blue" size="small">
-              {{ getProperties(tool).length }} 参数
-            </Tag>
-          </template>
-
-          <p class="tool-desc text-gray-500">{{ tool.description }}</p>
-
-          <Collapse v-if="getProperties(tool).length > 0" ghost size="small">
-            <Collapse.Panel key="params">
-              <template #header>
-                <span class="schema-header text-gray-500"> 输入参数 </span>
-              </template>
-              <div class="params-list">
-                <div
-                  v-for="param in getProperties(tool)"
-                  :key="param.name"
-                  class="param-item bg-gray-50 dark:bg-gray-800"
-                >
-                  <div class="param-row">
-                    <code class="param-name text-gray-800 dark:text-gray-200">{{
-                      param.name
-                    }}</code>
-                    <Tag :color="getTypeColor(param.type)" size="small">
-                      {{ param.type }}
-                    </Tag>
-                    <Tag v-if="param.required" color="red" size="small">
-                      必填
-                    </Tag>
-                  </div>
-                  <p v-if="param.description" class="param-desc text-gray-400">
-                    {{ param.description }}
-                  </p>
-                  <div v-if="param.enum" class="param-enum">
-                    <span class="enum-label text-gray-400">可选值：</span>
-                    <Tag v-for="val in param.enum" :key="val" size="small">
-                      {{ val }}
-                    </Tag>
-                  </div>
-                </div>
-              </div>
-            </Collapse.Panel>
-          </Collapse>
-
-          <div v-else class="no-params text-gray-300 dark:text-gray-600">
-            该工具无需输入参数
-          </div>
-
-          <div
-            class="card-footer border-t border-gray-100 dark:border-gray-700"
+          <span class="tool-identity"
+            ><span class="tool-icon text-muted-foreground"
+              ><component :is="toolIcon(tool)" /></span
+            ><span class="tool-labels"
+              ><span class="tool-title">{{ toolPresentation(tool).title }}</span
+              ><code class="tool-name text-muted-foreground">{{
+                tool.name
+              }}</code></span
+            ></span
           >
-            <a
-              class="action-btn primary text-blue-600 dark:text-blue-400"
-              @click.stop="openCallModal(tool)"
-            >
-              <CaretRightOutlined /> 调用
-            </a>
-          </div>
-        </Card>
+          <span class="tool-summary text-muted-foreground">{{
+            toolPresentation(tool).summary
+          }}</span>
+          <span class="tool-meta text-muted-foreground">{{
+            getProperties(tool).length > 0
+              ? `${getProperties(tool).length} 参数`
+              : '无参数'
+          }}</span>
+          <span class="tool-open text-primary"><PlayCircleOutlined /></span>
+        </button>
       </div>
-    </template>
+    </section>
 
-    <!-- 模拟调用弹窗 -->
     <Modal
-      v-model:open="modalVisible"
-      :title="modalTool ? `调用 - ${modalTool.name}` : '调用'"
+      v-model:open="showGuide"
+      title="连接配置"
       :footer="null"
-      width="480px"
-      destroy-on-close
+      width="620px"
     >
-      <div v-if="modalTool" class="modal-call">
-        <p v-if="modalTool.description" class="modal-tool-desc text-gray-500">
-          {{ modalTool.description }}
-        </p>
-
-        <div class="modal-actions">
-          <span class="modal-label text-gray-800 dark:text-gray-200"
-            >参数配置</span
-          >
+      <div class="config-panel">
+        <div class="panel-heading">
+          <CodeOutlined class="text-primary" />
+          <h3 class="panel-title">连接 AIO Life</h3>
+        </div>
+        <div class="config-address bg-secondary">
+          <div class="config-address-info">
+            <span class="text-muted-foreground">服务地址</span
+            ><code>{{ mcpUrl }}</code>
+          </div>
           <Button
-            type="primary"
-            size="small"
-            :loading="modalCalling"
-            @click="callTool"
-          >
-            调用
+            type="text"
+            class="icon-button"
+            aria-label="复制服务地址"
+            :icon="h(CopyOutlined)"
+            @click="copyText(mcpUrl)"
+          />
+        </div>
+        <div class="config-facts text-muted-foreground">
+          <span>Streamable HTTP</span><span>Bearer API Key</span>
+        </div>
+        <div class="config-section-heading">
+          <span>客户端配置</span
+          ><Button
+            type="text"
+            class="icon-button"
+            aria-label="复制客户端配置"
+            :icon="h(CopyOutlined)"
+            @click="copyText(clientConfig)"
+          />
+        </div>
+        <pre class="guide-config-json bg-secondary">{{ clientConfig }}</pre>
+        <div class="key-actions">
+          <Button :icon="h(KeyOutlined)" @click="openApiKeyModal">
+            生成密钥
+          </Button>
+          <Button type="link" @click="router.push('/mcp/api-keys')">
+            管理 API Key
           </Button>
         </div>
+      </div>
+    </Modal>
 
+    <Modal
+      v-model:open="modalVisible"
+      :title="modalTool ? `调用 ${modalTool.name}` : '调用工具'"
+      width="640px"
+      :busy="modalCalling"
+      :confirm-loading="modalCalling"
+      ok-text="调用"
+      cancel-text="关闭"
+      :submit-on-enter="false"
+      @ok="callTool"
+    >
+      <div v-if="modalTool" class="modal-call">
+        <div class="panel-heading">
+          <component :is="toolIcon(modalTool)" class="text-primary" />
+          <h3 class="panel-title">{{ toolPresentation(modalTool).title }}</h3>
+        </div>
+        <code class="modal-tool-name text-muted-foreground">{{
+          modalTool.name
+        }}</code>
+        <p class="modal-tool-desc text-muted-foreground">
+          {{ modalTool.description }}
+        </p>
+        <div class="config-section-heading">
+          <span>输入参数</span
+          ><span class="text-muted-foreground">{{
+            getProperties(modalTool).length
+          }}</span>
+        </div>
         <Form
           v-if="getProperties(modalTool).length > 0"
           layout="vertical"
@@ -480,68 +410,90 @@ onMounted(() => {
           <Form.Item
             v-for="param in getProperties(modalTool)"
             :key="param.name"
-            :label="param.name"
             :required="param.required"
             :extra="param.description"
           >
+            <template #label>
+              <span>{{ param.name }}</span
+              ><code class="param-type text-muted-foreground">{{
+                param.type
+              }}</code>
+            </template>
             <Select
               v-if="param.enum"
               v-model:value="modalFormValues[param.name]"
-              :options="param.enum.map((e: any) => ({ label: e, value: e }))"
+              :aria-label="param.name"
+              :options="
+                param.enum.map((e: any) => ({ label: String(e), value: e }))
+              "
               placeholder="请选择"
               allow-clear
-              size="small"
+              :disabled="modalCalling"
             />
             <Switch
               v-else-if="param.type === 'boolean'"
               v-model:checked="modalFormValues[param.name]"
-              size="small"
+              :aria-label="param.name"
+              :disabled="modalCalling"
             />
             <InputNumber
               v-else-if="param.type === 'number' || param.type === 'integer'"
               v-model:value="modalFormValues[param.name]"
+              :aria-label="param.name"
               style="width: 100%"
               placeholder="请输入数字"
-              size="small"
+              :disabled="modalCalling"
+            />
+            <Input.TextArea
+              v-else-if="param.type === 'object' || param.type === 'array'"
+              v-model:value="modalFormValues[param.name]"
+              :aria-label="param.name"
+              :rows="4"
+              placeholder="输入 JSON"
+              :disabled="modalCalling"
             />
             <Input
               v-else
               v-model:value="modalFormValues[param.name]"
+              :aria-label="param.name"
               placeholder="请输入"
-              size="small"
+              :disabled="modalCalling"
             />
           </Form.Item>
         </Form>
-        <div v-else class="no-params text-gray-300 dark:text-gray-600">
-          该工具无需输入参数
-        </div>
-
-        <div v-if="modalResult" class="modal-result">
-          <div class="result-label text-gray-800 dark:text-gray-200">
-            返回结果
+        <p v-else class="no-params text-muted-foreground">
+          无需填写参数，可直接调用。
+        </p>
+        <div v-if="modalResult" class="modal-result" aria-live="polite">
+          <div class="config-section-heading">
+            <span>{{ modalIsError ? '调用失败' : '返回结果' }}</span
+            ><Button
+              type="text"
+              class="icon-button"
+              aria-label="复制返回结果"
+              :icon="h(CopyOutlined)"
+              @click="copyText(modalResult)"
+            />
           </div>
           <pre
-            class="result-content border"
-            :class="
-              modalIsError
-                ? 'border-red-200 bg-red-50 text-red-500 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400'
-                : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
-            "
+            class="result-content bg-secondary"
+            :class="{ 'text-destructive': modalIsError }"
             >{{ modalResult }}</pre
           >
         </div>
       </div>
     </Modal>
-
     <!-- 生成 API Key 弹窗 -->
     <Modal
       v-model:open="apiKeyModalVisible"
       title="生成 API Key"
       :footer="null"
       width="480px"
+      :busy="apiKeyGenerating"
       destroy-on-close
     >
       <div v-if="!generatedApiKey" class="api-key-modal">
+        <h3 class="panel-title">生成 API Key</h3>
         <Form :model="apiKeyForm" layout="vertical">
           <Form.Item label="备注" name="remark">
             <Input
@@ -585,6 +537,7 @@ onMounted(() => {
               type="link"
               size="small"
               :icon="h(CopyOutlined)"
+              aria-label="复制 API Key"
               @click="copyApiKey"
             />
           </Tooltip>
@@ -621,25 +574,37 @@ onMounted(() => {
 
 <style scoped>
 .mcp-tools-page {
-  padding: 12px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+  color: hsl(var(--foreground));
+}
+
+.page-header,
+.header-info,
+.connection-bar,
+.tools-toolbar,
+.list-caption,
+.panel-heading,
+.config-section-heading,
+.key-actions,
+.config-facts {
+  display: flex;
+  align-items: center;
 }
 
 .page-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .header-info {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+  gap: 10px;
 }
 
 .header-info h2 {
   margin: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
 }
 
@@ -647,343 +612,420 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.tools-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 12px;
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
-.tool-card {
+.connection-bar {
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+.connection-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: hsl(var(--primary) / 0.08);
+  border-radius: 10px;
+  font-size: 21px;
+  flex-shrink: 0;
+}
+
+.connection-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.connection-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.connection-protocol {
+  margin-left: 12px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.connection-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.tools-section {
+  margin-top: 24px;
+}
+
+.tools-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.group-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.group-tab {
+  padding: 0 12px;
+  height: 40px;
+  border: none;
   border-radius: 8px;
-  transition: box-shadow 0.2s;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.group-tab:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--accent));
+}
+
+.group-tab-active {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.09);
+  font-weight: 500;
+}
+
+.tool-search {
+  width: 240px;
+  min-height: 36px;
+}
+
+.list-caption {
+  justify-content: space-between;
+  padding: 18px 2px 10px;
+  font-size: 12px;
+}
+
+.tool-list {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tool-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(255px, 0.9fr) minmax(160px, 1.4fr) 64px 36px;
+  align-items: center;
+  column-gap: 20px;
+  padding: 16px;
+  border: none;
+  border-bottom: 1px solid hsl(var(--border) / 0.55);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tool-row:last-child {
+  border-bottom: none;
+}
+
+.tool-row:hover {
+  background: hsl(var(--accent) / 0.6);
+}
+
+.tool-row:focus-visible,
+.group-tab:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
+}
+
+.tool-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tool-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  flex-shrink: 0;
+  font-size: 19px;
+}
+
+.tool-labels {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
 }
 
 .tool-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .tool-name {
-  font-size: 13px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.tool-desc {
-  margin: 0 0 8px;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.schema-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-}
-
-.params-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.param-item {
-  padding: 6px 10px;
-  border-radius: 6px;
-}
-
-.param-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.param-name {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.param-desc {
-  margin: 4px 0 0;
   font-size: 11px;
+  overflow-wrap: anywhere;
 }
 
-.param-enum {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.enum-label {
-  font-size: 12px;
-}
-
-.no-params {
+.tool-summary {
   font-size: 13px;
-  text-align: center;
-  padding: 12px 0;
+  line-height: 1.6;
 }
 
-.card-footer {
-  margin-top: 8px;
-  padding-top: 8px;
-  display: flex;
-  gap: 16px;
-}
-
-.action-btn {
+.tool-meta {
   font-size: 12px;
-  cursor: pointer;
-  display: inline-flex;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tool-open {
+  display: flex;
+  justify-content: center;
+  font-size: 19px;
+}
+
+.empty-state,
+.load-error {
+  padding: 48px 16px;
+}
+
+.load-error {
+  display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 12px;
 }
 
-.action-btn.primary {
-  font-weight: 500;
-}
-
-/* 弹窗 */
+.config-panel,
 .modal-call {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+}
+
+.panel-heading {
   gap: 10px;
+  font-size: 20px;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.config-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.config-address-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.config-address-info code {
+  overflow-wrap: anywhere;
+}
+
+.config-facts {
+  gap: 20px;
+  font-size: 12px;
+}
+
+.config-section-heading {
+  justify-content: space-between;
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.guide-config-json,
+.result-content {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+
+.key-actions {
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.modal-tool-name {
+  font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
 .modal-tool-desc {
   margin: 0;
   font-size: 13px;
+  line-height: 1.8;
 }
 
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-label {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-/* small 控件下收紧行距（antd 默认 24px 偏松） */
-.modal-form :deep(.ant-form-item) {
-  margin-bottom: 12px;
-}
-
-.modal-result {
-  margin-top: 4px;
-}
-
-.result-label {
-  font-size: 12px;
-  font-weight: 500;
-  margin-bottom: 6px;
-}
-
-.result-content {
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
+.param-type {
+  margin-left: 8px;
   font-size: 11px;
-  border-radius: 6px;
-  padding: 10px;
+  font-weight: 400;
+}
+
+.no-params {
   margin: 0;
-  max-height: 240px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-/* 配置指南 */
-.guide-card {
-  margin-bottom: 16px;
-  border-radius: 8px;
-}
-
-.guide-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.guide-title {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.guide-body {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.guide-section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.guide-section-title {
+  padding: 8px 0;
   font-size: 13px;
-  font-weight: 500;
 }
 
-.guide-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+.modal-form :deep(.ant-form-item:last-child) {
+  margin-bottom: 0;
 }
 
-.guide-label {
-  font-size: 13px;
-  min-width: 64px;
-  line-height: 28px;
-  flex-shrink: 0;
-}
-
-.guide-url {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.guide-code {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
-  word-break: break-all;
-}
-
-.guide-auth {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.guide-hint {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.guide-generate-btn {
-  padding: 0 4px;
-  font-size: 12px;
-  height: auto;
-}
-
-.guide-link {
-  cursor: pointer;
-}
-
-.guide-link:hover {
-  text-decoration: underline;
-}
-
-.guide-config-json {
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
-  font-size: 11px;
-  border-radius: 6px;
-  padding: 12px;
-  margin: 0;
-  max-height: 300px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-  line-height: 1.6;
-}
-
-.guide-collapsed {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  transition: background 0.2s;
-}
-
-.guide-expand-link {
-  margin-left: auto;
-  font-size: 12px;
-}
-
-/* API Key 弹窗 */
-.api-key-modal {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.api-key-result {
+.api-key-modal,
+.api-key-result,
+.api-key-result-usage {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.api-key-result-icon {
+.api-key-result-icon,
+.api-key-result-tip {
   text-align: center;
 }
 
 .api-key-result-tip {
   margin: 0;
   font-size: 12px;
-  text-align: center;
 }
 
 .api-key-result-value {
   display: flex;
   align-items: center;
-  gap: 4px;
-  border-radius: 6px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
 }
 
 .api-key-result-value code {
   flex: 1;
-  font-size: 13px;
-  font-family: 'SF Mono', Monaco, Consolas, monospace;
-  word-break: break-all;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.api-key-result-usage {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+@media (max-width: 1050px) {
+  .tools-toolbar {
+    align-items: stretch;
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .tool-search {
+    width: 100%;
+  }
+
+  .tool-row {
+    grid-template-columns: minmax(220px, 1fr) minmax(150px, 1fr) 52px 24px;
+    gap: 12px;
+  }
 }
 
-@media (max-width: 768px) {
-  .tools-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 640px) {
+  .mcp-tools-page {
+    padding: 12px;
   }
 
   .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    margin-bottom: 12px;
   }
 
-  .page-header .ant-input {
-    width: 100% !important;
+  .header-info h2 {
+    font-size: 18px;
   }
 
-  .guide-item {
-    flex-direction: column;
-    gap: 4px;
+  .connection-bar {
+    padding: 12px;
+    gap: 8px;
   }
 
-  .guide-config-json {
-    font-size: 10px;
-    max-height: 220px;
+  .connection-protocol {
+    display: none;
+  }
+
+  .tools-section {
+    margin-top: 16px;
+  }
+
+  .group-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .group-tab {
+    padding: 0 10px;
+    white-space: nowrap;
+    min-height: 44px;
+    flex-shrink: 0;
+  }
+
+  .tool-row {
+    grid-template-columns: minmax(0, 1fr) 56px 24px;
+    row-gap: 8px;
+    padding: 14px 12px;
+  }
+
+  .tool-identity {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    gap: 8px;
+  }
+
+  .tool-summary {
+    grid-column: 1 / 3;
+    grid-row: 2;
+    padding-left: 40px;
+    font-size: 12px;
+  }
+
+  .tool-meta {
+    grid-column: 1 / 3;
+    grid-row: 3;
+    padding-left: 40px;
+    text-align: left;
+    font-size: 11px;
+  }
+
+  .tool-open {
+    grid-column: 3;
+    grid-row: 1 / 4;
   }
 }
 </style>
