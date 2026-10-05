@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import type { ProgressStatus } from '#/api/core/progress-status';
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
 import { SearchOutlined } from '@ant-design/icons-vue';
+import { useElementBounding, useWindowSize } from '@vueuse/core';
 import { Button, Empty, Input, Select, Spin } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
@@ -21,6 +22,13 @@ defineOptions({ name: 'ReadRecord' });
 
 const { isMobile } = usePreferences();
 const STATUS_FILTER_STORAGE_KEY = 'aio-life:read-record:status-filter';
+
+const pageRef = ref<HTMLElement>();
+const { top: pageTop } = useElementBounding(pageRef);
+const { height: windowHeight } = useWindowSize();
+const pageStyle = computed(() => ({
+  height: `${Math.max(0, windowHeight.value - pageTop.value)}px`,
+}));
 
 const modalVisible = ref(false);
 const currentRow = ref<any>(null);
@@ -117,10 +125,14 @@ const tableReload = () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 transition-colors duration-300 md:p-8">
-    <div class="mx-auto max-w-7xl">
+  <div
+    ref="pageRef"
+    class="min-h-0 p-4 transition-colors duration-300 md:p-8"
+    :style="pageStyle"
+  >
+    <div class="mx-auto flex h-full min-h-0 max-w-7xl flex-col">
       <!-- 搜索过滤 -->
-      <div class="mb-6 flex flex-wrap items-center gap-3">
+      <div class="mb-6 flex shrink-0 flex-wrap items-center gap-3">
         <Input
           v-model:value="queryForm.title"
           placeholder="搜索标题或作者"
@@ -146,8 +158,7 @@ const tableReload = () => {
           v-model:value="queryForm.statuses"
           placeholder="状态"
           allow-clear
-          class="status-filter w-32"
-          max-tag-count="responsive"
+          class="status-filter min-w-32 max-w-full shrink-0"
           mode="multiple"
           @change="handleStatusChange"
         >
@@ -172,10 +183,7 @@ const tableReload = () => {
       </div>
 
       <!-- 书架网格 -->
-      <div
-        class="flex h-[calc(100vh-200px)] flex-col overflow-y-auto pb-10"
-        @scroll="handleScroll"
-      >
+      <div class="min-h-0 flex-1 overflow-y-auto pb-10" @scroll="handleScroll">
         <Spin
           :spinning="loading && records.length === 0"
           :class="{ 'initial-loading-area': loading && records.length === 0 }"
@@ -262,13 +270,10 @@ const tableReload = () => {
           </div>
         </Spin>
 
-        <!-- 撑开底部空间的占位元素 -->
-        <div v-if="records.length > 0" class="flex-grow"></div>
-
         <!-- 加载更多提示 -->
         <div
           v-if="records.length > 0 && loading"
-          class="mt-auto shrink-0 py-4 text-center text-sm text-gray-400"
+          class="py-4 text-center text-sm text-gray-400"
         >
           <span>正在加载更多...</span>
         </div>

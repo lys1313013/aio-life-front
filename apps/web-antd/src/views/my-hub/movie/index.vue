@@ -1,12 +1,16 @@
 <script lang="ts" setup>
 import type { ProgressStatus } from '#/api/core/progress-status';
 
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
 import { SearchOutlined, UploadOutlined } from '@ant-design/icons-vue';
-import { useResizeObserver } from '@vueuse/core';
+import {
+  useElementBounding,
+  useResizeObserver,
+  useWindowSize,
+} from '@vueuse/core';
 import { Button, Empty, Input, Select, Spin } from 'ant-design-vue';
 
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
@@ -23,6 +27,13 @@ defineOptions({ name: 'Movie' });
 
 const { isMobile } = usePreferences();
 const STATUS_FILTER_STORAGE_KEY = 'aio-life:movie:status-filter';
+
+const pageRef = ref<HTMLElement>();
+const { top: pageTop } = useElementBounding(pageRef);
+const { height: windowHeight } = useWindowSize();
+const pageStyle = computed(() => ({
+  height: `${Math.max(0, windowHeight.value - pageTop.value)}px`,
+}));
 
 const modalVisible = ref(false);
 const importVisible = ref(false);
@@ -169,10 +180,14 @@ const tableReload = () => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 transition-colors duration-300 md:p-8">
-    <div class="mx-auto max-w-7xl">
+  <div
+    ref="pageRef"
+    class="min-h-0 p-4 transition-colors duration-300 md:p-8"
+    :style="pageStyle"
+  >
+    <div class="mx-auto flex h-full min-h-0 max-w-7xl flex-col">
       <!-- 搜索过滤 -->
-      <div class="mb-6 flex flex-wrap items-center gap-3">
+      <div class="mb-6 flex shrink-0 flex-wrap items-center gap-3">
         <Input
           v-model:value="queryForm.title"
           placeholder="搜索影视名称或导演"
@@ -201,8 +216,7 @@ const tableReload = () => {
           v-model:value="queryForm.statuses"
           placeholder="状态"
           allow-clear
-          class="status-filter w-32"
-          max-tag-count="responsive"
+          class="status-filter min-w-32 max-w-full shrink-0"
           mode="multiple"
           @change="handleStatusChange"
         >
@@ -233,7 +247,7 @@ const tableReload = () => {
       <!-- 影视网格 -->
       <div
         ref="gridScrollRef"
-        class="flex h-[calc(100vh-200px)] flex-col overflow-y-auto pb-10"
+        class="min-h-0 flex-1 overflow-y-auto pb-10"
         @scroll="handleScroll"
       >
         <Spin
@@ -322,13 +336,10 @@ const tableReload = () => {
           </div>
         </Spin>
 
-        <!-- 撑开底部空间的占位元素 -->
-        <div v-if="records.length > 0" class="flex-grow"></div>
-
         <!-- 加载更多提示 -->
         <div
           v-if="records.length > 0 && loading"
-          class="mt-auto shrink-0 py-4 text-center text-sm text-gray-400"
+          class="py-4 text-center text-sm text-gray-400"
         >
           <span>正在加载更多...</span>
         </div>
