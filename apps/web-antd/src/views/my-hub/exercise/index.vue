@@ -1218,16 +1218,11 @@ const tableReload = () => {
       />
     </Modal>
 
-    <GlobalFloatBtn class="exercise-add-float-btn" @click="openAddFormModal" />
+    <GlobalFloatBtn @click="openAddFormModal" />
   </div>
 </template>
 
 <style scoped>
-.exercise-add-float-btn {
-  --global-float-btn-bg: #1890ff;
-  --global-float-btn-hover-bg: #40a9ff;
-}
-
 @media (max-width: 1200px) {
   .chart-container {
     grid-template-columns: 1fr;
