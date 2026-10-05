@@ -54,6 +54,7 @@ const providers = ref<MembershipProviderVO[]>([]);
 const providersLoading = ref(false);
 const providersFailed = ref(false);
 let providerRequest = 0;
+let autoName = '';
 
 async function loadProviders() {
   const request = ++providerRequest;
@@ -99,6 +100,11 @@ const providerOptions = computed(() => {
 function changeProvider(value: unknown) {
   const provider = providers.value.find((item) => item.id === value);
   if (provider) {
+    if (!formState.value.name.trim() || formState.value.name === autoName) {
+      formState.value.name = provider.name;
+      autoName = provider.name;
+      formRef.value?.clearValidate('name');
+    }
     formState.value.category = provider.category;
     formState.value.provider = provider.name;
   }
@@ -120,6 +126,8 @@ function changeCategory(value: unknown) {
   ) {
     formState.value.providerId = undefined;
     formState.value.provider = '';
+    if (formState.value.name === autoName) formState.value.name = '';
+    autoName = '';
   }
 }
 
@@ -172,6 +180,9 @@ watch(
     }
     void loadProviders();
     const item = props.values;
+    const providerName = item?.providerName || item?.provider || '';
+    autoName =
+      item?.providerId && item.name === providerName ? providerName : '';
     if (item) {
       formState.value = {
         id: item.id,

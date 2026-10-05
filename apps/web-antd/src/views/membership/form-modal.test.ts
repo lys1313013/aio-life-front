@@ -165,6 +165,51 @@ describe('会员共享编辑器', () => {
     );
   });
 
+  it('选择平台补充名称，切换跟随自动名称且保留手动名称', async () => {
+    const opencode = {
+      id: '195034',
+      name: 'OpenCode Go',
+      code: 'opencode_go',
+      category: 'AI',
+      iconKey: 'opencode_go',
+      sortOrder: 340,
+      isEnabled: 1,
+    };
+    const claude = {
+      ...opencode,
+      id: '195021',
+      name: 'Claude',
+      code: 'claude',
+      iconKey: 'claude',
+    };
+    api.providers.mockResolvedValue([opencode, claude]);
+    const wrapper = render();
+    await flushPromises();
+    const selector = wrapper.findAllComponents({ name: 'EditorSelect' })[1]!;
+    const model = wrapper.findComponent({ name: 'EditorForm' }).props('model');
+    const choose = async (id: string) => {
+      selector.vm.$emit('update:value', id);
+      selector.vm.$emit('change', id);
+      await flushPromises();
+    };
+    await choose(opencode.id);
+    expect(model.name).toBe('OpenCode Go');
+    expect(model.category).toBe('AI');
+    await choose(claude.id);
+    expect(model.name).toBe('Claude');
+    wrapper
+      .findAllComponents({ name: 'EditorInput' })[0]!
+      .vm.$emit('update:value', '我的编程套餐');
+    await choose(opencode.id);
+    expect(model.name).toBe('我的编程套餐');
+    const category = wrapper.findAllComponents({ name: 'EditorSelect' })[0]!;
+    category.vm.$emit('update:value', 'music');
+    category.vm.$emit('change', 'music');
+    await flushPromises();
+    expect(model.name).toBe('我的编程套餐');
+    expect(model.providerId).toBeUndefined();
+  });
+
   it('选择AI分类只显示AI平台，切换分类保留自定义文本且空分类显示全部', async () => {
     const ai = {
       id: '900719925474099403',
