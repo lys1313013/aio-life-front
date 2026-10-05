@@ -6,6 +6,8 @@
 
 .app-modal .ant-modal-content,
 .app-vben-modal {
+  --app-modal-padding-top: 30px;
+
   overflow: hidden;
   padding: 0;
   border: 1px solid hsl(var(--border) / 0.65);
@@ -28,7 +30,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 30px 28px 24px;
+  padding: var(--app-modal-padding-top) 28px 24px;
 }
 
 .app-modal-footer,
@@ -188,7 +190,7 @@
 @media (max-width: 479px) {
   .app-modal-body,
   .app-vben-modal .app-modal-body {
-    padding: 30px 20px 20px;
+    padding: var(--app-modal-padding-top) 20px 20px;
   }
 
   .app-modal-footer,

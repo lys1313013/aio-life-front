@@ -461,7 +461,7 @@ onUnmounted(() => {
 
 :global(.memo-modal .app-modal-body) {
   gap: 12px;
-  padding: 28px 32px 12px;
+  padding: var(--app-modal-padding-top) 32px 12px;
 }
 
 :global(.memo-modal .app-modal-footer) {
@@ -525,7 +525,7 @@ onUnmounted(() => {
 
 @media (max-width: 767px) {
   :global(.memo-modal .app-modal-body) {
-    padding: 22px 20px 8px;
+    padding: var(--app-modal-padding-top) 20px 8px;
   }
 
   :global(.memo-modal .app-modal-footer) {
@@ -534,12 +534,6 @@ onUnmounted(() => {
 
   :global(.memo-modal .memo-editor-title) {
     font-size: 20px;
-  }
-}
-
-@media (max-height: 480px) {
-  :global(.memo-modal .app-modal-body) {
-    padding-top: 16px;
   }
 }
 

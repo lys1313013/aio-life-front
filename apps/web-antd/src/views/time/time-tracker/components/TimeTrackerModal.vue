@@ -381,7 +381,7 @@ defineExpose({ open });
 </style>
 <style>
 .time-record-modal .app-modal-body {
-  padding: 16px 16px 0;
+  padding: var(--app-modal-padding-top) 16px 0;
 }
 
 .time-record-modal .app-modal-footer {
