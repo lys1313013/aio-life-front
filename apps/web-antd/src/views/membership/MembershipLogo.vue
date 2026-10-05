@@ -43,9 +43,16 @@ watch(src, () => {
       :src="src"
       alt=""
       class="h-full w-full object-contain"
+      :class="{ 'membership-app-icon': iconKey === 'netease_music' }"
       loading="lazy"
       @error="failed = true"
     />
     <IconifyIcon v-else :icon="categoryIcon" class="text-xl" />
   </span>
 </template>
+
+<style scoped>
+.membership-app-icon {
+  border-radius: 22%;
+}
+</style>

@@ -2,13 +2,13 @@ import type { Dayjs } from 'dayjs';
 
 // 分类预设
 export const CATEGORIES = [
+  { value: 'AI', label: 'AI', icon: 'lucide:sparkle' },
   { value: 'video', label: '视频', icon: 'mdi:movie-open-outline' },
   { value: 'music', label: '音乐', icon: 'mdi:music-note-eighth' },
   { value: 'shopping', label: '购物', icon: 'mdi:shopping-outline' },
   { value: 'cloud', label: '云盘', icon: 'mdi:cloud-outline' },
   { value: 'study', label: '学习', icon: 'mdi:book-open-outline' },
   { value: 'game', label: '游戏', icon: 'mdi:gamepad-variant-outline' },
-  { value: 'AI', label: 'AI', icon: 'lucide:sparkle' },
   { value: 'other', label: '其他', icon: 'mdi:shape-outline' },
 ];
 

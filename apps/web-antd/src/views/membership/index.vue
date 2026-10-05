@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import type { MembershipStatsVO, MembershipVO } from '#/api/membership';
 
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 
-import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
+import { CalendarOutlined } from '@ant-design/icons-vue';
 import {
-  Button as AButton,
   Empty as AEmpty,
-  Input as AInput,
-  Select as ASelect,
-  SelectOption as ASelectOption,
+  Switch as ASwitch,
   Tag as ATag,
 } from 'ant-design-vue';
 
@@ -42,30 +39,57 @@ const loading = ref(false);
 const statsLoading = ref(false);
 
 // Filters
-const filters = ref({
-  keyword: '',
-  category: undefined as string | undefined,
-});
+const selectedCategory = ref('');
+const includeExpired = ref(false);
 
 const modalVisible = ref(false);
 const currentMember = ref<MembershipVO>();
 
 // Computed
+const getCategoryMeta = (value?: string): (typeof CATEGORIES)[number] => {
+  return (
+    CATEGORIES.find((c) => c.value === value) ??
+    CATEGORIES[CATEGORIES.length - 1]!
+  );
+};
+
+const visibleMembers = computed(() =>
+  members.value.filter(
+    (item) => includeExpired.value || item.status !== 'expired',
+  ),
+);
+
+const categoryTabs = computed(() => {
+  const counts = new Map<string, number>();
+  for (const item of visibleMembers.value) {
+    const category = getCategoryMeta(item.category).value;
+    counts.set(category, (counts.get(category) ?? 0) + 1);
+  }
+  return [
+    { value: '', label: '全部', count: visibleMembers.value.length },
+    ...CATEGORIES.filter((category) => counts.has(category.value)).map(
+      (category) => ({
+        value: category.value,
+        label: category.label,
+        count: counts.get(category.value)!,
+      }),
+    ),
+  ];
+});
+
+watch(categoryTabs, (tabs) => {
+  if (!tabs.some((tab) => tab.value === selectedCategory.value)) {
+    selectedCategory.value = '';
+  }
+});
+
 const filteredMembers = computed(() => {
-  return members.value
-    .filter((item) => {
-      if (filters.value.keyword) {
-        const kw = filters.value.keyword.toLowerCase();
-        const matchName = item.name.toLowerCase().includes(kw);
-        const matchProvider = (item.providerName || item.provider || '')
-          .toLowerCase()
-          .includes(kw);
-        if (!matchName && !matchProvider) return false;
-      }
-      if (filters.value.category && item.category !== filters.value.category)
-        return false;
-      return true;
-    })
+  return visibleMembers.value
+    .filter(
+      (item) =>
+        !selectedCategory.value ||
+        getCategoryMeta(item.category).value === selectedCategory.value,
+    )
     .toSorted((a, b) => {
       const rankA = a.status === 'expired' ? 1 : 0;
       const rankB = b.status === 'expired' ? 1 : 0;
@@ -73,13 +97,6 @@ const filteredMembers = computed(() => {
       return a.remainingDays - b.remainingDays;
     });
 });
-
-const getCategoryMeta = (value?: string): (typeof CATEGORIES)[number] => {
-  return (
-    CATEGORIES.find((c) => c.value === value) ??
-    CATEGORIES[CATEGORIES.length - 1]!
-  );
-};
 
 const getStatusMeta = (status: string): { color: string; label: string } => {
   return STATUS_META[status] ?? { label: status, color: 'default' };
@@ -135,10 +152,6 @@ const handleDeleted = (id: string) => {
   loadStats();
 };
 
-const clearFilters = () => {
-  filters.value = { keyword: '', category: undefined };
-};
-
 const getBillingCycleLabel = (value?: string) => {
   return BILLING_CYCLES.find((item) => item.value === value)?.label ?? '月';
 };
@@ -191,37 +204,41 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
     </section>
 
     <!-- Filters -->
-    <div class="mb-6 rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div class="flex flex-wrap items-center gap-3">
-        <AInput
-          v-model:value="filters.keyword"
-          placeholder="搜索会员名称、平台..."
-          class="w-full sm:w-64"
-          allow-clear
+    <div class="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <nav
+        class="order-2 flex w-full min-w-0 gap-6 overflow-x-auto sm:order-1 sm:w-auto sm:flex-1"
+        aria-label="会员分类"
+        :aria-busy="loading"
+      >
+        <button
+          v-for="tab in categoryTabs"
+          :key="tab.value"
+          type="button"
+          class="flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-1 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          :class="
+            selectedCategory === tab.value
+              ? 'border-primary font-medium text-primary'
+              : 'border-transparent text-muted-foreground hover:text-card-foreground'
+          "
+          :aria-pressed="selectedCategory === tab.value"
+          @click="selectedCategory = tab.value"
         >
-          <template #prefix><SearchOutlined class="text-gray-400" /></template>
-        </AInput>
-
-        <ASelect
-          v-model:value="filters.category"
-          placeholder="分类筛选"
-          class="w-full sm:w-40"
-          allow-clear
-        >
-          <ASelectOption
-            v-for="cat in CATEGORIES"
-            :key="cat.value"
-            :value="cat.value"
-          >
-            <span class="inline-flex items-center gap-1">
-              <IconifyIcon :icon="cat.icon" />
-              {{ cat.label }}
-            </span>
-          </ASelectOption>
-        </ASelect>
-
-        <AButton @click="clearFilters">重置</AButton>
-      </div>
+          {{ tab.label }}
+          <span class="text-xs tabular-nums">{{
+            loading ? '—' : tab.count
+          }}</span>
+        </button>
+      </nav>
+      <label
+        class="order-1 ml-auto flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground sm:order-2"
+      >
+        包含过期
+        <ASwitch
+          v-model:checked="includeExpired"
+          size="small"
+          aria-label="包含过期"
+        />
+      </label>
     </div>
 
     <!-- Card Grid -->
@@ -231,7 +248,13 @@ const formatAmount = (value?: number) => Number(value ?? 0).toFixed(2);
         v-if="filteredMembers.length === 0 && !loading"
         class="py-20 text-center text-gray-400"
       >
-        <AEmpty description="暂无会员，点击右下角添加" />
+        <AEmpty
+          :description="
+            members.length > 0 && !includeExpired
+              ? '暂无生效中的会员'
+              : '暂无会员，点击右下角添加'
+          "
+        />
       </div>
 
       <div
