@@ -60,18 +60,38 @@ const bgOptions = [
 ];
 
 const emojiOptions = [
-  '🎉',
-  '🎂',
-  '❤️',
-  '💍',
-  '🎓',
-  '👶',
-  '🏠',
-  '🚗',
-  '✈️',
-  '💼',
-  '💪',
-  '🌟',
+  { icon: '🎉', label: '庆祝' },
+  { icon: '🎂', label: '生日' },
+  { icon: '❤️', label: '爱心' },
+  { icon: '💍', label: '婚姻' },
+  { icon: '🎓', label: '毕业' },
+  { icon: '👶', label: '宝宝' },
+  { icon: '🏠', label: '家' },
+  { icon: '🚗', label: '汽车' },
+  { icon: '✈️', label: '飞机' },
+  { icon: '💼', label: '工作' },
+  { icon: '💪', label: '力量' },
+  { icon: '🌟', label: '星光' },
+  { icon: '💐', label: '花束' },
+  { icon: '🥂', label: '干杯' },
+  { icon: '🎁', label: '礼物' },
+  { icon: '🍼', label: '奶瓶' },
+  { icon: '🧸', label: '玩偶' },
+  { icon: '🏢', label: '办公楼' },
+  { icon: '🖥️', label: '电脑' },
+  { icon: '🤝', label: '合作' },
+  { icon: '📚', label: '学习' },
+  { icon: '🔑', label: '钥匙' },
+  { icon: '🌱', label: '成长' },
+  { icon: '🧳', label: '行李箱' },
+  { icon: '🌍', label: '世界' },
+  { icon: '🏖️', label: '海滩' },
+  { icon: '🏆', label: '奖杯' },
+  { icon: '🎯', label: '目标' },
+  { icon: '🐱', label: '猫' },
+  { icon: '🐶', label: '狗' },
+  { icon: '🎨', label: '绘画' },
+  { icon: '📷', label: '摄影' },
 ];
 
 const openModal = (item?: AnniversaryRecord, defaultPinned = false) => {
@@ -200,20 +220,22 @@ defineExpose({ open: openModal });
               >选择图标</label
             >
             <div
-              class="flex flex-wrap justify-center gap-2 rounded-xl bg-gray-50 p-3 dark:bg-gray-700/50"
+              class="flex max-h-44 flex-wrap justify-start gap-2 overflow-y-auto rounded-xl bg-gray-50 p-3 dark:bg-gray-700/50"
             >
               <button
                 v-for="emoji in emojiOptions"
-                :key="emoji"
+                :key="emoji.icon"
                 type="button"
-                @click="selectEmoji(emoji)"
-                class="rounded-lg p-1 text-2xl transition-transform hover:scale-125 hover:bg-white dark:hover:bg-gray-600"
+                :aria-label="emoji.label"
+                :aria-pressed="formState.icon === emoji.icon"
+                @click="selectEmoji(emoji.icon)"
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl transition-colors hover:bg-white dark:hover:bg-gray-600"
                 :class="{
-                  'scale-110 bg-white shadow-sm dark:bg-gray-600':
-                    formState.icon === emoji,
+                  'bg-white shadow-sm dark:bg-gray-600':
+                    formState.icon === emoji.icon,
                 }"
               >
-                {{ emoji }}
+                {{ emoji.icon }}
               </button>
             </div>
           </div>
