@@ -29,7 +29,7 @@ vi.mock('#/api/membership/providers', () => ({
 }));
 vi.mock('@vben/icons', () => ({ IconifyIcon: { template: '<i />' } }));
 vi.mock('@vben/preferences', () => ({
-  usePreferences: () => ({ isMobile: false }),
+  usePreferences: () => ({ isMobile: false, isDark: { value: false } }),
 }));
 vi.mock('#/components/app-modal', () => ({
   AppModal: defineComponent({
@@ -125,7 +125,7 @@ function submit(wrapper: ReturnType<typeof render>) {
 }
 
 describe('会员共享编辑器', () => {
-  it('选择平台自动带入分类，允许分类覆盖并以字符串平台 ID 提交', async () => {
+  it('未选分类时选择平台自动带入分类，切换到其他分类清除关联', async () => {
     const provider = {
       id: '900719925474099401',
       name: '腾讯视频',
@@ -137,7 +137,7 @@ describe('会员共享编辑器', () => {
     };
     api.providers.mockResolvedValue([provider]);
     api.update.mockResolvedValue(existing);
-    const wrapper = render(existing);
+    const wrapper = render({ ...existing, category: undefined });
     await flushPromises();
     const selector = wrapper.findAllComponents({ name: 'EditorSelect' })[1]!;
     selector.vm.$emit('update:value', provider.id);
@@ -149,14 +149,63 @@ describe('会员共享编辑器', () => {
       provider: provider.name,
       category: 'video',
     });
-    wrapper
-      .findAllComponents({ name: 'EditorSelect' })[0]!
-      .vm.$emit('update:value', 'study');
+    const categorySelector = wrapper.findAllComponents({
+      name: 'EditorSelect',
+    })[0]!;
+    categorySelector.vm.$emit('update:value', 'study');
+    categorySelector.vm.$emit('change', 'study');
     submit(wrapper);
     await flushPromises();
     expect(api.update).toHaveBeenCalledWith(
-      expect.objectContaining({ providerId: provider.id, category: 'study' }),
+      expect.objectContaining({
+        providerId: null,
+        category: 'study',
+        provider: undefined,
+      }),
     );
+  });
+
+  it('选择AI分类只显示AI平台，切换分类保留自定义文本且空分类显示全部', async () => {
+    const ai = {
+      id: '900719925474099403',
+      name: 'Claude',
+      code: 'claude',
+      category: 'AI',
+      iconKey: null,
+      sortOrder: 1,
+      isEnabled: 1,
+    };
+    const video = {
+      ...ai,
+      id: '900719925474099404',
+      name: '腾讯视频',
+      code: 'tencent_video',
+      category: 'video',
+    };
+    api.providers.mockResolvedValue([ai, video]);
+    const wrapper = render({ ...existing, category: 'AI' });
+    await flushPromises();
+    const optionIds = () =>
+      wrapper
+        .findAllComponents({ name: 'EditorOption' })
+        .map((option) => option.props('value'));
+    expect(optionIds()).toContain(ai.id);
+    expect(optionIds()).not.toContain(video.id);
+    const categorySelector = wrapper.findAllComponents({
+      name: 'EditorSelect',
+    })[0]!;
+    categorySelector.vm.$emit('update:value', 'video');
+    categorySelector.vm.$emit('change', 'video');
+    await flushPromises();
+    expect(optionIds()).toContain(video.id);
+    expect(optionIds()).not.toContain(ai.id);
+    expect(
+      wrapper.findComponent({ name: 'EditorForm' }).props('model').provider,
+    ).toBe(existing.provider);
+    categorySelector.vm.$emit('update:value', undefined);
+    categorySelector.vm.$emit('change', undefined);
+    await flushPromises();
+    expect(optionIds()).toEqual(expect.arrayContaining([ai.id, video.id]));
   });
 
   it('已停用的平台保留关联，清空后按自定义平台保存', async () => {

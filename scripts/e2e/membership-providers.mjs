@@ -41,6 +41,15 @@ const providers = [
     sortOrder: 2,
     isEnabled: 0,
   },
+  {
+    id: '900719925474099404',
+    name: 'Claude',
+    code: 'claude',
+    category: 'AI',
+    iconKey: null,
+    sortOrder: 3,
+    isEnabled: 1,
+  },
 ];
 const record = {
   id: '900719925474099410',
@@ -263,7 +272,55 @@ try {
   await page.setViewportSize({ width: 820, height: 1000 });
   await page.goto(`${origin}/membership`);
   await page.getByText(record.name, { exact: true }).click();
+  await modal.locator('.ant-select').first().click();
+  await page
+    .locator('.ant-select-dropdown:visible .ant-select-item-option')
+    .filter({ hasText: /\bAI\b/ })
+    .click();
+  for (const width of [390, 820, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const dark of [false, true]) {
+      await page.evaluate(
+        async ({ dark, module }) => {
+          const { updatePreferences } = await import(module);
+          updatePreferences({ theme: { mode: dark ? 'dark' : 'light' } });
+        },
+        { dark, module: preferencesModule },
+      );
+      await modal.locator('.ant-select').nth(1).click();
+      const options = page
+        .locator('.ant-select-dropdown:visible')
+        .last()
+        .locator('.ant-select-item-option');
+      await options.filter({ hasText: 'Claude' }).waitFor();
+      const optionLabels = await options
+        .locator('.ant-select-item-option-content')
+        .allTextContents();
+      assert.deepEqual(
+        optionLabels.map((text) => text.trim()),
+        ['Claude'],
+      );
+      await page.screenshot({
+        path: `${output}/category-AI-${width}-${dark ? 'dark' : 'light'}.png`,
+        fullPage: true,
+      });
+      await modal.locator('#form_item_name').click();
+      await options.waitFor({ state: 'hidden' });
+    }
+  }
+  await modal.locator('.ant-select').first().click();
+  await page
+    .locator('.ant-select-dropdown:visible .ant-select-item-option')
+    .filter({ hasText: '音乐' })
+    .click();
   await modal.locator('.ant-select').nth(1).click();
+  assert.equal(
+    await page
+      .locator('.ant-select-dropdown:visible .ant-select-item-option')
+      .filter({ hasText: '腾讯视频' })
+      .count(),
+    0,
+  );
   await page
     .locator('.ant-select-item-option')
     .filter({ hasText: '网易云音乐' })
@@ -302,7 +359,7 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log(
-    JSON.stringify({ screenshots: 18, writes: writes.length, errors }, null, 2),
+    JSON.stringify({ screenshots: 24, writes: writes.length, errors }, null, 2),
   );
 } finally {
   await browser.close();

@@ -8,6 +8,7 @@ export const CATEGORIES = [
   { value: 'cloud', label: '云盘', icon: 'mdi:cloud-outline' },
   { value: 'study', label: '学习', icon: 'mdi:book-open-outline' },
   { value: 'game', label: '游戏', icon: 'mdi:gamepad-variant-outline' },
+  { value: 'AI', label: 'AI', icon: 'lucide:sparkle' },
   { value: 'other', label: '其他', icon: 'mdi:shape-outline' },
 ];
 

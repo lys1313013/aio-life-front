@@ -5,8 +5,11 @@ import { describe, expect, it, vi } from 'vitest';
 import MembershipLogo from './MembershipLogo.vue';
 
 vi.mock('#/api/membership/providers', () => ({
-  membershipProviderIconUrl: (key: string) =>
-    `/api/membership/provider-icons/${key}`,
+  membershipProviderIconUrl: (key: string, dark = false) =>
+    `/api/membership/provider-icons/${key}${dark ? '?dark=true' : ''}`,
+}));
+vi.mock('@vben/preferences', () => ({
+  usePreferences: () => ({ isDark: { value: false } }),
 }));
 vi.mock('@vben/icons', () => ({
   IconifyIcon: { props: ['icon'], template: '<i :data-icon="icon" />' },

@@ -69,13 +69,18 @@ async function loadProviders() {
   }
 }
 const providerOptions = computed(() => {
-  const options = providers.value.map((provider) => ({
-    ...provider,
-    disabled: false,
-  }));
+  const options = providers.value
+    .filter(
+      (provider) =>
+        !formState.value.category ||
+        provider.category === formState.value.category,
+    )
+    .map((provider) => ({ ...provider, disabled: false }));
   const existing = props.values;
   if (
     existing?.providerId &&
+    existing.providerId === formState.value.providerId &&
+    existing.category === formState.value.category &&
     !options.some((provider) => provider.id === existing.providerId)
   ) {
     options.unshift({
@@ -96,6 +101,25 @@ function changeProvider(value: unknown) {
   if (provider) {
     formState.value.category = provider.category;
     formState.value.provider = provider.name;
+  }
+}
+function changeCategory(value: unknown) {
+  const selected = providers.value.find(
+    (provider) => provider.id === formState.value.providerId,
+  );
+  const original = props.values;
+  const selectedCategory =
+    selected?.category ||
+    (original?.providerId === formState.value.providerId
+      ? original?.category
+      : undefined);
+  if (
+    formState.value.providerId &&
+    selectedCategory &&
+    selectedCategory !== value
+  ) {
+    formState.value.providerId = undefined;
+    formState.value.provider = '';
   }
 }
 
@@ -282,7 +306,11 @@ const recalculateMonthlyAmount = () => {
 
       <div class="flex flex-col sm:flex-row sm:gap-4">
         <AFormItem label="分类" name="category" class="flex-1">
-          <ASelect v-model:value="formState.category" placeholder="请选择分类">
+          <ASelect
+            v-model:value="formState.category"
+            placeholder="请选择分类"
+            @change="changeCategory"
+          >
             <ASelectOption
               v-for="cat in CATEGORIES"
               :key="cat.value"

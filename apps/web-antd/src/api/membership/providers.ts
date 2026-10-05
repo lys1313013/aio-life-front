@@ -76,7 +76,7 @@ export async function deleteMembershipProvider(id: string) {
   return await requestClient.delete<void>(`/system/membership-providers/${id}`);
 }
 
-export function membershipProviderIconUrl(key: string) {
+export function membershipProviderIconUrl(key: string, dark = false) {
   const { apiURL } = useAppConfig(import.meta.env, import.meta.env.PROD);
-  return `${apiURL.replace(/\/$/, '')}/membership/provider-icons/${encodeURIComponent(key)}`;
+  return `${apiURL.replace(/\/$/, '')}/membership/provider-icons/${encodeURIComponent(key)}${dark ? '?dark=true' : ''}`;
 }
