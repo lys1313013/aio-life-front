@@ -20,7 +20,6 @@ const {
   loading,
   finishing,
   error,
-  remaining,
   terminal,
   text,
   refresh,
@@ -83,13 +82,6 @@ watch(
       role="status"
     >
       {{ text }}
-    </p>
-    <p v-if="ticket && !terminal" class="text-sm text-muted-foreground">
-      核对码
-      <span class="font-mono font-semibold text-foreground">{{
-        ticket.verificationCode
-      }}</span>
-      <span v-if="status === 'WAITING'" class="ml-3">{{ remaining }} 秒</span>
     </p>
     <p v-if="error" role="alert" class="text-center text-sm text-destructive">
       {{ error }}
