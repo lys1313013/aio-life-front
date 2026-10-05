@@ -32,8 +32,6 @@ async function handleRefresh() {
       :aria-label="label"
       :aria-busy="pending || loading"
       :disabled="pending || loading || disabled"
-      @mousedown.stop
-      @touchstart.stop
       @click.stop="handleRefresh"
     ></button>
     <slot></slot>

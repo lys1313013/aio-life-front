@@ -67,6 +67,19 @@ export interface WereadNotes {
 export interface WereadProgress {
   book?: { progress?: number; readingTime?: number; updateTime?: number };
 }
+export interface WereadRecentBook extends Omit<WereadBook, 'readUpdateTime'> {
+  readUpdateTime: string;
+  progress: null | number;
+}
+export interface WereadRecent {
+  connected: boolean;
+  books: WereadRecentBook[];
+}
+export function getWereadRecent() {
+  return requestClient.get<WereadRecent>('/weread/recent', {
+    timeout: 120_000,
+  });
+}
 export async function getWereadConnection() {
   return requestClient.get<WereadConnection>('/weread/connection');
 }

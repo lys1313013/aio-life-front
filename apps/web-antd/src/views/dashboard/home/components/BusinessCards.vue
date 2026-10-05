@@ -24,8 +24,8 @@ import {
 } from '#/api/my-hub/anniversary';
 import { ReadRecordApi } from '#/api/readRecord';
 import { AppModal } from '#/components/app-modal';
+import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
-import { CATEGORIES } from '#/views/membership/constants';
 
 import {
   BUSINESS_CARD_PAGE_SIZE,
@@ -38,6 +38,8 @@ import {
 import BusinessListCard from './BusinessListCard.vue';
 
 const props = defineProps<{ only?: string }>();
+const emit = defineEmits<{ visibility: [visible: boolean] }>();
+const cardVisibility = ref<Record<string, boolean>>({});
 const GoalEditor = defineAsyncComponent(
   () => import('#/views/task-center/goal/GoalEditor.vue'),
 );
@@ -55,6 +57,8 @@ const MovieEditor = defineAsyncComponent(
 );
 const router = useRouter();
 const access = useAccessStore();
+const menuVisuals = useMenuVisualsStore();
+void menuVisuals.load();
 const user = useUserStore();
 const identity = computed(
   () => user.userInfo?.userId || user.userInfo?.id || '',
@@ -94,8 +98,6 @@ const configurations = [
   {
     key: 'goal',
     title: '目标',
-    icon: 'mdi:target',
-    paths: ['/task/goal', '/task-center/goal'],
     unpin: (id: string) => setGoalPinned(id, 0),
     reorder: updateGoalPinnedOrder,
     async fetchPage(): Promise<BusinessCardPage> {
@@ -116,8 +118,6 @@ const configurations = [
   {
     key: 'anniversary',
     title: '纪念日',
-    icon: 'mdi:calendar-heart',
-    paths: ['/record/anniversary', '/my-hub/anniversary'],
     unpin: (id: string) => setAnniversaryPinned(id, 0),
     reorder: updateAnniversaryPinnedOrder,
     async fetchPage(): Promise<BusinessCardPage> {
@@ -139,8 +139,6 @@ const configurations = [
   {
     key: 'reading',
     title: '阅读',
-    icon: 'mdi:book-open-page-variant',
-    paths: ['/record/read', '/my-hub/read-record'],
     async fetchPage(page: number): Promise<BusinessCardPage> {
       // Fetch both statuses from page one so a long in-progress list cannot hide wanted books.
       const results = await Promise.all(
@@ -179,8 +177,6 @@ const configurations = [
   {
     key: 'membership',
     title: '会员',
-    icon: 'mdi:card-account-details-outline',
-    paths: ['/membership'],
     async fetchPage(): Promise<BusinessCardPage> {
       return {
         hasMore: false,
@@ -191,10 +187,8 @@ const configurations = [
           badge: dateDistance(row.expiryDate, true),
           badgeUrgent: row.status === 'expiring',
           membership: true,
-          icon:
-            row.icon ||
-            CATEGORIES.find((category) => category.value === row.category)
-              ?.icon,
+          providerIconKey: row.providerIconKey,
+          category: row.category,
           autoRenew: row.autoRenew === 1,
           record: row,
         })),
@@ -204,8 +198,6 @@ const configurations = [
   {
     key: 'movie',
     title: '观影',
-    icon: 'mdi:movie-open-play-outline',
-    paths: ['/record/movie', '/my-hub/movie'],
     async fetchPage(page: number): Promise<BusinessCardPage> {
       const result = await MovieApi.pageList({
         activeOnly: true,
@@ -239,7 +231,9 @@ const cards = computed(() =>
   configurations
     .filter((config) => !props.only || config.key === props.only)
     .flatMap((config) => {
-      const chain = findMenuChain(access.accessMenus, config.paths);
+      const source = menuVisuals.cardMenu(`section.${config.key}`);
+      if (!source?.menuId) return [];
+      const chain = findMenuChain(access.accessMenus, [], [], source.menuId);
       const menu = chain.at(-1);
       if (!menu || access.loginExpired) return [];
       const lockedMenu = chain.find(
@@ -258,14 +252,18 @@ const cards = computed(() =>
       return [
         {
           ...config,
-          icon: menu.icon || config.icon,
-          iconColor: menu.iconColor,
+          ...menuVisuals.visual(`section.${config.key}`),
           path: menu.path,
           locked,
           unlockPath,
         },
       ];
     }),
+);
+watch(
+  () => cards.value.some((card) => cardVisibility.value[card.key] !== false),
+  (value) => emit('visibility', value),
+  { immediate: true },
 );
 void locks.loadLockedMenus();
 function accessDenied(path: string) {
@@ -330,12 +328,15 @@ const membershipRecord = computed(
           > | null;
         }
       "
+      @visibility="cardVisibility[card.key] = $event"
       :title="card.title"
+      :skeleton-count="card.key === 'membership' ? 4 : 1"
       :skeleton-row-height="
         card.key === 'goal' ? 72 : card.key === 'anniversary' ? 56 : 64
       "
       :icon="card.icon"
       :media="card.key === 'reading' || card.key === 'movie'"
+      :membership="card.key === 'membership'"
       :reading-shelves="card.key === 'reading'"
       :icon-color="card.iconColor"
       :locked="card.locked"

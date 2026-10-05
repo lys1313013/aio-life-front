@@ -70,6 +70,7 @@ try {
       homePath: '/',
     },
     '/auth/codes': [],
+    '/menu/visuals': { menus: [], cards: {} },
     '/menu/all': [
       {
         name: 'FixtureLayout',
@@ -151,13 +152,21 @@ try {
     ['/my-hub/movie', 'Movie'],
   ];
   fixtures['/menu/all'][0].children.push(
-    ...businessMenus.map(([path, name]) => ({
+    ...businessMenus.map(([path, name], index) => ({
       path,
       name,
       component: '/dashboard/home/index',
-      meta: { title: name },
+      meta: { title: name, menuId: String(index + 1) },
     })),
   );
+  fixtures['/menu/visuals'] = {
+    menus: [],
+    cards: Object.fromEntries(
+      ['goal', 'anniversary', 'reading', 'membership', 'movie'].map(
+        (key, index) => [`section.${key}`, { menuId: String(index + 1) }],
+      ),
+    ),
+  };
   Object.assign(fixtures, {
     '/goals': [
       {

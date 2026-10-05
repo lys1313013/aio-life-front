@@ -19,6 +19,8 @@ import { useSortable } from '@vben/hooks';
 
 import { Dropdown, Menu, MenuItem } from 'ant-design-vue';
 
+import MembershipLogo from '#/views/membership/MembershipLogo.vue';
+
 import {
   BUSINESS_CARD_MAX_HEIGHT,
   goalProgressColor,
@@ -35,8 +37,10 @@ const props = defineProps<{
   iconColor?: string;
   locked?: boolean;
   media?: boolean;
+  membership?: boolean;
   readingShelves?: boolean;
   reorder?: (ids: string[]) => Promise<unknown>;
+  skeletonCount?: number;
   skeletonRowHeight?: number;
   title: string;
   unpin?: (id: string) => Promise<unknown>;
@@ -47,12 +51,21 @@ const emit = defineEmits<{
   edit: [item: BusinessCardItem];
   navigate: [];
   unlock: [];
+  visibility: [visible: boolean];
 }>();
 const items = ref<BusinessCardItem[]>([]);
 const loading = ref(false);
 const loadingMore = ref(false);
 const error = ref(false);
 const initialized = ref(false);
+const visible = computed(
+  () =>
+    !!props.locked ||
+    !initialized.value ||
+    items.value.length > 0 ||
+    error.value,
+);
+watch(visible, (value) => emit('visibility', value), { immediate: true });
 const busyId = ref('');
 const page = ref(0);
 const hasMore = ref(false);
@@ -316,14 +329,17 @@ defineExpose({ reload: () => load(true) });
 
 <template>
   <section
-    v-if="locked || !initialized || items.length > 0 || error"
+    v-if="visible"
     class="business-list-card flex h-auto min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground md:h-[250px] lg:h-[280px]"
+    :class="{
+      'media-list-card': media && !readingShelves,
+      'membership-card': membership,
+    }"
     :style="{ maxHeight: `${BUSINESS_CARD_MAX_HEIGHT}px` }"
     :aria-label="title"
   >
     <CardHeader
-      class="pr-2"
-      :class="media ? 'pl-5' : 'pl-3'"
+      class="px-2.5 sm:px-3"
       :label="`刷新${title}`"
       :loading="loading"
       :show-indicator="false"
@@ -332,12 +348,12 @@ defineExpose({ reload: () => load(true) });
     >
       <button
         type="button"
-        class="flex min-h-11 min-w-0 items-center gap-2 text-base font-semibold hover:text-primary"
+        class="home-card-title flex min-h-11 min-w-0 items-center gap-2 text-base font-semibold hover:text-primary"
         @click="emit('navigate')"
       >
         <VbenIcon
           :icon="icon"
-          :style="{ color: iconColor }"
+          :style="{ color: iconColor || 'hsl(var(--foreground))' }"
           class="size-4 shrink-0"
         /><span>{{ title }}</span>
       </button>
@@ -378,15 +394,19 @@ defineExpose({ reload: () => load(true) });
     <div
       v-else
       ref="scrollRef"
-      class="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-2"
+      class="business-card-scroll relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2.5 sm:px-3"
       :style="
         items.length === 0
           ? {
-              minHeight: `${readingShelves ? 107 : (skeletonRowHeight || 64) + 8}px`,
+              minHeight: membership
+                ? 'calc(4 * var(--membership-row-height) + var(--business-card-bottom-padding))'
+                : media && !readingShelves
+                  ? 'calc(var(--media-row-height) + var(--business-card-bottom-padding))'
+                  : `calc(${readingShelves ? 99 : (skeletonRowHeight || 64) * (skeletonCount || 1)}px + var(--business-card-bottom-padding))`,
             }
           : {}
       "
-      :class="media ? 'px-4 pt-1' : 'px-2'"
+      :class="{ 'pt-1': media }"
       @scroll="onScroll"
     >
       <ReadingShelves
@@ -410,8 +430,11 @@ defineExpose({ reload: () => load(true) });
         >
           <button
             type="button"
-            class="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-            :class="{ 'min-h-16': item.membership, 'media-row': item.media }"
+            class="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            :class="{
+              'membership-row': item.membership,
+              'media-row': item.media,
+            }"
             :disabled="!!busyId"
             :aria-label="`编辑${item.title}`"
             @click="editItem(item)"
@@ -459,6 +482,7 @@ defineExpose({ reload: () => load(true) });
             </span>
             <BusinessCardCover
               v-else-if="item.media"
+              class="media-cover"
               :file-id="item.fileId"
               :url="item.coverUrl"
               :icon="icon"
@@ -468,12 +492,12 @@ defineExpose({ reload: () => load(true) });
               class="w-8 shrink-0 text-center text-xl"
               >{{ item.emoji }}</span
             >
-            <span
+            <MembershipLogo
               v-else-if="item.membership"
-              class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary/60 text-muted-foreground"
-            >
-              <VbenIcon :icon="item.icon || icon" class="size-5" />
-            </span>
+              :icon-key="item.providerIconKey"
+              :category="item.category"
+              :name="item.title"
+            />
             <VbenIcon
               v-else
               :icon="item.icon || icon"
@@ -579,13 +603,20 @@ defineExpose({ reload: () => load(true) });
       <BusinessCardSkeleton
         v-if="!readingShelves && loading && items.length === 0"
         :media="media"
-        :count="1"
-        :row-height="skeletonRowHeight"
+        :count="skeletonCount || 1"
+        :row-height="
+          membership
+            ? 'var(--membership-row-height)'
+            : media
+              ? 'var(--media-row-height)'
+              : skeletonRowHeight
+        "
       />
       <BusinessCardSkeleton
         v-else-if="!readingShelves && loadingMore"
         :media="media"
         :count="1"
+        :row-height="media ? 'var(--media-row-height)' : undefined"
         label="加载更多"
       />
       <button
@@ -616,13 +647,80 @@ defineExpose({ reload: () => load(true) });
   cursor: grabbing;
 }
 .business-list-card {
+  --business-card-bottom-padding: 10px;
+
   container: business-card / inline-size;
 }
 
+.business-card-scroll {
+  padding-bottom: var(--business-card-bottom-padding);
+}
+
+@media (min-width: 640px) {
+  .business-list-card {
+    --business-card-bottom-padding: 12px;
+  }
+}
+
+.membership-row {
+  min-height: var(--membership-row-height);
+  padding-block: calc((var(--membership-row-height) - 40px) / 2);
+}
+
+.membership-card {
+  --membership-card-height: 280px;
+  /* 标题 44px、边框 2px，剩余高度均分给四条会员和底部留白。 */
+  --membership-row-height: calc(
+    (
+        var(--membership-card-height) - 46px -
+          var(--business-card-bottom-padding)
+      ) /
+      4
+  );
+}
+
+@media (min-width: 768px) {
+  .membership-card {
+    --membership-card-height: 250px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .membership-card {
+    --membership-card-height: 280px;
+  }
+}
+
 .media-row {
-  height: 64px;
+  height: var(--media-row-height, 64px);
   gap: 10px;
   padding-block: 4px;
+}
+
+.media-list-card {
+  --media-row-height: 64px;
+}
+
+@media (min-width: 768px) {
+  .media-list-card {
+    --media-card-height: 250px;
+    /* 标题 44px、边框 2px、顶部 4px，剩余高度分配给三行和底部内边距。 */
+    --media-row-height: calc(
+      (var(--media-card-height) - 50px - var(--business-card-bottom-padding)) /
+        3
+    );
+  }
+}
+
+@media (min-width: 1024px) {
+  .media-list-card {
+    --media-card-height: 280px;
+  }
+}
+
+.media-cover {
+  width: calc((var(--media-row-height, 64px) - 16px) * 2 / 3);
+  height: calc(var(--media-row-height, 64px) - 16px);
 }
 
 :deep(.media-row-grid) {

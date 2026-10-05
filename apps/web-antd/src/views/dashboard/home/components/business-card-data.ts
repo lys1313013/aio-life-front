@@ -30,6 +30,8 @@ export interface BusinessCardItem {
   badge?: string;
   badgeUrgent?: boolean;
   membership?: boolean;
+  providerIconKey?: null | string;
+  category?: string;
   inProgress?: boolean;
   record: unknown;
 }
@@ -83,11 +85,13 @@ export function findMenuChain(
   menus: HomeMenu[],
   paths: string[],
   parents: HomeMenu[] = [],
+  menuId?: string,
 ): HomeMenu[] {
   for (const menu of menus) {
     const chain = [...parents, menu];
-    if (paths.includes(menu.path)) return chain;
-    const nested = findMenuChain(menu.children ?? [], paths, chain);
+    if (menuId ? menu.menuId === menuId : paths.includes(menu.path))
+      return chain;
+    const nested = findMenuChain(menu.children ?? [], paths, chain, menuId);
     if (nested.length > 0) return nested;
   }
   return [];

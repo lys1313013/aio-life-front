@@ -13,6 +13,29 @@ const mocks = vi.hoisted(() => ({
   readUpdate: vi.fn(),
   movieUpdate: vi.fn(),
 }));
+vi.mock('#/store/menu-visuals', () => {
+  const values: Record<
+    string,
+    { menuId: string; icon: string; iconColor?: string }
+  > = {
+    'section.goal': { menuId: '5', icon: 'mdi:target' },
+    'section.membership': { menuId: '4', icon: 'ant-design:gift-outlined' },
+    'section.reading': {
+      menuId: '2',
+      icon: 'lucide:book-open',
+      iconColor: '#5c91ab',
+    },
+    'section.movie': { menuId: '3', icon: 'lucide:clapperboard' },
+  };
+  return {
+    useMenuVisualsStore: () => ({
+      load: vi.fn(),
+      cardMenu: (key: string) => values[key],
+      visual: (key: string) =>
+        values[key] || { icon: 'lucide:layout-dashboard' },
+    }),
+  };
+});
 vi.mock('@vben/stores', () => ({
   useAccessStore: () => ({
     accessMenus: [
@@ -49,6 +72,13 @@ vi.mock('#/store/secondary-lock', () => ({
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@vben/common-ui', () => ({ VbenIcon: { template: '<i />' } }));
 vi.mock('@vben/icons', () => ({ IconifyIcon: { template: '<i />' } }));
+vi.mock('@vben/preferences', () => ({
+  usePreferences: () => ({ isDark: { value: false } }),
+}));
+vi.mock('#/api/membership/providers', () => ({
+  membershipProviderIconUrl: (key: string, dark = false) =>
+    `/api/membership/provider-icons/${key}${dark ? '?dark=true' : ''}`,
+}));
 vi.mock('ant-design-vue', () => {
   const wrapper = { template: '<div><slot /></div>' };
   return {
@@ -299,12 +329,22 @@ describe('首页卡片显示规则', () => {
     };
     mocks.memberships.mockResolvedValue([
       expired,
-      { id: '2', name: '有效会员', expiryDate: '2099-01-01', status: 'active' },
+      {
+        id: '2',
+        name: '有效会员',
+        expiryDate: '2099-01-01',
+        status: 'active',
+        category: 'AI',
+        providerIconKey: 'chatgpt',
+      },
     ]);
     const wrapper = mount(BusinessCards);
     await flushPromises();
     expect(wrapper.text()).toContain('有效会员');
     expect(wrapper.text()).not.toContain('已过期会员');
+    expect(
+      wrapper.get('[aria-label="编辑有效会员"] img').attributes('src'),
+    ).toBe('/api/membership/provider-icons/chatgpt');
     mocks.memberships.mockResolvedValue([expired]);
     await wrapper.get('[aria-label="刷新会员"]').trigger('click');
     await flushPromises();

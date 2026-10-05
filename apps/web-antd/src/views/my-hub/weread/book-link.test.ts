@@ -38,6 +38,15 @@ function render(deepLink?: string) {
   });
 }
 describe('阅读排行打开书籍', () => {
+  it('紧凑书籍链接接收父卡片布局样式和属性', () => {
+    const wrapper = mount(BookLink, {
+      props: { book: { ...book, deepLink: link }, compact: true },
+      attrs: { class: 'recent-book-row', 'data-testid': 'recent-book' },
+    });
+    expect(wrapper.get('a').classes()).toContain('recent-book-row');
+    expect(wrapper.get('a').attributes('data-testid')).toBe('recent-book');
+  });
+
   it.each([link, detailLink])(
     '已有链接直接打开阅读页：%s',
     async (deepLink) => {

@@ -131,3 +131,33 @@ it('真实 KeepAlive 离页返回保留首页内容实例', async () => {
   expect(mocks.contentMounted).toHaveBeenCalledTimes(1);
   wrapper.unmount();
 });
+
+it('只调整顺序保留内容实例，启用项变化才重新初始化', async () => {
+  mocks.contentMounted.mockClear();
+  mocks.contentUnmounted.mockClear();
+  const preferences = reactive({
+    items: [
+      { cardKey: 'section.time', enabled: true, sortOrder: 0 },
+      { cardKey: 'section.thoughts', enabled: true, sortOrder: 1 },
+    ],
+    ready: true,
+    error: false,
+    loading: false,
+    load: vi.fn(async () => {}),
+  });
+  mocks.preferences = preferences;
+  const wrapper = mount(Home);
+  await flushPromises();
+  const content = wrapper.get('[data-testid="content"]').element;
+  preferences.items = [
+    { cardKey: 'section.thoughts', enabled: true, sortOrder: 0 },
+    { cardKey: 'section.time', enabled: true, sortOrder: 1 },
+  ];
+  await flushPromises();
+  expect(wrapper.get('[data-testid="content"]').element).toBe(content);
+  expect(mocks.contentMounted).toHaveBeenCalledTimes(1);
+  preferences.items[0]!.enabled = false;
+  await flushPromises();
+  expect(mocks.contentMounted).toHaveBeenCalledTimes(2);
+  wrapper.unmount();
+});

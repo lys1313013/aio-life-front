@@ -23,11 +23,7 @@ const initialized = ref(false);
 const contentKey = computed(() =>
   JSON.stringify([
     user.userInfo?.userId || user.userInfo?.id,
-    preferences.items.map((item) => [
-      item.cardKey,
-      item.enabled,
-      item.sortOrder,
-    ]),
+    preferences.items.map((item) => [item.cardKey, item.enabled]).sort(),
   ]),
 );
 let pending: null | Promise<void> = null;

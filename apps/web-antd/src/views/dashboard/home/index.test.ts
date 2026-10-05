@@ -36,6 +36,13 @@ vi.mock('#/store/quick-nav', () => ({
   useQuickNavStore: () => ({ load: vi.fn() }),
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('#/store/menu-visuals', () => ({
+  useMenuVisualsStore: () => ({
+    load: vi.fn(),
+    loading: false,
+    visual: () => ({ icon: 'lucide:layout-dashboard' }),
+  }),
+}));
 vi.mock('@vben/stores', () => ({
   useUserStore: () => ({ userInfo: { id: 'fixture' } }),
 }));

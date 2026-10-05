@@ -25,11 +25,13 @@ import {
 import { getPinnedThoughts } from '#/api/core/think';
 import { updateTaskDetail } from '#/api/core/todo';
 import { getUserBindListApi } from '#/api/core/user-bind';
+import BusinessIcon from '#/components/BusinessIcon.vue';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
   ACTION_OPEN_TIME_TRACKER_MODAL,
 } from '#/constants/action';
 import { useHomeCardsStore } from '#/store/home-cards';
+import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useQuickNavStore } from '#/store/quick-nav';
 
 import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
@@ -42,11 +44,14 @@ import BusinessCardSkeleton from './components/BusinessCardSkeleton.vue';
 import CardHeader from './components/CardHeader.vue';
 import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
+import HomeCardSortGrid from './components/HomeCardSortGrid.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
+import WereadRecentCard from './components/WereadRecentCard.vue';
 import { useHomeRequest } from './composables/useHomeRequest';
 
 interface OverviewItem {
+  cardKey: string;
   icon: Component | string;
   iconColor?: string;
   iconClickUrl?: string;
@@ -64,6 +69,40 @@ interface OverviewItem {
 }
 
 const homeCards = useHomeCardsStore();
+const menuVisuals = useMenuVisualsStore();
+onMounted(() => menuVisuals.load());
+const sectionVisibility = ref<Record<string, boolean>>({});
+function sectionVisible(section: { cardKey: string }) {
+  if (section.cardKey === 'section.watched')
+    return (
+      !watchedLoaded.value ||
+      watchedError.value ||
+      watchedTasks.value.length > 0
+    );
+  if (section.cardKey === 'section.github') return githubBound.value;
+  if (section.cardKey === 'section.exercise')
+    return exerciseLoading.value || !exerciseEmpty.value;
+  return sectionVisibility.value[section.cardKey] !== false;
+}
+const overviewCards = computed<OverviewItem[]>(() => {
+  if (loading.value && overviewItems.value.length === 0)
+    return homeCards.items
+      .filter((item) => item.group === 'overview' && item.enabled)
+      .map((item) => ({
+        cardKey: item.cardKey,
+        title: item.title,
+        icon: item.icon,
+        loading: true,
+      }));
+  return overviewItems.value
+    .filter(
+      (item) =>
+        item.loading ||
+        item.error ||
+        (item.value !== undefined && item.value !== null && item.value !== ''),
+    )
+    .sort((a, b) => homeCards.order(a.cardKey) - homeCards.order(b.cardKey));
+});
 let active = true;
 let dataGeneration = 0;
 const cardVersions = new Map<string, number>();
@@ -196,9 +235,6 @@ async function verifyGithub() {
     console.error('查询 GitHub 绑定失败:', error);
   }
 }
-const longPressTimer = ref<ReturnType<typeof setTimeout>>();
-const isLongPress = ref(false);
-
 const editTaskModalVisible = ref(false);
 const editingWatchedTask = ref<null | WatchedTaskDetail>(null);
 
@@ -220,38 +256,6 @@ const SECTION_REFRESH = {
 };
 
 const sectionTimers = new Map<string, ReturnType<typeof setInterval>>();
-
-function startLongPress(item: OverviewItem) {
-  const isTimeTracker = item.title === '时迹' || item.type === 'TIME_TRACKER';
-  const isExercise = item.title === '运动' || item.type === 'EXERCISE';
-
-  if (!isTimeTracker && !isExercise) return;
-
-  isLongPress.value = false;
-  longPressTimer.value = setTimeout(() => {
-    isLongPress.value = true;
-    if (isTimeTracker) {
-      timeTrackerModalRef.value?.open();
-    } else if (isExercise) {
-      exerciseModalRef.value?.open();
-    }
-    // 震动反馈
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-  }, 200);
-}
-
-function endLongPress() {
-  if (longPressTimer.value) {
-    clearTimeout(longPressTimer.value);
-    longPressTimer.value = undefined;
-  }
-}
-
-function cancelLongPress() {
-  endLongPress();
-}
 
 function loadWatchedTasks() {
   if (!homeCards.enabled('section.watched')) return Promise.resolve();
@@ -453,7 +457,6 @@ function stopTimers() {
     item.loading = false;
     item.refreshing = false;
   });
-  endLongPress();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   if (timeTrackerNowTimer.value) clearInterval(timeTrackerNowTimer.value);
   // 清理所有定时器
@@ -514,6 +517,7 @@ const overviewRequest = useHomeRequest({
         );
         items.push({
           ...previous,
+          cardKey: `overview.${task.type.toLowerCase()}`,
           title: task.title,
           type: task.type,
           loading: !previous,
@@ -590,10 +594,6 @@ async function loadCard(item: OverviewItem) {
 }
 
 function handleCardClick(item: OverviewItem) {
-  if (isLongPress.value) {
-    isLongPress.value = false;
-    return;
-  }
   refreshCard(item);
 }
 
@@ -601,7 +601,7 @@ function handleTitleClick(url: string) {
   if (url === ACTION_OPEN_TIME_TRACKER_MODAL) {
     timeTrackerModalRef.value?.open();
   } else if (url === ACTION_OPEN_EXERCISE_MODAL) {
-    // 点击「今日运动」标题进入运动页面，而非弹出录入弹窗（长按卡片仍可快速录入）
+    // 点击「今日运动」标题进入运动页面，而非弹出录入弹窗
     navTo({ url: '/record/exercise' });
   }
 }
@@ -665,59 +665,43 @@ function navTo(nav: { url?: string }) {
     >
       加载失败，重试
     </button>
-    <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
-      <template v-if="loading && overviewItems.length === 0">
+    <HomeCardSortGrid
+      :items="overviewCards"
+      group="overview"
+      class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5"
+    >
+      <template #default="{ item }">
         <AnalysisCard
-          v-for="item in homeCards.items.filter(
-            (item) => item.group === 'overview' && item.enabled,
-          )"
-          :key="item.cardKey"
+          :loading="item.loading"
+          :refreshing="item.refreshing"
+          :error="item.error"
+          :icon="
+            menuVisuals.visual(`overview.${item.type?.toLowerCase()}`).icon
+          "
+          :icon-color="
+            menuVisuals.visual(`overview.${item.type?.toLowerCase()}`).iconColor
+          "
+          :icon-click-url="item.iconClickUrl"
           :title="item.title"
-          :icon="item.icon"
-          loading
-          class="min-w-0"
+          :title-click-url="item.titleClickUrl"
+          :total-title="item.totalTitle"
+          :total-value="item.totalValue"
+          :value="item.value"
+          :value-color="item.valueColor"
+          class="min-w-0 cursor-pointer"
+          @click="handleCardClick(item)"
+          @retry="refreshCard(item)"
+          @title-click="handleTitleClick"
         />
       </template>
-      <template v-else>
-        <template v-for="item in overviewItems" :key="item.type || item.title">
-          <AnalysisCard
-            v-if="
-              item.loading ||
-              item.error ||
-              (item.value !== undefined &&
-                item.value !== null &&
-                item.value !== '')
-            "
-            :loading="item.loading"
-            :refreshing="item.refreshing"
-            :error="item.error"
-            :icon="item.icon"
-            :icon-color="item.iconColor"
-            :icon-click-url="item.iconClickUrl"
-            :title="item.title"
-            :title-click-url="item.titleClickUrl"
-            :total-title="item.totalTitle"
-            :total-value="item.totalValue"
-            :value="item.value"
-            :value-color="item.valueColor"
-            class="min-w-0 cursor-pointer"
-            @click="handleCardClick(item)"
-            @retry="refreshCard(item)"
-            @mousedown="startLongPress(item)"
-            @touchstart="startLongPress(item)"
-            @mouseup="endLongPress"
-            @touchend="endLongPress"
-            @mouseleave="cancelLongPress"
-            @touchmove="cancelLongPress"
-            @title-click="handleTitleClick"
-          />
-        </template>
-      </template>
-    </div>
-    <div
+    </HomeCardSortGrid>
+    <HomeCardSortGrid
+      :items="homeCards.sections"
+      group="section"
+      :visible="sectionVisible"
       class="mt-2 grid items-stretch gap-2 sm:mt-3 sm:gap-3 md:grid-cols-2 lg:grid-cols-3"
     >
-      <template v-for="section in homeCards.sections" :key="section.cardKey">
+      <template #default="{ item: section }">
         <!-- 时迹统计 -->
         <div
           v-if="section.cardKey === 'section.time'"
@@ -734,7 +718,10 @@ function navTo(nav: { url?: string }) {
               class="select-none text-base font-semibold transition-colors hover:text-primary"
               title="进入时迹"
               @click.stop="navTo({ url: '/time/time-tracker' })"
-              >时迹</span
+              ><BusinessIcon
+                card-key="section.time"
+                class="mr-2 inline-block size-4 align-middle"
+              />时迹</span
             >
             <span
               class="flex cursor-pointer items-center gap-1 rounded-full bg-secondary/60 px-2 py-1 transition-colors hover:bg-secondary"
@@ -789,7 +776,10 @@ function navTo(nav: { url?: string }) {
                 class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
                 title="进入待办"
                 @click="navTo({ url: '/task/todo' })"
-                >待办</span
+                ><BusinessIcon
+                  card-key="section.watched"
+                  class="mr-2 inline-block size-4 align-middle"
+                />待办</span
               >
             </div>
           </CardHeader>
@@ -932,7 +922,10 @@ function navTo(nav: { url?: string }) {
               class="select-none text-base font-semibold transition-colors hover:text-primary"
               title="进入闪念"
               @click.stop="navTo({ url: '/record/think' })"
-              >闪念</span
+              ><BusinessIcon
+                card-key="section.thoughts"
+                class="mr-2 inline-block size-4 align-middle"
+              />闪念</span
             >
             <span
               class="flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-muted-foreground transition-colors hover:bg-accent hover:text-primary"
@@ -1016,7 +1009,10 @@ function navTo(nav: { url?: string }) {
             ].includes(section.cardKey)
           "
           :only="section.cardKey.slice(8)"
+          @visibility="sectionVisibility[section.cardKey] = $event"
         />
+
+        <WereadRecentCard v-if="section.cardKey === 'section.weread'" @visibility="sectionVisibility[section.cardKey] = $event" />
 
         <!-- 运动：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
         <div
@@ -1032,7 +1028,7 @@ function navTo(nav: { url?: string }) {
           >
             <div class="flex items-center gap-2">
               <span class="inline-flex text-foreground">
-                <VbenIcon icon="mdi:run" class="size-4" />
+                <BusinessIcon card-key="section.exercise" class="size-4" />
               </span>
               <span
                 class="cursor-pointer select-none text-base font-semibold transition-colors hover:text-primary"
@@ -1085,18 +1081,10 @@ function navTo(nav: { url?: string }) {
                 class="inline-flex cursor-pointer text-foreground transition-colors hover:text-primary"
                 :title="`访问 ${githubUsername} 的 GitHub 主页`"
               >
-                <svg class="size-4" fill="currentColor" viewBox="0 0 16 16">
-                  <path
-                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                  />
-                </svg>
+                <BusinessIcon card-key="section.github" class="size-4" />
               </a>
               <span v-else class="inline-flex text-foreground">
-                <svg class="size-4" fill="currentColor" viewBox="0 0 16 16">
-                  <path
-                    d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-                  />
-                </svg>
+                <BusinessIcon card-key="section.github" class="size-4" />
               </span>
               <a
                 v-if="githubUsername"
@@ -1122,7 +1110,7 @@ function navTo(nav: { url?: string }) {
           />
         </div>
       </template>
-    </div>
+    </HomeCardSortGrid>
     <TimeTrackerModal
       ref="timeTrackerModalRef"
       @success="handleTimeTrackerSuccess"

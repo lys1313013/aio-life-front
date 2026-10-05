@@ -10,7 +10,12 @@ import { getWereadBookLink } from '#/api/core/weread';
 import { isMobileBrowser, wereadBrowserLink } from './app-link';
 import { safeBookLink } from './format';
 
-const props = defineProps<{ book?: WereadBook; compact?: boolean }>();
+defineOptions({ inheritAttrs: false });
+
+const props = defineProps<{
+  book?: Pick<WereadBook, 'bookId' | 'deepLink' | 'title'>;
+  compact?: boolean;
+}>();
 const mobile = isMobileBrowser(navigator.userAgent, navigator.maxTouchPoints);
 const attempted = ref(false);
 const resolvedLink = ref('');
@@ -82,6 +87,7 @@ async function resolveLink() {
 </script>
 <template>
   <component
+    v-bind="$attrs"
     :is="href ? 'a' : book?.bookId ? 'button' : 'div'"
     :class="
       compact

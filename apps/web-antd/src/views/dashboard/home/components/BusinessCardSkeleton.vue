@@ -4,7 +4,7 @@ withDefaults(
     count?: number;
     label?: string;
     media?: boolean;
-    rowHeight?: number;
+    rowHeight?: number | string;
   }>(),
   {
     count: 1,
@@ -24,14 +24,16 @@ withDefaults(
     <div
       v-for="row in count"
       :key="row"
-      class="box-border flex items-center px-1 py-2"
-      :style="{ height: `${rowHeight}px` }"
+      class="box-border flex items-center px-2 py-2"
+      :style="{
+        height: typeof rowHeight === 'number' ? `${rowHeight}px` : rowHeight,
+      }"
       :class="media ? 'gap-2.5' : 'gap-3'"
       aria-hidden="true"
     >
       <span
         class="shrink-0 bg-muted-foreground/20"
-        :class="media ? 'h-12 w-8 rounded-md' : 'size-9 rounded-xl'"
+        :class="media ? 'media-skeleton-cover rounded-md' : 'size-9 rounded-xl'"
       ></span>
       <span class="flex min-w-0 flex-1 flex-col gap-2.5">
         <span
@@ -45,6 +47,11 @@ withDefaults(
 </template>
 
 <style scoped>
+.media-skeleton-cover {
+  width: calc((var(--media-row-height, 64px) - 16px) * 2 / 3);
+  height: calc(var(--media-row-height, 64px) - 16px);
+}
+
 .media-skeleton > :nth-child(n + 4) {
   display: none;
 }
