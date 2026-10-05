@@ -6,6 +6,7 @@ import { computed, onMounted, ref } from 'vue';
 import {
   DeleteOutlined,
   EditOutlined,
+  LoadingOutlined,
   MoreOutlined,
   PushpinFilled,
   PushpinOutlined,
@@ -166,45 +167,45 @@ const sortedAnniversaries = computed(() => {
                   {{ item.icon || '🎉' }}
                 </div>
 
-                <div class="flex items-center">
+                <Dropdown :trigger="['click']">
                   <Button
                     type="text"
-                    class="!h-11 !w-11 !text-white"
+                    class="!h-11 !w-11 !rounded-full !text-white hover:!bg-white/20"
+                    :aria-label="`更多操作：${item.title}`"
+                    aria-haspopup="menu"
                     :loading="pinLoading.has(item.id!)"
-                    :aria-label="
-                      item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
-                    "
-                    :aria-pressed="item.isPinned === 1"
-                    @click="handlePin(item)"
                   >
                     <template #icon>
-                      <PushpinFilled
-                        v-if="item.isPinned === 1"
-                      /><PushpinOutlined v-else />
+                      <MoreOutlined class="text-xl" />
                     </template>
                   </Button>
-                  <Dropdown :trigger="['click']">
-                    <div
-                      class="cursor-pointer rounded-full p-2 opacity-0 transition-colors hover:bg-white/20 group-hover:opacity-100"
-                    >
-                      <MoreOutlined class="text-xl text-white" />
-                    </div>
-                    <template #overlay>
-                      <Menu>
-                        <MenuItem key="edit" @click="openModal(item)">
-                          <EditOutlined /> 编辑
-                        </MenuItem>
-                        <MenuItem
-                          key="delete"
-                          @click="handleDelete(item.id!)"
-                          class="text-red-500"
-                        >
-                          <DeleteOutlined /> 删除
-                        </MenuItem>
-                      </Menu>
-                    </template>
-                  </Dropdown>
-                </div>
+                  <template #overlay>
+                    <Menu>
+                      <MenuItem
+                        key="pin"
+                        :disabled="pinLoading.has(item.id!)"
+                        @click="handlePin(item)"
+                      >
+                        <LoadingOutlined v-if="pinLoading.has(item.id!)" spin />
+                        <PushpinFilled v-else-if="item.isPinned === 1" />
+                        <PushpinOutlined v-else />
+                        {{
+                          item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
+                        }}
+                      </MenuItem>
+                      <MenuItem key="edit" @click="openModal(item)">
+                        <EditOutlined /> 编辑
+                      </MenuItem>
+                      <MenuItem
+                        key="delete"
+                        @click="handleDelete(item.id!)"
+                        class="text-red-500"
+                      >
+                        <DeleteOutlined /> 删除
+                      </MenuItem>
+                    </Menu>
+                  </template>
+                </Dropdown>
               </div>
 
               <div class="mt-4 text-center md:mt-6">

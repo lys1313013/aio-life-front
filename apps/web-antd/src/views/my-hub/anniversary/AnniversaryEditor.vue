@@ -209,7 +209,8 @@ defineExpose({ open: openModal });
                 @click="selectEmoji(emoji)"
                 class="rounded-lg p-1 text-2xl transition-transform hover:scale-125 hover:bg-white dark:hover:bg-gray-600"
                 :class="{
-                  'scale-110 bg-white shadow-sm': formState.icon === emoji,
+                  'scale-110 bg-white shadow-sm dark:bg-gray-600':
+                    formState.icon === emoji,
                 }"
               >
                 {{ emoji }}

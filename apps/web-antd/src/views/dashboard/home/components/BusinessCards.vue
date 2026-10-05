@@ -342,7 +342,7 @@ const membershipRecord = computed(
       :fetch-page="card.fetchPage"
       :unpin="card.unpin"
       :reorder="card.reorder"
-      :drag-order="card.key === 'goal'"
+      :drag-order="card.key === 'goal' || card.key === 'anniversary'"
       @navigate="router.push(card.path)"
       @unlock="locks.triggerUnlock(card.unlockPath, false)"
       @access-denied="accessDenied(card.path)"
