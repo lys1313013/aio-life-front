@@ -1,8 +1,14 @@
 <script setup lang="ts">
 withDefaults(
-  defineProps<{ count?: number; label?: string; media?: boolean }>(),
+  defineProps<{
+    count?: number;
+    label?: string;
+    media?: boolean;
+    rowHeight?: number;
+  }>(),
   {
-    count: 3,
+    count: 1,
+    rowHeight: 64,
     label: '加载中',
   },
 );
@@ -18,7 +24,8 @@ withDefaults(
     <div
       v-for="row in count"
       :key="row"
-      class="flex min-h-16 items-center px-1 py-2"
+      class="box-border flex items-center px-1 py-2"
+      :style="{ height: `${rowHeight}px` }"
       :class="media ? 'gap-2.5' : 'gap-3'"
       aria-hidden="true"
     >

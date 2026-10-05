@@ -8,12 +8,15 @@ import dayjs from 'dayjs';
 
 import { getRecentCommitsApi } from '#/api/core/github';
 
+import { useHomeRequest } from '../composables/useHomeRequest';
+
 const PAGE_SIZE = 10;
 
 const commits = ref<GithubCommitVO[]>([]);
-const loading = ref(true);
+
 const loadingMore = ref(false);
-const loaded = ref(false);
+const moreFailed = ref(false);
+
 const finished = ref(false);
 const page = ref(1);
 const scrollRoot = ref<HTMLElement | null>(null);
@@ -29,10 +32,20 @@ function appendCommits(incoming: GithubCommitVO[]) {
 }
 
 async function loadPage() {
-  if (finished.value || loadingMore.value) return;
+  if (
+    !request.current(request.version()) ||
+    loading.value ||
+    finished.value ||
+    loadingMore.value
+  )
+    return;
+  const version = request.version();
+  const targetPage = page.value;
+  moreFailed.value = false;
   loadingMore.value = true;
   try {
-    const incoming = (await getRecentCommitsApi(PAGE_SIZE, page.value)) || [];
+    const incoming = (await getRecentCommitsApi(PAGE_SIZE, targetPage)) || [];
+    if (!request.current(version)) return;
     appendCommits(incoming);
     if (incoming.length < PAGE_SIZE || page.value * PAGE_SIZE >= 1000) {
       finished.value = true;
@@ -40,14 +53,23 @@ async function loadPage() {
       page.value += 1;
     }
   } catch (error) {
+    if (!request.current(version)) return;
+    moreFailed.value = true;
     console.error('加载更多 GitHub 提交失败:', error);
   } finally {
-    loadingMore.value = false;
+    if (request.current(version)) loadingMore.value = false;
   }
 }
 
 function maybeLoadMore() {
-  if (loading.value || loadingMore.value || finished.value) return;
+  if (
+    loading.value ||
+    loadingMore.value ||
+    finished.value ||
+    (failed.value && !loaded.value) ||
+    moreFailed.value
+  )
+    return;
   if (!scrollRoot.value || !sentinel.value) return;
   const distance =
     sentinel.value.getBoundingClientRect().bottom -
@@ -71,30 +93,33 @@ function setupObserver() {
   observer.observe(sentinel.value);
 }
 
-async function load() {
-  observer?.disconnect();
-  loading.value = true;
-  commits.value = [];
-  page.value = 1;
-  finished.value = false;
-  try {
-    const incoming = (await getRecentCommitsApi(PAGE_SIZE, page.value)) || [];
-    commits.value = incoming;
-    if (incoming.length < PAGE_SIZE || page.value * PAGE_SIZE >= 1000) {
-      finished.value = true;
-    } else {
-      page.value += 1;
-    }
-  } catch (error) {
-    console.error('获取最近提交失败:', error);
-    commits.value = [];
-  } finally {
-    loading.value = false;
-    loaded.value = true;
-  }
-  await nextTick();
-  setupObserver();
-  requestAnimationFrame(() => maybeLoadMore());
+const request = useHomeRequest({
+  initialLoading: true,
+  onStart: () => {
+    observer?.disconnect();
+    loadingMore.value = false;
+    moreFailed.value = false;
+  },
+  fetch: () => getRecentCommitsApi(PAGE_SIZE, 1),
+  apply: (incoming) => {
+    commits.value = incoming || [];
+    finished.value = commits.value.length < PAGE_SIZE;
+    page.value = finished.value ? 1 : 2;
+  },
+  onSettled: () => {
+    const version = request.version();
+    void nextTick().then(() => {
+      if (!request.current(version)) return;
+      setupObserver();
+      requestAnimationFrame(() => {
+        if (request.current(version)) maybeLoadMore();
+      });
+    });
+  },
+});
+const { loading, loaded, failed } = request;
+function load(force = false) {
+  return request.load(force);
 }
 
 function formatDate(date?: string) {
@@ -111,13 +136,24 @@ onBeforeUnmount(() => {
   observer = null;
 });
 
-defineExpose({ load });
+defineExpose({ load, loading, loaded, failed });
 </script>
 
 <template>
-  <div class="flex min-h-0 flex-1 flex-col">
+  <div class="relative flex min-h-0 flex-1 flex-col">
+    <button
+      v-if="failed && !loaded"
+      type="button"
+      aria-label="最近提交加载失败，重试"
+      :disabled="loading"
+      class="absolute right-3 top-0 z-10 rounded bg-card/95 p-2 text-xs text-primary"
+      @click="load()"
+    >
+      加载失败，重试
+    </button>
+    <div v-if="failed && !loaded" class="min-h-16 flex-1"></div>
     <div
-      v-if="loading"
+      v-else-if="loading && !loaded"
       class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
     >
       <Skeleton
@@ -214,6 +250,15 @@ defineExpose({ load });
           class="h-3 w-3 animate-spin rounded-full border-2 border-border border-t-primary"
         ></span>
         <span v-if="loadingMore" class="sr-only">正在加载更多提交</span>
+        <button
+          v-else-if="moreFailed"
+          type="button"
+          aria-label="加载更多提交失败，重试"
+          class="rounded p-2 text-primary"
+          @click="loadPage"
+        >
+          重试
+        </button>
         <span v-else>向下滚动加载更多</span>
       </div>
       <div

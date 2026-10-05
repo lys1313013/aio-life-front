@@ -27,9 +27,10 @@ const groups = computed(() =>
       ...group,
       items: props.items.filter((item) => !!item.inProgress === group.active),
     }))
-    .filter(
-      (group) =>
-        group.items.length > 0 || (props.loading && props.items.length === 0),
+    .filter((group) =>
+      props.loading && props.items.length === 0
+        ? group.active
+        : group.items.length > 0,
     ),
 );
 function onScroll(event: Event) {
@@ -65,12 +66,12 @@ defineExpose({
           <div
             v-for="index in 3"
             :key="index"
-            class="shelf-book animate-pulse motion-reduce:animate-none"
+            class="shelf-book shelf-placeholder animate-pulse motion-reduce:animate-none"
             role="status"
             aria-label="加载中"
           >
             <span
-              class="shelf-cover block rounded-md bg-muted-foreground/20"
+              class="shelf-cover block rounded-[1px] bg-muted-foreground/20"
             ></span>
           </div>
         </template>
@@ -79,13 +80,14 @@ defineExpose({
             v-for="item in group.items"
             :key="item.id"
             type="button"
-            class="shelf-book rounded-md hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
+            class="shelf-book rounded-[1px] hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
             :aria-label="`编辑${item.title}`"
             :title="item.title"
             @click="emit('edit', item)"
           >
             <BusinessCardCover
               class="shelf-cover"
+              natural-ratio
               :file-id="item.fileId"
               :url="item.coverUrl"
               :icon="icon"
@@ -93,7 +95,7 @@ defineExpose({
           </button>
           <span
             v-if="loadingMore"
-            class="shelf-book animate-pulse rounded-md bg-muted-foreground/20 motion-reduce:animate-none"
+            class="shelf-book shelf-placeholder animate-pulse rounded-[1px] bg-muted-foreground/20 motion-reduce:animate-none"
             role="status"
             aria-label="加载更多"
           ></span>
@@ -133,12 +135,15 @@ defineExpose({
   display: none;
 }
 .shelf-book {
-  flex: 0 0 calc(var(--shelf-cover-height) * 2 / 3);
+  flex: 0 0 auto;
   min-width: 0;
   scroll-snap-align: start;
 }
 .shelf-cover {
-  width: calc(var(--shelf-cover-height) * 2 / 3);
+  width: auto;
   height: var(--shelf-cover-height);
+}
+.shelf-placeholder {
+  width: calc(var(--shelf-cover-height) * 2 / 3);
 }
 </style>

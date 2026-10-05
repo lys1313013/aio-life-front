@@ -2,27 +2,34 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import ExerciseAddModal from '../../my-hub/exercise/components/ExerciseAddModal.vue';
 import AnalysisCard from './components/analysis-card.vue';
+import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import Home from './home-content.vue';
 
 const mocks = vi.hoisted(() => ({
   detail: vi.fn(),
+  exerciseReload: vi.fn(),
+  thoughts: vi.fn(),
+  watched: vi.fn(),
+  sections: [] as { cardKey: string }[],
   tasks: vi.fn(),
 }));
 
 vi.mock('#/api/core/dashboard', () => ({
   getDashboardCardDetail: mocks.detail,
   getDashboardTasks: mocks.tasks,
-  getWatchedTaskDetails: async () => [],
+  getWatchedTaskDetails: mocks.watched,
 }));
-vi.mock('#/api/core/think', () => ({ getPinnedThoughts: async () => [] }));
+vi.mock('#/api/core/think', () => ({ getPinnedThoughts: mocks.thoughts }));
 vi.mock('#/api/core/todo', () => ({ updateTaskDetail: vi.fn() }));
 vi.mock('#/api/core/user-bind', () => ({ getUserBindListApi: async () => [] }));
 vi.mock('#/store/home-cards', () => ({
   useHomeCardsStore: () => ({
     enabled: () => true,
     order: () => 0,
-    sections: [],
+    items: [],
+    sections: mocks.sections,
   }),
 }));
 vi.mock('#/store/quick-nav', () => ({
@@ -54,7 +61,10 @@ vi.mock('./components/BusinessCards.vue', () => ({
   default: { template: '<div />' },
 }));
 vi.mock('./components/ExerciseSummaryCard.vue', () => ({
-  default: { template: '<div />' },
+  default: {
+    template: '<div data-exercise />',
+    methods: { reload: mocks.exerciseReload },
+  },
 }));
 vi.mock('./components/GithubRecentCommits.vue', () => ({
   default: { template: '<div />' },
@@ -83,6 +93,9 @@ enableAutoUnmount(afterEach);
 describe('首页卡片失败恢复', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.sections.splice(0);
+    mocks.thoughts.mockReset().mockResolvedValue([]);
+    mocks.watched.mockReset().mockResolvedValue([]);
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
     vi.stubGlobal('localStorage', {
@@ -206,5 +219,83 @@ describe('首页卡片失败恢复', () => {
     await retryButton(wrapper).trigger('click');
     await flushPromises();
     expect(wrapper.getComponent(AnalysisCard).props('error')).toBe(false);
+  });
+
+  function section(wrapper: ReturnType<typeof mount>, name: string) {
+    return wrapper
+      .findAll('.dashboard-section')
+      .find((card) => card.text().includes(name))!;
+  }
+  it.each(['thoughts', 'watched'] as const)(
+    '%s 首次失败可重试，成功空态遵循原显隐规则',
+    async (key) => {
+      mocks.sections.push({ cardKey: `section.${key}` });
+      const api = mocks[key];
+      const title = key === 'thoughts' ? '闪念' : '待办';
+      api.mockRejectedValueOnce(new Error('offline'));
+      const wrapper = mount(Home);
+      await flushPromises();
+      expect(
+        section(wrapper, title)
+          .find(`button[aria-label="${title}加载失败，重试"]`)
+          .exists(),
+      ).toBe(true);
+      expect(wrapper.text()).not.toContain(
+        key === 'thoughts' ? '暂无固定的闪念' : '暂无关注的待办',
+      );
+      await wrapper
+        .get(`button[aria-label="${title}加载失败，重试"]`)
+        .trigger('click');
+      await flushPromises();
+      expect(
+        wrapper.find(`button[aria-label="${title}加载失败，重试"]`).exists(),
+      ).toBe(false);
+      if (key === 'watched')
+        expect(wrapper.find('.dashboard-section').exists()).toBe(false);
+      else expect(wrapper.text()).toContain('暂无固定的闪念');
+    },
+  );
+  it('闪念保存使旧查询失效，旧响应不覆盖新内容', async () => {
+    mocks.sections.push({ cardKey: 'section.thoughts' });
+    let finish!: (value: unknown[]) => void;
+    mocks.thoughts.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const wrapper = mount(Home);
+    await flushPromises();
+    mocks.thoughts.mockResolvedValueOnce([
+      { id: 'new', content: '保存后的新内容' },
+    ]);
+    (wrapper.vm as unknown as { onThoughtSaved: () => void }).onThoughtSaved();
+    await flushPromises();
+    expect(wrapper.text()).toContain('保存后的新内容');
+    finish([{ id: 'old', content: '旧查询内容' }]);
+    await flushPromises();
+    expect(wrapper.text()).toContain('保存后的新内容');
+    expect(wrapper.text()).not.toContain('旧查询内容');
+  });
+  it('运动成功空态隐藏展示但保留加载器，新增后能重新显示', async () => {
+    mocks.sections.push({ cardKey: 'section.exercise' });
+    const wrapper = mount(Home);
+    await flushPromises();
+    const exercise = wrapper.getComponent(ExerciseSummaryCard);
+    exercise.vm.$emit('loaded', true);
+    await flushPromises();
+    expect(wrapper.findComponent(ExerciseSummaryCard).exists()).toBe(true);
+    expect((exercise.element.parentElement as HTMLElement).style.display).toBe(
+      'none',
+    );
+    mocks.exerciseReload.mockImplementationOnce(() =>
+      exercise.vm.$emit('loaded', false),
+    );
+    wrapper.getComponent(ExerciseAddModal).vm.$emit('success');
+    await flushPromises();
+    expect(mocks.exerciseReload).toHaveBeenCalledWith(true);
+    expect((exercise.element.parentElement as HTMLElement).style.display).toBe(
+      '',
+    );
   });
 });

@@ -189,6 +189,67 @@ describe('首页运动细项和趋势', () => {
     expect(wrapper.findAll('.exercise-row')).toHaveLength(2);
   });
 
+  it('刷新使正在返回的旧分页失效，旧 finally 不解除刷新状态', async () => {
+    let finishPage!: (value: unknown) => void;
+    let finishRefresh!: (value: unknown) => void;
+    mocks.summary
+      .mockResolvedValueOnce({
+        days: [{ date: '2026-09-26', items: [item] }],
+        lastDate: '2026-09-26',
+        hasMore: true,
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishPage = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRefresh = resolve;
+          }),
+      );
+    const wrapper = mount(ExerciseSummaryCard);
+    await flushPromises();
+    await wrapper.get('.exercise-scroll').trigger('scroll');
+    await flushPromises();
+    const refreshing = wrapper.vm.reload(true);
+    await flushPromises();
+    finishPage({
+      days: [{ date: '2026-09-25', items: [item] }],
+      hasMore: false,
+    });
+    await flushPromises();
+    expect(wrapper.vm.loading).toBe(true);
+    expect(wrapper.findAll('.exercise-row')).toHaveLength(1);
+    finishRefresh({
+      days: [{ date: '2026-09-27', items: [{ ...item, count: 99 }] }],
+      hasMore: false,
+    });
+    await refreshing;
+    await flushPromises();
+    expect(wrapper.vm.loading).toBe(false);
+    expect(wrapper.findAll('.exercise-row')).toHaveLength(1);
+    expect(wrapper.text()).toContain('99');
+  });
+  it('重复日期页去重并终止自动分页', async () => {
+    const response = {
+      days: [{ date: '2026-09-26', items: [item] }],
+      lastDate: '2026-09-26',
+      hasMore: true,
+    };
+    mocks.summary.mockResolvedValue(response);
+    const wrapper = mount(ExerciseSummaryCard);
+    await flushPromises();
+    await wrapper.get('.exercise-scroll').trigger('scroll');
+    await flushPromises();
+    await wrapper.get('.exercise-scroll').trigger('scroll');
+    await flushPromises();
+    expect(wrapper.findAll('.exercise-row')).toHaveLength(1);
+    expect(mocks.summary).toHaveBeenCalledTimes(2);
+  });
+
   it.each([[0], [12, 12, 12, 12, 12], []])(
     '单点、持平和空历史不生成虚假点或无效坐标：%j',
     (...counts) => {

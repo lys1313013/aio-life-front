@@ -18,6 +18,8 @@ import {
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
 import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
+import { useHomeRequest } from './composables/useHomeRequest';
+
 const emit = defineEmits<{
   success: [];
   'update:last-end': [value: number];
@@ -27,7 +29,6 @@ const chartRef = ref<EchartsUIType>();
 const recentRecordScrollRef = ref<HTMLDivElement>();
 const timeTrackerModalRef = ref();
 const { renderEcharts } = useEcharts(chartRef);
-const loading = ref(false);
 
 interface RecentRecord {
   id: string;
@@ -56,14 +57,20 @@ const formatTime = (minutes: number) => {
   return `${h}:${m}`;
 };
 
-const loadData = async () => {
-  loading.value = true;
-  try {
+const request = useHomeRequest({
+  fetch: async () => {
     const today = dayjs().format('YYYY-MM-DD');
-    const [categoriesRes, recordsRes] = await Promise.all([
+    const [categories, records] = await Promise.all([
       listCategories(true),
       query({ condition: { date: today } }),
     ]);
+    return { categories, records, date: today };
+  },
+  apply: ({ categories: categoriesRes, records: recordsRes, date }) => {
+    if (date !== dayjs().format('YYYY-MM-DD')) {
+      void Promise.resolve().then(() => loadData(true));
+      return;
+    }
 
     const categories = categoriesRes || [];
     const records = recordsRes || [];
@@ -275,13 +282,10 @@ const loadData = async () => {
         },
       ],
     });
-  } catch (error) {
-    console.error('Failed to load time tracker data:', error);
-    emit('update:last-end', 0);
-  } finally {
-    loading.value = false;
-  }
-};
+  },
+});
+const { loading, loaded, failed } = request;
+const loadData = (force = false) => request.load(force);
 
 const handleRecordWheel = (event: WheelEvent) => {
   const list = recentRecordScrollRef.value;
@@ -321,6 +325,9 @@ onMounted(() => {
 
 defineExpose({
   loadData,
+  loading,
+  loaded,
+  failed,
 });
 </script>
 
@@ -330,88 +337,101 @@ defineExpose({
       spinning: loading,
       class: '!bg-transparent dark:!bg-transparent',
     }"
-    class="flex h-full w-full flex-row p-2 sm:py-4"
+    class="relative flex h-full w-full flex-row p-2 sm:py-4"
     @wheel.capture="handleRecordWheel"
   >
-    <!-- 最左侧竖向时间轴 (固定宽度，绝不被挤压) -->
-    <div
-      class="flex w-6 shrink-0 flex-col items-center justify-between pr-1 sm:w-8 sm:pr-2"
+    <button
+      v-if="failed && !loaded"
+      type="button"
+      aria-label="时迹加载失败，重试"
+      :disabled="loading"
+      class="m-auto rounded p-2 text-xs text-primary"
+      @click="loadData()"
     >
-      <span class="text-[10px] leading-none text-muted-foreground/60">0</span>
-      <!-- 时间轴背景与彩色区块 -->
+      加载失败，重试
+    </button>
+    <template v-else>
+      <!-- 最左侧竖向时间轴 (固定宽度，绝不被挤压) -->
       <div
-        class="relative my-1 w-2 flex-1 overflow-hidden rounded-full bg-secondary sm:w-2.5"
+        class="flex w-6 shrink-0 flex-col items-center justify-between pr-1 sm:w-8 sm:pr-2"
       >
+        <span class="text-[10px] leading-none text-muted-foreground/60">0</span>
+        <!-- 时间轴背景与彩色区块 -->
         <div
-          v-for="block in timelineBlocks"
-          :key="block.id"
-          class="absolute w-full"
-          :style="{
-            top: block.top,
-            height: block.height,
-            backgroundColor: block.color,
-          }"
-        ></div>
+          class="relative my-1 w-2 flex-1 overflow-hidden rounded-full bg-secondary sm:w-2.5"
+        >
+          <div
+            v-for="block in timelineBlocks"
+            :key="block.id"
+            class="absolute w-full"
+            :style="{
+              top: block.top,
+              height: block.height,
+              backgroundColor: block.color,
+            }"
+          ></div>
+        </div>
+        <span class="text-[10px] leading-none text-muted-foreground/60"
+          >24</span
+        >
       </div>
-      <span class="text-[10px] leading-none text-muted-foreground/60">24</span>
-    </div>
 
-    <!-- 右侧内容区：饼图 + 最新记录 -->
-    <div class="flex min-w-0 flex-1 flex-row items-center gap-1">
-      <!-- 
+      <!-- 右侧内容区：饼图 + 最新记录 -->
+      <div class="flex min-w-0 flex-1 flex-row items-center gap-1">
+        <!--
         【经验沉淀：EchartsUI 高度塌陷/截断问题】
         @vben/plugins/echarts 提供的 EchartsUI 组件内部源码默认写死了 height: '300px'。
         如果在外层弹性布局（Flex）中不显式覆盖该属性，内部 canvas 会强制按 300px 渲染，
         导致在高度受限的卡片中出现严重的下沉和底部截断。
-        
+
         解决方案：
         1. 外层包裹容器必须有明确的高度限制（如 h-[160px] 或最大高度）。
         2. EchartsUI 必须显式传入 height="100%" width="100%" 以覆盖内部默认值。
       -->
-      <div class="relative h-[160px] min-w-0 flex-1 sm:h-[180px]">
-        <EchartsUI ref="chartRef" height="100%" width="100%" />
-      </div>
+        <div class="relative h-[160px] min-w-0 flex-1 sm:h-[180px]">
+          <EchartsUI ref="chartRef" height="100%" width="100%" />
+        </div>
 
-      <!-- 同时完整显示五条；少量明细居中，更多记录从顶部开始滚动。 -->
-      <div
-        ref="recentRecordScrollRef"
-        class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain sm:h-[180px]"
-        role="region"
-        aria-label="今日时迹明细"
-        tabindex="0"
-      >
+        <!-- 同时完整显示五条；少量明细居中，更多记录从顶部开始滚动。 -->
         <div
-          v-if="recentRecords.length > 0"
-          class="flex min-h-full flex-col justify-center"
+          ref="recentRecordScrollRef"
+          class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain sm:h-[180px]"
+          role="region"
+          aria-label="今日时迹明细"
+          tabindex="0"
         >
-          <button
-            v-for="record in recentRecords"
-            :key="record.id"
-            type="button"
-            class="flex h-8 w-full shrink-0 cursor-pointer items-center justify-end gap-1.5 rounded-sm font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:h-9 sm:gap-2 sm:text-[11px]"
-            :aria-label="`编辑时迹 ${record.timeRangeStr} ${record.categoryName}`"
-            :style="{ color: record.categoryColor }"
-            @click="handleEditRecord(record.originalRecord)"
+          <div
+            v-if="recentRecords.length > 0"
+            class="flex min-h-full flex-col justify-center"
           >
-            <!-- 时间段 -->
-            <span class="shrink-0">
-              {{ record.timeRangeStr }}
-            </span>
-            <!-- 分类名称 -->
-            <span class="min-w-0 truncate">
-              {{ record.categoryName }}
-            </span>
-          </button>
-        </div>
-        <div
-          v-else
-          class="flex h-full items-center justify-center text-xs text-muted-foreground"
-        >
-          今日暂无记录
+            <button
+              v-for="record in recentRecords"
+              :key="record.id"
+              type="button"
+              class="flex h-8 w-full shrink-0 cursor-pointer items-center justify-end gap-1.5 rounded-sm font-mono text-[10px] leading-tight transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary sm:h-9 sm:gap-2 sm:text-[11px]"
+              :aria-label="`编辑时迹 ${record.timeRangeStr} ${record.categoryName}`"
+              :style="{ color: record.categoryColor }"
+              @click="handleEditRecord(record.originalRecord)"
+            >
+              <!-- 时间段 -->
+              <span class="shrink-0">
+                {{ record.timeRangeStr }}
+              </span>
+              <!-- 分类名称 -->
+              <span class="min-w-0 truncate">
+                {{ record.categoryName }}
+              </span>
+            </button>
+          </div>
+          <div
+            v-else
+            class="flex h-full items-center justify-center text-xs text-muted-foreground"
+          >
+            今日暂无记录
+          </div>
         </div>
       </div>
-    </div>
-
+    </template>
     <!-- 编辑记录弹窗 -->
     <TimeTrackerModal ref="timeTrackerModalRef" @success="handleModalSuccess" />
   </div>

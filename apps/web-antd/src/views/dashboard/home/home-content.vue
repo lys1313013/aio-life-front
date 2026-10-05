@@ -3,14 +3,19 @@ import type { Component } from 'vue';
 
 import type { WatchedTaskDetail } from '#/api/core/dashboard';
 
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import {
+  computed,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+} from 'vue';
 import { useRouter } from 'vue-router';
 
 import { VbenIcon } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
-
-import { Skeleton } from 'ant-design-vue';
 
 import {
   getDashboardCardDetail,
@@ -33,11 +38,13 @@ import TimeTrackerModal from '../../time/time-tracker/components/TimeTrackerModa
 import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
 import BusinessCards from './components/BusinessCards.vue';
+import BusinessCardSkeleton from './components/BusinessCardSkeleton.vue';
 import CardHeader from './components/CardHeader.vue';
 import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
+import { useHomeRequest } from './composables/useHomeRequest';
 
 interface OverviewItem {
   icon: Component | string;
@@ -58,13 +65,39 @@ interface OverviewItem {
 
 const homeCards = useHomeCardsStore();
 let active = true;
+let dataGeneration = 0;
+const cardVersions = new Map<string, number>();
 const homeUser = useUserStore();
 const overviewItems = ref<OverviewItem[]>([]);
-const loading = ref(true);
+
 const watchedTasks = ref<WatchedTaskDetail[]>([]);
-const watchedLoading = ref(true);
+const watchedRequest = useHomeRequest({
+  fetch: getWatchedTaskDetails,
+  enabled: () => homeCards.enabled('section.watched'),
+  apply: (data) => {
+    watchedTasks.value = data;
+  },
+  initialLoading: true,
+});
+const {
+  loading: watchedLoading,
+  loaded: watchedLoaded,
+  failed: watchedError,
+} = watchedRequest;
 const pinnedThoughts = ref<any[]>([]);
-const thoughtsLoading = ref(true);
+const thoughtsRequest = useHomeRequest({
+  fetch: getPinnedThoughts,
+  enabled: () => homeCards.enabled('section.thoughts'),
+  apply: (data) => {
+    pinnedThoughts.value = data || [];
+  },
+  initialLoading: true,
+});
+const {
+  loading: thoughtsLoading,
+  loaded: thoughtsLoaded,
+  failed: thoughtsError,
+} = thoughtsRequest;
 const thinkModalVisible = ref(false);
 const editingThoughtId = ref<null | string>(null);
 const timeTrackerModalRef = ref();
@@ -220,29 +253,18 @@ function cancelLongPress() {
   endLongPress();
 }
 
-async function loadWatchedTasks() {
-  if (!homeCards.enabled('section.watched')) return;
-  try {
-    watchedLoading.value = true;
-    watchedTasks.value = await getWatchedTaskDetails();
-  } catch (error) {
-    console.error('获取关注的待办失败:', error);
-  } finally {
-    watchedLoading.value = false;
-  }
+function loadWatchedTasks() {
+  if (!homeCards.enabled('section.watched')) return Promise.resolve();
+  return watchedRequest.load();
 }
 
-async function loadPinnedThoughts() {
-  if (!homeCards.enabled('section.thoughts')) return;
-  try {
-    thoughtsLoading.value = true;
-    const res = await getPinnedThoughts();
-    pinnedThoughts.value = res || [];
-  } catch (error) {
-    console.error('获取固定的闪念失败:', error);
-  } finally {
-    thoughtsLoading.value = false;
-  }
+function loadPinnedThoughts() {
+  if (!homeCards.enabled('section.thoughts')) return Promise.resolve();
+  return thoughtsRequest.load();
+}
+
+function reloadWatchedAfterWrite() {
+  return watchedRequest.load(true);
 }
 
 function openNewThought() {
@@ -256,22 +278,27 @@ function openThinkModal(thought: any) {
 }
 
 function onThoughtSaved() {
-  loadPinnedThoughts();
+  void thoughtsRequest.load(true);
 }
 
 function onThoughtDeleted() {
-  loadPinnedThoughts();
+  void thoughtsRequest.load(true);
 }
 
+const taskBusy = ref('');
 async function handleCompleteTask(detail: WatchedTaskDetail) {
+  if (taskBusy.value) return;
+  taskBusy.value = detail.id;
   try {
     await updateTaskDetail({
       id: detail.id,
       isCompleted: 1,
     });
-    await loadWatchedTasks();
+    await reloadWatchedAfterWrite();
   } catch (error) {
     console.error('标记完成失败:', error);
+  } finally {
+    taskBusy.value = '';
   }
 }
 
@@ -395,6 +422,7 @@ function clearAllSectionTimers() {
 
 function handleVisibilityChange() {
   if (document.visibilityState === 'visible') {
+    if (overviewError.value) void overviewRequest.load();
     // 首次失败时尚未拿到刷新间隔，回到前台也需要允许重试。
     overviewItems.value.forEach((item) => {
       if (item.error || (item.refreshInterval && item.refreshInterval > 0)) {
@@ -418,40 +446,51 @@ function handleVisibilityChange() {
   }
 }
 
-onUnmounted(() => {
+function stopTimers() {
   active = false;
+  dataGeneration++;
+  overviewItems.value.forEach((item) => {
+    item.loading = false;
+    item.refreshing = false;
+  });
+  endLongPress();
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   if (timeTrackerNowTimer.value) clearInterval(timeTrackerNowTimer.value);
   // 清理所有定时器
   refreshTimers.forEach((timer) => clearInterval(timer));
   refreshTimers.clear();
   clearAllSectionTimers();
+}
+onUnmounted(stopTimers);
+onDeactivated(stopTimers);
+onActivated(() => {
+  if (active) return;
+  active = true;
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  startNowTimer();
+  handleVisibilityChange();
 });
 
 // 每分钟更新 nowMinutes，驱动"距离上次记录已过去多久"的实时计算
-onMounted(() => {
+let timeDay = new Date().toDateString();
+function startNowTimer() {
+  const now = new Date();
+  nowMinutes.value = now.getHours() * 60 + now.getMinutes();
   timeTrackerNowTimer.value = setInterval(() => {
     const now = new Date();
     nowMinutes.value = now.getHours() * 60 + now.getMinutes();
+    if (now.toDateString() !== timeDay) {
+      timeDay = now.toDateString();
+      void timeTrackerCardRef.value?.loadData(true);
+    }
   }, 60_000);
-});
+}
+onMounted(startNowTimer);
 
-// 获取数据并设置 overviewItems
-onMounted(async () => {
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  if (homeCards.enabled('section.links')) quickNavStore.load();
-  // 秒填本地缓存的 GitHub 绑定决策 + 用户名：最近提交区块与其它区块同帧出现；并行校验不阻塞渲染
-  if (homeCards.enabled('section.github')) {
-    restoreGithubCache();
-    verifyGithub();
-  }
-  try {
-    loading.value = true;
-    loadWatchedTasks();
-    loadPinnedThoughts();
-    // 1. 获取任务列表
-    const tasks = await getDashboardTasks();
-    if (!active) return;
+const overviewRequest = useHomeRequest({
+  initialLoading: true,
+  fetch: getDashboardTasks,
+  apply: (tasks) => {
     // GITHUB 卡出现 ⟺ 后端 Redis 决策判定展示（未绑定则无此卡）；以任务列表为准修正本地缓存
     githubBound.value = tasks.some((t) => t.type === 'GITHUB');
     writeGithubBindCache({
@@ -470,34 +509,47 @@ onMounted(async () => {
           homeCards.order(`overview.${b.type.toLowerCase()}`),
       )
       .forEach((task) => {
+        const previous = overviewItems.value.find(
+          (item) => item.type === task.type,
+        );
         items.push({
+          ...previous,
           title: task.title,
           type: task.type,
-          loading: true,
+          loading: !previous,
+          refreshing: !!previous,
           icon: task.icon,
           iconColor: task.iconColor,
           totalTitle: task.totalTitle,
-          totalValue: '',
-          value: '',
+          totalValue: previous?.totalValue ?? '',
+          value: previous?.value ?? '',
         });
       });
 
     overviewItems.value = items;
-    loading.value = false;
 
     // 3. 首次加载与后续刷新共用状态收尾，单张卡片失败不影响其他卡片。
     overviewItems.value.forEach((item) => {
       loadCard(item);
     });
-  } catch (error) {
-    console.error('获取仪表盘数据失败:', error);
-    loading.value = false;
+  },
+});
+const { loading, failed: overviewError } = overviewRequest;
+
+onMounted(() => {
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  if (homeCards.enabled('section.links')) void quickNavStore.load();
+  if (homeCards.enabled('section.github')) {
+    restoreGithubCache();
+    void verifyGithub();
   }
-  startAllSectionTimers();
+  void loadWatchedTasks();
+  void loadPinnedThoughts();
+  void overviewRequest.load().then(startAllSectionTimers);
 });
 
-async function refreshCard(item: OverviewItem) {
-  if (item.loading || item.refreshing || !item.type) {
+async function refreshCard(item: OverviewItem, force = false) {
+  if (!active || (!force && (item.loading || item.refreshing)) || !item.type) {
     return;
   }
 
@@ -507,21 +559,33 @@ async function refreshCard(item: OverviewItem) {
 }
 
 async function loadCard(item: OverviewItem) {
+  const generation = dataGeneration;
+  const type = item.type!;
+  const version = (cardVersions.get(type) || 0) + 1;
+  cardVersions.set(type, version);
+  const current = () =>
+    active &&
+    generation === dataGeneration &&
+    cardVersions.get(type) === version &&
+    overviewItems.value.includes(item);
   try {
     const res = await getDashboardCardDetail(item.type!);
-    if (!active) return;
+    if (!current()) return;
     if (!res) {
       throw new Error('卡片数据为空');
     }
     Object.assign(item, res);
     item.error = false;
   } catch (error) {
+    if (!current()) return;
     console.error(`Failed to fetch card ${item.title}`, error);
     item.error = true;
   } finally {
-    item.loading = false;
-    item.refreshing = false;
-    setupCardRefresh(item);
+    if (current()) {
+      item.loading = false;
+      item.refreshing = false;
+      setupCardRefresh(item);
+    }
   }
 }
 
@@ -549,18 +613,18 @@ function refreshCardsByTypes(types: string[]) {
   const typeSet = new Set(types);
   overviewItems.value.forEach((item) => {
     if (item.type && typeSet.has(item.type)) {
-      refreshCard(item);
+      refreshCard(item, true);
     }
   });
 }
 
 function handleTimeTrackerSuccess() {
   // 1. 时迹区块
-  refreshTimeTracker();
-  // 2. 时迹波及的卡片（refreshCard 有值变化检测，未变化不重渲染）
+  void timeTrackerCardRef.value?.loadData(true);
+  // 2. 时迹波及的卡片（写入后刷新使旧请求失效）
   refreshCardsByTypes(TIME_TRACKER_RELATED_CARDS);
   // 3. 运动区块（时迹分类可能带运动明细）
-  exerciseSummaryCardRef.value?.reload?.();
+  exerciseSummaryCardRef.value?.reload?.(true);
 }
 
 function handleExerciseSuccess() {
@@ -569,10 +633,10 @@ function handleExerciseSuccess() {
       item.titleClickUrl === ACTION_OPEN_EXERCISE_MODAL ||
       item.iconClickUrl === ACTION_OPEN_EXERCISE_MODAL
     ) {
-      refreshCard(item);
+      refreshCard(item, true);
     }
   });
-  exerciseSummaryCardRef.value?.reload?.();
+  exerciseSummaryCardRef.value?.reload?.(true);
 }
 
 const router = useRouter();
@@ -591,9 +655,28 @@ function navTo(nav: { url?: string }) {
 
 <template>
   <div class="dashboard-home p-2 sm:p-4">
+    <button
+      v-if="overviewError"
+      type="button"
+      aria-label="概览加载失败，重试"
+      :disabled="loading"
+      class="mb-2 rounded p-2 text-xs text-primary"
+      @click="overviewRequest.load()"
+    >
+      加载失败，重试
+    </button>
     <div class="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-5">
       <template v-if="loading && overviewItems.length === 0">
-        <AnalysisCard v-for="i in 5" :key="i" loading class="min-w-0" />
+        <AnalysisCard
+          v-for="item in homeCards.items.filter(
+            (item) => item.group === 'overview' && item.enabled,
+          )"
+          :key="item.cardKey"
+          :title="item.title"
+          :icon="item.icon"
+          loading
+          class="min-w-0"
+        />
       </template>
       <template v-else>
         <template v-for="item in overviewItems" :key="item.type || item.title">
@@ -643,6 +726,8 @@ function navTo(nav: { url?: string }) {
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新时迹"
+            :error="timeTrackerCardRef?.failed && timeTrackerCardRef?.loaded"
+            :loading="timeTrackerCardRef?.loading"
             :refresh="refreshTimeTracker"
           >
             <span
@@ -688,13 +773,14 @@ function navTo(nav: { url?: string }) {
         <div
           v-if="
             section.cardKey === 'section.watched' &&
-            (watchedLoading || watchedTasks.length > 0)
+            (!watchedLoaded || watchedError || watchedTasks.length > 0)
           "
-          class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
+          class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新待办"
+            :error="watchedError"
             :refresh="loadWatchedTasks"
             :loading="watchedLoading"
           >
@@ -709,21 +795,14 @@ function navTo(nav: { url?: string }) {
           </CardHeader>
 
           <div
-            v-if="watchedLoading"
+            v-if="watchedLoading && !watchedLoaded"
             class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
           >
-            <Skeleton
-              v-for="i in 4"
-              :key="i"
-              :title="{ width: '30%' }"
-              :paragraph="{ rows: 1, width: '60%' }"
-              active
-              class="!w-full"
-            />
+            <BusinessCardSkeleton :count="1" :row-height="64" />
           </div>
 
           <div
-            v-else-if="watchedTasks.length === 0"
+            v-else-if="watchedLoaded && watchedTasks.length === 0"
             class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
           >
             <svg
@@ -747,6 +826,7 @@ function navTo(nav: { url?: string }) {
 
           <div
             v-else
+            :class="{ 'min-h-16': watchedError && watchedTasks.length === 0 }"
             class="flex-1 space-y-1 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
           >
             <div
@@ -761,10 +841,18 @@ function navTo(nav: { url?: string }) {
                   'border-green-500 bg-green-500 hover:border-green-600 hover:bg-green-600':
                     task.isCompleted === 1,
                 }"
+                :aria-label="task.isCompleted === 1 ? '待办已完成' : '完成待办'"
+                :aria-busy="taskBusy === task.id"
+                :disabled="!!taskBusy"
                 @click="handleCompleteTask(task)"
               >
+                <VbenIcon
+                  v-if="taskBusy === task.id"
+                  icon="mdi:loading"
+                  class="size-3 animate-spin"
+                />
                 <svg
-                  v-if="task.isCompleted === 1"
+                  v-else-if="task.isCompleted === 1"
                   class="size-3 text-white"
                   fill="none"
                   stroke="currentColor"
@@ -831,11 +919,12 @@ function navTo(nav: { url?: string }) {
         <!-- 固定闪念：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
         <div
           v-if="section.cardKey === 'section.thoughts'"
-          class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
+          class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新闪念"
+            :error="thoughtsError"
             :refresh="loadPinnedThoughts"
             :loading="thoughtsLoading"
           >
@@ -854,21 +943,14 @@ function navTo(nav: { url?: string }) {
           </CardHeader>
 
           <div
-            v-if="thoughtsLoading"
+            v-if="thoughtsLoading && !thoughtsLoaded"
             class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
           >
-            <Skeleton
-              v-for="i in 4"
-              :key="i"
-              :title="{ width: '30%' }"
-              :paragraph="{ rows: 1, width: '60%' }"
-              active
-              class="!w-full"
-            />
+            <BusinessCardSkeleton :count="1" :row-height="64" />
           </div>
 
           <div
-            v-else-if="pinnedThoughts.length === 0"
+            v-else-if="thoughtsLoaded && pinnedThoughts.length === 0"
             class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-6 text-center sm:m-3"
           >
             <svg
@@ -892,6 +974,9 @@ function navTo(nav: { url?: string }) {
 
           <div
             v-else
+            :class="{
+              'min-h-16': thoughtsError && pinnedThoughts.length === 0,
+            }"
             class="flex-1 space-y-1 overflow-y-auto p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
           >
             <div
@@ -935,15 +1020,14 @@ function navTo(nav: { url?: string }) {
 
         <!-- 运动：单列布局按内容自适应，双列及以上保持统一卡片高度。 -->
         <div
-          v-if="
-            section.cardKey === 'section.exercise' &&
-            (exerciseLoading || !exerciseEmpty)
-          "
-          class="dashboard-section flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
+          v-if="section.cardKey === 'section.exercise'"
+          v-show="exerciseLoading || !exerciseEmpty"
+          class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新运动"
+            :loading="exerciseSummaryCardRef?.loading"
             :refresh="() => exerciseSummaryCardRef?.reload?.()"
           >
             <div class="flex items-center gap-2">
@@ -986,6 +1070,10 @@ function navTo(nav: { url?: string }) {
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新最近提交"
+            :error="
+              githubRecentCommitsRef?.failed && githubRecentCommitsRef?.loaded
+            "
+            :loading="githubRecentCommitsRef?.loading"
             :refresh="() => githubRecentCommitsRef?.load?.()"
           >
             <div class="flex items-center gap-2">
@@ -1049,7 +1137,7 @@ function navTo(nav: { url?: string }) {
     <WatchedTaskEditModal
       v-model:visible="editTaskModalVisible"
       :task="editingWatchedTask"
-      @success="loadWatchedTasks"
+      @success="reloadWatchedAfterWrite"
     />
   </div>
 </template>

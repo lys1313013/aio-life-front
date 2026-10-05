@@ -8,11 +8,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
 
-import { Skeleton } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getDashboardSummaryApi } from '#/api/core/exerciseRecord';
 
+import { useHomeRequest } from '../composables/useHomeRequest';
+import BusinessCardSkeleton from './BusinessCardSkeleton.vue';
 import ExerciseTrend from './ExerciseTrend.vue';
 
 const emit = defineEmits<{
@@ -22,10 +23,9 @@ const emit = defineEmits<{
 const PAGE_SIZE = 7;
 
 const days = ref<ExerciseDashboardDayVO[]>([]);
-const loading = ref(true);
+
 const loadingMore = ref(false);
-const loaded = ref(false);
-const failed = ref(false);
+
 const loadMoreFailed = ref(false);
 const finished = ref(false);
 const cursor = ref<string | undefined>(undefined);
@@ -70,7 +70,14 @@ function logError(scope: string, error: any) {
 }
 
 async function loadPage() {
-  if (finished.value || loadingMore.value) return;
+  if (
+    !request.current(request.version()) ||
+    loading.value ||
+    finished.value ||
+    loadingMore.value
+  )
+    return;
+  const version = request.version();
   loadingMore.value = true;
   loadMoreFailed.value = false;
   try {
@@ -78,47 +85,56 @@ async function loadPage() {
       lastDate: cursor.value,
       limit: PAGE_SIZE,
     });
+    if (!request.current(version)) return;
     const incoming = res?.days || [];
-    if (incoming.length > 0) {
-      days.value = [...days.value, ...incoming];
-    }
+    const seen = new Set(days.value.map((day) => day.date));
+    const unique = incoming.filter((day) => !seen.has(day.date));
+    days.value = [...days.value, ...unique];
     if (res?.lastDate) {
       cursor.value = res.lastDate;
     }
-    if (!res?.hasMore || incoming.length === 0) {
+    if (!res?.hasMore || unique.length === 0) {
       finished.value = true;
     }
   } catch (error) {
+    if (!request.current(version)) return;
     loadMoreFailed.value = true;
     logError('loadPage', error);
   } finally {
-    loadingMore.value = false;
+    if (request.current(version)) loadingMore.value = false;
   }
 }
 
-async function init() {
-  loading.value = true;
-  failed.value = false;
-  loadMoreFailed.value = false;
-  try {
-    const res = await getDashboardSummaryApi({
-      lastDate: undefined,
-      limit: PAGE_SIZE,
-    });
-    const incoming = res?.days || [];
-    days.value = incoming;
+const request = useHomeRequest({
+  initialLoading: true,
+  onStart: () => {
+    observer?.disconnect();
+    loadingMore.value = false;
+    loadMoreFailed.value = false;
+  },
+  fetch: () =>
+    getDashboardSummaryApi({ lastDate: undefined, limit: PAGE_SIZE }),
+  apply: (res) => {
+    days.value = res?.days || [];
     cursor.value = res?.lastDate;
-    finished.value = !res?.hasMore || incoming.length === 0;
-  } catch (error) {
-    failed.value = true;
-    logError('init', error);
-  } finally {
-    loading.value = false;
-    loaded.value = true;
+    finished.value = !res?.hasMore || days.value.length === 0;
+  },
+  onError: (error) => logError('init', error),
+  onSettled: () => {
     emit('loaded', !failed.value && days.value.length === 0);
-    // 内容不足一屏时主动再拉一次，确保向下滚动体验连贯
-    requestAnimationFrame(() => maybeLoadMore());
-  }
+    const version = request.version();
+    void nextTick().then(() => {
+      if (!request.current(version)) return;
+      setupObserver();
+      requestAnimationFrame(() => {
+        if (request.current(version)) maybeLoadMore();
+      });
+    });
+  },
+});
+const { loading, loaded, failed } = request;
+function init(force = false) {
+  return request.load(force);
 }
 
 function setupObserver() {
@@ -226,18 +242,12 @@ function deltaTone(item: ExerciseDashboardItemVO): DeltaInfo['tone'] {
   return deltaInfo(item)?.tone || 'neutral';
 }
 
-async function reload() {
-  if (loading.value || loadingMore.value) return;
-  observer?.disconnect();
-  await init();
-  await nextTick();
-  setupObserver();
+function reload(force = false) {
+  return init(force);
 }
 
-onMounted(async () => {
-  await init();
-  await nextTick();
-  setupObserver();
+onMounted(() => {
+  void init();
 });
 
 onBeforeUnmount(() => {
@@ -245,23 +255,16 @@ onBeforeUnmount(() => {
   observer = null;
 });
 
-defineExpose({ reload });
+defineExpose({ reload, loading });
 </script>
 
 <template>
   <div class="exercise-summary flex min-h-0 min-w-0 flex-1 flex-col">
     <div
-      v-if="loading"
+      v-if="loading && !loaded"
       class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
     >
-      <Skeleton
-        v-for="i in 4"
-        :key="i"
-        :title="{ width: '30%' }"
-        :paragraph="{ rows: 1, width: '60%' }"
-        active
-        class="!w-full"
-      />
+      <BusinessCardSkeleton :count="1" :row-height="64" />
     </div>
 
     <div
@@ -274,7 +277,7 @@ defineExpose({ reload });
         type="button"
         aria-label="重新加载运动记录"
         class="rounded p-2 text-primary focus-visible:outline"
-        @click="reload"
+        @click="reload()"
       >
         <VbenIcon icon="mdi:refresh" class="size-4" />
       </button>
@@ -297,15 +300,15 @@ defineExpose({ reload });
     <div
       v-else
       ref="scrollRoot"
-      class="exercise-scroll min-h-0 flex-1 overflow-y-auto px-2.5 pb-2.5 sm:px-3 sm:pb-3"
+      class="exercise-scroll relative min-h-0 flex-1 overflow-y-auto px-2.5 pb-2.5 sm:px-3 sm:pb-3"
       @scroll.passive="maybeLoadMore"
     >
       <button
         v-if="failed"
         type="button"
-        class="mb-1 flex w-full items-center justify-center gap-1 py-1 text-xs text-muted-foreground"
+        class="absolute inset-x-0 top-0 z-10 flex items-center justify-center gap-1 bg-card/95 py-1 text-xs text-muted-foreground"
         aria-label="刷新运动记录失败，重试"
-        @click="reload"
+        @click="reload()"
       >
         <span>刷新失败</span><VbenIcon icon="mdi:refresh" class="size-3" />
       </button>

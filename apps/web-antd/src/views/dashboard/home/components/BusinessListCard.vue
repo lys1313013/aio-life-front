@@ -37,6 +37,7 @@ const props = defineProps<{
   media?: boolean;
   readingShelves?: boolean;
   reorder?: (ids: string[]) => Promise<unknown>;
+  skeletonRowHeight?: number;
   title: string;
   unpin?: (id: string) => Promise<unknown>;
 }>();
@@ -377,7 +378,14 @@ defineExpose({ reload: () => load(true) });
     <div
       v-else
       ref="scrollRef"
-      class="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-2"
+      class="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-2"
+      :style="
+        items.length === 0
+          ? {
+              minHeight: `${readingShelves ? 107 : (skeletonRowHeight || 64) + 8}px`,
+            }
+          : {}
+      "
       :class="media ? 'px-4 pt-1' : 'px-2'"
       @scroll="onScroll"
     >
@@ -571,7 +579,8 @@ defineExpose({ reload: () => load(true) });
       <BusinessCardSkeleton
         v-if="!readingShelves && loading && items.length === 0"
         :media="media"
-        :count="media ? 6 : 3"
+        :count="1"
+        :row-height="skeletonRowHeight"
       />
       <BusinessCardSkeleton
         v-else-if="!readingShelves && loadingMore"
@@ -583,6 +592,10 @@ defineExpose({ reload: () => load(true) });
         v-if="error"
         type="button"
         class="flex min-h-11 w-full items-center justify-center gap-1 text-sm text-muted-foreground"
+        :class="{
+          'absolute inset-x-0 top-0 bg-card/95':
+            items.length > 0 && errorPage === 1,
+        }"
         :aria-label="`${title}加载失败，重试`"
         @click="load()"
       >

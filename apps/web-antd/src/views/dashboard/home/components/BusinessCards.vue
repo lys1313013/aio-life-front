@@ -331,6 +331,9 @@ const membershipRecord = computed(
         }
       "
       :title="card.title"
+      :skeleton-row-height="
+        card.key === 'goal' ? 72 : card.key === 'anniversary' ? 56 : 64
+      "
       :icon="card.icon"
       :media="card.key === 'reading' || card.key === 'movie'"
       :reading-shelves="card.key === 'reading'"

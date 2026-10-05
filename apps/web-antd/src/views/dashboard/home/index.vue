@@ -57,23 +57,22 @@ onDeactivated(() => {
 onUnmounted(() => document.removeEventListener('visibilitychange', visible));
 </script>
 <template>
-  <div
-    v-if="preferences.error"
-    class="flex items-center gap-3 p-4"
-    role="alert"
-  >
-    <span>首页设置加载失败</span
-    ><Button :loading="preferences.loading" @click="refreshPreferences">
-      重试
-    </Button>
+  <div>
+    <div
+      v-if="preferences.error"
+      class="flex items-center gap-3 p-4"
+      role="alert"
+    >
+      <span>首页设置加载失败</span
+      ><Button :loading="preferences.loading" @click="refreshPreferences">
+        重试
+      </Button>
+    </div>
+    <Skeleton
+      v-if="!initialized || (!preferences.ready && preferences.loading)"
+      active
+      class="p-4"
+    />
+    <HomeContent v-if="initialized && preferences.ready" :key="contentKey" />
   </div>
-  <Skeleton
-    v-if="!initialized || (!preferences.ready && preferences.loading)"
-    active
-    class="p-4"
-  />
-  <HomeContent
-    v-if="active && initialized && preferences.ready"
-    :key="contentKey"
-  />
 </template>

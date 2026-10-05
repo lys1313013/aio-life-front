@@ -322,7 +322,8 @@ describe('阅读双排书架', () => {
       },
     });
     await flushPromises();
-    const shelf = wrapper.get('[aria-label="想读书籍"]');
+    let shelf = wrapper.get('[aria-label="在读书籍"]');
+    expect(wrapper.find('[aria-label="想读书籍"]').exists()).toBe(false);
     Object.defineProperties(shelf.element, {
       scrollWidth: { configurable: true, value: 600 },
       clientWidth: { configurable: true, value: 300 },
@@ -342,6 +343,12 @@ describe('阅读双排书架', () => {
         .find('[aria-label="编辑记录 1"]')
         .exists(),
     ).toBe(true);
+    shelf = wrapper.get('[aria-label="想读书籍"]');
+    Object.defineProperties(shelf.element, {
+      scrollWidth: { configurable: true, value: 600 },
+      clientWidth: { configurable: true, value: 300 },
+      scrollLeft: { configurable: true, value: 300 },
+    });
     expect(shelf.find('[aria-label="编辑记录 2"]').exists()).toBe(true);
     expect(shelf.find('[aria-label="编辑记录 1"]').exists()).toBe(false);
     expect(fetchPage).toHaveBeenCalledTimes(1);
@@ -349,6 +356,12 @@ describe('阅读双排书架', () => {
     await shelf.trigger('scroll');
     await flushPromises();
     expect(fetchPage.mock.calls.map((call) => call[0])).toEqual([1, 2]);
+    shelf = wrapper.get('[aria-label="想读书籍"]');
+    Object.defineProperties(shelf.element, {
+      scrollWidth: { configurable: true, value: 600 },
+      clientWidth: { configurable: true, value: 300 },
+      scrollLeft: { configurable: true, value: 300 },
+    });
     expect(shelf.find('[aria-label="编辑记录 2"]').exists()).toBe(true);
     await wrapper.get('[aria-label="阅读加载失败，重试"]').trigger('click');
     await flushPromises();
