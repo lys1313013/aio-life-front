@@ -110,14 +110,11 @@ function handleTitleClick(e: MouseEvent) {
             :class="{
               'cursor-pointer hover:text-primary': !!iconClickUrl,
             }"
-            class="analysis-card-icon inline-flex size-5 flex-shrink-0 items-center justify-center text-muted-foreground transition-colors sm:size-6"
+            class="analysis-card-icon inline-flex size-5 flex-shrink-0 items-center justify-center text-foreground transition-colors sm:size-6"
             @click="handleIconClick"
           >
             <VbenIcon
               :icon="icon"
-              :class="{
-                'analysis-card-weread-icon': icon === 'simple-icons:weread',
-              }"
               :style="{ color: iconColor || undefined }"
               class="size-4 sm:size-5"
             />
@@ -167,12 +164,6 @@ function handleTitleClick(e: MouseEvent) {
 </template>
 
 <style scoped>
-/* 品牌图标的镂空部分固定为白色，避免透出深色卡片背景。 */
-.analysis-card-weread-icon {
-  background-color: #fff;
-  border-radius: 21.3333%;
-}
-
 /* 静默刷新态：整卡轻微降透明，给出"正在更新"的视觉反馈 */
 .analysis-card {
   position: relative;

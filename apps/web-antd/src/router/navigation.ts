@@ -8,6 +8,7 @@ import { useAccessStore } from '@vben/stores';
 import { cloneDeep, resetStaticRoutes } from '@vben/utils';
 
 import { getMenuPreferencesApi } from '#/api/core/menu';
+import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 import { visibleNavigationMenus } from '#/utils/navigation-menus';
 
@@ -22,6 +23,7 @@ export async function refreshNavigation(options: GenerateMenuAndRoutesOptions) {
   generations.set(options.router, generation);
   const access = useAccessStore();
   const locks = useSecondaryLockStore();
+  const visuals = useMenuVisualsStore();
   const draft = createRouter({
     history: createMemoryHistory(),
     routes: cloneDeep(baseRoutes),
@@ -35,6 +37,7 @@ export async function refreshNavigation(options: GenerateMenuAndRoutesOptions) {
         return { hiddenMenuIds: [] };
       }),
       locks.loadLockedMenus(),
+      visuals.load(true),
     ],
   );
   if (generations.get(options.router) !== generation) return;
@@ -55,5 +58,6 @@ export async function refreshNavigation(options: GenerateMenuAndRoutesOptions) {
   access.setAccessMenus(menus);
   access.setAccessRoutes(accessibleRoutes);
   access.setIsAccessChecked(true);
+  visuals.syncMenus(accessibleMenus);
   return { accessibleMenus: menus, accessibleRoutes };
 }

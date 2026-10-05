@@ -14,6 +14,14 @@ const state = vi.hoisted(() => ({
     setIsAccessChecked: vi.fn(),
   },
 }));
+vi.mock('#/store/menu-visuals', () => ({
+  useMenuVisualsStore: () => ({
+    load: vi.fn(),
+    syncMenus: vi.fn(),
+    loading: false,
+    visual: () => ({ icon: 'lucide:layout-dashboard' }),
+  }),
+}));
 vi.mock('@vben/stores', () => ({ useAccessStore: () => state.access }));
 vi.mock('#/api/core/menu', () => ({ getMenuPreferencesApi: state.get }));
 vi.mock('#/store/secondary-lock', () => ({

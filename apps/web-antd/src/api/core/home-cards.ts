@@ -5,6 +5,7 @@ export interface HomeCardPreference {
   group: 'overview' | 'section';
   title: string;
   icon: string;
+  iconColor?: null | string;
   enabled: boolean;
   sortOrder: number;
 }

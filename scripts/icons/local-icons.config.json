@@ -1,5 +1,8 @@
 {
-  "collections": ["lucide", "ant-design"],
+  "collections": [
+    "lucide",
+    "ant-design"
+  ],
   "icons": [
     "ant-design:book-outlined",
     "ant-design:gift-outlined",
@@ -24,6 +27,7 @@
     "lucide:dumbbell",
     "lucide:home",
     "lucide:layout-dashboard",
+    "lucide:library",
     "lucide:monitor",
     "lucide:package",
     "lucide:user",

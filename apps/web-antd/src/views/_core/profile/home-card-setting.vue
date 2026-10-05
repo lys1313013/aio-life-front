@@ -8,6 +8,7 @@ import { VbenIcon } from '@vben/common-ui';
 import { Button, Popconfirm, Spin, Switch } from 'ant-design-vue';
 import draggable from 'vuedraggable';
 
+import BusinessIcon from '#/components/BusinessIcon.vue';
 import { useHomeCardsStore } from '#/store/home-cards';
 
 const store = useHomeCardsStore();
@@ -138,10 +139,7 @@ async function reset() {
               >
                 <VbenIcon icon="lucide:grip-vertical" class="size-4" />
               </button>
-              <VbenIcon
-                :icon="item.icon"
-                class="size-5 shrink-0 text-foreground"
-              />
+              <BusinessIcon :card-key="item.cardKey" class="size-5 shrink-0" />
               <span class="min-w-0 flex-1 text-sm">{{ item.title }}</span>
               <Switch
                 :checked="item.enabled"

@@ -21,11 +21,15 @@ import {
 import draggable from 'vuedraggable';
 
 import { getQuickNavCandidatesApi, QUICK_NAV_MAX } from '#/api/core/quick-nav';
+import BusinessIcon from '#/components/BusinessIcon.vue';
+import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useQuickNavStore } from '#/store/quick-nav';
 
 import QuickNavPickerModal from './QuickNavPickerModal.vue';
 
 const store = useQuickNavStore();
+const menuVisuals = useMenuVisualsStore();
+void menuVisuals.load();
 const router = useRouter();
 
 const editing = ref(false);
@@ -35,8 +39,14 @@ const pickerVisible = ref(false);
 
 const navItems = computed<WorkbenchQuickNavItem[]>(() =>
   store.items.map((it) => ({
-    color: it.color,
-    icon: it.icon,
+    color: menuVisuals.menuVisual(it.menuId, {
+      icon: it.icon,
+      iconColor: it.color,
+    }).iconColor,
+    icon: menuVisuals.menuVisual(it.menuId, {
+      icon: it.icon,
+      iconColor: it.color,
+    }).icon,
     title: it.title,
     url: it.path,
   })),
@@ -174,7 +184,12 @@ function dragChange() {
     <div
       class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
     >
-      <span class="text-base font-semibold">快捷导航</span>
+      <span class="text-base font-semibold"
+        ><BusinessIcon
+          card-key="section.links"
+          class="mr-2 inline-block size-4 align-middle"
+        />快捷导航</span
+      >
       <!-- 编辑/保存按钮 -->
       <div
         v-if="!isLoading && !loadFailed"
@@ -293,8 +308,18 @@ function dragChange() {
               </AButton>
               <div class="flex flex-col items-center justify-center">
                 <VbenIcon
-                  :color="element.color || undefined"
-                  :icon="element.icon"
+                  :style="{
+                    color: menuVisuals.menuVisual(element.menuId, {
+                      icon: element.icon,
+                      iconColor: element.color,
+                    }).iconColor,
+                  }"
+                  :icon="
+                    menuVisuals.menuVisual(element.menuId, {
+                      icon: element.icon,
+                      iconColor: element.color,
+                    }).icon
+                  "
                   class="size-5 sm:size-6"
                 />
                 <span
@@ -326,7 +351,7 @@ function dragChange() {
             @click="handleItemClick(item)"
           >
             <VbenIcon
-              :color="item.color || undefined"
+              :style="{ color: item.color }"
               :icon="item.icon"
               class="size-5 transition-all duration-300 group-hover:scale-125 sm:size-6"
             />
