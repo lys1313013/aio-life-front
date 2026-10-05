@@ -140,8 +140,17 @@ defineExpose({
   scroll-snap-align: start;
 }
 .shelf-cover {
+  position: relative;
   width: auto;
   height: var(--shelf-cover-height);
+}
+.shelf-cover::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  border: 1px solid hsl(var(--border));
+  border-radius: inherit;
 }
 .shelf-placeholder {
   width: calc(var(--shelf-cover-height) * 2 / 3);

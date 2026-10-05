@@ -28,6 +28,7 @@ import {
 import BusinessCardCover from './BusinessCardCover.vue';
 import BusinessCardSkeleton from './BusinessCardSkeleton.vue';
 import CardHeader from './CardHeader.vue';
+import CardRefreshIndicator from './CardRefreshIndicator.vue';
 import ReadingShelves from './ReadingShelves.vue';
 
 const props = defineProps<{
@@ -358,20 +359,10 @@ defineExpose({ reload: () => load(true) });
         /><span>{{ title }}</span>
       </button>
       <div v-if="!locked" class="flex items-center">
-        <span
+        <CardRefreshIndicator
           v-if="loading && items.length > 0 && !loadingMore"
-          class="mr-1 flex h-4 items-center gap-1"
-          role="status"
-          aria-label="正在刷新"
-        >
-          <span
-            v-for="dot in 3"
-            :key="dot"
-            class="refresh-dot size-1 rounded-full bg-muted-foreground/50"
-            :style="{ animationDelay: `${(dot - 1) * 150}ms` }"
-            aria-hidden="true"
-          ></span>
-        </span>
+          class="mr-1"
+        />
         <button
           type="button"
           class="card-icon"
@@ -732,24 +723,6 @@ defineExpose({ reload: () => load(true) });
 @container business-card (min-width: 380px) {
   :deep(.media-row-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.refresh-dot {
-  animation: refresh-pulse 1.2s ease-in-out infinite;
-}
-@keyframes refresh-pulse {
-  0%,
-  100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .refresh-dot {
-    animation: none;
   }
 }
 
