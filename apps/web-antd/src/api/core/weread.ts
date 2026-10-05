@@ -74,9 +74,11 @@ export interface WereadRecentBook extends Omit<WereadBook, 'readUpdateTime'> {
 export interface WereadRecent {
   connected: boolean;
   books: WereadRecentBook[];
+  nextCursor: null | string;
 }
-export function getWereadRecent() {
+export function getWereadRecent(cursor?: string) {
   return requestClient.get<WereadRecent>('/weread/recent', {
+    params: { cursor, size: 6 },
     timeout: 120_000,
   });
 }

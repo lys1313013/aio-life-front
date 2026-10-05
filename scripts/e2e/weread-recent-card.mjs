@@ -22,6 +22,12 @@ const menus = [
         meta: { title: '首页', keepAlive: true },
       },
       {
+        name: 'FixtureMembership',
+        path: '/membership',
+        component: '/membership/index',
+        meta: { title: '会员', menuId: 'member-menu' },
+      },
+      {
         name: 'Weread',
         path: '/record/weread',
         component: '/my-hub/weread/index',
@@ -36,7 +42,28 @@ const visual = {
   icon: 'lucide:book-open',
   iconColor: '#4489ce',
 };
+const memberVisual = {
+  menuId: 'member-menu',
+  path: '/membership',
+  icon: 'lucide:crown',
+};
+const memberships = Array.from({ length: 4 }, (_, i) => ({
+  id: 'member-' + i,
+  name: '模拟会员 ' + i,
+  expiryDate: '2099-12-31',
+  status: 'active',
+  category: 'other',
+  autoRenew: 0,
+}));
 const cards = [
+  {
+    cardKey: 'section.membership',
+    group: 'section',
+    title: '会员',
+    enabled: true,
+    sortOrder: 2,
+    ...memberVisual,
+  },
   {
     cardKey: 'section.weread',
     group: 'section',
@@ -104,8 +131,11 @@ try {
         '/auth/codes': [],
         '/menu/all': menus,
         '/menu/visuals': {
-          menus: [visual],
-          cards: { 'section.weread': visual },
+          menus: [visual, memberVisual],
+          cards: {
+            'section.weread': visual,
+            'section.membership': memberVisual,
+          },
         },
         '/home/cards': cards,
         '/auth/secondary-lock/menus': [],
@@ -132,22 +162,56 @@ try {
         await page.route('**/api' + path, respond);
         await page.route('**/api' + path + '?*', respond);
       }
-      let responseBooks = books,
+      let responseBooks = Array.from({ length: 14 }, (_, i) => ({
+          ...books[i % 3],
+          bookId: String(i + 1),
+          title: i < 3 ? books[i].title : '模拟分页图书 ' + (i + 1),
+        })),
         fail = false,
+        moreFail = false,
         calls = 0,
         release;
       let gate = new Promise((resolve) => {
         release = resolve;
       });
-      await page.route('**/api/weread/recent', async (route) => {
+      let memberRelease;
+      let memberGate = Promise.resolve();
+      await page.route('**/api/membership/list', async (route) => {
+        await memberGate;
+        await route.fulfill({ json: { rscode: '0', data: memberships } });
+      });
+      const cursors = [];
+      const recent = async (route) => {
+        const cursor = new URL(route.request().url()).searchParams.get(
+          'cursor',
+        );
+        cursors.push(cursor);
         calls++;
         await gate;
         await route.fulfill({
-          json: fail
-            ? { rscode: '1', result: '模拟失败' }
-            : { rscode: '0', data: { connected: true, books: responseBooks } },
+          json:
+            fail || (cursor && moreFail)
+              ? { rscode: '1', result: '模拟失败' }
+              : {
+                  rscode: '0',
+                  data: {
+                    connected: true,
+                    books: responseBooks.slice(
+                      cursor ? Number(cursor.split(':')[1]) : 0,
+                      (cursor ? Number(cursor.split(':')[1]) : 0) + 6,
+                    ),
+                    nextCursor:
+                      (cursor ? Number(cursor.split(':')[1]) : 0) + 6 <
+                      responseBooks.length
+                        ? '200:' +
+                          ((cursor ? Number(cursor.split(':')[1]) : 0) + 6)
+                        : null,
+                  },
+                },
         });
-      });
+      };
+      await page.route('**/api/weread/recent', recent);
+      await page.route('**/api/weread/recent?*', recent);
       await page.goto(origin + '/auth/login');
       await page
         .locator('input:not([type="password"])')
@@ -186,6 +250,8 @@ try {
             .getBoundingClientRect();
           return { height: rect.height, nextTop: sibling.top };
         });
+      const memberCard = page.locator('.membership-card');
+      await expect(memberCard).toContainText('模拟会员');
       const skeleton = await geometry();
       await card.screenshot({
         path: `${output}/${width}-${dark ? 'dark' : 'light'}-loading.png`,
@@ -194,6 +260,29 @@ try {
       await expect(card).toContainText('42%');
       const loaded = await geometry();
       assert.deepEqual(loaded, skeleton);
+      const peerHeight = await memberCard.evaluate(
+        (el) => el.getBoundingClientRect().height,
+      );
+      assert.equal(
+        loaded.height,
+        peerHeight,
+        'full card matches membership height',
+      );
+      assert.equal(loaded.height, width >= 768 && width < 1024 ? 250 : 280);
+      const rowGeometry = await card
+        .locator('.weread-row')
+        .evaluateAll((rows) =>
+          rows
+            .slice(0, 3)
+            .map((el) => ({
+              row: el.getBoundingClientRect().height,
+              content: el.querySelector('a').getBoundingClientRect().height,
+            })),
+        );
+      assert.ok(
+        rowGeometry.every((row) => row.content <= row.row),
+        'three rows fully visible',
+      );
       await card.screenshot({
         path: `${output}/${width}-${dark ? 'dark' : 'light'}.png`,
       });
@@ -202,50 +291,83 @@ try {
         2,
         'only blank refresh and title',
       );
+      const list = card.getByLabel('最近阅读列表', { exact: true });
+      const scrollEnd = () =>
+        list.evaluate((el) => {
+          el.scrollTop = el.scrollHeight;
+        });
+      moreFail = true;
+      await scrollEnd();
+      await expect(card.getByLabel('重试加载更多书籍')).toBeVisible();
+      await expect(card.locator('a')).toHaveCount(6);
+      assert.deepEqual(await geometry(), loaded);
+      moreFail = false;
+      await card.getByLabel('重试加载更多书籍').click();
+      await expect(card.locator('a')).toHaveCount(12);
+      await scrollEnd();
+      await expect(card.locator('a')).toHaveCount(14);
+      assert.deepEqual(await geometry(), loaded);
+      await scrollEnd();
+      await page.waitForTimeout(100);
+      assert.deepEqual(cursors, [null, '200:6', '200:6', '200:12']);
+      await card.screenshot({
+        path: `${output}/${width}-${dark ? 'dark' : 'light'}-pagination.png`,
+      });
+      await list.evaluate((el) => {
+        el.scrollTop = 0;
+      });
+      const beforeBook = calls;
       const popupTask = page.waitForEvent('popup');
       await card.locator('a').first().click();
       const popup = await popupTask;
       await popup.close();
-      assert.equal(calls, 1, 'book does not refresh');
+      assert.equal(calls, beforeBook, 'book does not refresh');
       gate = new Promise((resolve) => {
         release = resolve;
       });
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toHaveAttribute('aria-busy', 'true');
       assert.deepEqual(await geometry(), loaded, 'refresh keeps geometry');
+      memberGate = new Promise((resolve) => {
+        memberRelease = resolve;
+      });
+      await memberCard
+        .getByRole('button', { name: '刷新会员', exact: true })
+        .click();
+      await expect(card.getByLabel('正在刷新', { exact: true })).toBeVisible();
+      await expect(
+        memberCard.getByLabel('正在刷新', { exact: true }),
+      ).toBeVisible();
+      assert.equal(await card.locator('.refresh-dot').count(), 3);
+      assert.equal(await memberCard.locator('.refresh-dot').count(), 3);
+      assert.equal(await card.locator('.h-0\\.5').count(), 0);
+      await page.screenshot({
+        path: `${output}/${width}-${dark ? 'dark' : 'light'}-compare-refresh.png`,
+      });
+      memberRelease();
       await expect(card).toContainText('42%');
       release();
       await expect(card).toHaveAttribute('aria-busy', 'false');
       fail = true;
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toContainText('刷新失败');
       assert.deepEqual(await geometry(), loaded);
       fail = false;
       responseBooks = [];
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toContainText('暂无最近阅读');
       const empty = await geometry();
       assert.deepEqual(empty, loaded);
       gate = new Promise((resolve) => {
         release = resolve;
       });
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toHaveAttribute('aria-busy', 'true');
       assert.deepEqual(await geometry(), empty);
       release();
       await expect(card).toHaveAttribute('aria-busy', 'false');
       responseBooks = [books[0]];
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toContainText('42%');
       await expect(card.locator('a')).toHaveCount(1);
       const single = await geometry();
@@ -260,9 +382,7 @@ try {
             '长书名用于检查手机平板桌面是否溢出以及书籍封面作者和阅读进度是否仍然清晰可见',
         },
       ];
-      await card
-        .getByRole('button', { name: '刷新微信读书', exact: true })
-        .click({ position: { x: 4, y: 60 } });
+      await card.click({ position: { x: 4, y: 20 } });
       await expect(card).toContainText('长书名');
       assert.deepEqual(await geometry(), single);
       assert.equal(

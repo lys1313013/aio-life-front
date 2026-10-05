@@ -67,6 +67,7 @@ beforeEach(() => {
   user.userInfo.id = 'user1';
   mocks.recent.mockResolvedValue({
     connected: true,
+    nextCursor: null,
     books: [
       {
         bookId: '9007199254740993',
@@ -78,6 +79,87 @@ beforeEach(() => {
       },
     ],
   });
+});
+it('触底合并分页请求，去重并在末页停止', async () => {
+  const first = await mocks.recent();
+  mocks.recent.mockClear();
+  mocks.recent.mockResolvedValueOnce({ ...first, nextCursor: '200:book6' });
+  const wrapper = mount(WereadRecentCard);
+  await flushPromises();
+  let release!: (value: unknown) => void;
+  mocks.recent.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  const list = wrapper.get('[aria-label="最近阅读列表"]');
+  await list.trigger('scroll');
+  await list.trigger('scroll');
+  expect(mocks.recent).toHaveBeenCalledTimes(2);
+  expect(mocks.recent).toHaveBeenLastCalledWith('200:book6');
+  release({
+    connected: true,
+    books: [
+      ...first.books,
+      { ...first.books[0], bookId: 'new', title: '下一批' },
+    ],
+    nextCursor: null,
+  });
+  await flushPromises();
+  expect(wrapper.findAll('a')).toHaveLength(2);
+  await list.trigger('scroll');
+  expect(mocks.recent).toHaveBeenCalledTimes(2);
+});
+it('分页失败保留数据和游标，底部重试恢复', async () => {
+  const first = await mocks.recent();
+  mocks.recent.mockClear();
+  mocks.recent.mockResolvedValueOnce({ ...first, nextCursor: '200:book6' });
+  const wrapper = mount(WereadRecentCard);
+  await flushPromises();
+  mocks.recent.mockRejectedValueOnce(new Error('failed'));
+  await wrapper.get('[aria-label="最近阅读列表"]').trigger('scroll');
+  await flushPromises();
+  expect(wrapper.text()).toContain('模拟书籍');
+  await wrapper.get('[aria-label="最近阅读列表"]').trigger('scroll');
+  expect(mocks.recent).toHaveBeenCalledTimes(2);
+  mocks.recent.mockResolvedValueOnce({
+    connected: true,
+    books: [],
+    nextCursor: '200:book6',
+  });
+  await wrapper.get('[aria-label="重试加载更多书籍"]').trigger('click');
+  await flushPromises();
+  expect(mocks.recent).toHaveBeenLastCalledWith('200:book6');
+  expect(wrapper.find('[aria-label="重试加载更多书籍"]').exists()).toBe(false);
+  await wrapper.get('[aria-label="最近阅读列表"]').trigger('scroll');
+  expect(mocks.recent).toHaveBeenCalledTimes(3);
+});
+it('刷新期间分页旧响应不能覆盖新列表', async () => {
+  const first = await mocks.recent();
+  mocks.recent.mockClear();
+  mocks.recent.mockResolvedValueOnce({ ...first, nextCursor: '200:book6' });
+  const wrapper = mount(WereadRecentCard);
+  await flushPromises();
+  let release!: (value: unknown) => void;
+  mocks.recent.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  await wrapper.get('[aria-label="最近阅读列表"]').trigger('scroll');
+  mocks.recent.mockResolvedValueOnce({ ...first, nextCursor: null });
+  await wrapper.get('[aria-label="刷新微信读书"]').trigger('click');
+  await flushPromises();
+  release({
+    connected: true,
+    books: [{ ...first.books[0], bookId: 'old', title: '过期分页' }],
+    nextCursor: null,
+  });
+  await flushPromises();
+  expect(wrapper.text()).not.toContain('过期分页');
+  expect(wrapper.text()).toContain('模拟书籍');
 });
 it('书籍和标题点击不刷新，空白刷新合并请求且保留内容', async () => {
   const wrapper = mount(WereadRecentCard);

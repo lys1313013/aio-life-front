@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { WereadRecentBook } from '#/api/core/weread';
 
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useAccessStore, useUserStore } from '@vben/stores';
@@ -15,8 +15,9 @@ import { useSecondaryLockStore } from '#/store/secondary-lock';
 import BookLink from '#/views/my-hub/weread/book-link.vue';
 
 import { useHomeRequest } from '../composables/useHomeRequest';
-import { findMenuChain } from './business-card-data';
+import { BUSINESS_CARD_MAX_HEIGHT, findMenuChain } from './business-card-data';
 import BusinessCardCover from './BusinessCardCover.vue';
+import CardRefreshIndicator from './CardRefreshIndicator.vue';
 
 const emit = defineEmits<{ visibility: [visible: boolean] }>();
 const router = useRouter();
@@ -27,6 +28,11 @@ const locks = useSecondaryLockStore();
 const books = ref<WereadRecentBook[]>([]);
 const connected = ref<boolean | null>(null);
 const denied = ref(false);
+const scrollRef = ref<HTMLElement>();
+const nextCursor = ref<null | string>(null);
+const loadingMore = ref(false);
+const moreFailed = ref(false);
+let pageGeneration = 0;
 const identity = computed(
   () => user.userInfo?.userId || user.userInfo?.id || '',
 );
@@ -53,10 +59,19 @@ const locked = computed(
 const available = computed(() => !!path.value && !access.loginExpired);
 const request = useHomeRequest({
   enabled: () => available.value && !locked.value,
-  fetch: getWereadRecent,
+  fetch: () => getWereadRecent(),
+  onStart: () => {
+    pageGeneration++;
+    loadingMore.value = false;
+    moreFailed.value = false;
+  },
   apply: (data) => {
     books.value = data.books;
     connected.value = data.connected;
+    nextCursor.value = data.nextCursor ?? null;
+    void nextTick(() => {
+      if (scrollRef.value) scrollRef.value.scrollTop = 0;
+    });
   },
   onError: (error) => {
     if (
@@ -80,6 +95,10 @@ watch(
   [identity, available, locked],
   () => {
     request.invalidate();
+    pageGeneration++;
+    loadingMore.value = false;
+    moreFailed.value = false;
+    nextCursor.value = null;
     books.value = [];
     connected.value = null;
     loaded.value = false;
@@ -106,6 +125,66 @@ void locks.loadLockedMenus();
 function openPage() {
   if (path.value) void router.push(path.value);
 }
+async function loadMore() {
+  const cursor = nextCursor.value;
+  if (
+    !cursor ||
+    loading.value ||
+    loadingMore.value ||
+    !available.value ||
+    locked.value
+  )
+    return;
+  const version = request.version();
+  const generation = ++pageGeneration;
+  const valid = () =>
+    request.current(version) &&
+    generation === pageGeneration &&
+    !locked.value &&
+    available.value;
+  loadingMore.value = true;
+  moreFailed.value = false;
+  try {
+    const data = await getWereadRecent(cursor);
+    if (!valid()) return;
+    if (!data.connected) {
+      connected.value = false;
+      books.value = [];
+      nextCursor.value = null;
+      return;
+    }
+    books.value = [
+      ...new Map(
+        [...books.value, ...data.books].map((book) => [book.bookId, book]),
+      ).values(),
+    ];
+    nextCursor.value =
+      data.books.length > 0 && data.nextCursor !== cursor
+        ? (data.nextCursor ?? null)
+        : null;
+  } catch (error) {
+    if (!valid()) return;
+    if (
+      (error as { response?: { data?: { rscode?: string } } })?.response?.data
+        ?.rscode === '2001'
+    ) {
+      denied.value = true;
+      books.value = [];
+      nextCursor.value = null;
+    } else moreFailed.value = true;
+  } finally {
+    if (valid()) loadingMore.value = false;
+  }
+}
+function onScroll() {
+  const element = scrollRef.value;
+  if (
+    element &&
+    !moreFailed.value &&
+    element.scrollHeight - element.scrollTop - element.clientHeight < 32
+  )
+    void loadMore();
+}
 function readingDate(value: string) {
   const date = dayjs(Number(value) * 1000);
   const prefix = date.isSame(dayjs(), 'day')
@@ -121,6 +200,7 @@ function readingDate(value: string) {
   <section
     v-if="visible"
     class="weread-card relative flex min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground"
+    :style="{ '--weread-max-height': `${BUSINESS_CARD_MAX_HEIGHT}px` }"
     aria-label="微信读书首页卡片"
     :aria-busy="loading"
   >
@@ -133,7 +213,7 @@ function readingDate(value: string) {
       @click.stop="request.load()"
     ></button>
     <header
-      class="pointer-events-none relative flex h-11 shrink-0 items-center px-3"
+      class="pointer-events-none relative flex h-11 shrink-0 items-center justify-between px-2.5 sm:px-3"
     >
       <button
         type="button"
@@ -143,11 +223,7 @@ function readingDate(value: string) {
       >
         <BusinessIcon card-key="section.weread" class="size-4" />微信读书
       </button>
-      <span
-        v-if="loading"
-        class="pointer-events-none absolute inset-x-3 bottom-0 h-0.5 animate-pulse bg-primary/40 motion-reduce:animate-none"
-        aria-hidden="true"
-      ></span>
+      <CardRefreshIndicator v-if="loading && loaded && !locked" />
     </header>
     <div
       v-if="locked"
@@ -163,7 +239,7 @@ function readingDate(value: string) {
     </div>
     <div
       v-else-if="!loaded && loading"
-      class="pointer-events-none relative px-3 pb-3"
+      class="weread-body weread-full pointer-events-none relative px-2.5 sm:px-3"
       role="status"
       aria-label="正在加载最近阅读"
     >
@@ -182,7 +258,13 @@ function readingDate(value: string) {
     </div>
     <div
       v-else-if="books.length > 0"
-      class="pointer-events-none relative px-3 pb-3"
+      ref="scrollRef"
+      class="weread-body weread-scroll pointer-events-auto relative px-2.5 sm:px-3"
+      :class="{ 'weread-full': books.length >= 3 }"
+      tabindex="0"
+      aria-label="最近阅读列表"
+      @scroll.passive="onScroll"
+      @click.stop="request.load()"
     >
       <div
         v-for="book in books"
@@ -244,6 +326,24 @@ function readingDate(value: string) {
           </svg>
         </BookLink>
       </div>
+      <div
+        v-if="loadingMore"
+        class="weread-row flex animate-pulse items-center gap-3 motion-reduce:animate-none"
+        role="status"
+        aria-label="正在加载更多书籍"
+      >
+        <span class="weread-cover rounded bg-muted-foreground/20"></span>
+        <span class="h-3 w-1/2 rounded bg-muted-foreground/20"></span>
+      </div>
+      <button
+        v-else-if="moreFailed"
+        type="button"
+        class="flex min-h-11 w-full items-center justify-center text-sm text-destructive"
+        aria-label="重试加载更多书籍"
+        @click.stop="loadMore"
+      >
+        加载失败，点击重试
+      </button>
     </div>
     <div
       v-else
@@ -263,18 +363,59 @@ function readingDate(value: string) {
 
 <style scoped>
 .weread-row {
-  min-height: 72px;
-  padding-block: 4px;
+  box-sizing: border-box;
+  height: var(--weread-row-height);
+  padding-block: var(--weread-row-inset);
 }
 .weread-cover {
-  width: 42px;
-  height: 64px;
+  width: min(42px, calc(var(--weread-cover-height) * 2 / 3));
+  height: var(--weread-cover-height);
   flex-shrink: 0;
 }
+.weread-full {
+  height: var(--weread-body-height);
+}
+.weread-scroll {
+  max-height: var(--weread-body-height);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
 .weread-placeholder {
-  min-height: 228px;
+  min-height: var(--weread-body-height);
 }
 .weread-card {
+  --weread-card-height: var(--weread-max-height);
+  --weread-bottom-padding: 10px;
+  --weread-row-inset: 4px;
+  /* 标题 44px、边框 2px；剩余内容高度均分三行，与其他业务卡片对齐。 */
+  --weread-body-height: calc(
+    var(--weread-card-height) - 46px - var(--weread-bottom-padding)
+  );
+  --weread-row-height: calc(var(--weread-body-height) / 3);
+  --weread-cover-height: min(
+    64px,
+    calc(var(--weread-row-height) - 2 * var(--weread-row-inset))
+  );
+
   container-type: inline-size;
+  padding-bottom: var(--weread-bottom-padding);
+}
+@media (min-width: 640px) {
+  .weread-card {
+    --weread-bottom-padding: 12px;
+  }
+}
+@media (min-width: 768px) {
+  .weread-card {
+    --weread-card-height: 250px;
+    --weread-row-inset: 2px;
+  }
+}
+@media (min-width: 1024px) {
+  .weread-card {
+    --weread-card-height: var(--weread-max-height);
+    --weread-row-inset: 4px;
+  }
 }
 </style>
