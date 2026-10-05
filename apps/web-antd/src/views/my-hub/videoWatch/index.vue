@@ -1,16 +1,11 @@
 <script>
-import VideoCover from './VideoCover.vue';
 import {
   CaretRightOutlined,
-  ClockCircleOutlined,
   DeleteOutlined,
-  HistoryOutlined,
-  PlusOutlined,
-  VideoCameraOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
-  Card,
   Form,
   Input,
   InputNumber,
@@ -18,24 +13,26 @@ import {
   Popconfirm,
   Progress,
   Select,
+  Spin,
   Tabs,
-  Tag,
 } from 'ant-design-vue';
 
 import {
-  queryVideoCovers,
-  retryVideoCover,
   deleteBilibiliVideo,
   getStatusCount,
   insertBVideo,
   parseBilibiliUrl,
   query,
+  queryVideoCovers,
+  retryVideoCover,
   statistics,
   updateBiVideo,
 } from '#/api/core/bilibili-video';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+
+import VideoCover from './VideoCover.vue';
 
 export default {
   components: {
@@ -48,23 +45,23 @@ export default {
     AInputNumber: InputNumber,
     ASelect: Select,
     ASelectOption: Select.Option,
-    ACard: Card,
     APopconfirm: Popconfirm,
-    ATag: Tag,
+    ASpin: Spin,
     AProgress: Progress,
     ATabs: Tabs,
     ATabPane: Tabs.TabPane,
-    PlusOutlined,
     DeleteOutlined,
-    VideoCameraOutlined,
-    HistoryOutlined,
-    ClockCircleOutlined,
+    ReloadOutlined,
     CaretRightOutlined,
     GlobalFloatBtn,
   },
   data() {
     return {
       videos: [],
+      statsLoading: true,
+      statsLoaded: false,
+      statsFailed: false,
+      statsRevision: 0,
       coverTimer: null,
       coverRevision: 0,
       queryRevision: 0,
@@ -110,12 +107,7 @@ export default {
       learningStats: {
         studiedSeconds: 0,
         unstudiedSeconds: 0,
-        totalSeconds: 0,
-        studiedCount: 0,
-        unstudiedCount: 0,
-        notStartedCount: 0,
         totalCount: 0,
-        progressPercentage: 0,
       },
     };
   },
@@ -125,16 +117,21 @@ export default {
   activated() {
     this.coverActive = true;
     this.pollCovers();
+    if (!this.statsLoaded && !this.statsLoading) this.updateVideoCounts();
   },
   deactivated() {
     this.coverActive = false;
     this.stopCovers();
     this.queryRevision++;
+    this.statsRevision++;
+    this.statsLoading = false;
   },
   beforeUnmount() {
     this.coverActive = false;
     this.stopCovers();
     this.queryRevision++;
+    this.statsRevision++;
+    this.statsLoading = false;
   },
   methods: {
     stopCovers() {
@@ -146,7 +143,7 @@ export default {
       const ids = this.videos
         .filter((v) => v.coverState === 'PENDING')
         .map((v) => v.id);
-      if (!this.coverActive || !ids.length) return;
+      if (!this.coverActive || ids.length === 0) return;
       const revision = this.coverRevision;
       this.coverTimer = setTimeout(async () => {
         try {
@@ -178,6 +175,7 @@ export default {
     async query() {
       this.stopCovers();
       const revision = ++this.queryRevision;
+      const statsRequest = this.updateVideoCounts();
       const res = await query({
         page: 1,
         pageSize: 50,
@@ -188,43 +186,32 @@ export default {
       if (revision !== this.queryRevision) return;
       this.videos = res.items || [];
       this.pollCovers();
-      await this.updateVideoCounts();
+      await statsRequest;
     },
 
     async updateVideoCounts() {
-      const res = await getStatusCount({});
-      if (res) {
-        let sum = 0;
-        Object.keys(this.videoCounts).forEach((key) => {
-          this.videoCounts[key] = res[key] || 0;
-          if (key !== 'all') {
-            sum += this.videoCounts[key];
-          }
-        });
-        this.videoCounts.all = sum;
-      }
-      this.calculateLearningStats();
-    },
-
-    async calculateLearningStats() {
-      const res = await statistics({});
-      if (res) {
-        this.learningStats = {
-          ...res,
-          notStartedCount: this.videoCounts[PROGRESS_STATUS.NOT_STARTED] || 0,
-          studiedCount: this.videoCounts[PROGRESS_STATUS.COMPLETED] || 0,
-          unstudiedCount:
-            (this.videoCounts[PROGRESS_STATUS.IN_PROGRESS] || 0) +
-            (this.videoCounts[PROGRESS_STATUS.ON_HOLD] || 0),
-          totalCount: this.videoCounts.all || 0,
-        };
-
-        if (this.learningStats.totalCount > 0) {
-          this.learningStats.progressPercentage = Math.round(
-            (this.learningStats.studiedCount / this.learningStats.totalCount) *
-              100,
-          );
+      const revision = ++this.statsRevision;
+      this.statsLoading = true;
+      this.statsFailed = false;
+      try {
+        const [counts, stats] = await Promise.all([
+          getStatusCount({}),
+          statistics({}),
+        ]);
+        if (revision !== this.statsRevision) return;
+        let total = 0;
+        for (const key of Object.keys(this.videoCounts)) {
+          if (key === 'all') continue;
+          this.videoCounts[key] = counts?.[key] ?? 0;
+          total += this.videoCounts[key];
         }
+        this.videoCounts.all = total;
+        this.learningStats = { ...stats, totalCount: total };
+        this.statsLoaded = true;
+      } catch {
+        if (revision === this.statsRevision) this.statsFailed = true;
+      } finally {
+        if (revision === this.statsRevision) this.statsLoading = false;
       }
     },
 
@@ -346,16 +333,6 @@ export default {
       return statusMap[status] || '未知';
     },
 
-    getStatusBgClass(status) {
-      const classMap = {
-        [PROGRESS_STATUS.NOT_STARTED]: 'bg-muted text-muted-foreground',
-        [PROGRESS_STATUS.IN_PROGRESS]: 'bg-primary text-primary-foreground',
-        [PROGRESS_STATUS.ON_HOLD]: 'bg-warning text-warning-foreground',
-        [PROGRESS_STATUS.COMPLETED]: 'bg-success text-success-foreground',
-      };
-      return classMap[status] || 'bg-muted text-muted-foreground';
-    },
-
     onTabChange(key) {
       this.tabKey = key;
       this.query();
@@ -427,13 +404,13 @@ export default {
     },
 
     formatLearningTime(seconds) {
-      if (!seconds || seconds <= 0) return '0秒';
+      if (!seconds || seconds <= 0) return { value: 0, unit: '秒' };
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const secs = Math.floor(seconds % 60);
-      if (hours > 0) return `${hours}小时${minutes}分`;
-      if (minutes > 0) return `${minutes}分${secs}秒`;
-      return `${secs}秒`;
+      if (hours > 0) return { value: hours, unit: `小时${minutes}分` };
+      if (minutes > 0) return { value: minutes, unit: `分${secs}秒` };
+      return { value: secs, unit: '秒' };
     },
 
     getActualProgress(video) {
@@ -465,98 +442,71 @@ export default {
 </script>
 
 <template>
-  <div class="min-h-full bg-background/50 p-0 sm:p-4">
-    <!-- 学习进度统计卡片 -->
-    <div class="mb-2 px-2 py-4 sm:mb-6 sm:px-0 sm:py-0">
-      <div class="grid grid-cols-2 gap-2 sm:gap-6 md:grid-cols-2">
-        <!-- 数量统计卡片 -->
-        <div
-          class="group rounded-xl border border-border/60 bg-card p-3 shadow-sm transition-all duration-300 hover:border-primary/20 hover:bg-accent/5 hover:shadow-md sm:p-6"
-        >
-          <div
-            class="mb-0 flex items-center justify-between sm:mb-4 sm:items-start"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-lg text-primary transition-transform duration-300 group-hover:scale-110 sm:h-12 sm:w-12 sm:text-2xl"
-            >
-              <VideoCameraOutlined />
-            </div>
-            <div class="text-right">
-              <div
-                class="mb-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:mb-1 sm:text-xs"
-              >
-                学习总数
-              </div>
-              <div
-                class="text-xl font-bold tabular-nums leading-tight text-foreground sm:text-3xl"
-              >
-                {{ learningStats.totalCount }}
-              </div>
-            </div>
-          </div>
-          <div
-            class="hidden flex-wrap gap-2 border-t border-border/40 pt-4 sm:flex"
-          >
-            <span
-              class="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success"
-            >
-              <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-success"></span>
-              {{ learningStats.studiedCount }} 已完成
-            </span>
-            <span
-              class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary"
-            >
-              <span class="mr-1.5 h-1.5 w-1.5 rounded-full bg-primary"></span>
-              {{ learningStats.unstudiedCount }} 进行中
-            </span>
-            <span
-              class="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground"
-            >
-              <span
-                class="mr-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
-              ></span>
-              {{ learningStats.notStartedCount }} 未开始
-            </span>
-          </div>
+  <div class="video-watch min-h-full bg-background/50 p-3 sm:p-4">
+    <section
+      class="video-summary relative"
+      aria-label="观看统计"
+      :aria-busy="statsLoading"
+    >
+      <dl class="video-summary-values">
+        <div>
+          <dt>视频</dt>
+          <dd>
+            <span class="video-summary-number">{{
+              statsLoaded ? learningStats.totalCount : '—'
+            }}</span>
+            <span class="video-summary-unit">{{
+              statsLoaded ? '部' : '\u00a0'
+            }}</span>
+          </dd>
         </div>
-
-        <!-- 时长统计卡片 -->
-        <div
-          class="group rounded-xl border border-border/60 bg-card p-3 shadow-sm transition-all duration-300 hover:border-orange-500/20 hover:bg-accent/5 hover:shadow-md sm:p-6"
-        >
-          <div
-            class="mb-0 flex items-center justify-between sm:mb-4 sm:items-start"
-          >
-            <div
-              class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-lg text-orange-500 transition-transform duration-300 group-hover:scale-110 sm:h-12 sm:w-12 sm:text-2xl"
-            >
-              <ClockCircleOutlined />
-            </div>
-            <div class="text-right">
-              <div
-                class="mb-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:mb-1 sm:text-xs"
-              >
-                已学时长
-              </div>
-              <div
-                class="text-xl font-bold tabular-nums leading-tight text-foreground sm:text-2xl"
-              >
-                {{ formatLearningTime(learningStats.studiedSeconds) }}
-              </div>
-            </div>
-          </div>
-          <div
-            class="hidden items-center justify-between border-t border-border/40 pt-4 text-[11px] sm:flex"
-          >
-            <span class="font-medium text-muted-foreground">剩余预估</span>
-            <span
-              class="font-bold tabular-nums text-orange-600 dark:text-orange-400"
-              >{{ formatLearningTime(learningStats.unstudiedSeconds) }}</span
-            >
-          </div>
+        <div>
+          <dt>已看时长</dt>
+          <dd>
+            <span class="video-summary-number">{{
+              statsLoaded
+                ? formatLearningTime(learningStats.studiedSeconds).value
+                : '—'
+            }}</span>
+            <span class="video-summary-unit">{{
+              statsLoaded
+                ? formatLearningTime(learningStats.studiedSeconds).unit
+                : '\u00a0'
+            }}</span>
+          </dd>
         </div>
-      </div>
-    </div>
+        <div>
+          <dt>剩余预估</dt>
+          <dd>
+            <span class="video-summary-number">{{
+              statsLoaded
+                ? formatLearningTime(learningStats.unstudiedSeconds).value
+                : '—'
+            }}</span>
+            <span class="video-summary-unit">{{
+              statsLoaded
+                ? formatLearningTime(learningStats.unstudiedSeconds).unit
+                : '\u00a0'
+            }}</span>
+          </dd>
+        </div>
+      </dl>
+      <ASpin
+        v-if="statsLoading"
+        size="small"
+        class="absolute right-2 top-2"
+        aria-label="加载统计"
+      />
+      <AButton
+        v-else-if="statsFailed"
+        type="text"
+        class="absolute right-1 top-1 !h-11 !w-11"
+        aria-label="重试统计"
+        @click="updateVideoCounts"
+      >
+        <template #icon><ReloadOutlined /></template>
+      </AButton>
+    </section>
 
     <div class="px-0 sm:px-0">
       <ATabs
@@ -567,29 +517,27 @@ export default {
       >
         <ATabPane v-for="tab in tabList" :key="tab.key">
           <template #tab>
-            <span class="flex items-center gap-0.5 px-0 sm:gap-2 sm:px-1">
+            <span class="flex items-center gap-1.5">
               <span class="text-[13px] sm:text-sm">{{ tab.tab }}</span>
               <span
-                class="inline-flex h-3.5 min-w-[16px] items-center justify-center rounded-full bg-muted px-1 text-[8px] font-bold tabular-nums text-muted-foreground sm:h-5 sm:min-w-[20px] sm:px-1.5 sm:text-[10px]"
+                class="video-tab-count text-xs font-normal tabular-nums text-muted-foreground"
               >
-                {{ videoCounts[tab.key] || 0 }}
+                {{ statsLoaded ? videoCounts[tab.key] : '—' }}
               </span>
             </span>
           </template>
 
-          <div class="mt-2 px-2 pb-6 sm:mt-6 sm:px-0">
+          <div class="mt-4 pb-6">
             <!-- 视频列表 -->
-            <div
-              class="grid grid-cols-2 gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-            >
+            <div class="video-grid">
               <div
                 v-for="video in videos"
                 :key="video.id"
-                class="hover:-translate-y-0.1 group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg"
+                class="group relative cursor-pointer"
                 @click="showEditModal(video)"
               >
                 <!-- 封面图区域 -->
-                <div class="relative aspect-[16/10] overflow-hidden">
+                <div class="relative aspect-video overflow-hidden rounded-md">
                   <VideoCover
                     :file-id="video.coverFileId"
                     :state="video.coverState"
@@ -612,15 +560,15 @@ export default {
 
                   <!-- 状态角标 -->
                   <div
-                    class="absolute left-1.5 top-1.5 z-20 rounded px-1.5 py-0.5 text-[9px] font-bold shadow-md backdrop-blur-sm sm:left-2.5 sm:top-2.5 sm:px-2.5 sm:py-1 sm:text-[10px]"
-                    :class="getStatusBgClass(video.status)"
+                    v-if="tabKey === 'all'"
+                    class="absolute left-2 top-2 z-20 rounded bg-black/60 px-1.5 py-0.5 text-[11px] text-white"
                   >
                     {{ getStatusText(video.status) }}
                   </div>
 
                   <!-- 删除按钮 (悬浮显示) -->
                   <div
-                    class="absolute right-1.5 top-1.5 z-30 translate-x-2 transform opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 sm:right-2.5 sm:top-2.5"
+                    class="absolute right-1 top-1 z-30 opacity-100 sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100"
                   >
                     <APopconfirm
                       title="确定要删除吗？"
@@ -630,7 +578,8 @@ export default {
                         size="small"
                         danger
                         shape="circle"
-                        class="border-none bg-background/80 shadow-lg backdrop-blur-md hover:scale-110 active:scale-90 dark:bg-black/60"
+                        class="!h-11 !w-11 border-none bg-background/90"
+                        :aria-label="`删除${video.title || '视频'}`"
                         @click.stop
                       >
                         <template #icon><DeleteOutlined /></template>
@@ -640,21 +589,21 @@ export default {
 
                   <!-- 悬浮播放按钮 -->
                   <div
-                    class="absolute inset-0 z-10 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    class="absolute inset-0 z-10 flex items-center justify-center bg-black/20 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
                     @click.stop="goToBilibiliVideo(video)"
                   >
                     <div
-                      class="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-transparent text-white transition-all duration-300 sm:h-14 sm:w-14"
+                      class="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white"
                     >
-                      <CaretRightOutlined class="ml-1 text-3xl sm:text-4xl" />
+                      <CaretRightOutlined class="ml-0.5 text-2xl" />
                     </div>
                   </div>
                 </div>
 
                 <!-- 内容区域 -->
-                <div class="p-2 sm:p-3">
+                <div class="pt-2.5">
                   <h3
-                    class="mb-2 line-clamp-2 h-10 overflow-hidden text-xs font-bold leading-5 text-foreground transition-colors duration-300 group-hover:text-primary sm:mb-2.5 sm:text-sm"
+                    class="mb-2 line-clamp-2 h-10 overflow-hidden text-sm font-medium leading-5 text-foreground group-hover:text-primary"
                   >
                     {{ video.title || '未命名视频' }}
                   </h3>
@@ -667,9 +616,7 @@ export default {
                         video.owner?.name || video.ownerName || '未知UP主'
                       }}</span>
                     </span>
-                    <span
-                      class="inline-flex items-center font-bold tabular-nums text-primary/80"
-                    >
+                    <span class="inline-flex items-center tabular-nums">
                       {{ video.currentEpisode }}/{{ video.episodes }}
                     </span>
                   </div>
@@ -683,7 +630,7 @@ export default {
                         >{{ formatDuration(video.watchedDuration) }} /
                         {{ formatDuration(video.duration) }}</span
                       >
-                      <span class="font-black tracking-tighter text-primary"
+                      <span class="font-normal"
                         >{{ getActualProgress(video) }}%</span
                       >
                     </div>
@@ -833,34 +780,151 @@ export default {
 </template>
 
 <style scoped>
+.video-summary {
+  padding: 16px 24px;
+  margin-bottom: 16px;
+  color: hsl(var(--card-foreground));
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 45%);
+  border-radius: 14px;
+  box-shadow: 0 3px 14px hsl(var(--foreground) / 4%);
+}
+
+.video-summary-values {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.video-summary-values > div {
+  position: relative;
+  min-width: 0;
+  padding-inline: 24px;
+}
+
+.video-summary-values > div:first-child {
+  padding-left: 0;
+}
+
+.video-summary-values > div:last-child {
+  padding-right: 0;
+}
+
+.video-summary-values > div + div::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 28px;
+  content: '';
+  background: hsl(var(--border) / 55%);
+  transform: translateY(-50%);
+}
+
+.video-summary dt {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.video-summary dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 4px;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.video-summary-number {
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 28px;
+  color: hsl(var(--card-foreground) / 85%);
+  overflow-wrap: anywhere;
+}
+
+.video-summary-unit {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: hsl(var(--muted-foreground));
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 24px 20px;
+}
+
 .custom-tabs :deep(.ant-tabs-nav) {
   padding: 0;
   margin-bottom: 0;
 }
 
-.custom-tabs :deep(.ant-tabs-nav-wrap) {
-  padding: 0;
+.custom-tabs :deep(.ant-tabs-nav::before) {
+  border-bottom: none;
 }
 
 .custom-tabs :deep(.ant-tabs-tab) {
-  padding: 8px 6px !important;
-  margin: 0 4px 0 0 !important;
-  transition: all 0.3s;
-}
-
-@media (min-width: 640px) {
-  .custom-tabs :deep(.ant-tabs-tab) {
-    padding: 12px 16px !important;
-    margin: 0 32px 0 0 !important;
-  }
-
-  .custom-tabs :deep(.ant-tabs-nav-wrap) {
-    padding: 0 8px;
-  }
+  min-height: 44px;
+  padding: 10px 0;
+  margin: 0 24px 0 0;
 }
 
 .custom-tabs :deep(.ant-tabs-tab-active) {
-  font-weight: 600;
+  font-weight: 500;
+}
+
+.custom-tabs :deep(.ant-tabs-tab-active .video-tab-count) {
+  color: hsl(var(--primary));
+}
+
+@media (max-width: 639px) {
+  .video-summary {
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+
+  .video-summary-values {
+    grid-template-columns: minmax(0, 0.65fr) repeat(2, minmax(0, 1fr));
+  }
+
+  .video-summary-values > div {
+    padding-inline: 12px;
+  }
+
+  .video-summary dt {
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .video-summary dd {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .video-summary-number {
+    font-size: 20px;
+    line-height: 26px;
+  }
+
+  .video-summary-unit {
+    font-size: 12px;
+    line-height: 18px;
+  }
+
+  .video-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 12px;
+  }
+
+  .custom-tabs :deep(.ant-tabs-tab) {
+    margin-right: 8px;
+  }
 }
 
 .line-clamp-2 {
