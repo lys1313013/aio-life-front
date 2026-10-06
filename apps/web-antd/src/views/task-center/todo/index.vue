@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Task, TaskColumn } from '#/api/core/todo';
+
 import { nextTick, onMounted, ref } from 'vue';
 
 import {
@@ -42,22 +44,8 @@ import { AppModal as AModal } from '#/components/app-modal';
 
 import TaskEditDrawer from './task-edit-drawer.vue';
 
-interface Task {
-  id: string;
-  columnId?: string;
-  content: string;
-  detail?: string;
-  unCompletedCount?: number;
-  startTime?: any;
-  endTime?: any;
-  dueDate?: any;
-}
-
-interface Column {
-  bgColor?: string;
-  id: string;
+interface Column extends TaskColumn {
   tasks: Task[];
-  title: string;
 }
 
 const { useToken } = theme;
@@ -77,7 +65,7 @@ const getColumnBg = (column: Column) => {
 };
 
 // 截止日期徽章：今天=蓝、逾期=红、3 天内=橙、其余灰
-const getDueBadge = (dueDate: any) => {
+const getDueBadge = (dueDate?: string) => {
   if (!dueDate) return null;
   const d = dayjs(dueDate);
   const now = dayjs();
@@ -99,16 +87,16 @@ const loading = ref(false);
 onMounted(async () => {
   loading.value = true;
   try {
-    const res = await getTaskColumnList({});
-    columns.value = res.items.map((item: any) => ({
+    const res = await getTaskColumnList();
+    columns.value = res.items.map((item) => ({
       ...item,
-      tasks: item.tasks || [],
+      tasks: [],
     }));
 
-    const tasksRes = await getTaskList({});
+    const tasksRes = await getTaskList();
     columns.value.forEach((column) => {
       column.tasks = tasksRes.items.filter(
-        (item: { columnId: string }) => item.columnId === column.id,
+        (item) => item.columnId === column.id,
       );
     });
   } catch (error) {
@@ -205,7 +193,7 @@ const refreshTask = async (taskId: string) => {
   try {
     const res = await getTaskList({ taskId });
     if (res.items) {
-      const task = res.items.find((t: any) => t.id === taskId);
+      const task = res.items.find((t) => t.id === taskId);
       if (task) {
         columns.value.forEach((col) => {
           const idx = col.tasks.findIndex((t) => t.id === taskId);
@@ -223,7 +211,7 @@ const refreshTask = async (taskId: string) => {
 const deleteTaskFunc = async (taskId: string) => {
   const hide = message.loading('删除中...', 0);
   try {
-    await deleteTask({ id: taskId });
+    await deleteTask(taskId);
     columns.value.forEach((column) => {
       column.tasks = column.tasks.filter((task) => task.id !== taskId);
     });
@@ -249,7 +237,7 @@ const confirmDeleteColumn = (columnId: string) => {
 const deleteColumnMethod = async (columnId: string) => {
   const hide = message.loading('删除中...', 0);
   try {
-    await deleteColumn({ id: columnId });
+    await deleteColumn(columnId);
     columns.value = columns.value.filter((col) => col.id !== columnId);
   } finally {
     hide();

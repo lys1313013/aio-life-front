@@ -4,32 +4,55 @@ import { pickPayload, pickPayloadList } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
-export async function getTaskColumnList(data: any) {
-  return await getQuery('/taskColumn/query', data);
+export interface TaskColumnQuery {
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TaskQuery {
+  get?: number;
+  pageSize?: number;
+  taskId?: string;
+}
+
+export interface TaskColumn {
+  id: string;
+  title: string;
+  sortOrder?: number;
+  bgColor?: string;
+}
+
+export interface TaskColumnListResult {
+  items: TaskColumn[];
+  total: null | number;
+}
+
+export async function getTaskColumnList(params: TaskColumnQuery = {}) {
+  return await getQuery<TaskColumnListResult>('/taskColumn/query', params);
 }
 
 export async function saveColumn(data: ApiRequests['TaskColumnCreateReq']) {
-  return await requestClient.post(
+  return await requestClient.post<TaskColumn>(
     '/taskColumn',
     pickPayload('TaskColumnCreateReq', data),
   );
 }
 
 export async function updateColumn(
-  data: ApiRequests['TaskColumnUpdateReq'] & { id?: string },
+  data: ApiRequests['TaskColumnUpdateReq'] & { id: string },
 ) {
-  return await requestClient.put(
+  return await requestClient.put<boolean>(
     `/taskColumn/${data.id}`,
     pickPayload('TaskColumnUpdateReq', data),
   );
 }
 
-export async function deleteColumn(data: any) {
-  return await requestClient.delete(`/taskColumn/${data.id}`);
+export async function deleteColumn(id: string) {
+  return await requestClient.delete<void>(`/taskColumn/${id}`);
 }
 
 export async function reSortColumn(data: ApiRequests['TaskColumnSortReq'][]) {
-  return await requestClient.post(
+  return await requestClient.post<void>(
     '/taskColumn/reSort',
     pickPayloadList('TaskColumnSortReq', data),
   );
@@ -60,10 +83,11 @@ export interface Task {
 
 export interface TaskListResult {
   items: Task[];
+  total: null | number;
 }
 
-export async function getTaskList(data: any) {
-  return await requestClient.get<TaskListResult>('/tasks', { params: data });
+export async function getTaskList(params: TaskQuery = {}) {
+  return await requestClient.get<TaskListResult>('/tasks', { params });
 }
 
 export async function getTaskDetail(taskId: string) {
@@ -95,7 +119,7 @@ export async function deleteTaskDetail(id: string) {
 export async function reSortTaskDetail(
   data: ApiRequests['TaskDetailSortReq'][],
 ) {
-  return await requestClient.post(
+  return await requestClient.post<void>(
     '/taskDetails/reSort',
     pickPayloadList('TaskDetailSortReq', data),
   );
@@ -110,24 +134,27 @@ export async function unstarTaskDetail(id: string) {
 }
 
 export async function saveTask(data: ApiRequests['TaskCreateReq']) {
-  return await requestClient.post('/tasks', pickPayload('TaskCreateReq', data));
+  return await requestClient.post<Task>(
+    '/tasks',
+    pickPayload('TaskCreateReq', data),
+  );
 }
 
 export async function updateTask(
-  data: ApiRequests['TaskUpdateReq'] & { id?: string },
+  data: ApiRequests['TaskUpdateReq'] & { id: string },
 ) {
-  return await requestClient.put(
+  return await requestClient.put<boolean>(
     `/tasks/${data.id}`,
     pickPayload('TaskUpdateReq', data),
   );
 }
 
-export async function deleteTask(data: any) {
-  return await requestClient.delete(`/tasks/${data.id}`);
+export async function deleteTask(id: string) {
+  return await requestClient.delete<void>(`/tasks/${id}`);
 }
 
 export async function reSortTask(data: ApiRequests['TaskSortReq'][]) {
-  return await requestClient.post(
+  return await requestClient.post<void>(
     '/tasks/reSort',
     pickPayloadList('TaskSortReq', data),
   );
