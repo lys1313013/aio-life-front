@@ -122,7 +122,7 @@ const loadData = async (loadMore = false) => {
       recordGridRef.value?.scrollTo({ top: 0 });
     }
     currentPage.value = targetPage;
-    hasMore.value = recordList.value.length < Number(response.total || 0);
+    hasMore.value = recordList.value.length < (response.total ?? 0);
 
     if (!loadMore) await syncSelectedItem();
   } catch (error) {

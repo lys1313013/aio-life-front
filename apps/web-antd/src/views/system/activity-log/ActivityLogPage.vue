@@ -103,7 +103,7 @@ async function load() {
     });
     if (currentRequest !== requestId) return;
     rows.value = result.items;
-    total.value = Number(result.total);
+    total.value = result.total;
   } catch {
     if (currentRequest !== requestId) return;
     rows.value = [];

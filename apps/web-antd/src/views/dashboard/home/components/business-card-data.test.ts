@@ -14,13 +14,22 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe('业务首页数据规则', () => {
-  it('分页总数按字符串处理，支持大整数，空页停止并拒绝非法总数', () => {
-    expect(hasMoreRecords('0', 1, 20, 0)).toBe(false);
-    expect(hasMoreRecords('21', 1, 20, 20)).toBe(true);
-    expect(hasMoreRecords('21', 2, 20, 1)).toBe(false);
-    expect(hasMoreRecords('9007199254740993', 1, 20, 20)).toBe(true);
-    expect(hasMoreRecords('100', 2, 20, 0)).toBe(false);
-    expect(() => hasMoreRecords('', 1, 20, 20)).toThrow();
+  it('分页使用数字总数，空页和末页停止，拒绝空值和不安全总数', () => {
+    expect(hasMoreRecords(0, 1, 20, 0)).toBe(false);
+    expect(hasMoreRecords(21, 1, 20, 20)).toBe(true);
+    expect(hasMoreRecords(21, 2, 20, 1)).toBe(false);
+    expect(hasMoreRecords(2_147_483_648, 1, 20, 20)).toBe(true);
+    expect(hasMoreRecords(100, 2, 20, 0)).toBe(false);
+    for (const total of [
+      null,
+      -1,
+      1.5,
+      Number.NaN,
+      Infinity,
+      9_007_199_254_740_992,
+    ]) {
+      expect(() => hasMoreRecords(total, 1, 20, 20)).toThrow();
+    }
   });
   it('会员排除过期，今天到期仍保留，到期日近到远且同日按完整ID排序', () => {
     vi.useFakeTimers();

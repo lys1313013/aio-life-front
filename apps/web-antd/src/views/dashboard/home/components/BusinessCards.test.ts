@@ -192,13 +192,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.goals.mockResolvedValue([]);
   mocks.memberships.mockResolvedValue([]);
-  mocks.readPage.mockResolvedValue({ items: [read], total: '1' });
-  mocks.moviePage.mockResolvedValue({ items: [movie], total: '1' });
+  mocks.readPage.mockResolvedValue({ items: [read], total: 1 });
+  mocks.moviePage.mockResolvedValue({ items: [movie], total: 1 });
   mocks.readUpdate.mockImplementation(async () => {
-    mocks.readPage.mockResolvedValue({ items: [], total: '0' });
+    mocks.readPage.mockResolvedValue({ items: [], total: 0 });
   });
   mocks.movieUpdate.mockImplementation(async () => {
-    mocks.moviePage.mockResolvedValue({ items: [], total: '0' });
+    mocks.moviePage.mockResolvedValue({ items: [], total: 0 });
   });
 });
 describe('首页复用阅读观影编辑器闭环', () => {

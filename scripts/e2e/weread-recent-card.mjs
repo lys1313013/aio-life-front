@@ -158,7 +158,7 @@ try {
       };
       for (const [path, data] of Object.entries(fixtures)) {
         const respond = (route) =>
-          route.fulfill({ json: { rscode: '0', data } });
+          route.fulfill({ json: { code: 0, data } });
         await page.route('**/api' + path, respond);
         await page.route('**/api' + path + '?*', respond);
       }
@@ -178,7 +178,7 @@ try {
       let memberGate = Promise.resolve();
       await page.route('**/api/membership/list', async (route) => {
         await memberGate;
-        await route.fulfill({ json: { rscode: '0', data: memberships } });
+        await route.fulfill({ json: { code: 0, data: memberships } });
       });
       const cursors = [];
       const recent = async (route) => {
@@ -191,9 +191,9 @@ try {
         await route.fulfill({
           json:
             fail || (cursor && moreFail)
-              ? { rscode: '1', result: '模拟失败' }
+              ? { code: 1, message: '模拟失败' }
               : {
-                  rscode: '0',
+                  code: 0,
                   data: {
                     connected: true,
                     books: responseBooks.slice(

@@ -131,17 +131,17 @@ const fixtures = {
 for (const [path, data] of Object.entries(fixtures))
   for (const suffix of ['', '?*'])
     await page.route(`**/api${path}${suffix}`, (r) =>
-      r.fulfill({ json: { rscode: '0', data } }),
+      r.fulfill({ json: { code: 0, data } }),
     );
 const writes = [];
 await page.route('**/api/system/membership-providers', async (r) => {
   if (r.request().method() === 'GET')
-    return r.fulfill({ json: { rscode: '0', data: providers } });
+    return r.fulfill({ json: { code: 0, data: providers } });
   const data = r.request().postDataJSON();
   const saved = { ...data, id: '900719925474099420' };
   providers.push(saved);
   writes.push({ method: 'POST', data });
-  return r.fulfill({ json: { rscode: '0', data: saved } });
+  return r.fulfill({ json: { code: 0, data: saved } });
 });
 await page.route('**/api/system/membership-providers/*', async (r) => {
   const id = new URL(r.request().url()).pathname.split('/').at(-1);
@@ -150,20 +150,20 @@ await page.route('**/api/system/membership-providers/*', async (r) => {
   if (method === 'DELETE') {
     providers.splice(idx, 1);
     writes.push({ method, id });
-    return r.fulfill({ json: { rscode: '0', data: null } });
+    return r.fulfill({ json: { code: 0, data: null } });
   }
   const data = r.request().postDataJSON();
   const saved = { ...data, id };
   providers[idx] = saved;
   writes.push({ method, id, data });
-  return r.fulfill({ json: { rscode: '0', data: saved } });
+  return r.fulfill({ json: { code: 0, data: saved } });
 });
 await page.route('**/api/membership', (r) => {
   const data = r.request().postDataJSON();
   writes.push({ method: 'MEMBERSHIP', data });
   return r.fulfill({
     json: {
-      rscode: '0',
+      code: 0,
       data: {
         ...record,
         ...data,

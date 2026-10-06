@@ -120,14 +120,14 @@ async function load(reset = false) {
   } catch (error_) {
     if (version !== generation) return;
     const failure = error_ as {
-      response?: { data?: { rscode?: string }; status?: number };
+      response?: { data?: { code?: number }; status?: number };
     };
     if (
-      failure.response?.data?.rscode === '2001' ||
+      failure.response?.data?.code === 2001 ||
       failure.response?.status === 403
     ) {
       items.value = [];
-      if (failure.response?.data?.rscode === '2001') emit('access-denied');
+      if (failure.response?.data?.code === 2001) emit('access-denied');
     }
     error.value = true;
     errorPage = targetPage;

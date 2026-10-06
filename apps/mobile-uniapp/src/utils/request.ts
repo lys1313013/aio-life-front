@@ -56,8 +56,8 @@ export const request = <T = any>(options: RequestOptions): Promise<T> => {
         const { statusCode, data } = res;
         if (statusCode >= 200 && statusCode < 300) {
           const resData = data as any;
-          // According to rules: Response format { rscode: '0', data: ... }, success code is '0'
-          if (resData.rscode === "0") {
+          // According to rules: Response format { code: 0, data: ... }, success code is 0
+          if (resData.code === 0) {
             resolve(resData.data as T);
           } else {
             showToast(resData.message || "请求失败");

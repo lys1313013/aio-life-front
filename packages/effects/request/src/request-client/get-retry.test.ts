@@ -13,7 +13,7 @@ describe('gET 传输重试', () => {
       .mockRejectedValueOnce(new AxiosError('Network Error'))
       .mockImplementationOnce(async (config) => ({
         config,
-        data: { rscode: '0', data: { id: '123' } },
+        data: { code: 0, data: { id: '123' } },
         status: 200,
         statusText: 'OK',
         headers: {},

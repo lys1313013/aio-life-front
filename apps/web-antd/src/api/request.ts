@@ -84,9 +84,9 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
   // 处理返回的响应数据格式
   client.addResponseInterceptor(
     defaultResponseInterceptor({
-      codeField: 'rscode',
+      codeField: 'code',
       dataField: 'data',
-      successCode: '0',
+      successCode: 0,
     }),
   );
 
@@ -106,7 +106,7 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
     fulfilled: (response) => response,
     rejected: (error) => {
       const responseData = error?.response?.data ?? {};
-      if (responseData?.rscode === '2001') {
+      if (responseData?.code === 2001) {
         const requestUrl = error?.config?.url ?? '';
         const lockedMenuPath = responseData?.data?.menuPath;
         const menuPath =
@@ -135,12 +135,12 @@ function createRequestClient(baseURL: string, options?: RequestClientOptions) {
       }
       // 二级锁错误不弹 error message，由二级锁弹窗处理
       const responseData = error?.response?.data ?? {};
-      if (responseData?.rscode === '2001') {
+      if (responseData?.code === 2001) {
         return;
       }
       // 这里可以根据业务进行定制,你可以拿到 error 内的信息进行定制化处理，根据不同的 code 做不同的提示，而不是直接使用 message.error 提示 msg
       // 当前mock接口返回的错误字段是 error 或者 message
-      const errorMessage = responseData?.result ?? '';
+      const errorMessage = responseData?.message ?? '';
       // 如果没有错误信息，则会根据状态码进行提示
       // 首屏通常会并发请求多个接口。服务异常时共用同一个 key，后续错误会
       // 更新当前提示而不是继续堆叠，同时不影响业务层的成功/警告提示。

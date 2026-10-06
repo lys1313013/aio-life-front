@@ -122,7 +122,7 @@ try {
   for (const [path, data] of Object.entries(fixtures)) {
     const handler = (route) => {
       calls.push(new URL(route.request().url()).pathname);
-      return route.fulfill({ json: { rscode: '0', data } });
+      return route.fulfill({ json: { code: 0, data } });
     };
     await page.route('**/api' + path, handler);
     await page.route('**/api' + path + '?*', handler);
@@ -140,7 +140,7 @@ try {
         'pending reorder must not add card loading',
       );
       if (fail)
-        return route.fulfill({ json: { rscode: '1', result: '模拟保存失败' } });
+        return route.fulfill({ json: { code: 1, message: '模拟保存失败' } });
       if (method === 'DELETE') cards = defaults();
       else if (path.endsWith('/order')) {
         const { group, keys } = route.request().postDataJSON();
@@ -163,7 +163,7 @@ try {
         );
       }
     }
-    return route.fulfill({ json: { rscode: '0', data: cards } });
+    return route.fulfill({ json: { code: 0, data: cards } });
   };
   await page.route('**/api/home/cards', preference);
   await page.route('**/api/home/cards/*', preference);

@@ -194,7 +194,7 @@ describe('业务首页卡片请求与滚动', () => {
     const fetchPage = vi
       .fn()
       .mockResolvedValueOnce({ items: [row('private')], hasMore: false })
-      .mockRejectedValue({ response: { data: { rscode: '2001' } } });
+      .mockRejectedValue({ response: { data: { code: 2001 } } });
     const wrapper = create(fetchPage);
     await flushPromises();
     await wrapper.vm.reload();

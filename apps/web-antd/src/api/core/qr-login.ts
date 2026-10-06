@@ -40,9 +40,9 @@ async function call<T>(
       headers: secret ? { 'X-QR-Secret': secret } : {},
       timeout: 10_000,
     });
-    if (response.data?.rscode !== '0') {
+    if (response.data?.code !== 0) {
       throw new QrLoginError(
-        response.data?.result || '扫码登录失败，请刷新二维码',
+        response.data?.message || '扫码登录失败，请刷新二维码',
         false,
       );
     }
@@ -51,7 +51,7 @@ async function call<T>(
     if (error instanceof QrLoginError) throw error;
     const status = error?.response?.status;
     throw new QrLoginError(
-      error?.response?.data?.result || '连接失败，正在重试',
+      error?.response?.data?.message || '连接失败，正在重试',
       !status || status === 409 || status === 429 || status >= 500,
     );
   }

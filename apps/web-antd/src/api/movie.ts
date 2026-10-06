@@ -87,7 +87,7 @@ export namespace MovieApi {
   }
 
   export interface DoubanImportPreview {
-    total: string;
+    total: number;
     newCount: number;
     duplicateCount: number;
     errorCount: number;
@@ -111,7 +111,10 @@ export namespace MovieApi {
    * 分页查询
    */
   export function pageList(data: MovieQuery) {
-    return getQuery<{ items: MovieVO[]; total: string }>('/movie/page', data);
+    return getQuery<{ items: MovieVO[]; total: null | number }>(
+      '/movie/page',
+      data,
+    );
   }
 
   /**

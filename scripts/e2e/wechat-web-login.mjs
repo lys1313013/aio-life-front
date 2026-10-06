@@ -48,8 +48,8 @@ try {
           assert.deepEqual(route.request().postDataJSON(), { scene: 'a'.repeat(32), browserSecret: 'b'.repeat(64) });
           data = { status: state };
         }
-        if (operation === 'exchange') { exchanged++; return route.fulfill({ status: 400, json: { rscode: '100400', result: '模拟兑换失败，请重新扫码' } }); }
-        await route.fulfill({ json: { rscode: '0', data } });
+        if (operation === 'exchange') { exchanged++; return route.fulfill({ status: 400, json: { code: 100400, message: '模拟兑换失败，请重新扫码' } }); }
+        await route.fulfill({ json: { code: 0, data } });
       });
       await page.goto(origin + '/auth/login');
       await page.getByText('扫码登录', { exact: true }).click();

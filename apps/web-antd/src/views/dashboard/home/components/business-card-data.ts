@@ -42,13 +42,14 @@ export interface BusinessCardPage {
 }
 
 export function hasMoreRecords(
-  total: string,
+  total: null | number,
   page: number,
   size: number,
   received: number,
 ) {
-  if (!/^\d+$/.test(total)) throw new Error('Invalid pagination total');
-  return received > 0 && BigInt(page) * BigInt(size) < BigInt(total);
+  if (typeof total !== 'number' || !Number.isSafeInteger(total) || total < 0)
+    throw new Error('Invalid pagination total');
+  return received > 0 && page * size < total;
 }
 
 export function dateDistance(date: string, expired = false) {

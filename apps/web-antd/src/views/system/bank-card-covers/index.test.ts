@@ -45,7 +45,7 @@ function pageResult(
   items: CoverTemplate[],
   total = items.length,
 ): CoverTemplatePage {
-  return { items, total: String(total) };
+  return { items, total };
 }
 let reachBottom: () => void;
 function deferred<T>() {
@@ -263,7 +263,7 @@ describe('公共卡面上传期间的表单', () => {
 });
 
 describe('公共卡面使用次数与编辑限制', () => {
-  it.each([0, '0'])(
+  it.each([0])(
     '使用次数为 %j 时允许修改银行和类型并保存',
     async (usageCount) => {
       api.listCoverTemplates.mockResolvedValueOnce(
@@ -295,7 +295,7 @@ describe('公共卡面使用次数与编辑限制', () => {
       expect(wrapper.findComponent(AppModal).props('open')).toBe(false);
     },
   );
-  it.each([1, '1', '9223372036854775807'])(
+  it.each([1, 2_147_483_647])(
     '使用次数为 %j 时锁定银行、类型和删除',
     async (usageCount) => {
       api.listCoverTemplates.mockResolvedValueOnce(

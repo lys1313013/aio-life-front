@@ -77,7 +77,7 @@ const enabledFilter = ref<number>();
 const search = ref('');
 const typeFilter = ref<string>();
 const editing = ref<CoverTemplate>();
-const editingInUse = computed(() => Number(editing.value?.usageCount ?? 0) > 0);
+const editingInUse = computed(() => (editing.value?.usageCount ?? 0) > 0);
 const formRef = ref<FormInstance>();
 function empty(): ApiRequests['BankCardCoverTemplateReq'] {
   return {
@@ -233,7 +233,8 @@ async function load(reset = true) {
     page = nextPage;
     hasMore.value =
       result.items.length === pageSize.value &&
-      BigInt(nextPage * pageSize.value) < BigInt(result.total);
+      result.total !== null &&
+      nextPage * pageSize.value < result.total;
   } catch {
     if (!disposed && request === generation) failed.value = true;
   } finally {
@@ -483,7 +484,7 @@ onActivated(() => {
               <Popconfirm
                 :title="`删除${item.name}？`"
                 :disabled="
-                  Number(item.usageCount) > 0 || !!busy[item.id] || !!sortingId
+                  item.usageCount > 0 || !!busy[item.id] || !!sortingId
                 "
                 @confirm="remove(item)"
               >
@@ -493,9 +494,7 @@ onActivated(() => {
                   :aria-label="`删除${item.name}`"
                   class="cover-delete"
                   :disabled="
-                    Number(item.usageCount) > 0 ||
-                    !!busy[item.id] ||
-                    !!sortingId
+                    item.usageCount > 0 || !!busy[item.id] || !!sortingId
                   "
                   :loading="busy[item.id] === 'delete'"
                 >

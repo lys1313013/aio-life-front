@@ -75,8 +75,8 @@ const request = useHomeRequest({
   },
   onError: (error) => {
     if (
-      (error as { response?: { data?: { rscode?: string } } })?.response?.data
-        ?.rscode === '2001'
+      (error as { response?: { data?: { code?: number } } })?.response?.data
+        ?.code === 2001
     ) {
       denied.value = true;
       books.value = [];
@@ -165,8 +165,8 @@ async function loadMore() {
   } catch (error) {
     if (!valid()) return;
     if (
-      (error as { response?: { data?: { rscode?: string } } })?.response?.data
-        ?.rscode === '2001'
+      (error as { response?: { data?: { code?: number } } })?.response?.data
+        ?.code === 2001
     ) {
       denied.value = true;
       books.value = [];

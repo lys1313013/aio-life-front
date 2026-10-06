@@ -49,7 +49,7 @@ try {
     sourceUrl: null,
     isEnabled: 1,
     sortOrder: i,
-    usageCount: '0',
+    usageCount: 0,
   }));
   const fixtures = {
     '/auth/login': { accessToken: 'bank-order-fixture' },
@@ -96,11 +96,11 @@ try {
   for (const [path, data] of Object.entries(fixtures)) {
     for (const suffix of ['', '?*'])
       await page.route(`**/api${path}${suffix}`, (route) =>
-        route.fulfill({ json: { rscode: '0', data } }),
+        route.fulfill({ json: { code: 0, data } }),
       );
   }
   await page.route('**/api/bank-cards', (route) =>
-    route.fulfill({ json: { rscode: '0', data: cards } }),
+    route.fulfill({ json: { code: 0, data: cards } }),
   );
   await page.route('**/api/system/bank-card-covers/page?*', (route) => {
     const query = new URL(route.request().url()).searchParams;
@@ -111,10 +111,10 @@ try {
     const start = (Number(query.get('page')) - 1) * Number(query.get('size'));
     return route.fulfill({
       json: {
-        rscode: '0',
+        code: 0,
         data: {
           items: list.slice(start, start + Number(query.get('size'))),
-          total: String(list.length),
+          total: list.length,
         },
       },
     });
@@ -127,7 +127,7 @@ try {
       moves.push({ path, ...move });
       await new Promise((resolve) => setTimeout(resolve, 180));
       if (fail)
-        return route.fulfill({ json: { rscode: '1', result: '模拟排序失败' } });
+        return route.fulfill({ json: { code: 1, message: '模拟排序失败' } });
       const list = path.startsWith('/bank-cards') ? cards : covers;
       const moving = list.splice(
         list.findIndex((item) => item.id === move.id),
@@ -144,7 +144,7 @@ try {
       });
       return route.fulfill({
         json: {
-          rscode: '0',
+          code: 0,
           data: list.map(({ id, sortOrder }) => ({ id, sortOrder })),
         },
       });

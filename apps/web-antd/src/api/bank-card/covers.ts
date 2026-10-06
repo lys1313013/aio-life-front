@@ -18,8 +18,8 @@ export interface CoverTemplate extends CoverOption {
   sourceUrl: null | string;
   isEnabled: number;
   sortOrder: number;
-  // 后端 long 序列化为字符串，同时兼容数字响应。
-  usageCount: number | string;
+  // 后端 Integer 计数，以 JSON 数字返回。
+  usageCount: number;
 }
 const path = '/system/bank-card-covers';
 export interface CoverTemplateQuery {
@@ -32,7 +32,7 @@ export interface CoverTemplateQuery {
 }
 export interface CoverTemplatePage {
   items: CoverTemplate[];
-  total: string;
+  total: null | number;
 }
 export const listCoverTemplates = (params: CoverTemplateQuery) =>
   requestClient.get<CoverTemplatePage>(`${path}/page`, { params });

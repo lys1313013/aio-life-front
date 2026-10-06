@@ -186,11 +186,11 @@ try {
     ],
     '/movie/page': {
       items: [{ id: '1', title: '模拟观影', status: 'not_started' }],
-      total: '1',
+      total: 1,
     },
     '/read-record/page': {
       items: [{ id: '1', title: '模拟阅读', status: 'in_progress' }],
-      total: '1',
+      total: 1,
     },
     '/home/cards': cards,
   });
@@ -223,7 +223,7 @@ try {
       if (delayed.has(path)) await pending;
       calls.push(new URL(route.request().url()).pathname);
       if ((businessPaths.has(path) && failBusiness) || failedSections.has(path))
-        return route.fulfill({ json: { rscode: '1', result: '模拟刷新失败' } });
+        return route.fulfill({ json: { code: 1, message: '模拟刷新失败' } });
       let result = data;
       if (path === '/home/cards') result = cards;
       if (path === '/dashboard/tasks') result = fixtures[path];
@@ -233,7 +233,7 @@ try {
           'not_started'
       )
         return route.fulfill({
-          json: { rscode: '0', data: { items: [], total: '0' } },
+          json: { code: 0, data: { items: [], total: 0 } },
         });
       if (businessPaths.has(path) && recordCount !== 1) {
         const rows = Array.isArray(data) ? data : data.items;
@@ -243,11 +243,9 @@ try {
           title: `模拟长标题用于检查多条内容换行和高度 ${index}`,
           name: `模拟长名称用于检查换行和高度 ${index}`,
         }));
-        result = Array.isArray(data)
-          ? items
-          : { items, total: String(items.length) };
+        result = Array.isArray(data) ? items : { items, total: items.length };
       }
-      return route.fulfill({ json: { rscode: '0', data: result } });
+      return route.fulfill({ json: { code: 0, data: result } });
     };
     await page.route(`**/api${path}`, handler);
     await page.route(`**/api${path}?*`, handler);

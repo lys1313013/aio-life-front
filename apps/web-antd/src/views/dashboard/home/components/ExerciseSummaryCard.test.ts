@@ -113,8 +113,8 @@ describe('首页运动细项和趋势', () => {
 
   it('首次失败不通知父页面隐藏卡片，可重试并避免重复请求', async () => {
     mocks.summary.mockRejectedValueOnce({
-      rscode: '113000',
-      result: '系统异常，请稍后重试',
+      code: 113000,
+      message: '系统异常，请稍后重试',
     });
     const wrapper = mount(ExerciseSummaryCard);
     await flushPromises();

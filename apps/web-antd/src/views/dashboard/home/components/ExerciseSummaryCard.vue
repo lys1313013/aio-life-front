@@ -59,8 +59,7 @@ function logError(scope: string, error: any) {
   const url = error?.config?.url;
   const data = error?.response?.data;
   const message =
-    data?.result ||
-    error?.result ||
+    data?.message ||
     error?.message ||
     (typeof error === 'string' ? error : 'unknown error');
   console.error(

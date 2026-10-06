@@ -48,7 +48,7 @@ export async function exportActivityLogs(
     const text = await blob.text();
     let reason = '导出失败，请重试';
     try {
-      reason = JSON.parse(text).result || reason;
+      reason = JSON.parse(text).message || reason;
     } catch {
       // 非 JSON 响应使用统一提示。
     }

@@ -131,7 +131,7 @@ CREATE TABLE password_vault (
 **列表/详情 响应**
 ```json
 {
-  "rscode": "0",
+  "code": 0,
   "data": [{
     "id": 1,
     "title": "GitHub",

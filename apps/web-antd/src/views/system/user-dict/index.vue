@@ -252,7 +252,7 @@ const queryAllDictData = async (dictType: string) => {
     condition: { dictType },
   };
   const firstPage = await adminQuery(queryParams);
-  const total = Number(firstPage.total) || 0;
+  const total = firstPage.total ?? 0;
 
   if (total === 0) {
     return [];

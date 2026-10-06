@@ -47,8 +47,8 @@ pnpm run test:e2e       # 运行端到端测试
 
 - 使用 `#/api/request` 中的 `requestClient`（基于 `@vben/request` 配置的请求客户端）
 - API 函数均为具名 async 导出，读取使用 `requestClient.get()`，新增使用 `requestClient.post()`，更新使用 `requestClient.put()`，删除按接口使用 `requestClient.post()` 或 `requestClient.delete()`
-- 响应格式：`{ rscode: '0', data: ... }`，成功码为 `'0'`
-- 后端 `Long/long` 响应字段默认均为 **string**，包括 ID、计数和分页总数；处理规则见下文“Long 响应与数值判断”。
+- 响应格式：`{ code: 0, message: null, data: ... }`，成功码为 `0`
+- 后端 `Long/long` 响应字段默认均为 **string**，包括 ID 和未覆盖序列化器的计数；`PageResp.total` 使用字段级数字序列化器，返回 `number | null`；处理规则见下文“Long 响应与数值判断”。
 
 ### 路由（`router/routes/modules/`）
 
@@ -67,7 +67,7 @@ pnpm run test:e2e       # 运行端到端测试
 3. **遵守 ESLint 规则** — 遵循现有 lint 配置
 4. **Loading 最小作用域** — 调用后端接口时必须有可感知的 loading 反馈，并尽可能绑定到实际受影响的最小 UI 单元（按钮、单行或若干行、卡片、局部容器）；只有页面首屏加载或整页数据不可用时才使用全局或整表 loading。局部增删改、排序成功后优先使用接口返回结果更新局部状态，避免无必要的整表或整页刷新；失败时可按数据一致性需要重新查询
 5. **Loading 提示语** — 提示语应尽可能简洁、抽象；spinner 或按钮状态足以表达进度时不显示文字，确需文字时优先使用“加载中”“处理中”“保存中”等通用短语，避免“设备加载中”等重复业务对象的描述
-6. **按实际 JSON 声明类型** — 后端 `Long/long` 响应字段默认序列化为 string，不限于 ID；ID 全程保留字符串，计数字段须显式解析后判断，禁止用真假值判断数量。具体见“Long 响应与数值判断”
+6. **按实际 JSON 声明类型** — 后端 `Long/long` 响应字段默认序列化为 string，不限于 ID；ID 全程保留字符串，数字计数直接比较，旧版字符串计数须在读取边界解析后判断，禁止用真假值判断数量。具体见“Long 响应与数值判断”
 7. **界面简洁、图标优先** — 图标已能清楚表达含义时，只展示图标，不再重复显示按钮文字、平台名称、状态文案或解释性说明。确需解释时，优先收进问号图标的按需提示中，不常驻展示文字。具体约定见下文
 8. 确认弹窗尽可能在按钮旁边弹出
 9. 编辑弹窗要上下居中（出一些场景要跟手外），编辑弹窗可以没有 title
@@ -87,14 +87,14 @@ pnpm run test:e2e       # 运行端到端测试
 
 ### 请求客户端行为
 
-`requestClient`（`apps/web-antd/src/api/request.ts`）已配置 `responseReturn: 'data'`，这意味着所有 API 调用返回的是 `{ rscode, data }` 中 `data` 字段的**直接值**，无需手动 `.data`。
+`requestClient`（`apps/web-antd/src/api/request.ts`）已配置 `responseReturn: 'data'`，这意味着所有 API 调用返回的是 `{ code, message, data }` 中 `data` 字段的**直接值**，无需手动 `.data`。
 
 关键行为：
 
 - 请求头自动带 `Authorization: Bearer <token>` 和 `Accept-Language`
 - token 过期自动刷新，失败后触发 re-authenticate（弹窗或直接登出）
-- **全局错误拦截器自动提示**：`errorMessageResponseInterceptor` 对任何请求失败（`rscode != '0'` 或 HTTP 错误）自动 `message.error` 弹出后端错误信息（`result` 字段），无需业务代码再提示
-  - 静默例外：`/dashboard/card`、`/message/unread-count` 两个接口及 `rscode === '2001'`（二级锁，由二级锁弹窗处理）
+- **全局错误拦截器自动提示**：`errorMessageResponseInterceptor` 对任何请求失败（`code != 0` 或 HTTP 错误）自动 `message.error` 弹出后端错误信息（`message` 字段），无需业务代码再提示
+  - 静默例外：`/dashboard/card`、`/message/unread-count` 两个接口及 `code === 2001`（二级锁，由二级锁弹窗处理）
   - **禁止在 catch 里对 requestClient 的 API 调用再写 `message.error('删除失败')` 之类提示**，否则会与全局提示同时弹出两次。catch 块只需做状态回滚/重置等逻辑，或留空
   - catch 里仅允许对**非 API 错误**提示：本地校验、加解密、剪贴板、URL 解析等不走 requestClient 的异常
   - 同一个 try 块混合本地逻辑和 API 调用时，应拆分 try/catch，避免一个 catch 承接两类异常
@@ -106,7 +106,7 @@ pnpm run test:e2e       # 运行端到端测试
 
 - **触发条件**：仅 GET 请求，且错误为网络错误 / 超时（无响应）或 HTTP 5xx
 - **重试策略**：最多重试 2 次（共 3 次尝试），指数退避（300ms → 600ms）
-- **不重试的情况**：POST/PUT/DELETE 等非 GET 请求（避免重复提交）、4xx 客户端错误、业务错误（`rscode != '0'`）、被取消的请求
+- **不重试的情况**：POST/PUT/DELETE 等非 GET 请求（避免重复提交）、4xx 客户端错误、业务错误（`code != 0`）、被取消的请求
 - 重试全部失败后才会弹出全局错误提示，业务代码无需感知重试过程
 
 ### API 层编码模式
@@ -146,13 +146,13 @@ export async function uploadHonorAttachment(file: File) {
 
 ### Long 响应与数值判断
 
-- **先核对序列化契约**：后端 `aio-life-server/src/main/java/top/aiolife/config/JsonConfig.java` 为 `Long.class` 和 `Long.TYPE` 注册了 `ToStringSerializer`。因此没有字段级覆盖时，所有 `Long/long` 响应字段都返回字符串，`0` 也返回 `"0"`；不仅是 ID，`usageCount`、分页 `total` 等也适用。`Integer/int` 不受这条配置影响，不能仅凭字段名推断类型。
-- **类型声明不等于运行时转换**：原始响应类型按实际 JSON 声明为 `string`，可空字段另加 `null`；只有确实需要兼容数字响应时才用 `string | number`，并明确兼容原因。`requestClient.get<T>()` 和 TypeScript 类型断言不会把 `"0"` 转成 `0`。需要数值模型时，在 API 适配层统一解析，区分原始响应和解析后的类型。
+- **先核对序列化契约**：后端 `aio-life-server/src/main/java/top/aiolife/config/JsonConfig.java` 为 `Long.class` 和 `Long.TYPE` 注册了 `ToStringSerializer`。因此没有字段级覆盖时，所有 `Long/long` 响应字段都返回字符串，`0` 也返回 `"0"`；ID、`fileSize` 等仍适用。业务实际数量（如 `usageCount`、会员数量、衣柜数量和消息未读数）已使用 `Integer`，以 JSON 数字返回。分页 `PageResp.total` 已用 `CountSerializer` 覆盖，以 JSON 整数返回，未提供总数时保留 `null`。`Integer/int` 不受这条配置影响，不能仅凭字段名推断类型。
+- **类型声明不等于运行时转换**：原始响应类型按实际 JSON 声明，ID 等未覆盖的 `Long` 用 `string`，`Integer` 计数和数字分页总数用 `number`，可空字段另加 `null`；只有确实需要兼容数字响应时才用 `string | number`，并明确兼容原因。`requestClient.get<T>()` 和 TypeScript 类型断言不会把 `"0"` 转成 `0`。需要数值模型时，在 API 适配层统一解析，区分原始响应和解析后的类型。
 - **ID 不转数字**：ID 在接口、路由、表单、组件 key、比较和提交过程中始终使用字符串，不使用 `Number()`、`parseInt()` 或一元 `+`，避免大整数精度丢失。
 - **数量不按真假值判断**：禁止用 `!!count`、`Boolean(count)`、`if (count)` 或 `v-if="count"` 判断是否有记录，因为 `"0"` 为真。先解析再比较 `> 0` 或 `=== 0`；也不要直接对原始字符串相加、排序或与数字严格相等比较。
 - **转换有边界**：计数转成 number 前校验非负整数格式，转换后检查 `Number.isSafeInteger()` 和非负范围；不能用 `Number(value) || 0` 把异常、缺失或空值静默当成零。只有接口明确约定时才把 `null` / 缺失视为零。可能超过安全整数范围且需要精确比较或运算时，保留字符串并使用经校验的 `BigInt` 或项目适用的大整数工具；不要将 `BigInt` 直接放进 JSON 请求。
-- **限制由真实数量决定**：例如公共卡面的银行、类型和删除限制，应依据使用次数是否大于零；`"0"` 必须允许未使用卡面的操作，正数才限制。前端用于交互提示，后端仍按实时引用关系校验。
-- **测试使用真实响应形态**：涉及计数、分页或操作限制时，模拟接口必须覆盖字符串 `"0"`、`"1"` 和正数字符串；若兼容 number，同时覆盖数字 `0`、`1`。解析层还须覆盖非法值、可空语义和安全整数边界，ID 测试使用超过 JavaScript 安全整数范围的字符串。不能只用数字 fixture 证明字符串契约正确。
+- **限制由真实数量决定**：例如公共卡面的银行、类型和删除限制，应依据数字使用次数是否大于零；`0` 必须允许未使用卡面的操作，正数才限制。前端用于交互提示，后端仍按实时引用关系校验。
+- **测试使用真实响应形态**：业务 `Integer` 计数和分页 fixture 使用数字，覆盖零、正数、空值语义、操作限制和末页停止；其他未覆盖序列化器的 Long 计数或操作限制，模拟接口必须覆盖字符串 `"0"`、`"1"` 和正数字符串；若兼容 number，同时覆盖数字 `0`、`1`。解析层还须覆盖非法值、可空语义和安全整数边界，ID 测试使用超过 JavaScript 安全整数范围的字符串。不能只用数字 fixture 证明字符串契约正确。
 
 ### 接口出入参规范（新模块强制）
 
