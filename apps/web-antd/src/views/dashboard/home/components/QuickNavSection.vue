@@ -25,6 +25,7 @@ import BusinessIcon from '#/components/BusinessIcon.vue';
 import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useQuickNavStore } from '#/store/quick-nav';
 
+import CardHeader from './CardHeader.vue';
 import QuickNavPickerModal from './QuickNavPickerModal.vue';
 
 const store = useQuickNavStore();
@@ -53,7 +54,9 @@ const navItems = computed<WorkbenchQuickNavItem[]>(() =>
 );
 
 const isLoading = computed(() => store.loading && !store.loaded);
-const loadFailed = computed(() => store.loaded && store.error !== null);
+const loadFailed = computed(
+  () => store.loaded && store.error !== null && store.items.length === 0,
+);
 const isEmpty = computed(
   () => store.loaded && !store.error && store.items.length === 0,
 );
@@ -160,7 +163,8 @@ function handleItemClick(item: WorkbenchQuickNavItem) {
 }
 
 function retryLoad() {
-  store.load();
+  if (editing.value || saving.value) return Promise.resolve();
+  return store.load();
 }
 
 // vuedraggable 改写 draft
@@ -181,8 +185,13 @@ function dragChange() {
   <div
     class="quick-nav-shell flex h-[240px] min-w-0 select-none flex-col overflow-hidden rounded-xl bg-card text-card-foreground sm:h-[250px] lg:h-[280px]"
   >
-    <div
-      class="flex items-center justify-between p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+    <CardHeader
+      class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
+      label="刷新快捷导航"
+      :refresh="retryLoad"
+      :loading="store.loading"
+      :error="!!store.error"
+      :disabled="editing || saving"
     >
       <span class="text-base font-semibold"
         ><BusinessIcon
@@ -217,7 +226,7 @@ function dragChange() {
           <VbenIcon icon="lucide:settings-2" class="size-4" />
         </AButton>
       </div>
-    </div>
+    </CardHeader>
 
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <!-- 加载/失败/空态 -->

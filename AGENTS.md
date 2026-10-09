@@ -252,6 +252,12 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 - 文件上传：`<ImageUpload v-model:file-ids="..." :upload-fn="uploadXxxAttachment" />`，uploadFn 签名为 `(file: File) => Promise<FileVO>`
 - 图片显示需要鉴权：用 `fetchAuthImageUrl(id)` 获取带 token 的 blob URL（`utils/file.ts`），或直接使用 `useAuthImageUrl` composable
 
+### 首页跨端需求入口
+
+- 首页共同规则维护在根项目 [首页功能说明](../docs/首页功能说明.md) 与 [今日时迹卡片设计](../docs/今日时迹卡片设计.md)，跨端差异见 [核查清单](../docs/mobile-migration/home-card-audit.md)。本仓库只维护 Web 组件与框架实现细节；旧今日时迹规格路径已改为索引。
+- 长按卡片用于排序；概览普通点击、内容卡片顶部空白点击刷新本卡，标题跳转与新增等操作互不触发。周期、返回时效和本地时钟须分别核验。
+- 上述相对链接适用于根项目标准 checkout；单独克隆时参阅 [根项目文档目录](https://github.com/lys1313013/aio-life/tree/main/docs)。
+
 ### Loading 与刷新范围
 
 - 所有后端接口调用都要提供可感知的 loading 反馈，但 loading 默认只覆盖实际受影响的最小范围，不能因为一个局部操作阻塞整个页面

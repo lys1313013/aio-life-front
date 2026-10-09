@@ -79,6 +79,10 @@ vi.mock('./components/GithubRecentCommits.vue', () => ({
 vi.mock('./components/QuickNavSection.vue', () => ({
   default: { template: '<div />' },
 }));
+// 微信读书独立卡片的路由与二级锁在其专用测试覆盖，首页这里只验证调度。
+vi.mock('./components/WereadRecentCard.vue', () => ({
+  default: { template: '<div />' },
+}));
 vi.mock('./components/WatchedTaskEditModal.vue', () => ({
   default: { template: '<div />' },
 }));
