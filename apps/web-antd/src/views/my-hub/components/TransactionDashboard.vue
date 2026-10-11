@@ -122,11 +122,7 @@ const averageAmount = computed(() => {
 
 // 获取月份数据的月份列表
 const getMonths = () => {
-  return filteredMonthlyData.value.map((item) => {
-    const yearStr = item.year.toString().slice(-2); // 为了图表显示更紧凑，用两位年份
-    const monthStr = item.month.toString().padStart(2, '0');
-    return `${yearStr}-${monthStr}`;
-  });
+  return filteredMonthlyData.value.map((item) => `${item.month}月`);
 };
 
 // 计算每个月份的总金额
@@ -393,7 +389,15 @@ const updateCharts = () => {
         },
       },
     ],
-    yAxis: [{ type: 'value' }],
+    yAxis: [
+      {
+        type: 'value',
+        axisLabel: {
+          formatter: (value: number) =>
+            Math.abs(value) >= 10_000 ? `${value / 10_000}万` : `${value}`,
+        },
+      },
+    ],
     series: getBarSeriesData(!isYearlyBar),
   }).then((chartInstance) => {
     if (!chartInstance) return;

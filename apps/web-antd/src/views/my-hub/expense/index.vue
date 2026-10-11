@@ -245,8 +245,6 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
       width: 200,
     },
-    { field: 'createTime', title: '创建时间', sortable: true, width: 180 },
-    { field: 'updateTime', title: '修改时间', sortable: true, width: 180 },
     {
       field: 'action',
       slots: { default: 'action' },
@@ -407,7 +405,7 @@ const handleYearChange = (_year: 'all' | number) => {
       @year-change="handleYearChange"
     />
     <!-- 表格区域 -->
-    <Grid>
+    <Grid :separator="false">
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增

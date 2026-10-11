@@ -149,7 +149,7 @@ interface FormState {
 
 const emptyForm = (): FormState => ({
   name: '',
-  category: undefined,
+  category: 'AI',
   provider: '',
   providerId: undefined,
   color: COLOR_PRESETS[0],

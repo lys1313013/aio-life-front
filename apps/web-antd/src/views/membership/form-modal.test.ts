@@ -383,7 +383,7 @@ describe('会员共享编辑器', () => {
       expect.objectContaining({
         id: undefined,
         name: '新会员',
-        category: 'other',
+        category: 'AI',
         startDate: '2026-03-01',
         expiryDate: '2027-03-01',
         price: 120,
