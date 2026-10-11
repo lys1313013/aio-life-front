@@ -3,6 +3,8 @@ import type { Task, TaskColumn } from '#/api/core/todo';
 
 import { nextTick, onMounted, ref } from 'vue';
 
+import { usePreferences } from '@vben/preferences';
+
 import {
   CalendarOutlined,
   CheckCircleOutlined,
@@ -50,6 +52,7 @@ interface Column extends TaskColumn {
 
 const { useToken } = theme;
 const { token } = useToken();
+const { isDark } = usePreferences();
 
 const isBlankColor = (color?: string) => {
   if (!color) return true;
@@ -57,11 +60,12 @@ const isBlankColor = (color?: string) => {
   return ['', '#fff', '#ffffff', 'transparent', 'white'].includes(c);
 };
 
-// 列背景：未设置时用浅灰（飞书式）
-const getColumnBg = (column: Column) => {
-  return isBlankColor(column.bgColor)
-    ? token.value.colorFillAlter
-    : column.bgColor;
+// 保留保存的列颜色，暗色主题下混入主题背景，避免浅底配浅色文字。
+const getColumnBg = (color?: string) => {
+  if (isBlankColor(color)) return token.value.colorFillAlter;
+  return isDark.value
+    ? `color-mix(in srgb, ${color} 12%, ${token.value.colorBgContainer})`
+    : color;
 };
 
 // 截止日期徽章：今天=蓝、逾期=红、3 天内=橙、其余灰
@@ -322,7 +326,7 @@ const vFocus = {
         <template #item="{ element: column }">
           <div
             class="kanban-column"
-            :style="{ backgroundColor: getColumnBg(column) }"
+            :style="{ backgroundColor: getColumnBg(column.bgColor) }"
           >
             <div class="column-header">
               <div class="header-left">
@@ -336,7 +340,13 @@ const vFocus = {
               </div>
 
               <ADropdown :trigger="['click']">
-                <AButton type="text" size="small" class="more-btn" @click.stop>
+                <AButton
+                  type="text"
+                  size="small"
+                  class="more-btn"
+                  :aria-label="`${column.title}列操作`"
+                  @click.stop
+                >
                   <template #icon><MoreOutlined /></template>
                 </AButton>
                 <template #overlay>
@@ -517,11 +527,7 @@ const vFocus = {
             :key="color || 'default'"
             class="color-preset"
             :class="{ active: editingColumn.bgColor === color }"
-            :style="{
-              backgroundColor: isBlankColor(color)
-                ? token.colorFillAlter
-                : color,
-            }"
+            :style="{ backgroundColor: getColumnBg(color) }"
             :title="color || '默认'"
             @click="editingColumn.bgColor = color"
           ></span>
@@ -636,7 +642,7 @@ const vFocus = {
 }
 
 .more-btn {
-  color: v-bind('token.colorTextTertiary');
+  color: v-bind('token.colorTextSecondary');
 }
 
 .task-list {
@@ -655,18 +661,27 @@ const vFocus = {
   border-radius: 2px;
 }
 
-/* 任务卡片：无边框，轻阴影 */
+/* 紧凑任务卡片：默认无描边和阴影，交互时轻量强调 */
 .kanban-task {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
-  margin-bottom: 8px;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
   cursor: grab;
   background: v-bind('token.colorBgElevated');
   border: none;
-  border-radius: 10px;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 4%);
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.kanban-task:hover,
+.kanban-task:focus-within {
+  background: color-mix(
+    in srgb,
+    v-bind('token.colorBgElevated') 94%,
+    v-bind('token.colorPrimary')
+  );
 }
 
 .kanban-task:active {
@@ -724,7 +739,7 @@ const vFocus = {
   justify-content: space-between;
   min-height: 20px;
   font-size: 12px;
-  color: v-bind('token.colorTextTertiary');
+  color: v-bind('token.colorTextSecondary');
 }
 
 .todo-count,
@@ -738,7 +753,7 @@ const vFocus = {
   padding: 0 8px;
   font-size: 11px;
   line-height: 18px;
-  color: v-bind('token.colorSuccess');
+  color: v-bind('token.colorSuccessText');
   background: v-bind('token.colorSuccessBg');
   border-radius: 9px;
 }
@@ -777,7 +792,7 @@ const vFocus = {
   padding: 10px;
   margin-top: 2px;
   background: v-bind('token.colorBgElevated');
-  border-radius: 10px;
+  border-radius: 6px;
   box-shadow:
     0 0 0 1.5px v-bind('token.colorPrimaryBorder'),
     0 4px 12px 0 rgb(0 0 0 / 8%);
@@ -804,7 +819,7 @@ const vFocus = {
   width: 296px;
   padding: 10px 12px;
   font-size: 13px;
-  color: v-bind('token.colorTextTertiary');
+  color: v-bind('token.colorTextSecondary');
   cursor: pointer;
   border: 1px dashed v-bind('token.colorBorderSecondary');
   border-radius: 14px;
@@ -872,7 +887,7 @@ const vFocus = {
 .todo-task-ghost {
   background: rgb(128 128 128 / 10%) !important;
   border: 1.5px dashed rgb(128 128 128 / 45%) !important;
-  border-radius: 10px !important;
+  border-radius: 6px !important;
   box-shadow: none !important;
   opacity: 1 !important;
 }
@@ -883,7 +898,7 @@ const vFocus = {
 
 .todo-task-drag {
   background: var(--ant-color-bg-elevated, #fff);
-  border-radius: 10px;
+  border-radius: 6px;
   box-shadow: 0 12px 32px rgb(0 0 0 / 18%) !important;
   opacity: 0.96;
   transform: rotate(2.5deg);
