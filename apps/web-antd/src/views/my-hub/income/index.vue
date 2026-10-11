@@ -11,7 +11,7 @@ import {
   DeleteOutlined,
   EditOutlined,
 } from '@ant-design/icons-vue';
-import { Button, message, Popconfirm } from 'ant-design-vue';
+import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -23,10 +23,10 @@ import TransactionDashboard from '../components/TransactionDashboard.vue';
 import FormModalDemo from './form-modal.vue';
 
 interface RowType {
-  incomeId: number | string;
+  id: string;
   amt: number;
   remark: string;
-  incTypeId: number;
+  incTypeId: string;
   incDate: string;
   updateTime: string;
 }
@@ -237,9 +237,7 @@ const openColumnConfig = () => {
 
 const deleteRow = async (row: RowType) => {
   try {
-    await deleteData({
-      incomeId: row.incomeId,
-    });
+    await deleteData(row.id);
     await gridApi.reload();
     // 刷新看板数据
     if (dashboardRef.value) {
@@ -275,20 +273,6 @@ const processQueryCondition = (formValues: any) => {
   return condition;
 };
 
-// 处理从图表点击选择月份
-const handleMonthSelect = (payload: {
-  endDate: string;
-  monthStr: string;
-  startDate: string;
-}) => {
-  message.success(`已选择月份: ${payload.monthStr}`);
-  if (gridApi && gridApi.formApi) {
-    gridApi.formApi.setValues({
-      incTimeRange: [payload.startDate, payload.endDate],
-    });
-  }
-};
-
 const tableReload = async () => {
   await gridApi.reload();
   // 刷新看板数据，但只在非年份选择触发时调用
@@ -305,7 +289,6 @@ const tableReload = async () => {
     <TransactionDashboard
       ref="dashboardRef"
       type="income"
-      @month-select="handleMonthSelect"
       @year-change="handleYearChange"
     />
     <!-- 收入列表 -->

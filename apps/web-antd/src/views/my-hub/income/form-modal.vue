@@ -41,7 +41,7 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '【自动生成】',
       },
-      fieldName: 'incomeId',
+      fieldName: 'id',
       label: '主键',
       disabled: true,
       dependencies: {
@@ -102,8 +102,8 @@ const [Modal, modalApi] = useVbenModal({
       const { valid } = await formApi.validate();
       if (!valid) return;
       const newVar = toRaw(await formApi.submitForm());
-      if (newVar.incomeId) {
-        await update(newVar.incomeId, newVar);
+      if (newVar.id) {
+        await update(newVar.id, newVar);
       } else {
         await add(newVar);
       }

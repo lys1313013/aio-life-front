@@ -28,21 +28,15 @@ const props = defineProps({
 // 定义事件
 const emit = defineEmits<{
   (e: 'yearChange', year: 'all' | number): void;
-  (
-    e: 'monthSelect',
-    payload: { endDate: string; monthStr: string; startDate: string },
-  ): void;
 }>();
 
 const chartRef = ref<EchartsUIType>();
 const pieChartRef = ref<EchartsUIType>();
 const yearPieChartRef = ref<EchartsUIType>();
-const monthChartRef = ref<EchartsUIType>();
 
 const { renderEcharts } = useEcharts(chartRef);
 const { renderEcharts: renderPieEcharts } = useEcharts(pieChartRef);
 const { renderEcharts: renderYearPieEcharts } = useEcharts(yearPieChartRef);
-const { renderEcharts: renderMonthEcharts } = useEcharts(monthChartRef);
 
 const { isDark, isMobile } = usePreferences();
 
@@ -85,9 +79,8 @@ const yearOptions = ref<{ label: number | string; value: number | string }[]>([
 // 格式化金额显示
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('zh-CN', {
-    style: 'currency',
-    currency: 'CNY',
     minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -136,58 +129,12 @@ const getMonths = () => {
   });
 };
 
-// 获取真实月份格式 (YYYY-MM) 用于点击事件
-const getFullMonths = () => {
-  return filteredMonthlyData.value.map((item) => {
-    const yearStr = item.year.toString();
-    const monthStr = item.month.toString().padStart(2, '0');
-    return `${yearStr}-${monthStr}`;
-  });
-};
-
 // 计算每个月份的总金额
 const getMonthlyTotalAmount = () => {
   return filteredMonthlyData.value.map((item) => {
     const total = item.detail.reduce((sum, current) => sum + current.amt, 0);
     return Number(total.toFixed(2));
   });
-};
-
-// 获取月份柱状/面积图的系列数据
-const getMonthlySeriesData = () => {
-  const types = getTypes();
-
-  const series: any[] = types.map((type) => {
-    const data = filteredMonthlyData.value.map((item) => {
-      const detail = item.detail.find((d) => d.typeName == type);
-      return detail ? detail.amt : 0;
-    });
-
-    return {
-      name: type,
-      type: 'line',
-      stack: 'amount',
-      areaStyle: {},
-      smooth: 0.3,
-      emphasis: { focus: 'series' },
-      symbol: 'emptyCircle',
-      symbolSize: 4,
-      label: {
-        show: false,
-        position: 'right',
-        formatter: (params: any) => {
-          const monthIndex = params.dataIndex;
-          const total = getMonthlyTotalAmount()[monthIndex] || 0;
-          const value = params.value || 0;
-          const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-          return `${percentage}%`;
-        },
-      },
-      data,
-    };
-  });
-
-  return series;
 };
 
 // 从数据中解析年份
@@ -276,7 +223,10 @@ const getTimePieData = (useMonthly: boolean) => {
   };
 };
 
-const getBarSeriesData = (useMonthly: boolean) => {
+const getBarSeriesData = (
+  useMonthly: boolean,
+  selectedTypes: Record<string, boolean> = {},
+) => {
   const types = getTypes();
   const dataSource = useMonthly
     ? filteredMonthlyData.value
@@ -289,6 +239,14 @@ const getBarSeriesData = (useMonthly: boolean) => {
     return detail ? detail.amt : 0;
   };
 
+  // 只给每根柱子最上方的可见色块加圆角，避免堆叠衔接处出现缺口。
+  const visibleTypes = types
+    .filter((type) => selectedTypes[type] !== false)
+    .reverse();
+  const topTypes = dataSource.map((item) =>
+    visibleTypes.find((type) => getValue(item, type) > 0),
+  );
+
   const series: any[] = types.map((type) => ({
     name: type,
     type: 'bar',
@@ -297,7 +255,12 @@ const getBarSeriesData = (useMonthly: boolean) => {
     barGap: '20%',
     emphasis: { focus: 'series' },
     label: { show: false },
-    data: dataSource.map((item: any) => getValue(item, type)),
+    data: dataSource.map((item: any, index) => ({
+      value: getValue(item, type),
+      itemStyle: {
+        borderRadius: topTypes[index] === type ? [3, 3, 0, 0] : 0,
+      },
+    })),
   }));
 
   series.push({
@@ -432,6 +395,14 @@ const updateCharts = () => {
     ],
     yAxis: [{ type: 'value' }],
     series: getBarSeriesData(!isYearlyBar),
+  }).then((chartInstance) => {
+    if (!chartInstance) return;
+    chartInstance.off('legendselectchanged');
+    chartInstance.on('legendselectchanged', (event: any) => {
+      chartInstance.setOption({
+        series: getBarSeriesData(!isYearlyBar, event.selected),
+      });
+    });
   });
 
   // 渲染类型分布环形图
@@ -533,92 +504,6 @@ const updateCharts = () => {
         data: modifiedTimePieData,
       },
     ],
-  });
-
-  // 渲染月份趋势面积图
-  const monthLabels = getMonths();
-  const fullMonthLabels = getFullMonths();
-  renderMonthEcharts({
-    grid: {
-      left: '3%',
-      right: '4%',
-      // 面积图 X 轴标签固定旋转 45°，需要更多底部空间避让图例
-      bottom: isMobile.value ? '26%' : '18%',
-      containLabel: true,
-    },
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: { type: 'cross' },
-      formatter: (params: any) => {
-        let tooltip = `${params[0].name}<br/>`;
-        let total = 0;
-        params.forEach((item: any) => {
-          total += item.value || 0;
-        });
-        params.forEach((item: any) => {
-          if (item.value > 0) {
-            const percentage =
-              total > 0 ? ((item.value / total) * 100).toFixed(1) : 0;
-            tooltip += `${item.marker} ${item.seriesName}: ${item.value} (${percentage}%)<br/>`;
-          }
-        });
-        tooltip += `总计: ${total.toFixed(2)}`;
-        return tooltip;
-      },
-    },
-    legend: {
-      type: 'scroll',
-      bottom: 0,
-      left: 'center',
-      padding: isMobile.value ? [0, 0, 0, 0] : [5, 5, 5, 5],
-      itemGap: isMobile.value ? 8 : 10,
-    },
-    xAxis: [
-      {
-        type: 'category',
-        data: monthLabels,
-        boundaryGap: false,
-        axisTick: { alignWithLabel: true },
-        axisLabel: { rotate: 45, fontSize: isMobile.value ? 10 : 12 },
-        triggerEvent: true, // 开启事件触发，以便能点击横坐标
-      },
-    ],
-    yAxis: [
-      {
-        type: 'value',
-        axisLabel: { fontSize: isMobile.value ? 10 : 12 },
-      },
-    ],
-    series: getMonthlySeriesData(),
-  }).then((monthChartInstance) => {
-    // 绑定点击事件 (给月趋势面积图)
-    // renderEcharts 内部延迟初始化实例，必须在 Promise 回调中绑定，否则首次渲染拿不到实例
-    if (monthChartInstance) {
-      monthChartInstance.off('click');
-      monthChartInstance.on('click', (params: any) => {
-        let monthIndex = -1;
-        if (params.componentType === 'xAxis') {
-          // 如果点击了 x 轴标签，我们需要通过文字去找索引
-          monthIndex = monthLabels.indexOf(params.value);
-        } else if (params.componentType === 'series') {
-          // 点击了图表区域
-          monthIndex = params.dataIndex;
-        }
-
-        if (monthIndex !== -1 && fullMonthLabels[monthIndex]) {
-          const fullMonthStr = fullMonthLabels[monthIndex] as string;
-          const [year, month] = fullMonthStr.split('-').map(Number) as [
-            number,
-            number,
-          ];
-          const lastDay = new Date(year, month, 0).getDate();
-          const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-          const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
-
-          emit('monthSelect', { monthStr: fullMonthStr, startDate, endDate });
-        }
-      });
-    }
   });
 };
 
@@ -724,7 +609,7 @@ defineExpose({
 
     <div class="chart-container">
       <Card class="chart-item">
-        <h3>{{ isSingleYear ? '月度' : '年度' }}{{ labelName }}趋势</h3>
+        <h3>{{ labelName }}走势</h3>
         <EchartsUI ref="chartRef" />
       </Card>
       <Card class="chart-item">
@@ -734,10 +619,6 @@ defineExpose({
       <Card class="chart-item">
         <h3>{{ isSingleYear ? '月份' : '年份' }}{{ labelName }}分布</h3>
         <EchartsUI ref="yearPieChartRef" />
-      </Card>
-      <Card class="chart-item full-width area-chart-item">
-        <h3>月度{{ labelName }}趋势</h3>
-        <EchartsUI ref="monthChartRef" />
       </Card>
     </div>
   </div>
@@ -779,7 +660,6 @@ defineExpose({
   color: white;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgb(102 126 234 / 25%);
-  transition: all 0.3s ease;
 }
 
 .income-theme {
@@ -788,11 +668,6 @@ defineExpose({
 
 .expense-theme {
   background: linear-gradient(135deg, #f093fb 0%, #764ba2 50%, #667eea 100%);
-}
-
-.total-card:hover {
-  box-shadow: 0 12px 40px rgb(102 126 234 / 35%);
-  transform: translateY(-2px);
 }
 
 .total-stats {
@@ -853,11 +728,6 @@ defineExpose({
   box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
 }
 
-.chart-item:nth-child(4) {
-  grid-column: 1 / -1;
-  height: 320px;
-}
-
 .chart-item h3 {
   flex-shrink: 0;
   margin: 0 0 10px;
@@ -883,19 +753,11 @@ defineExpose({
   .chart-container {
     grid-template-columns: repeat(2, 1fr);
   }
-
-  .chart-item:nth-child(4) {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 1200px) {
   .chart-container {
     grid-template-columns: 1fr;
-  }
-
-  .chart-item:nth-child(4) {
-    grid-column: 1 / -1;
   }
 }
 
@@ -939,10 +801,6 @@ defineExpose({
   .chart-item {
     height: 350px;
     padding: 12px 8px;
-  }
-
-  .chart-item:nth-child(4) {
-    height: 350px;
   }
 
   .stat-value {

@@ -11,7 +11,7 @@ import {
   DeleteOutlined,
   EditOutlined,
 } from '@ant-design/icons-vue';
-import { Button, message, Popconfirm } from 'ant-design-vue';
+import { Button, Popconfirm } from 'ant-design-vue';
 
 import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
@@ -388,19 +388,6 @@ const handleUpdateSuccess = async (updatedRow: any) => {
   }
 };
 
-const handleMonthSelect = (payload: {
-  endDate: string;
-  monthStr: string;
-  startDate: string;
-}) => {
-  message.success(`已选择月份: ${payload.monthStr}`);
-  if (gridApi && gridApi.formApi) {
-    gridApi.formApi.setValues({
-      expTimeRange: [payload.startDate, payload.endDate],
-    });
-  }
-};
-
 const handleYearChange = (_year: 'all' | number) => {
   // dashboard内部已处理
 };
@@ -417,7 +404,6 @@ const handleYearChange = (_year: 'all' | number) => {
     <TransactionDashboard
       ref="dashboardRef"
       type="expense"
-      @month-select="handleMonthSelect"
       @year-change="handleYearChange"
     />
     <!-- 表格区域 -->

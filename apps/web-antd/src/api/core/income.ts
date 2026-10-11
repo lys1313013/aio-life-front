@@ -25,7 +25,7 @@ export async function add(data: ApiRequests['IncomeCreateReq']) {
  * 更新
  */
 export async function update(
-  incomeId: number | string,
+  incomeId: string,
   data: ApiRequests['IncomeUpdateReq'],
 ) {
   return await requestClient.put(
@@ -37,8 +37,8 @@ export async function update(
 /**
  * 删除
  */
-export async function deleteData(data: any) {
-  return await requestClient.delete(`/income/${data.incomeId}`);
+export async function deleteData(incomeId: string) {
+  return await requestClient.delete(`/income/${incomeId}`);
 }
 
 /**
