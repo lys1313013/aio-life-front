@@ -33,8 +33,8 @@ const handleClick = (disabled: boolean) => {
 
 <style scoped lang="less">
 .global-floating-btn {
-  --float-btn-bg: rgb(255 255 255 / 85%);
-  --float-btn-hover-bg: rgb(255 255 255 / 95%);
+  --float-btn-bg: hsl(var(--card) / 45%);
+  --float-btn-hover-bg: hsl(var(--card) / 55%);
   --float-btn-color: rgb(82 88 102);
   --float-btn-border: rgb(82 88 102 / 15%);
   --float-btn-inset: rgb(255 255 255 / 20%);
@@ -59,7 +59,7 @@ const handleClick = (disabled: boolean) => {
   box-shadow:
     0 4px 16px var(--float-btn-shadow),
     inset 0 1px 0 var(--float-btn-inset);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px) saturate(160%);
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 
   .global-plus-icon {

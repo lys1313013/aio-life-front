@@ -116,39 +116,6 @@
 
 @layer components {
   @media (min-width: 640px) {
-    .global-float-btn {
-      right: 48px !important;
-      bottom: 48px !important;
-      width: 56px !important;
-      height: 56px !important;
-    }
-
-    .global-float-btn .ant-float-btn-body {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: 56px !important;
-      height: 56px !important;
-    }
-
-    .global-float-btn .ant-float-btn-icon {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      width: auto !important;
-      height: auto !important;
-      margin: 0 !important;
-      line-height: 1 !important;
-    }
-
-    .global-plus-icon {
-      font-size: 24px !important;
-    }
-
-    .global-float-btn:hover .global-plus-icon {
-      transform: rotate(90deg) scale(1.1);
-    }
-
     .global-backtop-btn {
       right: 56px !important;
       bottom: 120px !important;
@@ -191,32 +158,9 @@
     @apply bg-card text-card-foreground border-border rounded-xl border;
   }
 
-  /* 全局悬浮添加按钮 (FloatButton) 统一样式 */
-  .global-float-btn {
-    right: 30px !important;
-    bottom: 30px !important;
-    background-color: transparent !important;
-  }
-
-  .global-float-btn .ant-float-btn-body {
-    background-color: rgb(24 144 255 / 45%) !important;
-    box-shadow: 0 4px 16px rgb(0 0 0 / 15%) !important;
-    backdrop-filter: blur(10px) !important;
-  }
-
-  .global-float-btn:hover .ant-float-btn-body {
-    background-color: rgb(24 144 255 / 55%) !important;
-    box-shadow: 0 6px 20px rgb(0 0 0 / 20%) !important;
-  }
-
   .global-backtop-btn {
     right: 24px !important;
     bottom: 80px !important;
-  }
-
-  .global-plus-icon {
-    color: white !important;
-    transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 
