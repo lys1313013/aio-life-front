@@ -196,17 +196,6 @@ async function remove(provider: MembershipProviderVO) {
           allow-clear
         />
         <Button
-          aria-label="刷新会员平台"
-          :loading="loading"
-          :disabled="loading"
-          class="!h-11 !w-11"
-          @click="loadProviders"
-        >
-          <template #icon>
-            <IconifyIcon class="text-lg" icon="mdi:refresh" />
-          </template>
-        </Button>
-        <Button
           type="primary"
           aria-label="新增会员平台"
           class="!h-11 !w-11"
