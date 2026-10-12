@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import type { WereadRecentBook } from '#/api/core/weread';
 
-import { computed, nextTick, ref, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useAccessStore, useUserStore } from '@vben/stores';
@@ -28,7 +35,17 @@ const locks = useSecondaryLockStore();
 const books = ref<WereadRecentBook[]>([]);
 const connected = ref<boolean | null>(null);
 const denied = ref(false);
+const cardRef = ref<HTMLElement>();
 const scrollRef = ref<HTMLElement>();
+const wideShelf = ref(false);
+const rows = computed(() => (wideShelf.value ? 2 : 1));
+const columns = computed(() => {
+  const result: WereadRecentBook[][] = [];
+  for (let index = 0; index < books.value.length; index += rows.value) {
+    result.push(books.value.slice(index, index + rows.value));
+  }
+  return result;
+});
 const nextCursor = ref<null | string>(null);
 const loadingMore = ref(false);
 const moreFailed = ref(false);
@@ -70,7 +87,8 @@ const request = useHomeRequest({
     connected.value = data.connected;
     nextCursor.value = data.nextCursor ?? null;
     void nextTick(() => {
-      if (scrollRef.value) scrollRef.value.scrollTop = 0;
+      if (scrollRef.value) scrollRef.value.scrollLeft = 0;
+      fillViewport();
     });
   },
   onError: (error) => {
@@ -162,6 +180,7 @@ async function loadMore() {
       data.books.length > 0 && data.nextCursor !== cursor
         ? (data.nextCursor ?? null)
         : null;
+    void nextTick(fillViewport);
   } catch (error) {
     if (!valid()) return;
     if (
@@ -176,30 +195,76 @@ async function loadMore() {
     if (valid()) loadingMore.value = false;
   }
 }
+function fillViewport() {
+  const element = scrollRef.value;
+  if (
+    element &&
+    element.clientWidth > 0 &&
+    nextCursor.value &&
+    !loading.value &&
+    !loadingMore.value &&
+    !moreFailed.value &&
+    element.scrollWidth <= element.clientWidth + 1
+  )
+    void loadMore();
+}
 function onScroll() {
   const element = scrollRef.value;
   if (
     element &&
     !moreFailed.value &&
-    element.scrollHeight - element.scrollTop - element.clientHeight < 32
+    element.scrollWidth - element.scrollLeft - element.clientWidth < 32
   )
     void loadMore();
 }
+function updateShelfMode() {
+  const width = cardRef.value?.getBoundingClientRect().width ?? 0;
+  if (width <= 0) return;
+  const nextMode = width >= 400;
+  if (wideShelf.value !== nextMode) {
+    wideShelf.value = nextMode;
+    if (scrollRef.value) scrollRef.value.scrollLeft = 0;
+  }
+  void nextTick(fillViewport);
+}
+let resizeObserver: ResizeObserver | undefined;
+watch(
+  cardRef,
+  (element) => {
+    resizeObserver?.disconnect();
+    if (!element) return;
+    updateShelfMode();
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver ??= new ResizeObserver(updateShelfMode);
+      resizeObserver.observe(element);
+    }
+  },
+  { flush: 'post' },
+);
+onMounted(() => {
+  window.addEventListener('resize', updateShelfMode);
+});
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+  window.removeEventListener('resize', updateShelfMode);
+});
 function readingDate(value: string) {
   const date = dayjs(Number(value) * 1000);
   const prefix = date.isSame(dayjs(), 'day')
-    ? '今天'
+    ? ''
     : date.isSame(dayjs().subtract(1, 'day'), 'day')
       ? '昨天'
       : date.format(date.year() === dayjs().year() ? 'MM-DD' : 'YYYY-MM-DD');
-  return `${prefix} ${date.format('HH:mm')}`;
+  return `${prefix ? `${prefix} ` : ''}${date.format('HH:mm')}`;
 }
 </script>
 
 <template>
   <section
     v-if="visible"
+    ref="cardRef"
     class="weread-card relative flex min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground"
+    :class="{ 'weread-card-wide': wideShelf }"
     :style="{ '--weread-max-height': `${BUSINESS_CARD_MAX_HEIGHT}px` }"
     aria-label="微信读书首页卡片"
     :aria-busy="loading"
@@ -239,111 +304,100 @@ function readingDate(value: string) {
     </div>
     <div
       v-else-if="!loaded && loading"
-      class="weread-body weread-full pointer-events-none relative px-2.5 sm:px-3"
+      class="weread-body weread-loading pointer-events-none relative"
       role="status"
       aria-label="正在加载最近阅读"
     >
-      <div
-        v-for="index in 3"
-        :key="index"
-        class="weread-row flex animate-pulse items-center gap-3 motion-reduce:animate-none"
-      >
-        <span class="weread-cover rounded bg-muted-foreground/20"></span
-        ><span class="flex flex-1 flex-col gap-2"
-          ><span class="h-3 w-1/2 rounded bg-muted-foreground/20"></span
-          ><span class="h-2.5 w-1/3 rounded bg-muted-foreground/20"></span
-          ><span class="h-1 w-full rounded bg-muted-foreground/20"></span
-        ></span>
+      <div class="weread-track" aria-hidden="true">
+        <div
+          v-for="column in wideShelf ? 2 : 3"
+          :key="column"
+          class="weread-column"
+        >
+          <div
+            v-for="row in rows"
+            :key="row"
+            class="weread-book animate-pulse motion-reduce:animate-none"
+          >
+            <span class="weread-cover rounded bg-muted-foreground/20"></span>
+            <span class="weread-content">
+              <span class="h-3 w-4/5 rounded bg-muted-foreground/20"></span>
+              <span class="h-2.5 w-3/5 rounded bg-muted-foreground/20"></span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
     <div
       v-else-if="books.length > 0"
       ref="scrollRef"
-      class="weread-body weread-scroll pointer-events-auto relative px-2.5 sm:px-3"
-      :class="{ 'weread-full': books.length >= 3 }"
+      class="weread-body weread-scroll pointer-events-auto relative"
       tabindex="0"
       aria-label="最近阅读列表"
       @scroll.passive="onScroll"
       @click.stop="request.load()"
     >
-      <div
-        v-for="book in books"
-        :key="book.bookId"
-        class="weread-row pointer-events-auto"
-        @click.stop
-      >
-        <BookLink
-          :book="book"
-          compact
-          class="flex w-full items-center gap-3 text-left hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      <div class="weread-track">
+        <div
+          v-for="column in columns"
+          :key="column[0]!.bookId"
+          class="weread-column"
         >
-          <BusinessCardCover
-            class="weread-cover"
-            :url="book.cover"
-            :icon="visuals.visual('section.weread').icon"
-          />
-          <span class="flex min-w-0 flex-1 flex-col gap-1">
-            <span class="truncate text-sm font-semibold" :title="book.title">{{
-              book.title
-            }}</span>
-            <span
-              class="weread-meta flex min-w-0 justify-between gap-2 text-xs text-muted-foreground"
-              ><span class="truncate">{{ book.author }}</span
-              ><span class="shrink-0 tabular-nums">{{
-                readingDate(book.readUpdateTime)
-              }}</span></span
-            >
-            <span class="flex items-center gap-2"
-              ><span
-                class="h-1 flex-1 overflow-hidden rounded bg-muted-foreground/20"
-                role="progressbar"
-                :aria-label="`${book.title}阅读进度`"
-                :aria-valuenow="book.progress ?? undefined"
-                :aria-valuemin="0"
-                :aria-valuemax="100"
-                ><span
-                  class="block h-full rounded bg-primary"
-                  :style="{
-                    width: `${book.progress ?? 0}%`,
-                    backgroundColor:
-                      visuals.visual('section.weread').iconColor || undefined,
-                  }"
-                ></span></span
-              ><span class="w-9 text-right text-xs tabular-nums">{{
-                book.progress == null ? '—' : `${book.progress}%`
-              }}</span></span
-            >
-          </span>
-          <svg
-            aria-hidden="true"
-            class="size-4 shrink-0 text-muted-foreground"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+          <div
+            v-for="book in column"
+            :key="book.bookId"
+            class="weread-book pointer-events-auto"
+            @click.stop
           >
-            <path d="m9 5 7 7-7 7" />
-          </svg>
-        </BookLink>
+            <BookLink
+              :book="book"
+              compact
+              class="weread-book-link hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            >
+              <BusinessCardCover
+                class="weread-cover"
+                natural-ratio
+                :url="book.cover"
+                :icon="visuals.visual('section.weread').icon"
+              />
+              <span class="weread-content">
+                <span class="weread-title truncate" :title="book.title">{{
+                  book.title
+                }}</span>
+                <span class="weread-meta text-muted-foreground">
+                  <span
+                    class="shrink-0 tabular-nums"
+                    :aria-label="`${book.title}阅读进度`"
+                    >{{
+                      book.progress == null ? '—' : `${book.progress}%`
+                    }}</span
+                  >
+                  <span class="min-w-0 truncate tabular-nums">{{
+                    readingDate(book.readUpdateTime)
+                  }}</span>
+                </span>
+              </span>
+            </BookLink>
+          </div>
+        </div>
+        <div v-if="loadingMore || moreFailed" class="weread-status">
+          <span
+            v-if="loadingMore"
+            class="block h-3 w-4/5 animate-pulse rounded bg-muted-foreground/20 motion-reduce:animate-none"
+            role="status"
+            aria-label="正在加载更多书籍"
+          ></span>
+          <button
+            v-else
+            type="button"
+            class="min-h-11 text-sm text-destructive"
+            aria-label="重试加载更多书籍"
+            @click.stop="loadMore"
+          >
+            加载失败，点击重试
+          </button>
+        </div>
       </div>
-      <div
-        v-if="loadingMore"
-        class="weread-row flex animate-pulse items-center gap-3 motion-reduce:animate-none"
-        role="status"
-        aria-label="正在加载更多书籍"
-      >
-        <span class="weread-cover rounded bg-muted-foreground/20"></span>
-        <span class="h-3 w-1/2 rounded bg-muted-foreground/20"></span>
-      </div>
-      <button
-        v-else-if="moreFailed"
-        type="button"
-        class="flex min-h-11 w-full items-center justify-center text-sm text-destructive"
-        aria-label="重试加载更多书籍"
-        @click.stop="loadMore"
-      >
-        加载失败，点击重试
-      </button>
     </div>
     <div
       v-else
@@ -362,60 +416,175 @@ function readingDate(value: string) {
 </template>
 
 <style scoped>
-.weread-row {
+.weread-card {
   box-sizing: border-box;
-  height: var(--weread-row-height);
-  padding-block: var(--weread-row-inset);
+
+  --weread-card-height: 240px;
+  --weread-body-height: calc(var(--weread-card-height) - 58px);
+  --weread-columns: 3;
+  --weread-gap: 12px;
+  --weread-cover-height: min(144px, calc(var(--weread-body-height) - 62px));
+
+  height: var(--weread-card-height);
+  padding-bottom: 12px;
+  overflow: hidden;
 }
-.weread-cover {
-  width: min(42px, calc(var(--weread-cover-height) * 2 / 3));
-  height: var(--weread-cover-height);
-  flex-shrink: 0;
-}
-.weread-full {
+
+.weread-body {
   height: var(--weread-body-height);
+  min-height: 0;
 }
+
 .weread-scroll {
-  max-height: var(--weread-body-height);
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  scrollbar-width: thin;
+  overflow: auto hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
+
+.weread-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.weread-loading {
+  overflow: hidden;
+}
+
 .weread-placeholder {
   min-height: var(--weread-body-height);
 }
-.weread-card {
-  --weread-card-height: var(--weread-max-height);
-  --weread-bottom-padding: 10px;
-  --weread-row-inset: 4px;
-  /* 标题 44px、边框 2px；剩余内容高度均分三行，与其他业务卡片对齐。 */
-  --weread-body-height: calc(
-    var(--weread-card-height) - 46px - var(--weread-bottom-padding)
-  );
-  --weread-row-height: calc(var(--weread-body-height) / 3);
-  --weread-cover-height: min(
-    64px,
-    calc(var(--weread-row-height) - 2 * var(--weread-row-inset))
-  );
 
-  container-type: inline-size;
-  padding-bottom: var(--weread-bottom-padding);
+.weread-track {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: var(--weread-gap);
+  padding-inline: 12px;
 }
+
+.weread-column {
+  display: flex;
+  flex: 0 0
+    calc(
+      (100% - var(--weread-gap) * (var(--weread-columns) - 1)) /
+        var(--weread-columns)
+    );
+  flex-direction: column;
+  min-width: 0;
+}
+
+.weread-book {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.weread-card :deep(.weread-book-link) {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.weread-card :deep(.weread-book-link .ant-spin) {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.weread-cover {
+  width: min(calc(var(--weread-cover-height) * 2 / 3), 100%);
+  height: var(--weread-cover-height);
+  flex-shrink: 0;
+}
+
+.weread-content {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.weread-title {
+  display: block;
+  max-width: 100%;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.weread-meta {
+  display: flex;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.weread-status {
+  display: flex;
+  min-width: 160px;
+  height: 100%;
+  flex: 0 0 160px;
+  align-items: center;
+  justify-content: center;
+}
+
+.weread-card-wide {
+  --weread-columns: 2;
+  --weread-cover-height: min(
+    104px,
+    calc((var(--weread-body-height) - 8px) / 2)
+  );
+}
+
+.weread-card-wide .weread-column {
+  gap: 8px;
+}
+
+.weread-card-wide :deep(.weread-book-link) {
+  height: 100%;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
+  text-align: left;
+}
+
+.weread-card-wide .weread-content {
+  flex: 1;
+  align-items: flex-start;
+}
+
+.weread-card-wide .weread-meta {
+  justify-content: flex-start;
+}
+
+.weread-card-wide .weread-title {
+  width: 100%;
+}
+
 @media (min-width: 640px) {
   .weread-card {
-    --weread-bottom-padding: 12px;
-  }
-}
-@media (min-width: 768px) {
-  .weread-card {
     --weread-card-height: 250px;
-    --weread-row-inset: 2px;
   }
 }
+
 @media (min-width: 1024px) {
   .weread-card {
     --weread-card-height: var(--weread-max-height);
-    --weread-row-inset: 4px;
   }
 }
 </style>

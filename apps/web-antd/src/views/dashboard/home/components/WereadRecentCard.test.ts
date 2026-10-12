@@ -111,6 +111,47 @@ it('触底合并分页请求，去重并在末页停止', async () => {
   await list.trigger('scroll');
   expect(mocks.recent).toHaveBeenCalledTimes(2);
 });
+it('按卡片宽度切换单排与两排，并在横向滚动接近末端时分页', async () => {
+  const first = await mocks.recent();
+  mocks.recent.mockClear();
+  mocks.recent.mockResolvedValueOnce({
+    ...first,
+    books: Array.from({ length: 4 }, (_, index) => ({
+      ...first.books[0],
+      bookId: String(index + 1),
+    })),
+    nextCursor: 'next',
+  });
+  const wrapper = mount(WereadRecentCard);
+  await flushPromises();
+  let cardWidth = 410;
+  vi.spyOn(
+    wrapper.get('section').element,
+    'getBoundingClientRect',
+  ).mockImplementation(() => ({ width: cardWidth }) as DOMRect);
+  window.dispatchEvent(new Event('resize'));
+  await flushPromises();
+  expect(wrapper.findAll('.weread-column')).toHaveLength(2);
+  const list = wrapper.get('[aria-label="最近阅读列表"]');
+  const element = list.element as HTMLElement;
+  Object.defineProperties(element, {
+    clientWidth: { configurable: true, value: 200 },
+    scrollWidth: { configurable: true, value: 500 },
+    scrollLeft: { configurable: true, value: 270, writable: true },
+  });
+  mocks.recent.mockResolvedValueOnce({
+    connected: true,
+    books: [],
+    nextCursor: null,
+  });
+  await list.trigger('scroll');
+  await flushPromises();
+  expect(mocks.recent).toHaveBeenLastCalledWith('next');
+  cardWidth = 390;
+  window.dispatchEvent(new Event('resize'));
+  await flushPromises();
+  expect(wrapper.findAll('.weread-column')).toHaveLength(4);
+});
 it('分页失败保留数据和游标，底部重试恢复', async () => {
   const first = await mocks.recent();
   mocks.recent.mockClear();

@@ -18,7 +18,7 @@ vi.mock('#/store/menu-visuals', () => ({
   }),
 }));
 vi.mock('#/api/core/quick-nav', () => ({
-  QUICK_NAV_MAX: 12,
+  QUICK_NAV_MAX: 15,
   getQuickNavCandidatesApi: vi.fn(),
 }));
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }));

@@ -18,7 +18,7 @@ import { useAccessStore, useUserStore } from '@vben/stores';
 import { formatDate } from '@vben/utils';
 
 import {
-  getMessageListApi,
+  getMessagePageApi,
   getUnreadCountApi,
   markAllAsReadApi,
   markAsReadApi,
@@ -37,6 +37,7 @@ const authStore = useAuthStore();
 const accessStore = useAccessStore();
 const { destroyWatermark, updateWatermark } = useWatermark();
 const unreadCount = ref(0);
+const NOTIFICATION_PAGE_SIZE = 20;
 let pollTimer: null | ReturnType<typeof setInterval> = null;
 let lastFetchedCount = -1;
 const showDot = computed(() => unreadCount.value > 0);
@@ -96,67 +97,65 @@ function handleFeedback() {
 const avatarCache = new Map<string, string>();
 
 async function fetchNotifications() {
-  try {
-    const messages = await getMessageListApi();
-    const myId = String(
-      userStore.userInfo?.userId || userStore.userInfo?.id || '',
-    );
-    if (!myId) return;
+  const myId = String(
+    userStore.userInfo?.userId || userStore.userInfo?.id || '',
+  );
+  if (!myId) return;
+  const { items: messages, total } = await getMessagePageApi({
+    current: 1,
+    isRead: false,
+    size: NOTIFICATION_PAGE_SIZE,
+  });
 
-    // Filter unread messages for current user
-    const unreadMsgs = messages.filter(
-      (m) => String(m.receiverId) === myId && !m.isRead,
-    );
+  const unreadMsgs = messages.filter(
+    (m) => String(m.receiverId) === myId && !m.isRead,
+  );
 
-    const notificationsWithAvatar = await Promise.all(
-      unreadMsgs.map(async (msg) => {
-        let avatarUrl = msg.avatar || '';
-        const senderId = String(msg.senderId);
+  const notificationsWithAvatar = await Promise.all(
+    unreadMsgs.map(async (msg) => {
+      let avatarUrl = msg.avatar || '';
+      const senderId = String(msg.senderId);
 
-        if (!avatarUrl && senderId) {
-          if (avatarCache.has(senderId)) {
-            avatarUrl = avatarCache.get(senderId) || '';
-          } else {
-            try {
-              const userInfo = await getUserBasicInfoApi(senderId);
-              avatarUrl = userInfo.avatar || '';
-              avatarCache.set(senderId, avatarUrl);
-            } catch {
-              // Ignore error, keep empty avatar
-              avatarCache.set(senderId, '');
-            }
+      if (!avatarUrl && senderId) {
+        if (avatarCache.has(senderId)) {
+          avatarUrl = avatarCache.get(senderId) || '';
+        } else {
+          try {
+            const userInfo = await getUserBasicInfoApi(senderId);
+            avatarUrl = userInfo.avatar || '';
+            avatarCache.set(senderId, avatarUrl);
+          } catch {
+            // Ignore error, keep empty avatar
+            avatarCache.set(senderId, '');
           }
         }
+      }
 
-        return {
-          id: msg.id,
-          avatar: avatarUrl,
-          date: formatDate(msg.createTime),
-          isRead: false,
-          message: msg.content,
-          title: msg.title || `User ${msg.senderId}`,
-          link: `/message?userId=${msg.senderId}`,
-        };
-      }),
-    );
+      return {
+        id: msg.id,
+        avatar: avatarUrl,
+        date: formatDate(msg.createTime),
+        isRead: false,
+        message: msg.content,
+        title: msg.title || `User ${msg.senderId}`,
+        link: `/message?userId=${msg.senderId}`,
+      };
+    }),
+  );
 
-    notifications.value = notificationsWithAvatar;
-    unreadCount.value = notificationsWithAvatar.length;
-    lastFetchedCount = notificationsWithAvatar.length;
-  } catch (error) {
-    console.error('Failed to fetch notifications:', error);
-  }
+  notifications.value = notificationsWithAvatar;
+  unreadCount.value = total;
+  lastFetchedCount = total;
 }
 
 async function fetchUnreadCount() {
   try {
     const res = await getUnreadCountApi();
-    const newCount = res?.count || 0;
+    const newCount = res.count;
     unreadCount.value = newCount;
 
     if (newCount > 0 && newCount !== lastFetchedCount) {
       await fetchNotifications();
-      lastFetchedCount = newCount;
     } else if (newCount === 0) {
       notifications.value = [];
       lastFetchedCount = 0;
@@ -166,11 +165,19 @@ async function fetchUnreadCount() {
   }
 }
 
+async function refreshNotifications() {
+  try {
+    await fetchNotifications();
+  } catch (error) {
+    console.error('Failed to fetch notifications:', error);
+  }
+}
+
 // Fetch on mount
 onMounted(() => {
-  fetchUnreadCount();
+  refreshNotifications();
   // Poll every 30 seconds
-  pollTimer = setInterval(fetchUnreadCount, 30_000);
+  pollTimer = setInterval(() => fetchUnreadCount(), 30_000);
 });
 
 onUnmounted(() => {
@@ -183,7 +190,7 @@ onUnmounted(() => {
 async function handleNoticeClear() {
   try {
     await markAllAsReadApi();
-    await fetchNotifications();
+    await refreshNotifications();
   } catch (error) {
     console.error('Failed to clear notifications:', error);
   }
@@ -192,7 +199,7 @@ async function handleNoticeClear() {
 async function markRead(id: number | string) {
   try {
     await markAsReadApi(String(id));
-    await fetchNotifications();
+    await refreshNotifications();
   } catch (error) {
     console.error('Failed to mark as read:', error);
   }
@@ -201,13 +208,12 @@ async function markRead(id: number | string) {
 function remove(id: number | string) {
   // Just remove from list locally for now, as there's no delete API that fits "remove from notification list" without deleting message
   notifications.value = notifications.value.filter((item) => item.id !== id);
-  unreadCount.value = notifications.value.length;
 }
 
 async function handleMakeAll() {
   try {
     await markAllAsReadApi();
-    await fetchNotifications();
+    await refreshNotifications();
   } catch (error) {
     console.error('Failed to mark all as read:', error);
   }
@@ -247,7 +253,7 @@ watch(
       >
         <template #after-lock-screen>
           <div
-            class="hover:bg-accent hover:text-accent-foreground mx-1 flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm leading-8"
+            class="mx-1 flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm leading-8 hover:bg-accent hover:text-accent-foreground"
             @click="handleFeedback"
           >
             <FeedbackIcon class="mr-2 size-4" />
@@ -263,7 +269,7 @@ watch(
         @clear="handleNoticeClear"
         @make-all="handleMakeAll"
         @read="(item) => item.id && markRead(item.id)"
-        @refresh="fetchNotifications"
+        @refresh="refreshNotifications"
         @remove="(item) => item.id && remove(item.id)"
         @view-all="() => router.push('/message')"
       />

@@ -28,7 +28,7 @@ export interface QuickNavSaveItem {
   sortOrder: number;
 }
 
-export const QUICK_NAV_MAX = 12;
+export const QUICK_NAV_MAX = 15;
 
 export async function getQuickNavCandidatesApi() {
   return requestClient.get<QuickNavCandidate[]>('/quick-nav/candidates');

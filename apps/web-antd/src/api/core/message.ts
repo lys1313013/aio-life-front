@@ -19,6 +19,14 @@ export async function getMessageListApi(params?: { isRead?: boolean }) {
   return requestClient.get<Message[]>('/message/list', { params });
 }
 
+export async function getMessagePageApi(params: {
+  current: number;
+  isRead?: boolean;
+  size: number;
+}) {
+  return requestClient.get<MessagePageResult>('/message/page', { params });
+}
+
 export async function getUnreadCountApi() {
   return requestClient.get<{ count: number }>('/message/unread-count');
 }
