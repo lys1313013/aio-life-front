@@ -126,6 +126,8 @@ defineExpose({
       </template>
       <Button
         type="default"
+        aria-label="筛选分类"
+        :aria-pressed="selectedFilterCategoryIds.length > 0"
         :disabled="loading"
         :size="size"
         :class="{ 'filter-active': selectedFilterCategoryIds.length > 0 }"

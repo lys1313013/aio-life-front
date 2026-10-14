@@ -13,6 +13,7 @@ import { useHomeRequest } from '../composables/useHomeRequest';
 const PAGE_SIZE = 10;
 
 const commits = ref<GithubCommitVO[]>([]);
+const initialFailed = ref(false);
 
 const loadingMore = ref(false);
 const moreFailed = ref(false);
@@ -102,9 +103,13 @@ const request = useHomeRequest({
   },
   fetch: () => getRecentCommitsApi(PAGE_SIZE, 1),
   apply: (incoming) => {
+    initialFailed.value = false;
     commits.value = incoming || [];
     finished.value = commits.value.length < PAGE_SIZE;
     page.value = finished.value ? 1 : 2;
+  },
+  onError: () => {
+    if (!loaded.value) initialFailed.value = true;
   },
   onSettled: () => {
     const version = request.version();
@@ -141,17 +146,36 @@ defineExpose({ load, loading, loaded, failed });
 
 <template>
   <div class="relative flex min-h-0 flex-1 flex-col">
-    <button
-      v-if="failed && !loaded"
-      type="button"
-      aria-label="最近提交加载失败，重试"
-      :disabled="loading"
-      class="absolute right-3 top-0 z-10 rounded bg-card/95 p-2 text-xs text-primary"
-      @click="load()"
+    <div
+      v-if="initialFailed && !loaded"
+      class="flex flex-1 items-center justify-center gap-2 p-3 text-sm text-muted-foreground"
     >
-      加载失败，重试
-    </button>
-    <div v-if="failed && !loaded" class="min-h-16 flex-1"></div>
+      <span role="status">最近提交加载失败</span>
+      <button
+        type="button"
+        aria-label="最近提交加载失败，重试"
+        :aria-busy="loading"
+        :disabled="loading"
+        class="flex size-8 items-center justify-center rounded-full text-primary hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+        @click="load()"
+      >
+        <svg
+          aria-hidden="true"
+          class="size-4"
+          :class="{ 'animate-spin': loading }"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8M21 3v5h-5"
+          />
+        </svg>
+      </button>
+    </div>
     <div
       v-else-if="loading && !loaded"
       class="flex-1 space-y-1 overflow-hidden p-2.5 pt-1.5 sm:p-3 sm:pt-1.5"
@@ -167,25 +191,10 @@ defineExpose({ load, loading, loaded, failed });
     </div>
     <div
       v-else-if="loaded && commits.length === 0"
-      class="m-2.5 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-border py-4 text-center sm:m-3"
+      class="flex flex-1 items-center justify-center p-3 text-sm text-muted-foreground"
+      role="status"
     >
-      <svg
-        class="mx-auto mb-1.5 size-7 text-muted-foreground"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="1.5"
-          d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-        />
-      </svg>
-      <p class="text-sm text-muted-foreground">暂无最近提交</p>
-      <p class="mt-1 text-xs text-muted-foreground">
-        在个人中心绑定 GitHub 账号后即可展示
-      </p>
+      暂无最近提交
     </div>
     <div
       v-else

@@ -37,6 +37,64 @@ const connected = ref<boolean | null>(null);
 const denied = ref(false);
 const cardRef = ref<HTMLElement>();
 const scrollRef = ref<HTMLElement>();
+const draggingShelf = ref(false);
+let shelfPointer:
+  | undefined
+  | {
+      id: number;
+      scrollLeft: number;
+      x: number;
+      y: number;
+    };
+let suppressShelfClick = false;
+
+function startShelfDrag(event: PointerEvent) {
+  suppressShelfClick = false;
+  if (event.pointerType !== 'mouse' || event.button !== 0) return;
+  const element = scrollRef.value;
+  if (!element || element.scrollWidth <= element.clientWidth) return;
+  shelfPointer = {
+    id: event.pointerId,
+    scrollLeft: element.scrollLeft,
+    x: event.clientX,
+    y: event.clientY,
+  };
+}
+function moveShelfDrag(event: PointerEvent) {
+  const element = scrollRef.value;
+  if (!element || shelfPointer?.id !== event.pointerId) return;
+  if (event.buttons !== 1) {
+    endShelfDrag(event);
+    return;
+  }
+  const dx = event.clientX - shelfPointer.x;
+  const dy = event.clientY - shelfPointer.y;
+  if (!draggingShelf.value) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 6) return;
+    if (Math.abs(dy) > Math.abs(dx)) {
+      shelfPointer = undefined;
+      return;
+    }
+    draggingShelf.value = true;
+    suppressShelfClick = true;
+    element.setPointerCapture(event.pointerId);
+  }
+  event.preventDefault();
+  element.scrollLeft = shelfPointer.scrollLeft - dx;
+}
+function endShelfDrag(event: PointerEvent) {
+  if (shelfPointer?.id !== event.pointerId) return;
+  shelfPointer = undefined;
+  draggingShelf.value = false;
+}
+function guardShelfClick(event: MouseEvent) {
+  // 拖动结束产生的 click 不能打开书籍或触发空白刷新；键盘点击仍然可用。
+  if (suppressShelfClick && event.detail > 0) {
+    event.preventDefault();
+    event.stopPropagation();
+    suppressShelfClick = false;
+  }
+}
 const wideShelf = ref(false);
 const rows = computed(() => (wideShelf.value ? 2 : 1));
 const columns = computed(() => {
@@ -332,9 +390,19 @@ function readingDate(value: string) {
       v-else-if="books.length > 0"
       ref="scrollRef"
       class="weread-body weread-scroll pointer-events-auto relative"
+      :class="{ 'weread-dragging': draggingShelf }"
       tabindex="0"
       aria-label="最近阅读列表"
+      @pointerdown.stop="startShelfDrag"
+      @pointermove="moveShelfDrag"
+      @pointerup="endShelfDrag"
+      @pointercancel="endShelfDrag"
+      @lostpointercapture="endShelfDrag"
+      @mousedown.stop
+      @touchstart.stop
+      @dragstart.prevent
       @scroll.passive="onScroll"
+      @click.capture="guardShelfClick"
       @click.stop="request.load()"
     >
       <div class="weread-track">
@@ -439,6 +507,12 @@ function readingDate(value: string) {
   overflow: auto hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+  user-select: none;
+}
+
+.weread-dragging,
+.weread-dragging :deep(*) {
+  cursor: grabbing;
 }
 
 .weread-scroll::-webkit-scrollbar {

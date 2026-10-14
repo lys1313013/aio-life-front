@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
+
 import { chromium, expect } from '@playwright/test';
+
 const origin = process.env.HOME_CARDS_WEB_ORIGIN || 'http://127.0.0.1:5666';
 const output = 'node_modules/.cache/weread-recent';
-const preferencesModule =
-  '/@fs' +
+const preferencesModule = `/@fs${
   new URL('../../packages/@core/preferences/src/index.ts', import.meta.url)
-    .pathname;
+    .pathname
+}`;
 await mkdir(output, { recursive: true });
 const menus = [
   {
@@ -48,8 +50,8 @@ const memberVisual = {
   icon: 'lucide:crown',
 };
 const memberships = Array.from({ length: 4 }, (_, i) => ({
-  id: 'member-' + i,
-  name: '模拟会员 ' + i,
+  id: `member-${i}`,
+  name: `模拟会员 ${i}`,
   expiryDate: '2099-12-31',
   status: 'active',
   category: 'other',
@@ -83,19 +85,18 @@ const cards = [
 ];
 const covers = ['#deb241', '#eeeee8', '#6abecb'].map(
   (color, i) =>
-    'data:image/svg+xml,' +
-    encodeURIComponent(
+    `data:image/svg+xml,${encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="84" height="128"><rect width="84" height="128" fill="${color}"/><text x="42" y="56" fill="#333" text-anchor="middle" font-size="12">BOOK ${i + 1}</text></svg>`,
-    ),
+    )}`,
 );
 const books = ['西西弗神话', '思考，快与慢', '动物农场'].map((title, i) => ({
   bookId: String(i + 1),
   title,
   author: ['阿尔贝·加缪', '丹尼尔·卡尼曼', '乔治·奥威尔'][i],
   cover: covers[i],
-  readUpdateTime: String(1791163200 - i * 86400),
+  readUpdateTime: String(1_791_163_200 - i * 86_400),
   progress: [42, 68, 15][i],
-  deepLink: 'https://weread.qq.com/web/reader/fixture-' + i,
+  deepLink: `https://weread.qq.com/web/reader/fixture-${i}`,
 }));
 const browser = await chromium.launch({
   channel: process.env.CI ? undefined : 'chrome',
@@ -106,6 +107,7 @@ try {
     for (const dark of [false, true]) {
       const context = await browser.newContext({
         viewport: { width, height: 1000 },
+        hasTouch: true,
       });
       const page = await context.newPage();
       page.on('response', (response) => {
@@ -141,6 +143,7 @@ try {
         '/auth/secondary-lock/menus': [],
         '/message/unread-count': { count: 0 },
         '/message/list': [],
+        '/message/page': { records: [], total: 0 },
         '/menu/preferences': { menus: [], hiddenMenuIds: [] },
         '/auth/wechat/web/capabilities': { enabled: false },
         '/dashboard/tasks': [],
@@ -157,20 +160,19 @@ try {
         '/timeTrackerCategory/list': [],
       };
       for (const [path, data] of Object.entries(fixtures)) {
-        const respond = (route) =>
-          route.fulfill({ json: { code: 0, data } });
-        await page.route('**/api' + path, respond);
-        await page.route('**/api' + path + '?*', respond);
+        const respond = (route) => route.fulfill({ json: { code: 0, data } });
+        await page.route(`**/api${path}`, respond);
+        await page.route(`**/api${path}?*`, respond);
       }
+      let calls = 0;
+      let fail = false;
+      let moreFail = false;
+      let release;
       let responseBooks = Array.from({ length: 14 }, (_, i) => ({
-          ...books[i % 3],
-          bookId: String(i + 1),
-          title: i < 3 ? books[i].title : '模拟分页图书 ' + (i + 1),
-        })),
-        fail = false,
-        moreFail = false,
-        calls = 0,
-        release;
+        ...books[i % 3],
+        bookId: String(i + 1),
+        title: i < 3 ? books[i].title : `模拟分页图书 ${i + 1}`,
+      }));
       let gate = new Promise((resolve) => {
         release = resolve;
       });
@@ -203,8 +205,9 @@ try {
                     nextCursor:
                       (cursor ? Number(cursor.split(':')[1]) : 0) + 6 <
                       responseBooks.length
-                        ? '200:' +
-                          ((cursor ? Number(cursor.split(':')[1]) : 0) + 6)
+                        ? `200:${
+                            (cursor ? Number(cursor.split(':')[1]) : 0) + 6
+                          }`
                         : null,
                   },
                 },
@@ -212,7 +215,7 @@ try {
       };
       await page.route('**/api/weread/recent', recent);
       await page.route('**/api/weread/recent?*', recent);
-      await page.goto(origin + '/auth/login');
+      await page.goto(`${origin}/auth/login`);
       await page
         .locator('input:not([type="password"])')
         .first()
@@ -224,7 +227,7 @@ try {
         .click();
       const card = page.getByLabel('微信读书首页卡片', { exact: true });
       await expect(card)
-        .toBeVisible({ timeout: 15000 })
+        .toBeVisible({ timeout: 15_000 })
         .catch(async (error) => {
           console.error({
             url: page.url(),
@@ -263,25 +266,27 @@ try {
       const peerHeight = await memberCard.evaluate(
         (el) => el.getBoundingClientRect().height,
       );
-      assert.equal(
-        loaded.height,
-        peerHeight,
-        'full card matches membership height',
-      );
-      assert.equal(loaded.height, width >= 768 && width < 1024 ? 250 : 280);
+      if (width >= 1024)
+        assert.equal(
+          loaded.height,
+          peerHeight,
+          'desktop cards share maximum height',
+        );
+      let expectedHeight = 240;
+      if (width >= 640) expectedHeight = 250;
+      if (width >= 1024) expectedHeight = 280;
+      assert.equal(loaded.height, expectedHeight);
       const rowGeometry = await card
-        .locator('.weread-row')
+        .locator('.weread-book')
         .evaluateAll((rows) =>
-          rows
-            .slice(0, 3)
-            .map((el) => ({
-              row: el.getBoundingClientRect().height,
-              content: el.querySelector('a').getBoundingClientRect().height,
-            })),
+          rows.slice(0, 3).map((el) => ({
+            row: el.getBoundingClientRect().height,
+            content: el.querySelector('a').getBoundingClientRect().height,
+          })),
         );
       assert.ok(
         rowGeometry.every((row) => row.content <= row.row),
-        'three rows fully visible',
+        'book content fully visible',
       );
       await card.screenshot({
         path: `${output}/${width}-${dark ? 'dark' : 'light'}.png`,
@@ -292,9 +297,71 @@ try {
         'only blank refresh and title',
       );
       const list = card.getByLabel('最近阅读列表', { exact: true });
+      const bounds = await list.boundingBox();
+      const startX = bounds.x + bounds.width * 0.75;
+      const endX = bounds.x + bounds.width * 0.25;
+      const y = bounds.y + bounds.height / 2;
+      const beforeSwipe = calls;
+      await page.mouse.move(startX, y);
+      await page.mouse.down();
+      await page.waitForTimeout(350);
+      await page.mouse.move(endX, y, { steps: 12 });
+      await page.mouse.up();
+      await expect
+        .poll(() => list.evaluate((el) => el.scrollLeft))
+        .toBeGreaterThan(20);
+      assert.equal(calls, beforeSwipe, 'drag does not refresh');
+      assert.equal(context.pages().length, 1, 'drag does not open a book');
+      assert.equal(
+        await page.locator('.home-sort-chosen').count(),
+        0,
+        'shelf drag does not sort cards',
+      );
+      await page.mouse.move(endX, y);
+      await page.mouse.down();
+      await page.mouse.move(startX, y, { steps: 12 });
+      await page.mouse.up();
+      await expect
+        .poll(() => list.evaluate((el) => el.scrollLeft))
+        .toBeLessThan(1);
+      const cdp = await context.newCDPSession(page);
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: startX, y }],
+      });
+      for (let step = 1; step <= 12; step++) {
+        await cdp.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: startX + ((endX - startX) * step) / 12, y }],
+        });
+        await page.waitForTimeout(20);
+      }
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchEnd',
+        touchPoints: [],
+      });
+      await expect
+        .poll(() => list.evaluate((el) => el.scrollLeft))
+        .toBeGreaterThan(20);
+      await page.waitForTimeout(250);
+      assert.equal(calls, beforeSwipe, 'touch swipe does not refresh');
+      assert.equal(
+        context.pages().length,
+        1,
+        'touch swipe does not open a book',
+      );
+      assert.equal(
+        await page.locator('.home-sort-chosen').count(),
+        0,
+        'touch swipe does not sort cards',
+      );
+      await cdp.detach();
+      await list.evaluate((el) => {
+        el.scrollLeft = 0;
+      });
       const scrollEnd = () =>
         list.evaluate((el) => {
-          el.scrollTop = el.scrollHeight;
+          el.scrollLeft = el.scrollWidth;
         });
       moreFail = true;
       await scrollEnd();
@@ -314,7 +381,7 @@ try {
         path: `${output}/${width}-${dark ? 'dark' : 'light'}-pagination.png`,
       });
       await list.evaluate((el) => {
-        el.scrollTop = 0;
+        el.scrollLeft = 0;
       });
       const beforeBook = calls;
       const popupTask = page.waitForEvent('popup');
@@ -340,7 +407,7 @@ try {
       ).toBeVisible();
       assert.equal(await card.locator('.refresh-dot').count(), 3);
       assert.equal(await memberCard.locator('.refresh-dot').count(), 3);
-      assert.equal(await card.locator('.h-0\\.5').count(), 0);
+      assert.equal(await card.locator(String.raw`.h-0\.5`).count(), 0);
       await page.screenshot({
         path: `${output}/${width}-${dark ? 'dark' : 'light'}-compare-refresh.png`,
       });
@@ -371,9 +438,10 @@ try {
       await expect(card).toContainText('42%');
       await expect(card.locator('a')).toHaveCount(1);
       const single = await geometry();
-      assert.ok(
-        single.height < loaded.height,
-        'single book has no permanent whitespace',
+      assert.equal(
+        single.height,
+        loaded.height,
+        'single book keeps shelf height',
       );
       responseBooks = [
         {
@@ -399,9 +467,9 @@ try {
       results.push({ width, dark, skeleton, loaded, empty, single });
       await context.close();
     }
-  await writeFile(output + '/geometry.json', JSON.stringify(results, null, 2));
+  await writeFile(`${output}/geometry.json`, JSON.stringify(results, null, 2));
   console.log(
-    'Web Weread: 6 viewport/theme combinations passed, loading/refresh/error/empty/single/long text and click boundaries verified.',
+    'Web Weread: 6 viewport/theme combinations passed, mouse drag/touch swipe/pagination/loading/refresh/error/empty/single/long text and click boundaries verified.',
   );
 } finally {
   await browser.close();

@@ -83,17 +83,15 @@ onUnmounted(() => {
   document.removeEventListener('click', closeContextMenu);
 });
 
-// Auto scroll to bottom when messages change
+// 首次挂载、切换会话及 loading 结束后，等待消息 DOM 更新再定位到底部。
 watch(
-  () => props.messages,
+  [listRef, () => props.targetId, () => props.loading, () => props.messages],
   () => {
-    setTimeout(() => {
-      if (listRef.value) {
-        listRef.value.scrollTop = listRef.value.scrollHeight;
-      }
-    }, 100);
+    if (!props.loading && listRef.value) {
+      listRef.value.scrollTop = listRef.value.scrollHeight;
+    }
   },
-  { deep: true },
+  { deep: true, flush: 'post' },
 );
 </script>
 

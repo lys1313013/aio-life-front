@@ -1152,21 +1152,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
         <span class="quote-text">{{ currentQuote }}</span>
       </div>
       <div class="header-right">
-        <!-- 按钮区 -->
-        <div class="actions">
-          <CategoryFilter
-            :categories="config.categories"
-            :loading="loading"
-            :size="isMobile ? 'small' : 'middle'"
-            multiple
-            @filter-change="handleFilterChange"
-          />
-        </div>
         <!-- 日期切换区 -->
         <ConfigProvider :wave="{ disabled: true }">
           <div class="date-picker-container">
             <Button
-              type="default"
+              type="text"
+              :aria-label="statMode === 'day' ? '前一天' : '上一周期'"
               @click="goToPreviousPeriod"
               :disabled="loading"
               class="date-nav-button"
@@ -1180,6 +1171,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
               }}</span>
               <DatePicker
                 class="hidden-date-picker"
+                aria-label="选择日期"
                 v-model:value="selectedDate"
                 format="YYYY-MM-DD"
                 :allow-clear="false"
@@ -1192,7 +1184,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
               </DatePicker>
             </div>
             <Button
-              type="default"
+              type="text"
+              :aria-label="statMode === 'day' ? '后一天' : '下一周期'"
               @click="goToNextPeriod"
               :disabled="loading"
               class="date-nav-button"
@@ -1202,32 +1195,46 @@ const getDaySlots = (date: string): TimeSlot[] => {
             </Button>
           </div>
         </ConfigProvider>
-        <!-- 日周月切换区 -->
-        <Radio.Group
-          v-model:value="statMode"
-          @change="handleStatModeChange"
-          :disabled="loading"
-          :size="isMobile ? 'small' : 'default'"
-        >
-          <Radio.Button value="day">日</Radio.Button>
-          <Radio.Button value="week">周</Radio.Button>
-          <Radio.Button value="month">月</Radio.Button>
-        </Radio.Group>
-        <!-- 视图模式切换：时间轴 / 时间卡片 -->
-        <Radio.Group
-          v-model:value="viewMode"
-          :size="isMobile ? 'small' : 'default'"
-          :disabled="loading"
-        >
-          <Radio.Button value="timeline">
-            <ClockCircleOutlined />
-            <span class="view-mode-label">时间轴</span>
-          </Radio.Button>
-          <Radio.Button value="card">
-            <AppstoreOutlined />
-            <span class="view-mode-label">卡片</span>
-          </Radio.Button>
-        </Radio.Group>
+        <div class="toolbar-controls">
+          <!-- 日周月切换区 -->
+          <Radio.Group
+            class="toolbar-segments"
+            aria-label="统计周期"
+            v-model:value="statMode"
+            @change="handleStatModeChange"
+            :disabled="loading"
+            :size="isMobile ? 'small' : 'default'"
+          >
+            <Radio.Button value="day">日</Radio.Button>
+            <Radio.Button value="week">周</Radio.Button>
+            <Radio.Button value="month">月</Radio.Button>
+          </Radio.Group>
+          <!-- 视图模式切换：时间轴 / 时间卡片 -->
+          <Radio.Group
+            class="toolbar-segments"
+            aria-label="记录展示方式"
+            v-model:value="viewMode"
+            :size="isMobile ? 'small' : 'default'"
+            :disabled="loading"
+          >
+            <Radio.Button value="timeline" aria-label="时间轴视图">
+              <ClockCircleOutlined />
+            </Radio.Button>
+            <Radio.Button value="card" aria-label="卡片视图">
+              <AppstoreOutlined />
+            </Radio.Button>
+          </Radio.Group>
+          <!-- 筛选始终位于操作区末尾 -->
+          <div class="actions">
+            <CategoryFilter
+              :categories="config.categories"
+              :loading="loading"
+              :size="isMobile ? 'small' : 'middle'"
+              multiple
+              @filter-change="handleFilterChange"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1847,14 +1854,53 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .header-right {
   display: flex;
-  gap: 3px; /* 控制三个区域之间的间距 */
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.toolbar-controls {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
   align-items: center;
 }
 
 .actions {
   display: flex;
-  gap: 8px;
+  flex-shrink: 0;
   align-items: center;
+}
+
+.toolbar-segments {
+  display: inline-flex;
+  flex-wrap: nowrap;
+}
+
+.toolbar-segments :deep(.ant-radio-button-wrapper) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  background: transparent;
+}
+
+.toolbar-segments
+  :deep(
+    .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled)
+  ) {
+  background: transparent;
+}
+
+.actions :deep(.ant-btn) {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .content-layout {
@@ -1883,13 +1929,8 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 .date-picker-container {
   display: flex;
-  gap: 0;
+  flex-shrink: 0;
   align-items: center;
-  overflow: hidden;
-  background-color: v-bind('token.colorBgContainer');
-  border: 1px solid v-bind('token.colorBorder');
-  border-radius: 8px;
-  transition: all 0.2s;
 }
 
 .date-nav-button.ant-btn {
@@ -1897,12 +1938,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
   align-items: center;
   justify-content: center;
   width: 32px !important;
-  height: 30px !important;
+  height: 32px !important;
   padding: 0 !important;
   color: v-bind('token.colorTextSecondary');
   background: transparent !important;
   border: none !important;
-  border-radius: 0 !important;
+  border-radius: 6px !important;
   box-shadow: none !important;
   transition:
     color 0.2s,
@@ -1919,20 +1960,12 @@ const getDaySlots = (date: string): TimeSlot[] => {
   background-color: v-bind('token.controlItemBgActive') !important;
 }
 
-.date-nav-button:first-child {
-  border-right: 1px solid v-bind('token.colorSplit') !important;
-}
-
-.date-nav-button:last-child {
-  border-left: 1px solid v-bind('token.colorSplit') !important;
-}
-
 .date-picker-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
+  height: 32px;
   padding: 0 4px;
   cursor: pointer;
 }
@@ -1942,7 +1975,7 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 .date-text {
-  font-size: 12px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   line-height: 1.5;
   color: v-bind('token.colorText');
@@ -2401,11 +2434,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
 }
 
 /* ===== 时间卡片视图 ===== */
-.view-mode-label {
-  margin-left: 4px;
-  font-size: 13px;
-}
-
 .card-view-container {
   padding: 12px;
   background: v-bind('token.colorBgContainer');
@@ -2639,21 +2667,19 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
 /* 手机端样式 */
 @media (max-width: 1024px) {
-  .date-picker-container {
-    border-radius: 5px;
-  }
-
   .date-nav-button.ant-btn {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
-  .date-picker-container .ant-picker {
-    height: 24px !important;
+    width: 44px !important;
+    height: 44px !important;
   }
 
   .date-picker-wrapper {
-    height: 24px;
+    height: 44px;
+  }
+
+  .toolbar-segments :deep(.ant-radio-button-wrapper),
+  .actions :deep(.ant-btn) {
+    min-width: 44px;
+    height: 44px;
   }
 
   .timeline-container,
@@ -2679,34 +2705,15 @@ const getDaySlots = (date: string): TimeSlot[] => {
   }
 
   .header {
-    flex-flow: row nowrap;
-    gap: 8px;
     align-items: center;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .header-right {
-    flex-shrink: 0;
-    flex-wrap: nowrap;
-    gap: 8px;
-    margin-left: auto;
+    width: 100%;
   }
 
-  .actions {
-    display: flex;
-    flex-shrink: 0;
-    flex-wrap: nowrap;
-    gap: 3px;
-  }
-
-  .header-right .ant-radio-group {
-    display: inline-flex;
-    flex-wrap: nowrap;
-  }
-
-  .header-right .ant-radio-group .ant-radio-button-wrapper {
-    flex: 0 0 auto;
+  .date-picker-container {
+    margin-right: auto;
   }
 
   .category-selector {
@@ -2823,10 +2830,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
 
   .stat-value-center {
     font-size: 15px;
-  }
-
-  .view-mode-label {
-    display: none;
   }
 
   .card-view-container {

@@ -111,3 +111,30 @@ it('首次失败显示重试，不冒充空态；分页失败保留记录且停�
   expect(mocks.fetch.mock.calls.map((call) => call[1])).toEqual([1, 1, 2, 2]);
   expect(wrapper.text()).toContain('下一页提交');
 });
+
+it('失败重试期间保留错误态和加载反馈，成功空列表不再提示绑定', async () => {
+  let resolve!: (rows: []) => void;
+  const retry = new Promise<[]>((done) => {
+    resolve = done;
+  });
+  vi.stubGlobal('requestAnimationFrame', () => 0);
+  mocks.fetch
+    .mockReset()
+    .mockRejectedValueOnce(new Error('GitHub unavailable'))
+    .mockReturnValueOnce(retry);
+  const wrapper = mount(GithubRecentCommits);
+  await flushPromises();
+  expect(wrapper.text()).toContain('最近提交加载失败');
+  expect(wrapper.text()).not.toContain('绑定');
+  const button = wrapper.get('button[aria-label="最近提交加载失败，重试"]');
+  await button.trigger('click');
+  expect(button.attributes('disabled')).toBeDefined();
+  expect(button.attributes('aria-busy')).toBe('true');
+  expect(wrapper.text()).toContain('最近提交加载失败');
+  expect(wrapper.find('[data-skeleton]').exists()).toBe(false);
+  resolve([]);
+  await flushPromises();
+  expect(wrapper.text()).toContain('暂无最近提交');
+  expect(wrapper.text()).not.toContain('绑定');
+  expect(wrapper.text()).not.toContain('加载失败');
+});
