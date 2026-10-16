@@ -390,7 +390,7 @@ defineExpose({
           allow-clear
         />
       </AFormItem>
-      <AFormItem label="添加到首页" name="isPinned">
+      <AFormItem label="固定到首页" name="isPinned">
         <ASwitch
           v-model:checked="formState.isPinned"
           :checked-value="1"

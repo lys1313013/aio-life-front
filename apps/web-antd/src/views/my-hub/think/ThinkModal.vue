@@ -331,7 +331,7 @@ function formatDate(dateString: string) {
             </Tooltip>
             <label
               class="inline-flex items-center gap-2 text-xs text-muted-foreground"
-              >添加到首页<Switch
+              >固定到首页<Switch
                 v-model:checked="form.isPinned"
                 :checked-value="1"
                 :un-checked-value="0"

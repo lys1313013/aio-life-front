@@ -217,7 +217,9 @@ onUnmounted(() => {
                 </div>
                 <PushpinFilled
                   v-if="thought.isPinned === 1"
-                  style="color: #faad14"
+                  class="text-primary"
+                  role="img"
+                  aria-label="已固定到首页"
                 />
                 <div
                   class="event-badge"

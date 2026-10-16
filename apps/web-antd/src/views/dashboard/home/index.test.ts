@@ -252,7 +252,7 @@ describe('首页卡片失败恢复', () => {
           .exists(),
       ).toBe(true);
       expect(wrapper.text()).not.toContain(
-        key === 'thoughts' ? '暂无固定的闪念' : '暂无关注的待办',
+        key === 'thoughts' ? '暂无固定的闪念' : '暂无固定的待办',
       );
       await wrapper
         .get(`button[aria-label="${title}加载失败，重试"]`)

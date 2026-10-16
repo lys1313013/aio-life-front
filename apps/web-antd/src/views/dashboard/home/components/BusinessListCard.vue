@@ -585,7 +585,7 @@ defineExpose({ reload: () => load(true) });
                 >
                   下移
                 </MenuItem>
-                <MenuItem @click="act(item)">取消固定</MenuItem>
+                <MenuItem @click="act(item)">取消首页固定</MenuItem>
               </Menu>
             </template>
           </Dropdown>

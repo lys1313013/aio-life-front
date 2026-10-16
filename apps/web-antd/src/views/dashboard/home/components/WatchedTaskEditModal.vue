@@ -3,8 +3,6 @@ import type { WatchedTaskDetail } from '#/api/core/dashboard';
 
 import { ref, watch } from 'vue';
 
-import { VbenIcon } from '@vben/common-ui';
-
 import {
   DatePicker as ADatePicker,
   Form as AForm,
@@ -22,6 +20,7 @@ import {
   updateTaskDetail,
 } from '#/api/core/todo';
 import { AppModal as AModal, AppModalFooter } from '#/components/app-modal';
+import HomePinButton from '#/components/HomePinButton.vue';
 
 const props = defineProps<{
   task: null | WatchedTaskDetail;
@@ -35,7 +34,7 @@ const formState = ref<any>({
   content: '',
   priority: 10,
   timeRange: [] as any[],
-  isStarred: 1, // 默认为关注状态
+  isStarred: 1, // 首页待办默认已固定
 });
 
 watch(
@@ -80,7 +79,7 @@ const handleOk = async () => {
       endTime: endTime ? endTime.format('YYYY-MM-DD HH:mm:ss') : undefined,
     });
 
-    // 如果关注状态发生改变，则调用对应接口
+    // 固定状态使用现有星标接口保存。
     if (formState.value.isStarred !== (props.task.isStarred ?? 1)) {
       if (formState.value.isStarred === 1) {
         await starTaskDetail(props.task.id);
@@ -114,23 +113,11 @@ const handleToggleStar = () => {
   >
     <div class="relative pt-2">
       <div class="absolute right-0 top-0 z-10">
-        <button
-          type="button"
-          @click="handleToggleStar"
-          :title="formState.isStarred === 1 ? '取消关注' : '添加关注'"
-          class="flex h-auto items-center justify-center p-0 outline-none transition-transform hover:scale-110"
-        >
-          <VbenIcon
-            v-if="formState.isStarred === 1"
-            icon="mdi:star"
-            class="text-[22px] text-yellow-500"
-          />
-          <VbenIcon
-            v-else
-            icon="mdi:star-outline"
-            class="text-[22px] text-muted-foreground"
-          />
-        </button>
+        <HomePinButton
+          :pinned="formState.isStarred === 1"
+          :disabled="loading"
+          @toggle="handleToggleStar"
+        />
       </div>
 
       <AForm layout="vertical" class="mt-4">

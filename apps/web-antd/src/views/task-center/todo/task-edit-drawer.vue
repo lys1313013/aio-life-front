@@ -8,7 +8,6 @@ import {
   DeleteOutlined,
   HolderOutlined,
   PlusOutlined,
-  StarOutlined,
 } from '@ant-design/icons-vue';
 import { useMediaQuery } from '@vueuse/core';
 import {
@@ -42,6 +41,7 @@ import {
   updateTask,
   updateTaskDetail,
 } from '#/api/core/todo';
+import HomePinButton from '#/components/HomePinButton.vue';
 
 interface Detail {
   id: string;
@@ -82,6 +82,7 @@ const isMobile = useMediaQuery('(max-width: 768px)');
 const localTask = ref<Task>({ id: '', content: '' });
 const details = ref<Detail[]>([]);
 const detailsLoading = ref(false);
+const pinLoading = ref(new Set<string>());
 
 watch(
   () => props.open,
@@ -191,16 +192,20 @@ const getPriorityLabel = (priority: number) => {
 };
 
 const handleStar = async (detail: Detail) => {
+  if (pinLoading.value.has(detail.id)) return;
+  const pinned = detail.isStarred === 1;
+  pinLoading.value.add(detail.id);
   try {
-    if (detail.isStarred === 1) {
-      detail.isStarred = 0;
+    if (pinned) {
       await unstarTaskDetail(detail.id);
     } else {
-      detail.isStarred = 1;
       await starTaskDetail(detail.id);
     }
-  } catch (error) {
-    console.error('更新星标失败', error);
+    detail.isStarred = pinned ? 0 : 1;
+  } catch {
+    // 请求客户端统一提示错误，保留原固定状态。
+  } finally {
+    pinLoading.value.delete(detail.id);
   }
 };
 
@@ -368,7 +373,7 @@ function saveOnEnter(event: KeyboardEvent) {
           @end="onDetailDragEnd"
         >
           <template #item="{ element: detail, index }">
-            <div class="detail-item">
+            <div class="detail-item home-pin-surface">
               <HolderOutlined class="drag-handle" />
               <ACheckbox
                 :checked="detail.isCompleted === 1"
@@ -386,23 +391,12 @@ function saveOnEnter(event: KeyboardEvent) {
                 @keydown="saveOnEnter"
               />
               <div class="detail-actions">
-                <AButton
-                  type="text"
-                  size="small"
-                  class="detail-action-btn"
-                  @click="handleStar(detail)"
-                >
-                  <template #icon>
-                    <StarOutlined
-                      :style="{
-                        color:
-                          detail.isStarred === 1
-                            ? token.colorWarning
-                            : token.colorTextQuaternary,
-                      }"
-                    />
-                  </template>
-                </AButton>
+                <HomePinButton
+                  :pinned="detail.isStarred === 1"
+                  :loading="pinLoading.has(detail.id)"
+                  reveal-on-hover
+                  @toggle="handleStar(detail)"
+                />
                 <ADropdown :trigger="['click']" placement="bottomRight">
                   <ATag
                     :color="getPriorityColor(detail.priority)"

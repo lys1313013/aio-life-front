@@ -190,7 +190,7 @@ const sortedAnniversaries = computed(() => {
                         <PushpinFilled v-else-if="item.isPinned === 1" />
                         <PushpinOutlined v-else />
                         {{
-                          item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
+                          item.isPinned === 1 ? '取消首页固定' : '固定到首页'
                         }}
                       </MenuItem>
                       <MenuItem key="edit" @click="openModal(item)">

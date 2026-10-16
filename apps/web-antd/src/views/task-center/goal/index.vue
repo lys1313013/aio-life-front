@@ -4,12 +4,7 @@ import type { ProgressStatus } from '#/api/core/progress-status';
 
 import { onMounted, ref } from 'vue';
 
-import {
-  CalendarOutlined,
-  PushpinFilled,
-  PushpinOutlined,
-  SearchOutlined,
-} from '@ant-design/icons-vue';
+import { CalendarOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import {
   Button as AButton,
   Empty as AEmpty,
@@ -27,6 +22,7 @@ import { deleteGoals, getGoalList, setGoalPinned } from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import HomePinButton from '#/components/HomePinButton.vue';
 
 import GoalEditor from './GoalEditor.vue';
 
@@ -266,7 +262,7 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
         <div
           v-for="item in goals"
           :key="item.id"
-          class="apple-card group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-border bg-card p-4 sm:p-6"
+          class="apple-card home-pin-surface group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-border bg-card p-4 sm:p-6"
           @click="handleEdit(item)"
           @contextmenu.prevent="handleDelete(item.id!)"
         >
@@ -280,22 +276,13 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
                 {{ typeMap[item.type]?.label }}
               </ATag>
               <div class="flex items-center gap-1.5">
-                <AButton
-                  type="text"
+                <HomePinButton
                   class="!h-11 !w-11"
+                  :pinned="item.isPinned === 1"
                   :loading="pinLoading.has(item.id!)"
-                  :aria-label="
-                    item.isPinned === 1 ? '取消固定到首页' : '固定到首页'
-                  "
-                  :aria-pressed="item.isPinned === 1"
-                  @click.stop="handlePin(item)"
-                >
-                  <template #icon>
-                    <PushpinFilled v-if="item.isPinned === 1" /><PushpinOutlined
-                      v-else
-                    />
-                  </template>
-                </AButton>
+                  reveal-on-hover
+                  @toggle="handlePin(item)"
+                />
                 <div
                   class="h-2 w-2 rounded-full"
                   :class="getStatusBadgeColor(item.status)"

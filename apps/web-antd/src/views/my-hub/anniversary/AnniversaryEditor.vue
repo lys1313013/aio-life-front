@@ -271,7 +271,7 @@ defineExpose({ open: openModal });
             />
           </FormItem>
 
-          <FormItem label="添加到首页" name="isPinned">
+          <FormItem label="固定到首页" name="isPinned">
             <Switch
               v-model:checked="formState.isPinned"
               :checked-value="1"
