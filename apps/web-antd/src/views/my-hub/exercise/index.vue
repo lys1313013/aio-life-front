@@ -5,6 +5,7 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { ExerciseStatisticsPoint } from '#/api/core/exerciseRecord';
 
 import {
   computed,
@@ -22,6 +23,7 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -29,12 +31,17 @@ import {
   Popconfirm,
   RangePicker,
   Select,
+  Spin,
   Tag,
 } from 'ant-design-vue';
 
 import { appDialog } from '#/adapter/modal-dialog';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
-import { deleteBatch, getStatistics, query } from '#/api/core/exerciseRecord';
+import {
+  deleteBatch,
+  getStatisticsSummary,
+  query,
+} from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
@@ -42,8 +49,8 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import FormDrawerDemo from './form-drawer.vue';
 
 interface RowType {
-  id: any;
-  userId: number;
+  id: string;
+  userId: string;
   exerciseTypeId: string;
   exerciseCount: number;
   exerciseDate: string;
@@ -64,43 +71,32 @@ const selectedExerciseType = ref<string | undefined>(undefined);
 // 每日统计时间区间筛选
 const globalDateRange = ref<[Dayjs, Dayjs] | undefined>(undefined);
 
-const dictOptions = ref<Array<{ id: number; label: string; value: string }>>(
+const dictOptions = ref<Array<{ id: string; label: string; value: string }>>(
   [],
 );
 
-// 表格数据引用
-const tableData = ref<RowType[]>([]);
+const statisticsData = ref<ExerciseStatisticsPoint[]>([]);
+const statisticsLoading = ref(false);
+const statisticsError = ref(false);
+let statisticsGeneration = 0;
+let statisticsKey = '';
+let dailyTypeInitialized = false;
+let typesRequest: Promise<void> | undefined;
 
-const loadExerciseTypes = async () => {
-  try {
-    const res = await getByDictType('exercise_type');
-    dictOptions.value = res.dictDetailList.map((item: any) => ({
-      id: Number(item.id), // Ensure compatibility if needed
-      label: item.dictLabel || item.label,
-      value: String(item.id),
-    }));
-    // 默认选择最近一次使用的运动类型
-    if (!selectedExerciseType.value && dictOptions.value.length > 0) {
-      try {
-        const latestResult = await query({
-          page: 1,
-          pageSize: 1,
-          condition: {},
-        });
-        if (latestResult?.items?.length > 0) {
-          selectedExerciseType.value = String(
-            latestResult.items[0].exerciseTypeId,
-          );
-        } else {
-          selectedExerciseType.value = dictOptions.value[0]?.value;
-        }
-      } catch {
-        selectedExerciseType.value = dictOptions.value[0]?.value;
-      }
-    }
-  } catch (error) {
-    console.error('加载运动类型失败:', error);
-  }
+const loadExerciseTypes = () => {
+  typesRequest ??= getByDictType('exercise_type')
+    .then((res) => {
+      dictOptions.value = res.dictDetailList.map((item: any) => ({
+        id: item.id,
+        label: item.dictLabel || item.label,
+        value: item.id,
+      }));
+    })
+    .catch((error) => {
+      typesRequest = undefined;
+      console.error('加载运动类型失败:', error);
+    });
+  return typesRequest;
 };
 
 // 添加一个计算属性或方法来查找标签
@@ -130,100 +126,27 @@ const getExerciseTypeColor = (value: string) => {
   return typeColorMap[hash % typeColorMap.length];
 };
 
-// 计算月份统计数据（按运动类型分类，同一天同一类型多次记录算作一次）
+// 接口每一项就是一个运动日内的一个类型，不再从明细记录去重。
 const monthlyStats = computed(() => {
-  // 使用Set来去重同一天同一类型的记录
-  const dailyUniqueExercises = new Map<string, Set<string>>();
-
-  tableData.value.forEach((row) => {
-    if (row.exerciseDate) {
-      try {
-        // 使用日期和运动类型组合作为唯一键
-        const dateTypeKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
-
-        // 如果还没有这个组合，则添加到集合中
-        if (!dailyUniqueExercises.has(dateTypeKey)) {
-          dailyUniqueExercises.set(dateTypeKey, new Set());
-        }
-        // 将记录ID添加到该日期类型组合的集合中
-        dailyUniqueExercises.get(dateTypeKey)?.add(row.id);
-      } catch (error) {
-        console.warn('日期解析失败:', row.exerciseDate, error);
-      }
-    }
-  });
-
-  // 按月份和类型统计
   const monthlyData: Record<string, Record<string, number>> = {};
-
-  // 遍历去重后的数据进行统计
-  dailyUniqueExercises.forEach((_ids, dateTypeKey) => {
-    const [dateStr, typeId] = dateTypeKey.split('_');
-    const date = new Date(dateStr || '');
-
-    if (!isNaN(date.getTime())) {
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
-      const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
-
-      // 获取运动类型标签
-      const typeLabel = getExerciseTypeLabel(typeId || '');
-
-      // 初始化月份和类型的计数器
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {};
-      }
-
-      // 同一天同一类型算作一次
-      if (!monthlyData[monthKey][typeLabel]) {
-        monthlyData[monthKey][typeLabel] = 0;
-      }
-      monthlyData[monthKey][typeLabel] += 1;
-    }
-  });
-
+  for (const point of statisticsData.value) {
+    const month = point.exerciseDate.slice(0, 7);
+    const typeLabel = getExerciseTypeLabel(point.exerciseTypeId);
+    const values = (monthlyData[month] ??= {});
+    values[typeLabel] = (values[typeLabel] ?? 0) + 1;
+  }
   return monthlyData;
 });
 
-// 计算运动类型统计数据（按天计算：同一天同一类型算作一次）
 const exerciseTypeStats = computed(() => {
-  // 使用 Set 来去重同一天同一类型的记录
-  const uniqueDailyExercises = new Set<string>();
   const typeData: Record<string, number> = {};
-
-  tableData.value.forEach((row) => {
-    if (row.exerciseDate && row.exerciseTypeId) {
-      const uniqueKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
-      if (!uniqueDailyExercises.has(uniqueKey)) {
-        uniqueDailyExercises.add(uniqueKey);
-
-        const typeLabel = getExerciseTypeLabel(row.exerciseTypeId);
-        typeData[typeLabel] = (typeData[typeLabel] || 0) + 1;
-      }
-    }
-  });
-
-  const result = Object.entries(typeData).map(([name, value]) => ({
-    name,
-    value,
-  }));
-  return result;
+  for (const point of statisticsData.value) {
+    const label = getExerciseTypeLabel(point.exerciseTypeId);
+    typeData[label] = (typeData[label] ?? 0) + 1;
+  }
+  return Object.entries(typeData).map(([name, value]) => ({ name, value }));
 });
-
-// 计算总运动次数（去重：同一天同一类型算一次）
-const totalExercise = computed(() => {
-  const uniqueExercises = new Set<string>();
-
-  tableData.value.forEach((row) => {
-    if (row.exerciseDate && row.exerciseTypeId) {
-      // 使用日期和运动类型组合作为唯一键
-      const uniqueKey = `${row.exerciseDate}_${row.exerciseTypeId}`;
-      uniqueExercises.add(uniqueKey);
-    }
-  });
-
-  return uniqueExercises.size;
-});
+const totalExercise = computed(() => statisticsData.value.length);
 
 // 计算按天统计数据（支持按运动类型筛选）
 const dailyStats = computed(() => {
@@ -239,7 +162,7 @@ const dailyStats = computed(() => {
     endDate = globalDateRange.value[1].endOf('month').format('YYYY-MM-DD');
   }
 
-  tableData.value.forEach((row) => {
+  statisticsData.value.forEach((row) => {
     if (row.exerciseDate) {
       // 如果选择了特定运动类型，只统计该类型
       if (
@@ -279,11 +202,6 @@ const dailyStats = computed(() => {
 const updateCharts = () => {
   const monthlyData = monthlyStats.value;
   const typeData = exerciseTypeStats.value;
-
-  // 检查是否有数据
-  if (Object.keys(monthlyData).length === 0 || typeData.length === 0) {
-    return;
-  }
 
   // 获取所有唯一的运动类型
   const allTypes = [
@@ -523,11 +441,6 @@ watch(globalDateRange, () => {
 const updateDailyChart = () => {
   const dailyData = dailyStats.value;
 
-  // 检查是否有数据
-  if (dailyData.dates.length === 0) {
-    return;
-  }
-
   // 渲染按天统计柱状图
   renderDailyChart({
     tooltip: {
@@ -630,21 +543,31 @@ const updateDailyChart = () => {
 };
 
 // 监听筛选条件变化，重新加载统计图表数据
-const reloadStatsData = async (formValues: any) => {
+const reloadStatsData = async (formValues: any, force = true) => {
+  const condition = processQueryCondition(formValues);
+  const key = JSON.stringify(condition);
+  if (!force && !statisticsError.value && statisticsKey === key) return;
+  const current = ++statisticsGeneration;
+  statisticsLoading.value = true;
+  statisticsError.value = false;
   try {
-    // 处理查询条件
-    const processedCondition = processQueryCondition(formValues);
-    const result = await getStatistics(processedCondition);
-    if (result) {
-      tableData.value = result;
-      // 使用 setTimeout 确保 DOM 完全渲染后再更新图表
-      setTimeout(() => {
-        updateCharts();
-        updateDailyChart();
-      }, 100);
+    const result = await getStatisticsSummary(condition);
+    if (current !== statisticsGeneration) return;
+    statisticsData.value = result;
+    statisticsKey = key;
+    if (!dailyTypeInitialized) {
+      selectedExerciseType.value =
+        result[0]?.exerciseTypeId ?? dictOptions.value[0]?.value;
+      dailyTypeInitialized = true;
     }
-  } catch (error) {
-    console.error('加载筛选后的统计数据失败:', error);
+    setTimeout(() => {
+      updateCharts();
+      updateDailyChart();
+    }, 100);
+  } catch {
+    if (current === statisticsGeneration) statisticsError.value = true;
+  } finally {
+    if (current === statisticsGeneration) statisticsLoading.value = false;
   }
 };
 
@@ -841,18 +764,15 @@ const gridOptions = computed<VxeGridProps<RowType>>(() => ({
         await loadExerciseTypes();
         // 处理查询条件
         const processedCondition = processQueryCondition(formValues);
-        const result = await query({
-          page: page.currentPage,
-          pageSize: page.pageSize,
-          condition: processedCondition,
-        });
-
-        // 确保数据格式正确
-        if (result && result.items) {
-          // 表格显示分页数据
-          // 同时调用 getStatistics 获取统计数据用于统计图表
-          await reloadStatsData(formValues);
-        }
+        mobileLoadState.formValues = formValues ?? {};
+        const [result] = await Promise.all([
+          query({
+            page: page.currentPage,
+            pageSize: page.pageSize,
+            condition: processedCondition,
+          }),
+          reloadStatsData(formValues, page.currentPage === 1),
+        ]);
 
         // 手机端滚动加载：记录分页状态供 loadMore 使用
         if (isMobile.value) {
@@ -1063,58 +983,66 @@ const tableReload = () => {
 <template>
   <div class="vp-raw exercise-wrapper w-full">
     <!-- 图表区域 -->
-    <div class="charts-section">
-      <!-- 总运动次数卡片 -->
-      <div class="total-card">
-        <div
-          class="total-content flex flex-col items-center justify-between gap-4 sm:flex-row"
-        >
-          <div class="total-info w-full flex-1 text-center sm:w-auto">
-            <div class="total-label">总运动次数</div>
-            <div class="total-amount">{{ totalExercise }}次</div>
-          </div>
+    <Spin :spinning="statisticsLoading">
+      <div class="charts-section">
+        <!-- 总运动次数卡片 -->
+        <div class="total-card">
           <div
-            class="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row"
+            class="total-content flex flex-col items-center justify-between gap-4 sm:flex-row"
           >
-            <span class="text-sm text-white/90 sm:text-base">统计时间：</span>
-            <RangePicker
-              v-model:value="globalDateRange"
-              picker="month"
-              format="YYYY-MM"
-              value-format="YYYY-MM"
-              class="w-full sm:w-[240px]"
-              allow-clear
-            />
+            <div class="total-info w-full flex-1 text-center sm:w-auto">
+              <div class="total-label">总运动次数</div>
+              <Button
+                v-if="statisticsError"
+                aria-label="重试运动统计"
+                type="text"
+                @click="reloadStatsData(mobileLoadState.formValues)"
+              >
+                <ReloadOutlined />
+              </Button>
+              <div class="total-amount">{{ totalExercise }}次</div>
+            </div>
+            <div
+              class="flex w-full flex-col items-center gap-2 sm:w-auto sm:flex-row"
+            >
+              <span class="text-sm text-white/90 sm:text-base">统计时间：</span>
+              <RangePicker
+                v-model:value="globalDateRange"
+                picker="month"
+                format="YYYY-MM"
+                class="w-full sm:w-[240px]"
+                allow-clear
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- 图表容器 -->
-      <div class="chart-container mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-        <Card class="chart-item">
-          <EchartsUI ref="lineChartRef" style="width: 100%; height: 300px" />
+        <!-- 图表容器 -->
+        <div class="chart-container mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <Card class="chart-item">
+            <EchartsUI ref="lineChartRef" style="width: 100%; height: 300px" />
+          </Card>
+          <Card class="chart-item">
+            <EchartsUI ref="pieChartRef" style="width: 100%; height: 300px" />
+          </Card>
+        </div>
+
+        <!-- 按天统计图表 -->
+        <Card class="daily-chart-card mb-3" title="每日运动统计">
+          <template #extra>
+            <Select
+              v-model:value="selectedExerciseType"
+              placeholder="全部运动类型"
+              allow-clear
+              class="w-full sm:w-[180px]"
+              :options="dictOptions"
+              :field-names="{ label: 'label', value: 'value' }"
+            />
+          </template>
+          <EchartsUI ref="dailyChartRef" style="width: 100%; height: 300px" />
         </Card>
-        <Card class="chart-item">
-          <EchartsUI ref="pieChartRef" style="width: 100%; height: 300px" />
-        </Card>
       </div>
-
-      <!-- 按天统计图表 -->
-      <Card class="daily-chart-card mb-3" title="每日运动统计">
-        <template #extra>
-          <Select
-            v-model:value="selectedExerciseType"
-            placeholder="全部运动类型"
-            allow-clear
-            class="w-full sm:w-[180px]"
-            :options="dictOptions"
-            :field-names="{ label: 'label', value: 'value' }"
-          />
-        </template>
-        <EchartsUI ref="dailyChartRef" style="width: 100%; height: 300px" />
-      </Card>
-    </div>
-
+    </Spin>
     <!-- 表格区域 -->
     <Card
       class="table-card"

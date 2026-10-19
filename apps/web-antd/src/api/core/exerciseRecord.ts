@@ -11,6 +11,26 @@ export async function query(data: any) {
   return await getQuery('/exerciseRecord/query', data);
 }
 
+export interface ExerciseStatisticsPoint {
+  exerciseTypeId: string;
+  exerciseDate: string;
+  exerciseCount: number;
+  recordCount: number;
+}
+
+/** 完整历史按日和类型聚合，不受明细分页与条数上限影响。 */
+export async function getStatisticsSummary(data: {
+  description?: string;
+  endDate?: string;
+  exerciseTypeId?: string;
+  startDate?: string;
+}) {
+  return await getQuery<ExerciseStatisticsPoint[]>(
+    '/exerciseRecord/statistics/summary',
+    data,
+  );
+}
+
 /**
  * 获取运动记录统计数据，用于统计图表
  */
