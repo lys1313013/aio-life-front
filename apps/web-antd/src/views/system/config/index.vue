@@ -23,6 +23,8 @@ import {
 } from '#/api/system/system-config';
 import ContentLoading from '#/components/ContentLoading.vue';
 
+import WechatConfigEditor from './WechatConfigEditor.vue';
+
 const loading = ref(false);
 const configs = ref<SystemConfigVO[]>([]);
 const savingKey = ref<null | string>(null);
@@ -75,6 +77,7 @@ onMounted(async () => {
 });
 
 const handleSave = async (key: string) => {
+  if (savingKey.value !== null || key === 'wechat.mini') return;
   try {
     savingKey.value = key;
     let value: string;
@@ -88,10 +91,11 @@ const handleSave = async (key: string) => {
       value = editValues.value[key] || '';
     }
 
-    await updateSystemConfig(key, value);
+    const updated = await updateSystemConfig(key, value);
+    configs.value = configs.value.map((item) =>
+      item.configKey === key ? updated : item,
+    );
     message.success('保存成功');
-    // 刷新
-    await loadConfigs();
   } catch (error) {
     // 全局拦截器已提示
     console.error('保存失败', error);
@@ -99,6 +103,22 @@ const handleSave = async (key: string) => {
     savingKey.value = null;
   }
 };
+
+async function saveWechat(value: string) {
+  if (savingKey.value !== null) return;
+  savingKey.value = 'wechat.mini';
+  try {
+    const updated = await updateSystemConfig('wechat.mini', value);
+    configs.value = configs.value.map((item) =>
+      item.configKey === updated.configKey ? updated : item,
+    );
+    message.success('微信配置已保存并生效');
+  } catch {
+    // 请求拦截器已提示，不记录含密钥的请求对象。
+  } finally {
+    savingKey.value = null;
+  }
+}
 
 const getUserLabel = (userId: string) => {
   const user = adminUsers.value.find((u) => u.id === userId);
@@ -123,6 +143,7 @@ const getUserLabel = (userId: string) => {
           data-enter-submit-scope
           @keydown.capture="
             (event: KeyboardEvent) =>
+              cfg.configKey !== 'wechat.mini' &&
               handleEnterSubmit(
                 event,
                 () => handleSave(cfg.configKey),
@@ -136,7 +157,9 @@ const getUserLabel = (userId: string) => {
               <span class="font-medium text-card-foreground">{{
                 cfg.description || cfg.configKey
               }}</span>
-              <ATag class="m-0 text-xs">{{ cfg.configType }}</ATag>
+              <ATag v-if="cfg.configKey !== 'wechat.mini'" class="m-0 text-xs">
+                {{ cfg.configType }}
+              </ATag>
             </div>
           </template>
           <template #extra>
@@ -145,13 +168,22 @@ const getUserLabel = (userId: string) => {
             </span>
           </template>
 
-          <div class="mb-2 text-xs text-muted-foreground">
+          <div
+            v-if="cfg.configKey !== 'wechat.mini'"
+            class="mb-2 text-xs text-muted-foreground"
+          >
             Key: <code>{{ cfg.configKey }}</code>
           </div>
 
+          <WechatConfigEditor
+            v-if="cfg.configKey === 'wechat.mini'"
+            :config="cfg"
+            :saving="savingKey === 'wechat.mini'"
+            @save="saveWechat"
+          />
           <!-- JSON 类型 - 管理员选择器 -->
           <div
-            v-if="
+            v-else-if="
               cfg.configType === 'JSON' &&
               cfg.configKey === 'feedback.notify_admin_ids'
             "
@@ -214,7 +246,10 @@ const getUserLabel = (userId: string) => {
             />
           </div>
 
-          <div class="mt-3 flex justify-end">
+          <div
+            v-if="cfg.configKey !== 'wechat.mini'"
+            class="mt-3 flex justify-end"
+          >
             <AButton
               type="primary"
               :loading="savingKey === cfg.configKey"
