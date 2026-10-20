@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import ProfileBase from './base-setting.vue';
-import BodyProfile from './body-profile/index.vue';
 import CbtiSetting from './cbti-setting.vue';
 import HomeCardSetting from './home-card-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
@@ -24,10 +23,6 @@ const tabs = ref([
   {
     label: '基本设置',
     value: 'basic',
-  },
-  {
-    label: '身体档案',
-    value: 'body-profile',
   },
   {
     label: '账号绑定',
@@ -67,10 +62,16 @@ const tabsValue = ref(
   tabs.value.find((tab) => tab.value === requestedTab)?.value || 'basic',
 );
 
+const redirectPath = computed(() => {
+  if (route.query.tab === 'api-key') return '/mcp/api-keys';
+  if (route.query.tab === 'body-profile') return '/record/body-profile';
+  return '';
+});
+
 watch(
-  () => route.query.tab,
-  (tab) => {
-    if (tab === 'api-key') void router.replace('/mcp/api-keys');
+  redirectPath,
+  (path) => {
+    if (path) void router.replace(path);
   },
   { immediate: true },
 );
@@ -78,7 +79,7 @@ watch(
 watch(
   tabsValue,
   (val) => {
-    if (route.query.tab !== 'api-key' && route.query.tab !== val) {
+    if (!redirectPath.value && route.query.tab !== val) {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', val);
       window.history.replaceState({}, '', url.toString());
@@ -89,7 +90,7 @@ watch(
 </script>
 <template>
   <Profile
-    v-if="route.query.tab !== 'api-key'"
+    v-if="!redirectPath"
     v-model:model-value="tabsValue"
     title="个人中心"
     :user-info="userStore.userInfo"
@@ -97,7 +98,6 @@ watch(
   >
     <template #content>
       <ProfileBase v-if="tabsValue === 'basic'" />
-      <BodyProfile v-if="tabsValue === 'body-profile'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />

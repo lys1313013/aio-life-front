@@ -8,7 +8,7 @@ import {
   shoeText,
 } from './model';
 
-describe('当前身体档案契约', () => {
+describe('当前身体数据契约', () => {
   it('bMI使用厘米转米，缺少或无效数据不产生假数值', () => {
     expect(calculateBmi(178, 72)).toBe(22.7);
     expect(calculateBmi(180, 80)).toBe(24.7);

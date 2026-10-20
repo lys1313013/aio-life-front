@@ -12,6 +12,12 @@ const routes: RouteRecordRaw[] = [
     path: '/my-hub',
     children: [
       {
+        meta: { title: '身体数据', icon: 'mdi:human-handsup' },
+        name: 'BodyProfile',
+        path: '/record/body-profile',
+        component: () => import('#/views/my-hub/body-profile/index.vue'),
+      },
+      {
         meta: { title: '微信读书', icon: 'svg:weread' },
         name: 'Weread',
         path: '/record/weread',

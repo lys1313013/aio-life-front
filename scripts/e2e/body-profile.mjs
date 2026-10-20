@@ -79,10 +79,28 @@ try {
       realName: '模拟用户',
       nickname: '模拟用户',
       roles: ['admin'],
-      homePath: '/profile?tab=body-profile',
+      homePath: '/profile?tab=basic',
     },
     '/auth/codes': ['admin'],
     '/menu/all': [
+      {
+        name: 'Demos',
+        path: '/record',
+        component: 'BasicLayout',
+        meta: { title: '记录', icon: 'ic:baseline-view-in-ar' },
+        children: [
+          {
+            name: 'BodyProfile',
+            path: '/record/body-profile',
+            component: 'my-hub/body-profile/index',
+            meta: {
+              title: '身体数据',
+              icon: 'mdi:human-handsup',
+              menuId: '1511',
+            },
+          },
+        ],
+      },
       {
         name: 'Profile',
         path: '/profile',
@@ -145,6 +163,11 @@ try {
     .locator('button')
     .filter({ hasText: /^登录$/ })
     .click();
+  await page.getByText('基本设置', { exact: true }).waitFor();
+  assert.equal(await page.getByText('身体档案', { exact: true }).count(), 0);
+  await page.getByText('记录', { exact: true }).first().click();
+  await page.getByText('身体数据', { exact: true }).click();
+  await page.waitForURL('**/record/body-profile');
   const body = page.locator('.body-profile');
   await body.waitFor({ timeout: 30_000 });
   await page
@@ -177,7 +200,7 @@ try {
         animations: 'disabled',
       });
       await body
-        .getByRole('button', { name: '编辑身体档案', exact: true })
+        .getByRole('button', { name: '编辑身体数据', exact: true })
         .click();
       await page.screenshot({
         path: `${output}/${width}-${theme}-editor.png`,
@@ -190,7 +213,7 @@ try {
         .click();
       await page.locator('.ant-modal-wrap').waitFor({ state: 'hidden' });
     }
-  await body.getByRole('button', { name: '编辑身体档案', exact: true }).click();
+  await body.getByRole('button', { name: '编辑身体数据', exact: true }).click();
   let dialog = page.getByRole('dialog');
   await dialog
     .locator('.ant-form-item')
@@ -233,7 +256,7 @@ try {
   await body.getByText('模拟读取失败', { exact: true }).waitFor();
   assert.equal(
     await body
-      .getByRole('button', { name: '编辑身体档案', exact: true })
+      .getByRole('button', { name: '编辑身体数据', exact: true })
       .isDisabled(),
     true,
   );
@@ -243,7 +266,7 @@ try {
   await page.waitForTimeout(600);
   assert.equal(
     await body
-      .getByRole('button', { name: '编辑身体档案', exact: true })
+      .getByRole('button', { name: '编辑身体数据', exact: true })
       .isEnabled(),
     true,
   );
@@ -256,6 +279,9 @@ try {
   const after = await body.locator('.profile-anatomy').boundingBox();
   assert.equal(before.height, after.height);
   await page.screenshot({ path: `${output}/empty.png`, fullPage: true });
+  await page.goto(`${origin}/profile?tab=body-profile`);
+  await page.waitForURL('**/record/body-profile');
+  await body.waitFor();
   assert.deepEqual(errors, []);
   console.log(
     `Web body profile passed: 6 viewport/theme screenshots, current-state save/clear, failure retry, local updates, initial failure guard, stable empty layout; ${writes.length} writes.`,

@@ -179,12 +179,12 @@ function metricLabel(key: MeasurementKey) {
 </script>
 
 <template>
-  <section class="body-profile text-foreground" aria-label="身体档案">
+  <section class="body-profile text-foreground" aria-label="身体数据">
     <header class="profile-heading">
-      <h2>身体档案</h2>
+      <h2>身体数据</h2>
       <Button
         type="text"
-        aria-label="编辑身体档案"
+        aria-label="编辑身体数据"
         :disabled="!ready || loading"
         @click="edit()"
       >
@@ -310,7 +310,7 @@ function metricLabel(key: MeasurementKey) {
     </Spin>
     <AppModal
       :open="!!draft"
-      :title="editing === 'all' ? '编辑身体档案' : undefined"
+      :title="editing === 'all' ? '编辑身体数据' : undefined"
       aria-label="编辑身体数据"
       :width="editing === 'all' ? 580 : 400"
       :confirm-loading="saving"

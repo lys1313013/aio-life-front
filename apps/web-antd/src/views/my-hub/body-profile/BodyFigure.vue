@@ -15,6 +15,7 @@ const paths = computed(() =>
     role="img"
     aria-label="身体尺寸示意轮廓"
     class="body-figure"
+    :class="{ 'outline-only': props.gender !== 'female' }"
   >
     <path
       v-for="(path, index) in paths"
@@ -36,6 +37,10 @@ path {
   stroke-width: 1.15;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.outline-only path {
+  fill: none;
 }
 
 .detail {

@@ -22,9 +22,6 @@ vi.mock('@vben/common-ui', () => ({
 vi.mock('./base-setting.vue', () => ({
   default: { template: '<div>基本设置</div>' },
 }));
-vi.mock('./body-profile/index.vue', () => ({
-  default: { template: '<div>当前身体档案</div>' },
-}));
 vi.mock('./cbti-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./mbti-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./home-card-setting.vue', () => ({
@@ -49,10 +46,13 @@ afterEach(() => {
 });
 
 describe('个人中心', () => {
-  it('身体档案标签可直接打开', () => {
+  it('旧身体档案链接跳到身体数据菜单，不改写为基本设置', () => {
     route.query.tab = 'body-profile';
+    const replace = vi.spyOn(window.history, 'replaceState');
     const wrapper = mount(ProfilePage);
-    expect(wrapper.text()).toBe('当前身体档案');
+    expect(replaceRoute).toHaveBeenCalledWith('/record/body-profile');
+    expect(replace).not.toHaveBeenCalled();
+    expect(wrapper.findComponent({ name: 'Profile' }).exists()).toBe(false);
   });
   it('旧大模型配置链接回到基本设置', () => {
     route.query.tab = 'llm';
@@ -79,13 +79,20 @@ describe('个人中心', () => {
     expect(wrapper.findComponent({ name: 'Profile' }).exists()).toBe(false);
   });
 
-  it('个人中心不再提供 API Key 标签', () => {
+  it('个人中心不再提供 API Key 和身体档案标签', () => {
     route.query.tab = 'basic';
     const wrapper = mount(ProfilePage);
     expect(
       wrapper.findComponent({ name: 'Profile' }).props('tabs'),
     ).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ value: 'api-key' })]),
+    );
+    expect(
+      wrapper.findComponent({ name: 'Profile' }).props('tabs'),
+    ).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: 'body-profile' }),
+      ]),
     );
   });
 });
