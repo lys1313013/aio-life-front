@@ -295,12 +295,19 @@ const taskBusy = ref('');
 async function handleCompleteTask(detail: WatchedTaskDetail) {
   if (taskBusy.value) return;
   taskBusy.value = detail.id;
+  const generation = dataGeneration;
+  const isCompleted = detail.isCompleted === 1 ? 0 : 1;
   try {
     await updateTaskDetail({
       id: detail.id,
-      isCompleted: 1,
+      isCompleted,
     });
-    await reloadWatchedAfterWrite();
+    if (!active || generation !== dataGeneration) return;
+    // 保留条目到下一次刷新，并阻止写入前的查询覆盖本地完成状态。
+    watchedRequest.invalidate();
+    watchedTasks.value = watchedTasks.value.map((task) =>
+      task.id === detail.id ? { ...task, isCompleted } : task,
+    );
   } catch (error) {
     console.error('标记完成失败:', error);
   } finally {
@@ -824,7 +831,7 @@ function navTo(nav: { url?: string }) {
                   'border-green-500 bg-green-500 hover:border-green-600 hover:bg-green-600':
                     task.isCompleted === 1,
                 }"
-                :aria-label="task.isCompleted === 1 ? '待办已完成' : '完成待办'"
+                :aria-label="task.isCompleted === 1 ? '标记未完成' : '完成待办'"
                 :aria-busy="taskBusy === task.id"
                 :disabled="!!taskBusy"
                 @click="handleCompleteTask(task)"

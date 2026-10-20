@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
       微信扫码登录
     </h1>
     <div
-      class="mx-auto flex h-[280px] w-[280px] max-w-full items-center justify-center"
+      class="wechat-qr-stage mx-auto flex aspect-square w-[280px] max-w-full items-center justify-center rounded-[2rem] p-3"
     >
       <Spin
         v-if="status === 'LOADING' || status === 'CONFIRMED'"
@@ -138,12 +138,16 @@ onBeforeUnmount(() => {
       >
         <ReloadOutlined />
       </Button>
-      <img
+      <div
         v-else-if="challenge"
-        :src="challenge.qrCode"
-        alt="微信登录小程序码"
-        class="h-full w-full rounded-lg"
-      />
+        class="wechat-qr-paper h-full w-full overflow-hidden rounded-3xl"
+      >
+        <img
+          :src="challenge.qrCode"
+          alt="微信登录小程序码"
+          class="block h-full w-full mix-blend-multiply"
+        />
+      </div>
     </div>
     <p
       class="mt-4 min-h-6 text-sm text-muted-foreground"
@@ -162,3 +166,28 @@ onBeforeUnmount(() => {
     </Button>
   </section>
 </template>
+
+<style scoped>
+.wechat-qr-stage {
+  isolation: isolate;
+  background: hsl(var(--muted) / 35%);
+  box-shadow: inset 0 0 0 1px hsl(var(--foreground) / 4%);
+}
+
+.wechat-qr-paper {
+  /* Multiply 只柔化图片白底，保留原始深色码点及完整识别区域。 */
+  background: color-mix(
+    in srgb,
+    hsl(var(--background)) 94%,
+    hsl(var(--primary))
+  );
+}
+
+:global(.dark .wechat-qr-paper) {
+  background: color-mix(
+    in srgb,
+    hsl(var(--foreground)) 82%,
+    hsl(var(--background))
+  );
+}
+</style>

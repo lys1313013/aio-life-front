@@ -2,7 +2,7 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouterLink } from 'vue-router';
 
 import { AuthenticationLogin, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
@@ -13,7 +13,6 @@ import { useAuthStore } from '#/store';
 defineOptions({ name: 'Login' });
 
 const authStore = useAuthStore();
-const router = useRouter();
 const wechatWebEnabled = ref(false);
 onMounted(async () => {
   try {
@@ -29,6 +28,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInput',
       componentProps: {
+        class: 'h-11 rounded-xl',
         placeholder: $t('authentication.usernameTip'),
       },
       fieldName: 'username',
@@ -38,6 +38,7 @@ const formSchema = computed((): VbenFormSchema[] => {
     {
       component: 'VbenInputPassword',
       componentProps: {
+        class: 'h-11 rounded-xl',
         placeholder: $t('authentication.password'),
       },
       fieldName: 'password',
@@ -50,33 +51,60 @@ const formSchema = computed((): VbenFormSchema[] => {
 
 <template>
   <AuthenticationLogin
+    class="account-login"
     :form-schema="formSchema"
     :loading="authStore.loginLoading"
     :show-code-login="false"
     :show-forget-password="true"
-    :show-qrcode-login="wechatWebEnabled"
+    :show-qrcode-login="false"
     :show-third-party-login="false"
+    :title="$t('authentication.welcomeBack')"
     @submit="authStore.authLogin"
   >
-    <template #to-register>
-      <button
-        type="button"
-        class="vben-link mt-3 w-full text-sm"
-        @click="router.push('/auth/app-qrcode-login')"
+    <template #third-party-login>
+      <nav
+        aria-label="其他登录方式"
+        class="mt-3 grid auto-cols-fr grid-flow-col gap-3"
+        @keydown.enter.stop
       >
-        App 扫码登录
-      </button>
-      <div class="mt-3 flex items-center justify-center gap-2 text-sm">
+        <RouterLink
+          v-if="wechatWebEnabled"
+          class="login-alternative"
+          to="/auth/qrcode-login"
+        >
+          微信扫码登录
+        </RouterLink>
+        <RouterLink class="login-alternative" to="/auth/app-qrcode-login">
+          App 扫码登录
+        </RouterLink>
+      </nav>
+    </template>
+    <template #to-register>
+      <div
+        class="mt-7 flex items-center justify-center gap-2 text-sm"
+        @keydown.enter.stop
+      >
         <span class="text-muted-foreground">
           {{ $t('authentication.accountTip') }}
         </span>
-        <span
-          class="vben-link text-sm font-normal"
-          @click="router.push('/auth/register')"
+        <RouterLink
+          class="text-foreground decoration-border underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          to="/auth/register"
         >
           {{ $t('authentication.createAccount') }}
-        </span>
+        </RouterLink>
       </div>
     </template>
   </AuthenticationLogin>
 </template>
+
+<style scoped>
+.account-login :deep(button[aria-label='login']) {
+  height: 2.75rem;
+  border-radius: 0.75rem;
+}
+
+.login-alternative {
+  @apply flex h-11 min-w-0 items-center justify-center rounded-xl bg-foreground/5 px-3 text-sm font-medium text-foreground/75 transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+</style>

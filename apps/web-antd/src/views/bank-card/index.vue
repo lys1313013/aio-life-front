@@ -45,7 +45,7 @@ import { useCardOrder } from '#/composables/useCardOrder';
 
 import CardEditor from './card-editor.vue';
 import CardFace from './card-face.vue';
-import { filterCards, STATUS_OPTIONS } from './model';
+import { filterCards, money, STATUS_OPTIONS } from './model';
 
 const cards = ref<BankCard[]>([]);
 const banks = ref<BankOption[]>([]);
@@ -511,6 +511,21 @@ onBeforeUnmount(() => {
               </div>
             </template>
           </CardFace>
+          <div class="card-info">
+            <div class="card-amount">
+              {{ card.cardType === 'credit' ? '信用额度' : '余额' }}：{{
+                money(
+                  card.cardType === 'credit' ? card.creditLimit : card.balance,
+                )
+              }}{{
+                (card.cardType === 'credit'
+                  ? card.creditLimit
+                  : card.balance) != null
+                  ? ' 元'
+                  : ''
+              }}
+            </div>
+          </div>
           <div v-if="card.tags.length > 0" class="card-info">
             <div class="tag-list">
               <Tag
@@ -674,6 +689,12 @@ onBeforeUnmount(() => {
 }
 .card-info {
   padding: 13px 3px 0;
+}
+.card-amount {
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
 }
 .card-title {
   justify-content: space-between;

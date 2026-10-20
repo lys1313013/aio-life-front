@@ -46,8 +46,12 @@ export function filterCards(
         b.id.localeCompare(a.id, undefined, { numeric: true }),
     );
 }
-export function money(amount: BankCard['creditLimit']) {
-  return amount === null
-    ? '未记录'
-    : Number(amount).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+export function money(amount: BankCard['creditLimit'] | undefined) {
+  if (amount == null || amount === '') return '未记录';
+  const [integer, fraction = ''] = String(amount).split('.');
+  const decimals = fraction.replace(/0+$/, '');
+  return (
+    integer!.replaceAll(/\B(?=(\d{3})+(?!\d))/g, ',') +
+    (decimals ? `.${decimals}` : '')
+  );
 }

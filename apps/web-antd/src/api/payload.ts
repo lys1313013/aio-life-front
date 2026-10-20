@@ -108,6 +108,7 @@ export interface BankCardReq {
   openedDate?: null | string;
   expiryMonth?: null | string;
   creditLimit?: null | number | string;
+  balance?: null | number | string;
   statementDay?: null | number;
   repaymentDay?: null | number;
   coverTemplateId?: null | string;
@@ -1339,6 +1340,7 @@ const fields: Record<string, Record<string, null | string>> = {
     openedDate: null,
     expiryMonth: null,
     creditLimit: null,
+    balance: null,
     statementDay: null,
     repaymentDay: null,
     coverTemplateId: null,

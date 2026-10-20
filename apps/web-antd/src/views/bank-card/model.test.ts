@@ -58,5 +58,7 @@ describe('银行卡筛选', () => {
   it('未记录和零额度明确区分', () => {
     expect(money(null)).toBe('未记录');
     expect(money('0.00')).toBe('0');
+    expect(money(undefined)).toBe('未记录');
+    expect(money('9999999999999999.99')).toBe('9,999,999,999,999,999.99');
   });
 });

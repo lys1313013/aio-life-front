@@ -52,7 +52,21 @@ try {
         await route.fulfill({ json: { code: 0, data } });
       });
       await page.goto(origin + '/auth/login');
-      await page.getByText('扫码登录', { exact: true }).click();
+      const alternatives = page.getByRole('navigation', { name: '其他登录方式' });
+      const wechatLink = alternatives.getByRole('link', { name: '微信扫码登录', exact: true });
+      const appLink = alternatives.getByRole('link', { name: 'App 扫码登录', exact: true });
+      await wechatLink.waitFor();
+      await page.locator('#__app-loading__').waitFor({ state: 'detached' });
+      await page.evaluate(dark => document.documentElement.classList.toggle('dark', dark), colorScheme === 'dark');
+      const wechatBox = await wechatLink.boundingBox();
+      const appBox = await appLink.boundingBox();
+      assert.ok(wechatBox && appBox);
+      assert.ok(Math.abs(wechatBox.width - appBox.width) < 1);
+      assert.equal(wechatBox.y, appBox.y);
+      assert.ok(wechatBox.height >= 44 && appBox.height >= 44);
+      assert.equal(await appLink.getAttribute('href'), '/auth/app-qrcode-login');
+      await page.screenshot({ path: path.join(output, `login-${width}-${colorScheme}.png`), fullPage: true });
+      await wechatLink.click();
       await page.getByAltText('微信登录小程序码').waitFor();
       // 明确切换根主题，独立验证深浅色，避免持久化偏好影响截图。
       await page.evaluate(dark => document.documentElement.classList.toggle('dark', dark), colorScheme === 'dark');

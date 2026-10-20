@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   exerciseReload: vi.fn(),
   thoughts: vi.fn(),
   watched: vi.fn(),
+  updateTask: vi.fn(),
   sections: [] as { cardKey: string }[],
   tasks: vi.fn(),
 }));
@@ -22,7 +23,7 @@ vi.mock('#/api/core/dashboard', () => ({
   getWatchedTaskDetails: mocks.watched,
 }));
 vi.mock('#/api/core/think', () => ({ getPinnedThoughts: mocks.thoughts }));
-vi.mock('#/api/core/todo', () => ({ updateTaskDetail: vi.fn() }));
+vi.mock('#/api/core/todo', () => ({ updateTaskDetail: mocks.updateTask }));
 vi.mock('#/api/core/user-bind', () => ({ getUserBindListApi: async () => [] }));
 vi.mock('#/store/home-cards', () => ({
   useHomeCardsStore: () => ({
@@ -107,6 +108,7 @@ describe('首页卡片失败恢复', () => {
     mocks.sections.splice(0);
     mocks.thoughts.mockReset().mockResolvedValue([]);
     mocks.watched.mockReset().mockResolvedValue([]);
+    mocks.updateTask.mockReset().mockResolvedValue(true);
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
     vi.stubGlobal('localStorage', {
@@ -237,6 +239,89 @@ describe('首页卡片失败恢复', () => {
       .findAll('.dashboard-section')
       .find((card) => card.text().includes(name))!;
   }
+  const watchedTask = {
+    id: '9223372036854775807',
+    taskId: '9223372036854775806',
+    content: '保留到刷新时的待办',
+    isCompleted: 0,
+  };
+
+  it('完成后保留原位置与删除线，可取消完成，下次刷新才移除', async () => {
+    mocks.sections.push({ cardKey: 'section.watched' });
+    mocks.watched.mockResolvedValueOnce([watchedTask]);
+    const wrapper = mount(Home);
+    await flushPromises();
+    await wrapper.get('button[aria-label="完成待办"]').trigger('click');
+    await flushPromises();
+    expect(mocks.updateTask).toHaveBeenLastCalledWith({
+      id: watchedTask.id,
+      isCompleted: 1,
+    });
+    expect(mocks.watched).toHaveBeenCalledTimes(1);
+    expect(wrapper.get('.line-through').text()).toBe(watchedTask.content);
+    await wrapper.get('button[aria-label="标记未完成"]').trigger('click');
+    await flushPromises();
+    expect(mocks.updateTask).toHaveBeenLastCalledWith({
+      id: watchedTask.id,
+      isCompleted: 0,
+    });
+    expect(wrapper.find('.line-through').exists()).toBe(false);
+    await wrapper.get('button[aria-label="完成待办"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('button[aria-label="刷新待办"]').trigger('click');
+    await flushPromises();
+    expect(mocks.watched).toHaveBeenCalledTimes(2);
+    expect(wrapper.text()).not.toContain(watchedTask.content);
+  });
+
+  it('完成失败保留未完成状态，重试期间不重复提交', async () => {
+    mocks.sections.push({ cardKey: 'section.watched' });
+    mocks.watched.mockResolvedValueOnce([watchedTask]);
+    mocks.updateTask.mockRejectedValueOnce(new Error('offline'));
+    const wrapper = mount(Home);
+    await flushPromises();
+    await wrapper.get('button[aria-label="完成待办"]').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('.line-through').exists()).toBe(false);
+    let finish!: (value: boolean) => void;
+    mocks.updateTask.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const button = wrapper.get('button[aria-label="完成待办"]');
+    await button.trigger('click');
+    expect(button.attributes('aria-busy')).toBe('true');
+    expect(button.attributes('disabled')).toBeDefined();
+    await button.trigger('click');
+    expect(mocks.updateTask).toHaveBeenCalledTimes(2);
+    finish(true);
+    await flushPromises();
+    expect(wrapper.get('.line-through').text()).toBe(watchedTask.content);
+  });
+
+  it('勾选成功使正在进行的旧刷新失效，保留条目到下一次刷新', async () => {
+    mocks.sections.push({ cardKey: 'section.watched' });
+    mocks.watched.mockResolvedValueOnce([watchedTask]);
+    const wrapper = mount(Home);
+    await flushPromises();
+    let finish!: (value: unknown[]) => void;
+    mocks.watched.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await wrapper.get('button[aria-label="刷新待办"]').trigger('click');
+    await flushPromises();
+    await wrapper.get('button[aria-label="完成待办"]').trigger('click');
+    await flushPromises();
+    finish([]);
+    await flushPromises();
+    expect(wrapper.get('.line-through').text()).toBe(watchedTask.content);
+    expect(mocks.watched).toHaveBeenCalledTimes(2);
+  });
   it.each(['thoughts', 'watched'] as const)(
     '%s 首次失败可重试，成功空态遵循原显隐规则',
     async (key) => {

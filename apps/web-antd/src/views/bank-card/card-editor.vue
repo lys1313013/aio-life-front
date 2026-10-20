@@ -62,6 +62,7 @@ function empty(): BankCardInput {
     openedDate: null,
     expiryMonth: null,
     creditLimit: null,
+    balance: null,
     statementDay: null,
     repaymentDay: null,
     coverTemplateId: null,
@@ -163,6 +164,11 @@ watch(
   },
 );
 function changeType(type: unknown) {
+  if (type === 'credit') {
+    if (form.value.balance != null)
+      message.info('储蓄卡余额已清空，保存后生效');
+    form.value.balance = null;
+  }
   if (type === 'debit') {
     if (
       form.value.creditLimit !== null ||
@@ -219,6 +225,8 @@ async function submit() {
     const saved = await saveCard(data, props.card?.id);
     emit('saved', saved);
     emit('update:open', false);
+  } catch {
+    // 请求错误由全局拦截器提示，保留当前表单以便重试。
   } finally {
     saving.value = false;
   }
@@ -394,6 +402,34 @@ async function submit() {
             :token-separators="[',', '，']"
             placeholder="选择或输入新标签"
             option-filter-prop="label"
+          />
+        </FormItem>
+        <FormItem
+          v-if="form.cardType === 'debit'"
+          label="余额（元）"
+          name="balance"
+          :rules="[
+            {
+              validator: async (_rule: unknown, value: unknown) => {
+                if (
+                  value != null &&
+                  !/^\d{1,16}(\.\d{1,2})?$/.test(String(value))
+                )
+                  throw new Error('余额须为非负金额，最多16位整数和两位小数');
+              },
+            },
+          ]"
+        >
+          <InputNumber
+            :value="form.balance ?? undefined"
+            @update:value="
+              form.balance = $event == null ? null : String($event)
+            "
+            string-mode
+            :min="0"
+            :precision="2"
+            placeholder="未记录"
+            style="width: 100%"
           />
         </FormItem>
         <div v-if="form.cardType === 'credit'" class="credit-fields">

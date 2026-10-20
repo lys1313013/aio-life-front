@@ -31,6 +31,7 @@ export interface BankCard {
   openedDate: null | string;
   expiryMonth: null | string;
   creditLimit: null | number | string;
+  balance: null | string;
   statementDay: null | number;
   repaymentDay: null | number;
   coverTemplateId?: null | string;
