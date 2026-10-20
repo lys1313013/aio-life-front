@@ -31,13 +31,20 @@ describe('会员平台接口边界', () => {
   };
   const payload = {
     name: '腾讯视频',
-    code: 'tencent_video',
     category: 'video',
     iconKey: null,
     sortOrder: 0,
     isEnabled: 1,
   };
   it('创建仅发送允许的字段，清空图标使用 null', async () => {
+    const { code: _code, ...withoutCode } = data;
+    await createMembershipProvider(withoutCode);
+    expect(request.post).toHaveBeenCalledWith(
+      '/system/membership-providers',
+      payload,
+    );
+  });
+  it('创建时忽略旧客户端传入的只读编码', async () => {
     await createMembershipProvider(data);
     expect(request.post).toHaveBeenCalledWith(
       '/system/membership-providers',

@@ -65,7 +65,6 @@ describe('最小请求契约', () => {
       }),
     ).toEqual({
       name: '腾讯视频',
-      code: 'tencent_video',
       category: 'video',
       iconKey: null,
       sortOrder: 0,

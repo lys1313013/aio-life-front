@@ -104,6 +104,8 @@ const fixtures = {
   '/auth/secondary-lock/menus': [],
   '/message/unread-count': { count: 0 },
   '/message/list': [],
+  '/message/page': { items: [], total: 0 },
+  '/menu/visuals': { menus: [], cards: {} },
   '/menu/preferences': { menus: [], hiddenMenuIds: [] },
   '/auth/wechat/web/capabilities': { enabled: false },
   '/membership/list': [record],
@@ -138,7 +140,7 @@ await page.route('**/api/system/membership-providers', async (r) => {
   if (r.request().method() === 'GET')
     return r.fulfill({ json: { code: 0, data: providers } });
   const data = r.request().postDataJSON();
-  const saved = { ...data, id: '900719925474099420' };
+  const saved = { ...data, code: 'custom_fixture', id: '900719925474099420' };
   providers.push(saved);
   writes.push({ method: 'POST', data });
   return r.fulfill({ json: { code: 0, data: saved } });
@@ -153,7 +155,7 @@ await page.route('**/api/system/membership-providers/*', async (r) => {
     return r.fulfill({ json: { code: 0, data: null } });
   }
   const data = r.request().postDataJSON();
-  const saved = { ...data, id };
+  const saved = { ...data, code: providers[idx].code, id };
   providers[idx] = saved;
   writes.push({ method, id, data });
   return r.fulfill({ json: { code: 0, data: saved } });
@@ -206,23 +208,27 @@ try {
   await page.getByRole('button', { name: '编辑腾讯视频', exact: true }).click();
   const modal = page.locator('.ant-modal:visible');
 
+  assert.equal(await modal.locator('#form_item_code').count(), 0);
   await modal.locator('input').first().fill('腾讯视频测试');
   await modal.locator('[data-modal-confirm]').click();
   await page
     .getByRole('button', { name: '编辑腾讯视频测试', exact: true })
     .waitFor();
   assert.equal(writes.at(-1).id, '900719925474099401');
+  assert.equal('code' in writes.at(-1).data, false);
+  assert.equal(providers[0].code, 'tencent_video');
   await page.getByRole('switch', { name: '停用腾讯视频测试' }).click();
   await page.getByRole('switch', { name: '启用腾讯视频测试' }).waitFor();
   assert.equal(writes.at(-1).data.isEnabled, 0);
   await page.getByRole('button', { name: '新增会员平台', exact: true }).click();
   await modal.locator('#form_item_name').fill('自建平台');
-  await modal.locator('#form_item_code').fill('custom_platform');
+  assert.equal(await modal.locator('#form_item_code').count(), 0);
   await modal.locator('[data-modal-confirm]').click();
   await page
     .getByRole('button', { name: '编辑自建平台', exact: true })
     .waitFor();
   assert.equal(writes.at(-1).method, 'POST');
+  assert.equal('code' in writes.at(-1).data, false);
   assert.equal(writes.at(-1).data.iconKey, null);
   await page.getByRole('button', { name: '删除自建平台', exact: true }).click();
   await page
@@ -361,6 +367,10 @@ try {
   console.log(
     JSON.stringify({ screenshots: 24, writes: writes.length, errors }, null, 2),
   );
+} catch (error) {
+  await page.screenshot({ path: `${output}/failure.png`, fullPage: true });
+  console.error(JSON.stringify({ url: page.url(), errors }));
+  throw error;
 } finally {
   await browser.close();
 }
