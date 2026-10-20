@@ -6,6 +6,7 @@ import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import ProfileBase from './base-setting.vue';
+import BodyProfile from './body-profile/index.vue';
 import CbtiSetting from './cbti-setting.vue';
 import HomeCardSetting from './home-card-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
@@ -13,7 +14,6 @@ import MenuDisplaySetting from './menu-display-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
 import SecondaryPasswordSetting from './secondary-password-setting.vue';
-import SystemSetting from './system-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const route = useRoute();
@@ -24,6 +24,10 @@ const tabs = ref([
   {
     label: '基本设置',
     value: 'basic',
+  },
+  {
+    label: '身体档案',
+    value: 'body-profile',
   },
   {
     label: '账号绑定',
@@ -56,10 +60,6 @@ const tabs = ref([
   {
     label: '通知设置',
     value: 'notice',
-  },
-  {
-    label: '系统设置',
-    value: 'system',
   },
 ]);
 const requestedTab = route.query.tab;
@@ -97,6 +97,7 @@ watch(
   >
     <template #content>
       <ProfileBase v-if="tabsValue === 'basic'" />
+      <BodyProfile v-if="tabsValue === 'body-profile'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />
       <SecondaryPasswordSetting v-if="tabsValue === 'secondary-password'" />
@@ -105,7 +106,6 @@ watch(
       <MbtiSetting v-if="tabsValue === 'mbti'" />
       <CbtiSetting v-if="tabsValue === 'cbti'" />
       <ProfileNotificationSetting v-if="tabsValue === 'notice'" />
-      <SystemSetting v-if="tabsValue === 'system'" />
     </template>
   </Profile>
 </template>

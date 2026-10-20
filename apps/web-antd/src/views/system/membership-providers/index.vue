@@ -52,7 +52,6 @@ const editingId = ref<string>();
 const formRef = ref<FormInstance>();
 const emptyForm = (): MembershipProviderRequest => ({
   name: '',
-  code: '',
   category: 'other',
   iconKey: null,
   sortOrder: 0,
@@ -67,13 +66,6 @@ const selectedIcon = computed({
 });
 const rules: Record<string, Rule[]> = {
   name: [{ required: true, whitespace: true, message: '请输入平台名称' }],
-  code: [
-    { required: true, message: '请输入平台编码' },
-    {
-      pattern: /^[a-z][a-z0-9_]{0,49}$/,
-      message: '使用小写字母开头，可包含数字和下划线',
-    },
-  ],
   category: [{ required: true, message: '请选择分类' }],
   sortOrder: [{ required: true, message: '请输入排序' }],
 };
@@ -287,13 +279,6 @@ async function remove(provider: MembershipProviderVO) {
         <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
           <FormItem label="平台名称" name="name">
             <Input v-model:value="form.name" :maxlength="100" />
-          </FormItem>
-          <FormItem label="平台编码" name="code">
-            <Input
-              v-model:value="form.code"
-              placeholder="例如 tencent_video"
-              :maxlength="50"
-            />
           </FormItem>
           <FormItem label="分类" name="category">
             <Select v-model:value="form.category" :options="CATEGORIES" />

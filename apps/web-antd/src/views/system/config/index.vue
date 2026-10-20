@@ -11,7 +11,6 @@ import {
   Input as AInput,
   Select as ASelect,
   Switch as ASwitch,
-  Tag as ATag,
   Textarea as ATextarea,
   message,
 } from 'ant-design-vue';
@@ -119,19 +118,12 @@ async function saveWechat(value: string) {
     savingKey.value = null;
   }
 }
-
-const getUserLabel = (userId: string) => {
-  const user = adminUsers.value.find((u) => u.id === userId);
-  if (!user) return `用户${userId}`;
-  return user.nickname || user.username;
-};
 </script>
 
 <template>
   <div class="min-h-full bg-background/50 p-4 lg:p-6">
     <div class="mb-6">
       <h2 class="text-xl font-bold text-card-foreground">系统配置</h2>
-      <p class="text-muted-foreground">管理系统级配置项</p>
     </div>
 
     <ContentLoading v-if="loading" min-height="calc(100vh - 180px)" />
@@ -155,11 +147,10 @@ const getUserLabel = (userId: string) => {
           <template #title>
             <div class="flex items-center gap-2">
               <span class="font-medium text-card-foreground">{{
-                cfg.description || cfg.configKey
+                cfg.configKey === 'feedback.notify_admin_ids'
+                  ? '反馈通知管理员'
+                  : cfg.description || cfg.configKey
               }}</span>
-              <ATag v-if="cfg.configKey !== 'wechat.mini'" class="m-0 text-xs">
-                {{ cfg.configType }}
-              </ATag>
             </div>
           </template>
           <template #extra>
@@ -167,13 +158,6 @@ const getUserLabel = (userId: string) => {
               更新于 {{ cfg.updateTime || '-' }}
             </span>
           </template>
-
-          <div
-            v-if="cfg.configKey !== 'wechat.mini'"
-            class="mb-2 text-xs text-muted-foreground"
-          >
-            Key: <code>{{ cfg.configKey }}</code>
-          </div>
 
           <WechatConfigEditor
             v-if="cfg.configKey === 'wechat.mini'"
@@ -188,7 +172,11 @@ const getUserLabel = (userId: string) => {
               cfg.configKey === 'feedback.notify_admin_ids'
             "
           >
+            <label :for="cfg.configKey" class="sr-only">
+              接收反馈通知的管理员
+            </label>
             <ASelect
+              :id="cfg.configKey"
               v-model:value="editValues[cfg.configKey]"
               mode="multiple"
               placeholder="选择接收通知的管理员"
@@ -200,22 +188,9 @@ const getUserLabel = (userId: string) => {
                 :key="user.id"
                 :value="user.id"
               >
-                {{ user.nickname || user.username }} ({{ user.username }})
+                {{ user.nickname || user.username }}
               </ASelect.Option>
             </ASelect>
-            <div
-              v-if="editValues[cfg.configKey]?.length > 0"
-              class="mt-2 flex flex-wrap gap-1"
-            >
-              <ATag
-                v-for="uid in editValues[cfg.configKey]"
-                :key="uid"
-                color="blue"
-                class="m-0"
-              >
-                {{ getUserLabel(uid) }}
-              </ATag>
-            </div>
             <div class="mt-1 text-xs text-muted-foreground">
               当用户提交反馈或追加评论时，将通知以上管理员
             </div>

@@ -8,6 +8,34 @@ import {
 } from './payload';
 
 describe('最小请求契约', () => {
+  it('时迹明细保留已有字符串 ID，新增项无 ID，剔除归属和审计字段', () => {
+    const exercises = [
+      {
+        id: '9223372036854775001',
+        exerciseTypeId: '9223372036854775002',
+        exerciseCount: 0,
+        description: null,
+        userId: 'other',
+        timeId: 'other-time',
+        createTime: '2000-01-01',
+      },
+      { exerciseTypeId: '77', exerciseCount: 20 },
+    ];
+    const before = structuredClone(exercises);
+    expect(pickPayload('TimeRecordSaveReq', { exercises })).toEqual({
+      exercises: [
+        {
+          id: '9223372036854775001',
+          exerciseTypeId: '9223372036854775002',
+          exerciseCount: 0,
+          description: null,
+        },
+        { exerciseTypeId: '77', exerciseCount: 20 },
+      ],
+    });
+    expect(exercises).toEqual(before);
+  });
+
   it('会员平台关联保留字符串 ID 和解除语义，去除只读平台信息', () => {
     const id = '9007199254740993';
     for (const providerId of [id, null]) {
@@ -155,7 +183,7 @@ describe('最小请求契约', () => {
       }),
     ).toEqual({
       date: '2026-10-01',
-      exercises: [{ exerciseTypeId: '4', exerciseCount: 0 }],
+      exercises: [{ id: '3', exerciseTypeId: '4', exerciseCount: 0 }],
     });
     expect(
       pickPayload('ThoughtUpdateReq', {

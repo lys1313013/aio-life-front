@@ -173,7 +173,7 @@ try {
       await input.fill('');
       await save(dialog);
       assert.equal(requests.at(-1).balance, null);
-      assert.match(await debit().innerText(), /余额：未记录/);
+      assert.equal(await debit().locator('.card-amount').count(), 0);
       await editor();
       await input.fill('0');
       failSave = true;
@@ -203,6 +203,10 @@ try {
   assert.equal(requests.at(-1).balance, null);
   assert.equal(requests.at(-1).creditLimit, '50000.5');
   assert.match(await debit().innerText(), /信用额度：50,000.5 元/);
+  await editor();
+  await credit.fill('');
+  await save(dialog);
+  assert.equal(await debit().locator('.card-amount').count(), 0);
   assert.deepEqual(errors, []);
   console.log(
     'Web bank card balance: six viewport/theme checks, precision, zero, clear, failure retry and type switch passed.',

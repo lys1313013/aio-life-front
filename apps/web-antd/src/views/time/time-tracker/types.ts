@@ -28,8 +28,10 @@ export interface TimeSlot {
 }
 
 export interface ExerciseDetail {
+  id?: string;
   exerciseTypeId: string;
   exerciseCount?: number;
+  description?: string;
 }
 
 // 时间段分类

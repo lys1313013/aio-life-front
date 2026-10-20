@@ -5,7 +5,6 @@ import { requestClient } from '#/api/request';
 
 export interface MembershipProviderRequest {
   name: string;
-  code: string;
   category: string;
   iconKey?: null | string;
   sortOrder: number;
@@ -14,6 +13,7 @@ export interface MembershipProviderRequest {
 
 export interface MembershipProviderVO extends MembershipProviderRequest {
   id: string;
+  code: string;
 }
 
 export interface MembershipProviderIcon {
@@ -45,7 +45,6 @@ function providerPayload(
 ): MembershipProviderRequest {
   return pickPayload('MembershipProviderReq', {
     name: data.name.trim(),
-    code: data.code.trim(),
     category: data.category,
     iconKey: data.iconKey || null,
     sortOrder: data.sortOrder,

@@ -309,25 +309,25 @@ defineExpose({
         <AFormItem label="状态" name="status" class="flex-1">
           <ASelect v-model:value="formState.status" placeholder="请选择">
             <ASelectOption :value="PROGRESS_STATUS.NOT_STARTED">
-              <span class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-gray-400"></span>
                 待开始
               </span>
             </ASelectOption>
             <ASelectOption :value="PROGRESS_STATUS.IN_PROGRESS">
-              <span class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-blue-500"></span>
                 进行中
               </span>
             </ASelectOption>
             <ASelectOption :value="PROGRESS_STATUS.COMPLETED">
-              <span class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-green-500"></span>
                 已完成
               </span>
             </ASelectOption>
             <ASelectOption :value="PROGRESS_STATUS.ON_HOLD">
-              <span class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-2">
                 <span class="h-2 w-2 rounded-full bg-orange-500"></span>
                 搁置
               </span>

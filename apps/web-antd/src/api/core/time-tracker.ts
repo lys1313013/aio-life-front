@@ -5,8 +5,10 @@ import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 
 export interface ExerciseDetail {
+  id?: string;
   exerciseTypeId: string;
   exerciseCount?: number;
+  description?: string;
 }
 
 /**

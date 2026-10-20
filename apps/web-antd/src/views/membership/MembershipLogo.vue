@@ -33,8 +33,8 @@ watch(src, () => {
 
 <template>
   <span
-    class="inline-flex h-9 w-9 shrink-0 items-center justify-center text-muted-foreground"
-    :class="{ 'rounded-lg bg-secondary': !iconKey || failed }"
+    class="membership-logo inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-muted-foreground"
+    :class="{ 'bg-secondary': !iconKey || failed }"
     role="img"
     :aria-label="name || '会员平台'"
   >
@@ -43,7 +43,6 @@ watch(src, () => {
       :src="src"
       alt=""
       class="h-full w-full object-contain"
-      :class="{ 'membership-app-icon': iconKey === 'netease_music' }"
       loading="lazy"
       @error="failed = true"
     />
@@ -52,7 +51,7 @@ watch(src, () => {
 </template>
 
 <style scoped>
-.membership-app-icon {
+.membership-logo {
   border-radius: 22%;
 }
 </style>

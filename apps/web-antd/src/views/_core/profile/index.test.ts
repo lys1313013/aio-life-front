@@ -22,6 +22,9 @@ vi.mock('@vben/common-ui', () => ({
 vi.mock('./base-setting.vue', () => ({
   default: { template: '<div>基本设置</div>' },
 }));
+vi.mock('./body-profile/index.vue', () => ({
+  default: { template: '<div>当前身体档案</div>' },
+}));
 vi.mock('./cbti-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./mbti-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./home-card-setting.vue', () => ({
@@ -37,7 +40,6 @@ vi.mock('./password-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./secondary-password-setting.vue', () => ({
   default: { template: '<div />' },
 }));
-vi.mock('./system-setting.vue', () => ({ default: { template: '<div />' } }));
 vi.mock('./user-bind.vue', () => ({ default: { template: '<div />' } }));
 
 enableAutoUnmount(afterEach);
@@ -47,6 +49,11 @@ afterEach(() => {
 });
 
 describe('个人中心', () => {
+  it('身体档案标签可直接打开', () => {
+    route.query.tab = 'body-profile';
+    const wrapper = mount(ProfilePage);
+    expect(wrapper.text()).toBe('当前身体档案');
+  });
   it('旧大模型配置链接回到基本设置', () => {
     route.query.tab = 'llm';
     const replace = vi.spyOn(window.history, 'replaceState');

@@ -561,7 +561,7 @@ async function submit() {
   position: sticky;
   top: 0;
 }
-.editor-preview :deep(.card-face) {
+.editor-preview :deep(.card-face:not(.has-image)) {
   padding: 18px;
 }
 .editor-preview :deep(.face-bank) {

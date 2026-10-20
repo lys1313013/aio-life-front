@@ -8,6 +8,7 @@ export const CATEGORIES = [
   { value: 'shopping', label: '购物', icon: 'mdi:shopping-outline' },
   { value: 'lifestyle', label: '生活服务', icon: 'lucide:coffee' },
   { value: 'cloud', label: '云盘', icon: 'mdi:cloud-outline' },
+  { value: 'reading', label: '阅读', icon: 'mdi:book-open-outline' },
   { value: 'study', label: '学习', icon: 'mdi:book-open-outline' },
   { value: 'game', label: '游戏', icon: 'mdi:gamepad-variant-outline' },
   { value: 'other', label: '其他', icon: 'mdi:shape-outline' },

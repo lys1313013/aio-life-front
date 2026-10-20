@@ -511,7 +511,13 @@ onBeforeUnmount(() => {
               </div>
             </template>
           </CardFace>
-          <div class="card-info">
+          <div
+            v-if="
+              (card.cardType === 'credit' ? card.creditLimit : card.balance) !=
+              null
+            "
+            class="card-info"
+          >
             <div class="card-amount">
               {{ card.cardType === 'credit' ? '信用额度' : '余额' }}：{{
                 money(
