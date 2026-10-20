@@ -3,6 +3,7 @@ import type {
   FeishuChannelConfig,
   FeishuRecipient,
   NotificationPreference,
+  WechatSubscriptionConfig,
 } from '#/api/core/notification';
 
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -28,6 +29,7 @@ import {
   getFeishuChannelConfigApi,
   getFeishuRecipientsApi,
   getNotificationPreferencesApi,
+  getWechatSubscriptionConfigApi,
   saveFeishuChannelConfigApi,
   testFeishuChannelConfigApi,
   updateNotificationPreferencesApi,
@@ -38,6 +40,7 @@ const CHANNEL_LABELS: Record<string, string> = {
   STATION: '站内',
   EMAIL: '邮件',
   FEISHU: '飞书',
+  WECHAT_MINI: '微信',
 };
 
 const loading = ref(false);
@@ -58,6 +61,12 @@ const config = ref<FeishuChannelConfig>({
 const recipients = ref<FeishuRecipient[]>([]);
 const recipientWarning = ref('');
 const preferences = ref<NotificationPreference[]>([]);
+const wechat = ref<WechatSubscriptionConfig>({
+  enabled: false,
+  bound: false,
+  bizType: 'LEETCODE_REMINDER',
+  templateId: null,
+});
 const formState = reactive({
   appId: '',
   appSecret: '',
@@ -126,12 +135,14 @@ async function openFeishuModal() {
 async function fetchData() {
   loading.value = true;
   try {
-    const [channelConfig, preferenceList] = await Promise.all([
+    const [channelConfig, preferenceList, wechatConfig] = await Promise.all([
       getFeishuChannelConfigApi(),
       getNotificationPreferencesApi(),
+      getWechatSubscriptionConfigApi(),
     ]);
     config.value = channelConfig;
     preferences.value = preferenceList;
+    wechat.value = wechatConfig;
     formState.enabled = channelConfig.enabled;
     formState.openId = channelConfig.receiverOpenId || '';
     resetCredentialForm();
@@ -400,6 +411,17 @@ onMounted(fetchData);
         </Form>
       </Modal>
 
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="font-medium">微信通知</span>
+        <span class="text-muted-foreground">{{
+          !wechat.enabled
+            ? '暂未开通订阅消息'
+            : wechat.bound
+              ? '请在微信小程序内订阅'
+              : '请先通过微信登录绑定当前账号'
+        }}</span>
+      </div>
+
       <Card title="通知类型" :bordered="false">
         <div class="divide-y divide-gray-100 dark:divide-gray-700">
           <div
@@ -419,7 +441,16 @@ onMounted(fetchData);
                 <span class="channel-label">{{
                   CHANNEL_LABELS[ch.channel] || ch.channel
                 }}</span>
-                <Switch v-model:checked="ch.enabled" size="small" />
+                <Switch
+                  v-model:checked="ch.enabled"
+                  :aria-label="item.description + CHANNEL_LABELS[ch.channel]"
+                  :disabled="
+                    preferenceSaving ||
+                    (ch.channel === 'WECHAT_MINI' &&
+                      (!wechat.enabled || !wechat.bound))
+                  "
+                  size="small"
+                />
               </div>
             </div>
           </div>

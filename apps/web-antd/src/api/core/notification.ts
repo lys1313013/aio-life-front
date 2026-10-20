@@ -35,6 +35,19 @@ export interface ChannelState {
   enabled: boolean;
 }
 
+export interface WechatSubscriptionConfig {
+  enabled: boolean;
+  bound: boolean;
+  bizType: string;
+  templateId: null | string;
+}
+
+export async function getWechatSubscriptionConfigApi() {
+  return await requestClient.get<WechatSubscriptionConfig>(
+    '/notification/channels/wechat-mini',
+  );
+}
+
 export interface NotificationPreference {
   bizType: string;
   description: string;
