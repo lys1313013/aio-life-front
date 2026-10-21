@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { Task, TaskColumn } from '#/api/core/todo';
 
-import { nextTick, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
@@ -44,7 +44,7 @@ import {
 } from '#/api/core/todo';
 import { AppModal as AModal } from '#/components/app-modal';
 
-import TaskEditDrawer from './task-edit-drawer.vue';
+import TaskEditModal from './task-edit-modal.vue';
 
 interface Column extends TaskColumn {
   tasks: Task[];
@@ -185,30 +185,24 @@ const onColumnDragEnd = async () => {
 };
 
 // --- 任务编辑抽屉 ---
-const drawerOpen = ref(false);
+const editorOpen = ref(false);
 const selectedTask = ref<null | Task>(null);
 
-const openEditDrawer = (task: Task) => {
+const openTaskEditor = (task: Task) => {
   selectedTask.value = task;
-  drawerOpen.value = true;
+  editorOpen.value = true;
 };
 
-const refreshTask = async (taskId: string) => {
-  try {
-    const res = await getTaskList({ taskId });
-    if (res.items) {
-      const task = res.items.find((t) => t.id === taskId);
-      if (task) {
-        columns.value.forEach((col) => {
-          const idx = col.tasks.findIndex((t) => t.id === taskId);
-          if (idx !== -1) {
-            col.tasks[idx] = task;
-          }
-        });
-      }
-    }
-  } catch (error) {
-    console.error('刷新任务失败', error);
+const selectedColumnTitle = computed(
+  () =>
+    columns.value.find((column) => column.id === selectedTask.value?.columnId)
+      ?.title,
+);
+
+const updateTaskLocally = (updated: Partial<Task> & { id: string }) => {
+  for (const column of columns.value) {
+    const task = column.tasks.find((item) => item.id === updated.id);
+    if (task) Object.assign(task, updated);
   }
 };
 
@@ -381,7 +375,7 @@ const vFocus = {
               @end="onDragEnd"
             >
               <template #item="{ element }">
-                <div class="kanban-task" @click="openEditDrawer(element)">
+                <div class="kanban-task" @click="openTaskEditor(element)">
                   <div class="task-header">
                     <span class="task-title">{{ element.content }}</span>
                     <APopconfirm
@@ -501,10 +495,11 @@ const vFocus = {
       </draggable>
     </template>
 
-    <TaskEditDrawer
-      v-model:open="drawerOpen"
+    <TaskEditModal
+      v-model:open="editorOpen"
       :task="selectedTask"
-      @refresh="refreshTask"
+      :column-title="selectedColumnTitle"
+      @updated="updateTaskLocally"
     />
 
     <!-- 编辑列弹窗 -->
