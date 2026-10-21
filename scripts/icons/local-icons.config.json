@@ -98,6 +98,14 @@
     "solar:projector-line-duotone",
     "solar:remote-controller-2-line-duotone",
     "solar:plug-circle-line-duotone",
-    "solar:battery-charge-minimalistic-line-duotone"
+    "solar:battery-charge-minimalistic-line-duotone",
+    "mdi:close",
+    "mdi:map-marker-path",
+    "mdi:map-outline",
+    "mdi:map-search-outline",
+    "mdi:minus",
+    "mdi:pencil-outline",
+    "mdi:plus",
+    "mdi:reload"
   ]
 }

@@ -1,0 +1,65 @@
+/* 点的视觉尺寸与透明触控区域分开；手机普通点 8px，选中 10px。 */
+.footprint-map-hit {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.footprint-map-hit:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+}
+
+.footprint-map-dot {
+  box-sizing: border-box;
+  display: grid;
+  width: 10px;
+  height: 10px;
+  color: hsl(var(--primary-foreground));
+  place-items: center;
+  background: hsl(var(--primary));
+  border: 1px solid hsl(var(--background));
+  border-radius: 50%;
+  box-shadow: 0 1px 3px #0003;
+}
+
+.footprint-map-dot[data-active='true'] {
+  width: 12px;
+  height: 12px;
+}
+
+.footprint-map-dot[data-small='true'] {
+  width: 8px;
+  height: 8px;
+}
+
+.footprint-map-dot[data-small='true'][data-active='true'] {
+  width: 10px;
+  height: 10px;
+}
+
+.footprint-map-cluster {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+
+.footprint-map-cluster[data-active='true'] {
+  width: 22px;
+  height: 22px;
+}
+
+.footprint-map-cluster[data-small='true'],
+.footprint-map-cluster[data-small='true'][data-active='true'] {
+  width: 18px;
+  height: 18px;
+}

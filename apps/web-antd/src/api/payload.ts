@@ -401,6 +401,19 @@ export interface IncomeUpdateReq {
   tax?: null | number | string;
 }
 
+export interface LifeFootprintSaveReq {
+  startDate?: null | string;
+  endDate?: null | string;
+  placeName?: null | string;
+  address?: null | string;
+  city?: null | string;
+  longitude?: null | number | string;
+  latitude?: null | number | string;
+  coordinateSystem?: null | string;
+  providerUid?: null | string;
+  note?: null | string;
+}
+
 export interface LoginReq {
   username?: null | string;
   password?: null | string;
@@ -1187,6 +1200,7 @@ export interface ApiRequests {
   HonorRecordUpdateReq: HonorRecordUpdateReq;
   IncomeCreateReq: IncomeCreateReq;
   IncomeUpdateReq: IncomeUpdateReq;
+  LifeFootprintSaveReq: LifeFootprintSaveReq;
   LoginReq: LoginReq;
   MbtiResultSaveReq: MbtiResultSaveReq;
   MembershipCreateReq: MembershipCreateReq;
@@ -1643,6 +1657,18 @@ const fields: Record<string, Record<string, null | string>> = {
     remark: null,
     incTypeId: null,
     tax: null,
+  },
+  LifeFootprintSaveReq: {
+    startDate: null,
+    endDate: null,
+    placeName: null,
+    address: null,
+    city: null,
+    longitude: null,
+    latitude: null,
+    coordinateSystem: null,
+    providerUid: null,
+    note: null,
   },
   LoginReq: {
     username: null,
@@ -2442,6 +2468,10 @@ const queryFields: Record<string, string[]> = {
   ],
   '/expense/statisticsByYear': [],
   '/expense/statisticsByMonth': [],
+  '/life-footprints/map/config': [],
+  '/life-footprints/map/search': ['keyword', 'region'],
+  '/life-footprints/map/geocode': ['address'],
+  '/life-footprints/map/reverse': ['latitude', 'longitude'],
   '/github/recent-commits': ['page', 'perPage'],
   '/goals': ['isPinned', 'keyword', 'status', 'type'],
   '/honorCategories': [],
@@ -2457,6 +2487,8 @@ const queryFields: Record<string, string[]> = {
   ],
   '/income/statisticsByYear': [],
   '/income/statisticsByMonth': [],
+  '/life-footprints': [],
+  '/life-footprints/{id}': [],
   '/mbti/test/{testId}': [],
   '/mbti/results': [],
   '/mbti/result/{id}': [],
@@ -2860,6 +2892,18 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/income/{incomeId}',
     model: 'IncomeUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/life-footprints',
+    model: 'LifeFootprintSaveReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/life-footprints/{id}',
+    model: 'LifeFootprintSaveReq',
     list: false,
   },
   {
