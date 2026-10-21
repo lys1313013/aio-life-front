@@ -2611,6 +2611,7 @@ const queryFields: Record<string, string[]> = {
     'startDate',
     'username',
   ],
+  '/system/logs/operation/{id}': [],
   '/system/logs/{type:operation|access}/export': [
     'endDate',
     'page',
