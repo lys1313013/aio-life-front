@@ -471,7 +471,7 @@ const handleSave = async () => {
                 v-if="row.icon"
                 :is="getCategoryIcon(row.icon)"
                 class="size-5"
-                :style="{ color: row.color }"
+                :style="{ color: row.color || '#1890ff' }"
               />
               <span v-else class="text-xs text-gray-400">无</span>
             </div>
