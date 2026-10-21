@@ -21,13 +21,19 @@ export interface ActivityLog {
   nickname: string;
   success: boolean;
   username: string;
+  userId?: null | string;
+  requestPath?: null | string;
+  requestMethod: null | string;
+  requestTime: null | string;
+  durationMs: null | number;
+  serverIp: null | string;
 }
 
 export async function queryActivityLogs(
   type: ActivityLogType,
   params: ActivityLogQuery,
 ) {
-  return requestClient.get<{ items: ActivityLog[]; total: number }>(
+  return requestClient.get<{ items: ActivityLog[]; total: null | number }>(
     `/system/logs/${type}`,
     { params },
   );
@@ -52,7 +58,17 @@ export async function exportActivityLogs(
     } catch {
       // 非 JSON 响应使用统一提示。
     }
-    throw new Error(reason);
+    const error = new Error(reason);
+    error.name = 'ActivityLogExportError';
+    throw error;
   }
   return blob;
+}
+
+export interface ActivityLogDetail extends ActivityLog {
+  requestParams: null | Record<string, unknown>;
+}
+
+export function readOperationLog(id: string) {
+  return requestClient.get<ActivityLogDetail>(`/system/logs/operation/${id}`);
 }
