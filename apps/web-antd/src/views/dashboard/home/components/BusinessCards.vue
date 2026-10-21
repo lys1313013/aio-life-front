@@ -330,10 +330,11 @@ const membershipRecord = computed(
       "
       @visibility="cardVisibility[card.key] = $event"
       :title="card.title"
-      :skeleton-count="card.key === 'membership' ? 4 : 1"
-      :skeleton-row-height="
-        card.key === 'goal' ? 72 : card.key === 'anniversary' ? 56 : 64
+      :skeleton-count="
+        card.key === 'membership' ? 4 : card.key === 'goal' ? 3 : 1
       "
+      :skeleton-row-height="card.key === 'anniversary' ? 56 : 64"
+      :goal="card.key === 'goal'"
       :icon="card.icon"
       :media="card.key === 'reading' || card.key === 'movie'"
       :membership="card.key === 'membership'"

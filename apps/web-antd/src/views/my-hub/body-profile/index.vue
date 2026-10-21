@@ -17,7 +17,6 @@ import {
   Spin,
   Tooltip,
 } from 'ant-design-vue';
-import dayjs from 'dayjs';
 
 import { getBodyProfile, saveBodyProfile } from '#/api/core/body-profile';
 import { AppModal } from '#/components/app-modal';
@@ -181,7 +180,6 @@ function metricLabel(key: MeasurementKey) {
 <template>
   <section class="body-profile text-foreground" aria-label="身体数据">
     <header class="profile-heading">
-      <h2>身体数据</h2>
       <Button
         type="text"
         aria-label="编辑身体数据"
@@ -303,9 +301,6 @@ function metricLabel(key: MeasurementKey) {
             </button>
           </div>
         </details>
-        <footer v-if="profile.updateTime">
-          {{ dayjs(profile.updateTime).format('更新于 YYYY.MM.DD HH:mm') }}
-        </footer>
       </div>
     </Spin>
     <AppModal
@@ -460,15 +455,9 @@ function metricLabel(key: MeasurementKey) {
 
 .profile-heading {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   margin-bottom: 22px;
-}
-
-h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 500;
 }
 
 .profile-data {
@@ -618,13 +607,6 @@ summary {
   text-align: left;
   overflow-wrap: anywhere;
   min-height: 44px;
-}
-
-footer {
-  margin-top: 18px;
-  text-align: right;
-  color: hsl(var(--muted-foreground));
-  font-size: 11px;
 }
 
 .editor-grid {

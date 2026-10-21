@@ -34,6 +34,7 @@ import ReadingShelves from './ReadingShelves.vue';
 const props = defineProps<{
   dragOrder?: boolean;
   fetchPage: (page: number) => Promise<BusinessCardPage>;
+  goal?: boolean;
   icon: Component | string;
   iconColor?: string;
   locked?: boolean;
@@ -423,6 +424,7 @@ defineExpose({ reload: () => load(true) });
             type="button"
             class="flex min-h-14 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             :class="{
+              'goal-row': goal,
               'membership-row': item.membership,
               'media-row': item.media,
             }"
@@ -497,7 +499,7 @@ defineExpose({ reload: () => load(true) });
             <span class="min-w-0 flex-1">
               <span
                 class="line-clamp-2 break-words text-sm font-medium"
-                :class="item.media ? 'leading-4' : 'leading-5'"
+                :class="item.media || goal ? 'leading-4' : 'leading-5'"
                 >{{ item.title }}</span
               >
               <span
@@ -651,6 +653,12 @@ defineExpose({ reload: () => load(true) });
   .business-list-card {
     --business-card-bottom-padding: 12px;
   }
+}
+
+.goal-row {
+  /* 56px 进度环与上下各 4px 留白，平板 250px 卡片可完整展示三行。 */
+  min-height: 64px;
+  padding-block: 4px;
 }
 
 .membership-row {

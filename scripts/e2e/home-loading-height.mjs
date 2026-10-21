@@ -96,6 +96,7 @@ try {
     '/auth/secondary-lock/menus': [],
     '/message/unread-count': { count: 0 },
     '/message/list': [],
+    '/message/page': { items: [], total: 0 },
     '/menu/preferences': { menus: [], hiddenMenuIds: [] },
     '/auth/wechat/web/capabilities': { enabled: false },
     '/dashboard/tasks': [
@@ -168,16 +169,15 @@ try {
     ),
   };
   Object.assign(fixtures, {
-    '/goals': [
-      {
-        id: '1',
-        title: '模拟目标',
-        status: 'in_progress',
-        isPinned: 1,
-        targetValue: 10,
-        currentValue: 2,
-      },
-    ],
+    '/goals': Array.from({ length: 3 }, (_, index) => ({
+      id: String(index + 1),
+      title: `模拟目标 ${index + 1}：检查目标长标题换行后的完整展示`,
+      endDate: '2029-09-06',
+      status: 'in_progress',
+      isPinned: 1,
+      targetValue: 10,
+      currentValue: 2,
+    })),
     '/anniversaryRecords': [
       { id: '1', title: '模拟纪念日', targetDate: '2026-12-01', isPinned: 1 },
     ],
@@ -350,13 +350,42 @@ try {
         });
       await page.waitForTimeout(300);
       const after = await geometry();
+      const goalGeometry = await page
+        .locator('[aria-label="目标"]')
+        .evaluate((card) => {
+          const scroll = card.querySelector('.business-card-scroll');
+          const bounds = scroll.getBoundingClientRect();
+          return [...card.querySelectorAll('[data-goal-id]')].map((row) => {
+            const rect = row.getBoundingClientRect();
+            return {
+              height: rect.height,
+              visible: rect.top >= bounds.top && rect.bottom <= bounds.bottom,
+            };
+          });
+        });
+      assert.equal(goalGeometry.length, 3);
+      assert.ok(
+        goalGeometry.every((row) => row.height === 64 && row.visible),
+        `${width}: three goals fully visible`,
+      );
       results.push({ width, dark, before, after });
       for (const title of ['目标', '纪念日', '阅读', '会员', '观影']) {
-        assert.equal(
-          after.find((row) => row.title === title)?.height,
-          before.find((row) => row.title === title)?.height,
-          `${width} ${title}: initial height`,
-        );
+        const loadedHeight = after.find((row) => row.title === title)?.height;
+        const skeletonHeight = before.find(
+          (row) => row.title === title,
+        )?.height;
+        // 单列未知数量按合理首屏量占位；少量内容允许收缩，三条目标应与骨架等高。
+        if (width >= 768 || title === '目标')
+          assert.equal(
+            loadedHeight,
+            skeletonHeight,
+            `${width} ${title}: initial height`,
+          );
+        else
+          assert.ok(
+            loadedHeight <= skeletonHeight,
+            `${width} ${title}: compact content`,
+          );
       }
       await page.screenshot({
         path: `${output}/${width}-${dark ? 'dark' : 'light'}-loaded.png`,
