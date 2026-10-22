@@ -1,0 +1,38 @@
+[
+  {
+    "app": "mobile",
+    "width": 390,
+    "theme": "light",
+    "cards": 6
+  },
+  {
+    "app": "mobile",
+    "width": 390,
+    "theme": "dark",
+    "cards": 6
+  },
+  {
+    "app": "mobile",
+    "width": 820,
+    "theme": "light",
+    "cards": 6
+  },
+  {
+    "app": "mobile",
+    "width": 820,
+    "theme": "dark",
+    "cards": 6
+  },
+  {
+    "app": "mobile",
+    "width": 1440,
+    "theme": "light",
+    "cards": 6
+  },
+  {
+    "app": "mobile",
+    "width": 1440,
+    "theme": "dark",
+    "cards": 6
+  }
+]

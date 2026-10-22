@@ -1,0 +1,4493 @@
+{
+  "results": [
+    {
+      "width": 390,
+      "dark": false,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 362
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 588
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 814
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1040
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1298
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "dark": true,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 362
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 588
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 814
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1040
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1298
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 270,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 104
+        },
+        {
+          "title": "收支概览",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 382
+        },
+        {
+          "title": "收入",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 608
+        },
+        {
+          "title": "支出",
+          "height": 218,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 834
+        },
+        {
+          "title": "视频续看",
+          "height": 278,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1060
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 374,
+          "scrollWidth": 372,
+          "top": 1346
+        }
+      ]
+    },
+    {
+      "width": 820,
+      "dark": false,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ]
+    },
+    {
+      "width": 820,
+      "dark": true,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "支出",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 378
+        },
+        {
+          "title": "视频续看",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        },
+        {
+          "title": "我的设备",
+          "height": 250,
+          "width": 358,
+          "scrollWidth": 356,
+          "top": 640
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "dark": false,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "dark": true,
+      "loading": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "imagesPending": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "loaded": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ],
+      "rangeLoaded": [
+        {
+          "title": "最近笔记",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收支概览",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "收入",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 116
+        },
+        {
+          "title": "支出",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 441.328125,
+          "scrollWidth": 439,
+          "top": 408
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 441.34375,
+          "scrollWidth": 439,
+          "top": 408
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "events": [
+    {
+      "path": "/auth/wechat/web/capabilities",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671456
+    },
+    {
+      "path": "/auth/login",
+      "method": "POST",
+      "query": {},
+      "at": 1792665671880
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671891
+    },
+    {
+      "path": "/auth/codes",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671891
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671894
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671894
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671895
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665671895
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672035
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665672036
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672048
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672049,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665672049,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665672050,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665672050,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672050,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672050,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672051
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672056
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672057
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672058
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672058
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665672074
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665672075
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665672076
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665672076
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665672077
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665672077
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665672078
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665672078
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665672079
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672796
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672802
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672803
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672804
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665672805
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673435
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665673436
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673451
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673452,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673452
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665673489
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665673491
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665673491
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665673492
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665673492
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665673492
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665673496
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665673497
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665673498
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673811
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673811
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673811
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665673811
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665674493,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665674708
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665674894,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665675096,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665675174,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676057
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676059
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676060
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676060
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676061
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676227
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665676227
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676239
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676239,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665676239,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665676239,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665676239,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676240,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676240,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676240
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665676250
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665676250
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665676251
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665676251
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665676252
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665676252
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665676254
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665676254
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665676260
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676820
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676820
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676821
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665676821
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665677373,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665677556
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665677722,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665677889,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665677955,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665678849
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665678851
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665678852
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665678852
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665678853
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679002
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665679002
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679011
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679011,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679012
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665679030
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665679030
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665679031
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665679031
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665679038
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665679039
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665679040
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665679040
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665679042
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679593
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679593
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679594
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665679594
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665680139,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665680321
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665680489,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665680656,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665680722,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682090
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682092
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682093
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682094
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682094
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682318
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665682318
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682331
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682331,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665682331,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665682331,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665682331,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682331,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682332,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682332
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665682693
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665682693
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665682694
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665682694
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665682695
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665682695
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665682696
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665682697
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665682697
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682793
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682793
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682794
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665682794
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665683375,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665683572
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665683739,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665683910,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665683995,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665684953
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665684956
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665684957
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665684957
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665684958
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685125
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665685125
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685135
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685136,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665685136,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665685136,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665685137,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685137,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685137,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685137
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665685150
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665685151
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665685151
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665685152
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665685152
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665685152
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665685154
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665685157
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665685166
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685637
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685637
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685638
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665685638
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665686206,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665686389
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665686555,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665686722,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665686789,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687640
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687642
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687643
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687643
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687643
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687785
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665687785
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687794
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687794,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665687794
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665687810
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665687811
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665687811
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665687811
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665687812
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665687812
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665687813
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665687814
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665687814
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665688387
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665688388
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665688389
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665688389
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665688956,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10000,
+        "expense": 2000,
+        "balance": 8000
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665689155
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665689322,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665689489,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "amount": 2000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665689555,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20000
+      }
+    },
+    {
+      "path": "/income",
+      "method": "POST",
+      "query": {},
+      "at": 1792665690900
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665690909,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10123.45,
+        "expense": 2000,
+        "balance": 8123.450000000001
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665690909,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 100123.45
+      }
+    },
+    {
+      "path": "/expense",
+      "method": "POST",
+      "query": {},
+      "at": 1792665692367
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "year"
+      },
+      "at": 1792665692375,
+      "response": {
+        "refreshInterval": 300,
+        "period": "year",
+        "label": "2026年",
+        "startDate": "2026-01-01",
+        "endDate": "2026-12-31",
+        "month": null,
+        "income": 10123.45,
+        "expense": 2088.5,
+        "balance": 8034.950000000001
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "all"
+      },
+      "at": 1792665692375,
+      "response": {
+        "refreshInterval": 300,
+        "period": "all",
+        "label": "全部",
+        "startDate": null,
+        "endDate": null,
+        "month": null,
+        "amount": 20088.5
+      }
+    }
+  ],
+  "writes": [
+    {
+      "path": "/income",
+      "method": "POST",
+      "body": {
+        "amt": "123.45",
+        "incDate": "2026-10-22",
+        "incTypeId": "9007199254740993"
+      }
+    },
+    {
+      "path": "/expense",
+      "method": "POST",
+      "body": {
+        "transactionAmt": "88.50",
+        "amt": "88.50",
+        "expTypeId": "9007199254740993",
+        "payTypeId": "9007199254740993",
+        "expTime": "2026-10-22 00:00:00"
+      }
+    }
+  ]
+}

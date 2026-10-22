@@ -1,0 +1,521 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "dark": true,
+      "loading": [
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 386.671875,
+          "bodyHeight": 234,
+          "rows": [
+            {
+              "height": 64,
+              "top": 0,
+              "bottom": 64,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 64,
+              "bottom": 128,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 128,
+              "bottom": 192,
+              "fullyVisible": true
+            }
+          ],
+          "thumbs": []
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 386.65625,
+          "bodyHeight": 234,
+          "rows": [
+            {
+              "height": 64,
+              "top": 0,
+              "bottom": 64,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 64,
+              "bottom": 128,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 128,
+              "bottom": 192,
+              "fullyVisible": true
+            }
+          ],
+          "thumbs": []
+        }
+      ],
+      "data": [
+        {
+          "title": "视频续看",
+          "height": 280,
+          "width": 386.671875,
+          "bodyHeight": 234,
+          "rows": [
+            {
+              "height": 64,
+              "top": 0,
+              "bottom": 64,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 64,
+              "bottom": 128,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 128,
+              "bottom": 192,
+              "fullyVisible": true
+            }
+          ],
+          "thumbs": [
+            {
+              "width": 72,
+              "height": 44
+            },
+            {
+              "width": 72,
+              "height": 44
+            },
+            {
+              "width": 72,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "title": "我的设备",
+          "height": 280,
+          "width": 386.65625,
+          "bodyHeight": 234,
+          "rows": [
+            {
+              "height": 64,
+              "top": 0,
+              "bottom": 64,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 64,
+              "bottom": 128,
+              "fullyVisible": true
+            },
+            {
+              "height": 64,
+              "top": 128,
+              "bottom": 192,
+              "fullyVisible": true
+            }
+          ],
+          "thumbs": [
+            {
+              "width": 44,
+              "height": 44
+            },
+            {
+              "width": 44,
+              "height": 44
+            },
+            {
+              "width": 44,
+              "height": 44
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "events": [
+    {
+      "path": "/auth/wechat/web/capabilities",
+      "method": "GET",
+      "query": {},
+      "at": 1792665916533
+    },
+    {
+      "path": "/auth/login",
+      "method": "POST",
+      "query": {},
+      "at": 1792665917065
+    },
+    {
+      "path": "/user/info",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917075
+    },
+    {
+      "path": "/auth/codes",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917075
+    },
+    {
+      "path": "/menu/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917078
+    },
+    {
+      "path": "/menu/preferences",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917078
+    },
+    {
+      "path": "/auth/secondary-lock/menus",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917079
+    },
+    {
+      "path": "/menu/visuals",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917079
+    },
+    {
+      "path": "/home/cards",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917241
+    },
+    {
+      "path": "/message/page",
+      "method": "GET",
+      "query": {
+        "page": "1",
+        "isRead": "false",
+        "pageSize": "20"
+      },
+      "at": 1792665917241
+    },
+    {
+      "path": "/timeTrackerCategory/all",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917256
+    },
+    {
+      "path": "/home/sections/memo",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/finance",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "income": 1000,
+        "expense": 200,
+        "balance": 800
+      }
+    },
+    {
+      "path": "/home/sections/income",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 1000
+      }
+    },
+    {
+      "path": "/home/sections/expense",
+      "method": "GET",
+      "query": {
+        "period": "month"
+      },
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "period": "month",
+        "label": "2026年10月",
+        "startDate": "2026-10-01",
+        "endDate": "2026-10-31",
+        "month": "2026-10",
+        "amount": 200
+      }
+    },
+    {
+      "path": "/home/sections/video",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/home/sections/device",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917257,
+      "response": {
+        "refreshInterval": 300,
+        "items": [
+          {
+            "id": "9007199254740993",
+            "title": "用于验证卡片长标题换行与封面缩略图占位的标题 测试内容 1",
+            "name": "测试设备 1 MacBook Pro 超长设备名称",
+            "hiddenContent": true,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741993",
+            "coverState": "READY",
+            "fileId": "9007199254741995"
+          },
+          {
+            "id": "9007199254740994",
+            "title": "测试内容 2",
+            "name": "测试设备 2 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": "9007199254741994",
+            "coverState": "FAILED",
+            "fileId": "9007199254741994"
+          },
+          {
+            "id": "9007199254740995",
+            "title": "测试内容 3",
+            "name": "测试设备 3 MacBook Pro 超长设备名称",
+            "hiddenContent": false,
+            "updateTime": "2026-10-22T14:30:00",
+            "currentEpisode": 3,
+            "episodes": 10,
+            "progressPercent": 25,
+            "watchedDuration": 200,
+            "duration": 800,
+            "resumeUrl": "https://www.bilibili.com/video/BV1xx?p=3&t=200",
+            "usageDays": 250,
+            "dailyCost": 11.25,
+            "coverFileId": null,
+            "coverState": "NONE",
+            "fileId": null
+          }
+        ]
+      }
+    },
+    {
+      "path": "/dashboard/tasks",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917257
+    },
+    {
+      "path": "/file/preview/9007199254741993",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917509
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917509
+    },
+    {
+      "path": "/file/preview/9007199254741995",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917510
+    },
+    {
+      "path": "/file/preview/9007199254741994",
+      "method": "GET",
+      "query": {},
+      "at": 1792665917510
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "income_type"
+      },
+      "at": 1792665918109
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "exp_type"
+      },
+      "at": 1792665918867
+    },
+    {
+      "path": "/userDictType/getByDictType",
+      "method": "GET",
+      "query": {
+        "dictType": "pay_type"
+      },
+      "at": 1792665918873
+    }
+  ]
+}
