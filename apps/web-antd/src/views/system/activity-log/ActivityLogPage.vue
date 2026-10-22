@@ -9,14 +9,19 @@ import type {
   ActivityLogType,
 } from '#/api/system/activity-log';
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+} from 'vue';
 
 import {
   CopyOutlined,
   DownloadOutlined,
   FileSearchOutlined,
-  ReloadOutlined,
   SearchOutlined,
 } from '@ant-design/icons-vue';
 import {
@@ -27,7 +32,6 @@ import {
   message,
   Spin,
   Table,
-  Tabs,
   Tag,
 } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -40,9 +44,7 @@ import {
 import { AppModal } from '#/components/app-modal';
 
 const props = defineProps<{ type: ActivityLogType }>();
-const router = useRouter();
 const RangePicker = DatePicker.RangePicker;
-const TabPane = Tabs.TabPane;
 const defaultDates = (): [Dayjs, Dayjs] => [
   dayjs().subtract(7, 'day'),
   dayjs(),
@@ -56,6 +58,9 @@ const rows = ref<ActivityLog[]>([]);
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref<number | undefined>(0);
+const filtersElement = ref<HTMLElement>();
+const resultsElement = ref<HTMLElement>();
+const tableBodyHeight = ref<number>();
 const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detailFailed = ref(false);
@@ -63,6 +68,7 @@ const detailId = ref('');
 const detail = ref<ActivityLogDetail>();
 let requestId = 0;
 let detailRequestId = 0;
+let filtersResizeObserver: ResizeObserver | undefined;
 // 翻页和导出始终使用已提交的筛选。
 let filters: ActivityLogQuery = readFilters();
 
@@ -121,6 +127,10 @@ const pagination = computed<TablePaginationConfig>(() => ({
   showTotal: (count) => `共 ${count} 条`,
   total: total.value,
 }));
+const tableScroll = computed(() => ({
+  x: props.type === 'operation' ? 1834 : 974,
+  ...(tableBodyHeight.value === undefined ? {} : { y: tableBodyHeight.value }),
+}));
 const parameterText = computed(() => {
   const params = detail.value?.requestParams;
   if (params === null || params === undefined) return '未采集';
@@ -161,12 +171,6 @@ function search() {
   filters = readFilters();
   page.value = 1;
   void load();
-}
-
-function reset() {
-  dates.value = defaultDates();
-  username.value = '';
-  search();
 }
 
 function changePage(value: TablePaginationConfig) {
@@ -230,13 +234,48 @@ async function exportAll() {
   }
 }
 
-function changeTab(key: number | string) {
-  void router.push(`/system/${key}-log`);
+function updateTableBodyHeight() {
+  if (window.innerWidth < 1024) {
+    tableBodyHeight.value = undefined;
+    return;
+  }
+
+  const header = resultsElement.value?.querySelector('.ant-table-thead');
+  const pagination = resultsElement.value?.querySelector(
+    '.ant-table-pagination',
+  );
+  if (!header) return;
+
+  // 为分页、表格与卡片的间距留出空间，长列表仅在表格内部滚动。
+  const paginationHeight = pagination?.getBoundingClientRect().height ?? 32;
+  tableBodyHeight.value = Math.max(
+    80,
+    Math.floor(
+      window.innerHeight -
+        header.getBoundingClientRect().bottom -
+        paginationHeight -
+        48,
+    ),
+  );
 }
-onMounted(load);
+
+onMounted(() => {
+  void load();
+  void nextTick(updateTableBodyHeight);
+  window.addEventListener('resize', updateTableBodyHeight);
+  if (typeof ResizeObserver !== 'undefined' && filtersElement.value) {
+    filtersResizeObserver = new ResizeObserver(updateTableBodyHeight);
+    filtersResizeObserver.observe(filtersElement.value);
+  }
+});
+onActivated(() => {
+  void nextTick(updateTableBodyHeight);
+});
 onBeforeUnmount(() => {
   ++requestId;
   ++detailRequestId;
+  filtersResizeObserver?.disconnect();
+  window.removeEventListener('resize', updateTableBodyHeight);
 });
 </script>
 
@@ -244,11 +283,11 @@ onBeforeUnmount(() => {
   <section
     class="activity-log-page m-3 min-w-0 rounded-lg bg-background p-3 md:m-4 md:p-4"
   >
-    <Tabs :active-key="type" @change="changeTab">
-      <TabPane key="operation" tab="操作日志" />
-      <TabPane key="access" tab="访问日志" />
-    </Tabs>
-    <form class="log-filters mb-4" @submit.prevent="search">
+    <form
+      ref="filtersElement"
+      class="log-filters mb-4"
+      @submit.prevent="search"
+    >
       <label class="date-filter flex min-w-0 items-center gap-2">
         <span class="shrink-0">{{
           type === 'operation' ? '请求日期' : '操作日期'
@@ -279,9 +318,6 @@ onBeforeUnmount(() => {
         >
           <template #icon><SearchOutlined /></template>
         </Button>
-        <Button aria-label="重置" :disabled="loading" @click="reset">
-          <template #icon><ReloadOutlined /></template>
-        </Button>
         <Button
           aria-label="导出全部"
           :loading="exporting"
@@ -292,7 +328,16 @@ onBeforeUnmount(() => {
         </Button>
       </div>
     </form>
-    <div class="log-results" :aria-busy="loading">
+    <div
+      ref="resultsElement"
+      class="log-results"
+      :aria-busy="loading"
+      :style="
+        tableBodyHeight === undefined
+          ? undefined
+          : { '--table-body-height': `${tableBodyHeight}px` }
+      "
+    >
       <Alert
         v-if="failed"
         class="log-error"
@@ -316,7 +361,7 @@ onBeforeUnmount(() => {
         :data-source="rows"
         :loading="loading"
         :pagination="pagination"
-        :scroll="{ x: type === 'operation' ? 1834 : 974 }"
+        :scroll="tableScroll"
         :locale="{ emptyText: failed ? '加载失败' : '暂无日志' }"
         row-key="id"
         size="small"
@@ -447,6 +492,16 @@ onBeforeUnmount(() => {
 <style scoped>
 .activity-log-page {
   container-type: inline-size;
+}
+
+@media (min-width: 1024px) {
+  .activity-log-page :deep(.ant-table-pagination.ant-pagination) {
+    margin-bottom: 0;
+  }
+
+  .log-results :deep(.ant-table-body) {
+    min-height: var(--table-body-height);
+  }
 }
 
 .log-filters {

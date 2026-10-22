@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+} from 'vue';
 
 import {
   Button,
@@ -24,6 +31,12 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const visible = ref(false);
 const confirmLoading = ref(false);
+const tableArea = ref<HTMLElement>();
+const tableBodyHeight = ref<number>();
+const tableScroll = computed(() => ({
+  x: 'max-content',
+  ...(tableBodyHeight.value === undefined ? {} : { y: tableBodyHeight.value }),
+}));
 
 const formState = ref({
   remark: '',
@@ -98,8 +111,36 @@ const handleDelete = async (id: string) => {
   }
 };
 
+function updateTableBodyHeight() {
+  if (window.innerWidth < 1024) {
+    tableBodyHeight.value = undefined;
+    return;
+  }
+
+  const header = tableArea.value?.querySelector('.ant-table-thead');
+  const pagination = tableArea.value?.querySelector('.ant-table-pagination');
+  if (!header) return;
+  tableBodyHeight.value = Math.max(
+    80,
+    Math.floor(
+      window.innerHeight -
+        header.getBoundingClientRect().bottom -
+        (pagination?.getBoundingClientRect().height ?? 32) -
+        48,
+    ),
+  );
+}
+
 onMounted(() => {
-  fetchList();
+  void fetchList();
+  void nextTick(updateTableBodyHeight);
+  window.addEventListener('resize', updateTableBodyHeight);
+});
+onActivated(() => {
+  void nextTick(updateTableBodyHeight);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateTableBodyHeight);
 });
 </script>
 
@@ -110,42 +151,52 @@ onMounted(() => {
       <Button type="primary" @click="visible = true">生成新 Key</Button>
     </div>
 
-    <Table
-      :columns="columns"
-      :data-source="dataSource"
-      :loading="loading"
-      :scroll="{ x: 'max-content' }"
-      row-key="id"
+    <div
+      ref="tableArea"
+      class="table-area"
+      :style="
+        tableBodyHeight === undefined
+          ? undefined
+          : { '--table-body-height': `${tableBodyHeight}px` }
+      "
     >
-      <template #bodyCell="{ column, record, text }">
-        <template v-if="column.key === 'apiKey'">
-          <code
-            class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
-          >
-            {{ record.apiKey.substring(0, 8) }}***{{
-              record.apiKey.substring(record.apiKey.length - 4)
-            }}
-          </code>
+      <Table
+        :columns="columns"
+        :data-source="dataSource"
+        :loading="loading"
+        :scroll="tableScroll"
+        row-key="id"
+      >
+        <template #bodyCell="{ column, record, text }">
+          <template v-if="column.key === 'apiKey'">
+            <code
+              class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground"
+            >
+              {{ record.apiKey.substring(0, 8) }}***{{
+                record.apiKey.substring(record.apiKey.length - 4)
+              }}
+            </code>
+          </template>
+          <template v-else-if="column.key === 'expiredAt'">
+            {{ text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '永不过期' }}
+          </template>
+          <template v-else-if="column.key === 'createTime'">
+            {{ dayjs(text).format('YYYY-MM-DD HH:mm:ss') }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <Popconfirm
+              title="确定要删除该 API Key 吗？"
+              @confirm="handleDelete(record.id)"
+            >
+              <Button type="link" danger size="small">删除</Button>
+            </Popconfirm>
+          </template>
+          <template v-else>
+            {{ text }}
+          </template>
         </template>
-        <template v-else-if="column.key === 'expiredAt'">
-          {{ text ? dayjs(text).format('YYYY-MM-DD HH:mm:ss') : '永不过期' }}
-        </template>
-        <template v-else-if="column.key === 'createTime'">
-          {{ dayjs(text).format('YYYY-MM-DD HH:mm:ss') }}
-        </template>
-        <template v-else-if="column.key === 'action'">
-          <Popconfirm
-            title="确定要删除该 API Key 吗？"
-            @confirm="handleDelete(record.id)"
-          >
-            <Button type="link" danger size="small">删除</Button>
-          </Popconfirm>
-        </template>
-        <template v-else>
-          {{ text }}
-        </template>
-      </template>
-    </Table>
+      </Table>
+    </div>
 
     <Modal
       v-model:open="visible"
@@ -175,5 +226,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* No styles needed, using Tailwind classes */
+@media (min-width: 1024px) {
+  .table-area :deep(.ant-table-body) {
+    min-height: var(--table-body-height);
+  }
+
+  .table-area :deep(.ant-table-pagination.ant-pagination) {
+    margin-bottom: 0;
+  }
+}
 </style>

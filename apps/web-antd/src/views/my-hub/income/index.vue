@@ -292,7 +292,7 @@ const tableReload = async () => {
       @year-change="handleYearChange"
     />
     <!-- 收入列表 -->
-    <Grid>
+    <Grid viewport-fill="section">
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增

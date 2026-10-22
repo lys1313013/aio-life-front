@@ -259,7 +259,7 @@ const getImageUrl = (fileId: number | string) => {
   <Page auto-content-height>
     <div class="flex h-full flex-col space-y-4">
       <div class="flex-1 overflow-hidden">
-        <Grid>
+        <Grid viewport-fill="page">
           <!-- 类型插槽 -->
           <template #typeSlot="{ row }">
             <Tag>{{ typeLabels[row.feedbackType] || row.feedbackType }}</Tag>

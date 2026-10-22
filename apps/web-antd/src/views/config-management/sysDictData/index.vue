@@ -321,7 +321,7 @@ function handleDelete(item: RowType) {
     <FormModalComponent @table-reload="tableReload" />
 
     <!-- 桌面端展示表格，移动端通过 CSS 隐藏表格部分以保留搜索表单 -->
-    <Grid :class="{ 'mobile-grid': isMobile }">
+    <Grid :class="{ 'mobile-grid': isMobile }" viewport-fill="page">
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增

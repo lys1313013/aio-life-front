@@ -136,7 +136,7 @@ function handleReload() {
 <template>
   <div class="p-4">
     <FormModalComponent @reload="handleReload" />
-    <Grid>
+    <Grid viewport-fill="page">
       <template #toolbar-tools>
         <Button type="primary" @click="openFormModal()">
           <PlusOutlined />

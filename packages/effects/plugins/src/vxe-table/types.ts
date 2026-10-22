@@ -76,6 +76,8 @@ export interface VxeGridProps<
    * 搜索表单与表格主体之间的分隔条
    */
   separator?: boolean | SeparatorOptions;
+  /** 桌面端将独立列表页的表格和分页限制在一个视口内。 */
+  viewportFill?: 'card' | 'page' | 'section';
 }
 
 export type ExtendedVxeGridApi<

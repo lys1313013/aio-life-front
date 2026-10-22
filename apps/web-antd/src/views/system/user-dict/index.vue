@@ -431,7 +431,7 @@ const handleSave = async () => {
       </Card>
 
       <div class="flex-1 overflow-hidden bg-background">
-        <Grid>
+        <Grid viewport-fill="page">
           <template #rowDragIcon="{ row }">
             <LoadingOutlined
               v-if="sortingRowIds.has(String(row.id))"

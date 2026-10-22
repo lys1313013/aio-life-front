@@ -17,8 +17,10 @@ import type { ExtendedVxeGridApi, VxeGridProps } from './types';
 import {
   computed,
   nextTick,
+  onActivated,
   onMounted,
   onUnmounted,
+  ref,
   toRaw,
   useSlots,
   useTemplateRef,
@@ -62,6 +64,67 @@ const TOOLBAR_TOOLS = 'toolbar-tools';
 const TABLE_TITLE = 'table-title';
 
 const gridRef = useTemplateRef<VxeGridInstance>('gridRef');
+const rootRef = useTemplateRef<HTMLElement>('rootRef');
+const viewportHeight = ref<number>();
+const gridHeight = ref<number>();
+let resizeObserver: ResizeObserver | undefined;
+let gridObserver: MutationObserver | undefined;
+let fitFrame: number | undefined;
+let layoutKey = '';
+
+function fitViewportPager() {
+  if (viewportHeight.value === undefined || gridHeight.value === undefined)
+    return;
+  const root = rootRef.value;
+  const pager = root?.querySelector('.vxe-grid--pager-wrapper');
+  if (!root || !pager) return;
+
+  const difference =
+    root.getBoundingClientRect().bottom -
+    12 -
+    pager.getBoundingClientRect().bottom;
+  if (Math.abs(difference) <= 2) return;
+  gridHeight.value = Math.max(
+    180,
+    Math.min(viewportHeight.value, gridHeight.value + Math.round(difference)),
+  );
+}
+
+function schedulePagerFit() {
+  if (fitFrame !== undefined || viewportHeight.value === undefined) return;
+  fitFrame = requestAnimationFrame(() => {
+    fitFrame = undefined;
+    fitViewportPager();
+  });
+}
+
+function updateViewportHeight() {
+  if (!props.viewportFill || window.innerWidth < 1024 || !rootRef.value) {
+    viewportHeight.value = undefined;
+    gridHeight.value = undefined;
+    layoutKey = '';
+    return;
+  }
+
+  const top =
+    props.viewportFill === 'section'
+      ? 112
+      : props.viewportFill === 'card'
+        ? 176
+        : Math.max(0, rootRef.value.getBoundingClientRect().top);
+  const key = `${window.innerWidth}:${window.innerHeight}:${top}`;
+  if (key === layoutKey) {
+    schedulePagerFit();
+    return;
+  }
+  layoutKey = key;
+  viewportHeight.value = Math.max(
+    180,
+    Math.floor(window.innerHeight - top - 24),
+  );
+  gridHeight.value = viewportHeight.value;
+  void nextTick(schedulePagerFit);
+}
 
 const state = props.api?.useStore?.();
 
@@ -229,6 +292,9 @@ const options = computed(() => {
   if (mergedOptions.formConfig) {
     mergedOptions.formConfig.enabled = false;
   }
+  if (gridHeight.value !== undefined) {
+    mergedOptions.height = gridHeight.value;
+  }
   return mergedOptions;
 });
 
@@ -350,23 +416,65 @@ const isCompactForm = computed(() => {
 onMounted(() => {
   props.api?.mount?.(gridRef.value, formApi);
   init();
+  if (props.viewportFill) {
+    void nextTick(updateViewportHeight);
+    window.addEventListener('resize', updateViewportHeight);
+    if (typeof ResizeObserver !== 'undefined' && rootRef.value?.parentElement) {
+      resizeObserver = new ResizeObserver(updateViewportHeight);
+      resizeObserver.observe(rootRef.value.parentElement);
+    }
+    if (typeof MutationObserver !== 'undefined' && rootRef.value) {
+      gridObserver = new MutationObserver(updateViewportHeight);
+      gridObserver.observe(rootRef.value, { childList: true, subtree: true });
+    }
+    for (const sibling of [
+      rootRef.value?.previousElementSibling,
+      rootRef.value?.parentElement?.previousElementSibling,
+    ]) {
+      if (!sibling) continue;
+      resizeObserver?.observe(sibling);
+      gridObserver?.observe(sibling, { childList: true, subtree: true });
+    }
+  }
+});
+
+onActivated(() => {
+  if (props.viewportFill) void nextTick(updateViewportHeight);
 });
 
 onUnmounted(() => {
+  resizeObserver?.disconnect();
+  gridObserver?.disconnect();
+  if (fitFrame !== undefined) cancelAnimationFrame(fitFrame);
+  window.removeEventListener('resize', updateViewportHeight);
   formApi?.unmount?.();
   props.api?.unmount?.();
 });
 </script>
 
 <template>
-  <div :class="cn('bg-card h-full rounded-md', className)">
+  <div
+    ref="rootRef"
+    :class="cn('bg-card h-full rounded-md', className)"
+    :style="
+      viewportHeight === undefined
+        ? undefined
+        : { height: `${viewportHeight}px` }
+    "
+  >
     <VxeGrid
       ref="gridRef"
+      :style="
+        gridHeight === undefined
+          ? undefined
+          : { '--viewport-grid-height': `${gridHeight}px` }
+      "
       :class="
         cn(
           'p-1',
           {
             'pt-0': showToolbar && !formOptions,
+            'viewport-fill-grid': viewportHeight !== undefined,
           },
           gridClass,
         )

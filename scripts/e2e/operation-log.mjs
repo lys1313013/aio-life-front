@@ -221,7 +221,10 @@ try {
   assert.ok(
     (await readFile(await download.path(), 'utf8')).includes('[REDACTED]'),
   );
-  await main.getByRole('button', { name: '重置', exact: true }).click();
+  await main
+    .getByRole('textbox', { name: '用户账号', exact: true })
+    .fill('');
+  await main.getByRole('button', { name: '查询', exact: true }).click();
   await expect.poll(() => listReads.at(-1)?.username).toBeUndefined();
   await expect(main.locator('.ant-spin-spinning')).toHaveCount(0);
 
@@ -247,9 +250,18 @@ try {
   );
   failList = false;
   await main.getByRole('button', { name: '重试日志' }).click();
+  await expect(main.locator('.ant-spin-spinning')).toBeVisible();
   await expect(main.getByText('日志加载失败，请重试')).toHaveCount(0);
   await expect(main.locator('.ant-spin-spinning')).toHaveCount(0);
 
+  data = Array.from({ length: 21 }, (_, index) => ({
+    ...seed,
+    id: String(BigInt(id) - BigInt(index)),
+  }));
+  await main.getByRole('button', { name: '查询', exact: true }).click();
+  await expect(main.locator('.ant-table-tbody tr.ant-table-row')).toHaveCount(
+    20,
+  );
   for (const width of [390, 768, 1024, 1440])
     for (const theme of ['light', 'dark']) {
       await page.setViewportSize({ width, height: 1000 });
@@ -267,9 +279,28 @@ try {
         ),
         true,
       );
-      await main.locator('.ant-table-content').evaluate((node) => {
-        node.scrollLeft = 0;
-      });
+      if (width >= 1024) {
+        const tableBody = main.locator('.ant-table-body');
+        await expect(tableBody).toBeVisible();
+        assert.equal(
+          await tableBody.evaluate(
+            (node) => node.scrollHeight > node.clientHeight,
+          ),
+          true,
+        );
+        const paginationBox = await main
+          .locator('.ant-table-pagination')
+          .boundingBox();
+        assert.ok(paginationBox.y + paginationBox.height <= 1000);
+        const pageBox = await main.boundingBox();
+        assert.ok(pageBox.y + pageBox.height <= 1000);
+      }
+      await main
+        .locator('.ant-table-body, .ant-table-content')
+        .first()
+        .evaluate((node) => {
+          node.scrollLeft = 0;
+        });
       await page.screenshot({
         path: `${output}/${width}-${theme}.png`,
         fullPage: true,
@@ -291,12 +322,18 @@ try {
       });
       await dialog.getByRole('button', { name: /关\s*闭/ }).click();
     }
-  // 单条、空态与空态刷新。
-  data = [seed];
-  await main.getByRole('button', { name: '查询', exact: true }).click();
+  await main.locator('.ant-pagination-item-2').click();
   await expect(main.locator('.ant-table-tbody tr.ant-table-row')).toHaveCount(
     1,
   );
+  // 单条、空态与空态刷新。
+  data = [seed];
+  await main.getByRole('button', { name: '查询', exact: true }).click();
+  await expect(main.locator('.ant-spin-spinning')).toBeVisible();
+  await expect(main.locator('.ant-table-tbody tr.ant-table-row')).toHaveCount(
+    1,
+  );
+  await expect(main.locator('.ant-spin-spinning')).toHaveCount(0);
   data = [];
   await main.getByRole('button', { name: '查询', exact: true }).click();
   await expect(main.getByText('暂无日志', { exact: true })).toBeVisible();
@@ -308,7 +345,7 @@ try {
     emptyBox.height,
   );
   await expect(main.locator('.ant-spin-spinning')).toHaveCount(0);
-  await main.getByRole('tab', { name: '访问日志', exact: true }).click();
+  await page.goto(`${origin}/system/access-log`);
   await page.waitForURL('**/system/access-log');
   await expect(
     main.getByRole('columnheader', { name: '登录方式', exact: true }),
@@ -318,7 +355,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    'Operation log passed: 10 columns; large IDs; 0ms; lazy parameters, empty/null and retry; filters/export; stable refresh/failure/empty; 8 viewport/theme screenshots; access-log regression.',
+    'Operation log passed: 10 columns; large IDs; 0ms; lazy parameters, empty/null and retry; filters/export; stable refresh/failure/empty; desktop viewport pagination; 8 viewport/theme screenshots; access-log regression.',
   );
 } finally {
   await browser.close();

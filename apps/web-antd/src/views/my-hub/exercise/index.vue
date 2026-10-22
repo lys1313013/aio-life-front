@@ -1055,6 +1055,7 @@ const tableReload = () => {
         :key="isMobile ? 'mobile' : 'desktop'"
         :grid-options="gridOptions"
         :show-search-form="!isMobile"
+        viewport-fill="card"
       >
         <template v-if="!isMobile" #toolbar-tools>
           <Popconfirm
