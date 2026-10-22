@@ -8,6 +8,8 @@ import type {
   MapConfig,
 } from './model';
 
+import type { SystemRegion } from '#/api/core/system-region';
+
 import {
   computed,
   onActivated,
@@ -50,17 +52,19 @@ import {
   sortFootprints,
   timeLabel,
 } from './model';
+import RegionPicker from './RegionPicker.vue';
+import { regionAddress, regionCity, regionName } from './regions';
 
 const access = useAccessStore();
 const choices = ref<Footprint[]>([]);
 const records = ref<Footprint[]>([]);
 const selected = ref<Footprint | null>(null);
 const config = ref<MapConfig>({
-  browserKey: '',
   searchEnabled: false,
   coordinateSystem: 'GCJ02',
 });
 const failed = ref(false);
+const mapConfigReady = ref(false);
 const loading = ref(false);
 const ready = ref(false);
 const resolving = ref(false);
@@ -68,6 +72,16 @@ const saving = ref(false);
 const searching = ref(false);
 const draft = ref<Draft>(emptyDraft());
 const editorOpen = ref(false);
+const regionPath = ref<SystemRegion[]>([]);
+function regionChanged(path: SystemRegion[]) {
+  regionPath.value = path;
+  invalidateSearch();
+  draft.value.city = regionCity(path);
+  draft.value.longitude = draft.value.latitude = null;
+  draft.value.providerUid = null;
+  draft.value.confirmed = false;
+  mapHint.value = '';
+}
 const error = ref('');
 const reloadAvailable = ref(false);
 const mapHint = ref('');
@@ -113,6 +127,7 @@ async function load() {
         records.value.find((r) => r.id === selected.value?.id) || null;
   } else failed.value = true;
   if (result[1].status === 'fulfilled') config.value = result[1].value;
+  mapConfigReady.value = true;
   loading.value = false;
 }
 function invalidateSearch() {
@@ -129,6 +144,7 @@ function openEditor(record?: Footprint) {
   invalidateSearch();
   error.value = '';
   mapHint.value = '';
+  regionPath.value = [];
   draft.value = record ? { ...record, confirmed: true } : emptyDraft();
   editorOpen.value = true;
 }
@@ -168,7 +184,10 @@ function searchName() {
   debounce = setTimeout(async () => {
     searching.value = true;
     try {
-      const result = await searchFootprintLocations(keyword);
+      const result = await searchFootprintLocations(
+        keyword,
+        regionName(regionPath.value) || '全国',
+      );
       if (
         active &&
         editorOpen.value &&
@@ -259,7 +278,10 @@ async function geocode() {
   resolving.value = true;
   try {
     const result = await geocodeFootprintAddress(
-      draft.value.address?.trim() || draft.value.placeName.trim(),
+      regionAddress(
+        regionPath.value,
+        draft.value.address?.trim() || draft.value.placeName.trim(),
+      ),
     );
     if (
       active &&
@@ -413,7 +435,9 @@ watch(
 
         <FootprintMap
           ref="mainMap"
-          :browser-key="config.browserKey"
+          :source="config.tiles"
+          :tencent="config.tencent"
+          :pending="!mapConfigReady"
           :records="records"
           :selected-id="selected?.id"
           small
@@ -460,7 +484,7 @@ watch(
     </div>
     <AppModal
       :open="editorOpen"
-      :width="560"
+      :width="820"
       :busy="saving"
       :confirm-loading="saving"
       @ok="save"
@@ -472,147 +496,161 @@ watch(
       "
     >
       <div class="footprint-editor">
-        <div class="date-fields">
-          <label
-            >开始<DatePicker
-              :value="draft.startDate || undefined"
-              @update:value="
-                (value) => {
-                  draft.startDate = value == null ? '' : String(value);
-                }
-              "
-              value-format="YYYY-MM-DD"
-              format="YYYY-MM-DD"
-              placeholder="选择日期"
-              class="w-full"
-              :disabled="saving"
-          /></label>
-          <div>
-            <div class="end-label">
-              <label for="footprint-end">结束</label
-              ><Checkbox
-                :checked="draft.endDate === PRESENT_DATE"
-                :disabled="saving"
-                @change="
-                  draft.endDate = $event.target.checked ? PRESENT_DATE : ''
+        <div class="editor-fields">
+          <div class="date-fields">
+            <label class="editor-field"
+              >开始<DatePicker
+                :value="draft.startDate || undefined"
+                @update:value="
+                  (value) => {
+                    draft.startDate = value == null ? '' : String(value);
+                  }
                 "
-              >
-                至今
-              </Checkbox>
+                value-format="YYYY-MM-DD"
+                format="YYYY-MM-DD"
+                placeholder="选择日期"
+                class="w-full"
+                :disabled="saving"
+            /></label>
+            <div>
+              <div class="end-label">
+                <label for="footprint-end">结束</label
+                ><Checkbox
+                  :checked="draft.endDate === PRESENT_DATE"
+                  :disabled="saving"
+                  @change="
+                    draft.endDate = $event.target.checked ? PRESENT_DATE : ''
+                  "
+                >
+                  至今
+                </Checkbox>
+              </div>
+              <DatePicker
+                id="footprint-end"
+                :value="
+                  draft.endDate === PRESENT_DATE
+                    ? undefined
+                    : draft.endDate || undefined
+                "
+                @update:value="
+                  (value) => {
+                    draft.endDate = value == null ? '' : String(value);
+                  }
+                "
+                value-format="YYYY-MM-DD"
+                format="YYYY-MM-DD"
+                placeholder="选择日期"
+                class="w-full"
+                :disabled="saving || draft.endDate === PRESENT_DATE"
+              />
             </div>
-            <DatePicker
-              id="footprint-end"
-              :value="
-                draft.endDate === PRESENT_DATE
-                  ? undefined
-                  : draft.endDate || undefined
-              "
-              @update:value="
-                (value) => {
-                  draft.endDate = value == null ? '' : String(value);
-                }
-              "
-              value-format="YYYY-MM-DD"
-              format="YYYY-MM-DD"
-              placeholder="选择日期"
-              class="w-full"
-              :disabled="saving || draft.endDate === PRESENT_DATE"
+          </div>
+          <label class="editor-field"
+            >地点<Input
+              v-model:value="draft.placeName"
+              aria-label="地点"
+              placeholder="搜索地点或填写名称"
+              :maxlength="100"
+              :disabled="saving"
+              @input="searchName"
+              ><template #suffix
+                ><Spin v-if="searching" size="small" /></template></Input
+          ></label>
+          <div
+            v-if="candidates.length > 0"
+            class="location-results"
+            data-enter-submit="ignore"
+          >
+            <button
+              v-for="(location, index) in candidates"
+              :key="location.providerUid || String(index)"
+              type="button"
+              @click="selectCandidate(location)"
+            >
+              <span>{{ location.placeName }}</span
+              ><span class="footprint-time"
+                >{{ location.city }} {{ location.address }}</span
+              >
+            </button>
+          </div>
+          <div class="editor-field">
+            <span>所在地区</span>
+            <RegionPicker
+              v-if="editorOpen"
+              v-model:value="draft.regionCode"
+              :disabled="saving"
+              @change="regionChanged"
+              @restored="regionPath = $event"
             />
           </div>
+          <label class="editor-field"
+            >地址<Input
+              :value="draft.address ?? undefined"
+              @update:value="
+                (value) => {
+                  draft.address = value == null ? null : String(value);
+                }
+              "
+              aria-label="地址"
+              :maxlength="500"
+              :disabled="saving"
+              placeholder="详细地址（选填）"
+              @input="invalidateSearch"
+              ><template #suffix
+                ><Button
+                  v-if="config.searchEnabled"
+                  type="text"
+                  aria-label="解析地址到地图"
+                  :loading="resolving"
+                  :disabled="saving || !(draft.address || draft.placeName)"
+                  @click="geocode"
+                  ><IconifyIcon
+                    icon="mdi:map-search-outline" /></Button></template></Input
+          ></label>
+          <label class="editor-field"
+            >备注<Input.TextArea
+              :value="draft.note ?? undefined"
+              @update:value="
+                (value) => {
+                  draft.note = value == null ? null : String(value);
+                }
+              "
+              aria-label="备注"
+              :maxlength="5000"
+              :rows="2"
+              :disabled="saving"
+          /></label>
         </div>
-        <label
-          >地点<Input
-            v-model:value="draft.placeName"
-            aria-label="地点"
-            placeholder="搜索地点或填写名称"
-            :maxlength="100"
-            :disabled="saving"
-            @input="searchName"
-            ><template #suffix
-              ><Spin v-if="searching" size="small" /></template></Input
-        ></label>
-        <div
-          v-if="candidates.length > 0"
-          class="location-results"
-          data-enter-submit="ignore"
-        >
-          <button
-            v-for="(location, index) in candidates"
-            :key="location.providerUid || String(index)"
-            type="button"
-            @click="selectCandidate(location)"
-          >
-            <span>{{ location.placeName }}</span
-            ><span class="footprint-time"
-              >{{ location.city }} {{ location.address }}</span
+        <div class="editor-map-panel">
+          <FootprintMap
+            ref="editorMap"
+            :source="config.tiles"
+            :point="point"
+            picking
+            small
+            :height="340"
+            @pick="pickPosition"
+          />
+          <div class="position-actions">
+            <span class="footprint-time" aria-live="polite">{{
+              draft.confirmed
+                ? '位置已确认'
+                : point
+                  ? '请确认所选位置'
+                  : '请选择地图位置'
+            }}</span>
+            <Button
+              v-if="point && !draft.confirmed"
+              type="link"
+              :disabled="saving"
+              @click="confirmPosition"
             >
-          </button>
+              确认位置
+            </Button>
+            <Spin v-if="resolving" size="small" />
+          </div>
+          <span v-if="mapHint" class="footprint-time">{{ mapHint }}</span>
         </div>
-        <FootprintMap
-          ref="editorMap"
-          :browser-key="config.browserKey"
-          :point="point"
-          picking
-          small
-          :height="210"
-          @pick="pickPosition"
-        />
-        <div class="position-actions">
-          <span class="footprint-time" aria-live="polite">{{
-            draft.confirmed
-              ? '位置已确认'
-              : point
-                ? '请确认所选位置'
-                : '请选择地图位置'
-          }}</span>
-          <Button
-            v-if="point && !draft.confirmed"
-            type="link"
-            :disabled="saving"
-            @click="confirmPosition"
-          >
-            确认位置
-          </Button>
-          <Spin v-if="resolving" size="small" />
-        </div>
-        <span v-if="mapHint" class="footprint-time">{{ mapHint }}</span>
-        <label
-          >地址<Input
-            :value="draft.address ?? undefined"
-            @update:value="
-              (value) => {
-                draft.address = value == null ? null : String(value);
-              }
-            "
-            aria-label="地址"
-            :maxlength="500"
-            :disabled="saving"
-            placeholder="详细地址（选填）"
-            @input="invalidateSearch"
-            ><template #suffix
-              ><Button
-                v-if="config.searchEnabled"
-                type="text"
-                aria-label="解析地址到地图"
-                :loading="resolving"
-                :disabled="saving || !(draft.address || draft.placeName)"
-                @click="geocode"
-                ><IconifyIcon
-                  icon="mdi:map-search-outline" /></Button></template></Input
-        ></label>
-        <label
-          >备注<Input.TextArea
-            :value="draft.note ?? undefined"
-            @update:value="
-              (value) => {
-                draft.note = value == null ? null : String(value);
-              }
-            "
-            aria-label="备注"
-            :maxlength="5000"
-            :rows="2"
-            :disabled="saving"
-        /></label>
         <Alert v-if="error" :message="error" type="error">
           <template v-if="reloadAvailable" #action>
             <Button
@@ -763,10 +801,26 @@ watch(
 
 .footprint-editor {
   display: grid;
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
 }
 
-.footprint-editor label {
+.editor-fields {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.editor-map-panel {
+  min-width: 0;
+}
+
+.footprint-editor > :deep(.ant-alert) {
+  grid-column: 1 / -1;
+}
+
+.editor-field {
   display: grid;
   gap: 6px;
 }
@@ -778,6 +832,7 @@ watch(
 }
 
 .end-label {
+  min-height: 22px;
   margin-bottom: 6px;
 }
 
@@ -826,6 +881,15 @@ watch(
 
   .date-fields {
     gap: 8px;
+  }
+
+  .footprint-editor {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .editor-map-panel :deep(.footprint-map) {
+    height: 240px !important;
   }
 }
 </style>

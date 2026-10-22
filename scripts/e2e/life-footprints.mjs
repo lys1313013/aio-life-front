@@ -10,6 +10,7 @@ await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.CI ? undefined : 'chrome' });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  page.setDefaultTimeout(10_000);
   const errors = []; page.on('pageerror', error => errors.push(error.message));
   const state = await setupMapFixture(page);
   const fixtures = {
@@ -21,7 +22,7 @@ try {
     '/menu/visuals': { menus: [], cards: {} }, '/menu/preferences': { menus: [], hiddenMenuIds: [] }, '/auth/wechat/web/capabilities': { enabled: false },
   };
   await page.route('**/api/**', async route => {
-    if (!new URL(route.request().url()).pathname.startsWith('/api/')) return route.fallback();
+    if (new URL(route.request().url()).origin !== new URL(origin).origin || !new URL(route.request().url()).pathname.startsWith('/api/')) return route.fallback();
     if (await state.handle(route)) return;
     const path = new URL(route.request().url()).pathname.replace(/^\/api/, '');
     if (Object.hasOwn(fixtures, path)) return route.fulfill({ json: { code: 0, data: fixtures[path] } });
@@ -35,10 +36,29 @@ try {
   const main = page.locator('.footprints');
   await expect(main.locator('.footprint-map-hit')).toHaveCount(1);
   await expect(main.locator('.footprint-detail')).toHaveCount(0);
+  const mapArea = main.locator('.footprint-map-area');
+  const beforeTileFailure = await mapArea.boundingBox();
+  console.log('CHECK: 地图初始化');
+  await main.getByRole('button', { name: '返回中国地图', exact: true }).click();
+  await main.getByRole('button', { name: '缩小地图', exact: true }).click();
+  await main.getByRole('button', { name: '缩小地图', exact: true }).click();
+  await expect.poll(() => main.locator('.tencent-fixture-canvas').evaluateAll(tiles => tiles.length > 0 && tiles.every(tile => tile.dataset.ready === 'true'))).toBe(true);
+  assert.deepEqual(state.invalidTileRequests, [], '地图跨越日期变更线时不能请求越界瓦片');
+  state.failTiles = true;
+  await main.getByRole('button', { name: '放大地图', exact: true }).click();
+  await expect(main.getByText('底图加载失败', { exact: true })).toBeVisible();
+  await expect(main.locator('.footprint-map-hit')).toHaveCount(1);
+  state.failTiles = false;
+  await main.getByRole('button', { name: '重试底图', exact: true }).click();
+  await expect(main.getByText('底图加载失败', { exact: true })).toHaveCount(0);
+  const afterTileRetry = await mapArea.boundingBox();
+  assert.equal(afterTileRetry.height, beforeTileFailure.height);
+  assert.equal(afterTileRetry.y, beforeTileFailure.y);
   await main.getByRole('button', { name: '3条地点记录', exact: true }).click();
   await expect(main.locator('.group-record')).toHaveCount(3);
   await main.locator('.group-record').first().click();
   await expect(main.locator('.footprint-detail')).toContainText('丁香公寓');
+  console.log('CHECK: 底图重试与聚合选择');
   const reads = state.reads;
   await main.getByRole('button', { name: '编辑生活足迹', exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -71,7 +91,41 @@ try {
   await dialog.getByRole('button', { name: /保\s*存/ }).click();
   await expect(dialog).not.toBeVisible();
   assert.equal(state.writes.at(-1).endDate, '2020-06-30');
+  console.log('CHECK: 四级地区选择、失败恢复与回显');
+  state.failRegions = true;
+  await main.getByRole('button', { name: '编辑生活足迹', exact: true }).click();
+  await expect(dialog.getByText('地区读取失败', {exact:true})).toBeVisible();
+  state.failRegions = false;
+  await dialog.getByRole('button', {name:'重试地区',exact:true}).click();
+  async function region(label, name) {
+    const field = dialog.getByRole('combobox',{name:label,exact:true});
+    await expect(field).toBeEnabled();
+    await field.press('ArrowDown');
+    await page.locator('.ant-select-dropdown:visible .ant-select-item-option-content').filter({hasText:name}).click();
+  }
+  await region('省份','北京市');
+  await region('城市','市辖区');
+  await region('区县','东城区');
+  await region('乡镇 / 街道','东华门街道');
+  await expect(dialog).toContainText('请选择地图位置');
+  await dialog.getByRole('textbox',{name:'地址',exact:true}).fill('景山前街1号');
+  await dialog.getByRole('button',{name:'解析地址到地图',exact:true}).click();
+  await expect(dialog.getByRole('button',{name:'确认位置',exact:true})).toBeVisible();
+  assert.equal(state.geocodes.at(-1),'北京市东城区东华门街道景山前街1号');
+  await dialog.getByRole('button',{name:'确认位置',exact:true}).click();
+  await dialog.getByRole('button', { name: /保\s*存/ }).click();
+  await expect(dialog).not.toBeVisible();
+  assert.equal(state.writes.at(-1).regionCode,'110101001');
+  assert.equal(state.writes.at(-1).city,'北京市');
+  await main.getByRole('button', { name: '编辑生活足迹', exact: true }).click();
+  await expect(dialog.locator('.region-picker')).toContainText('东华门街道');
+  await region('省份','浙江省');
+  await expect(dialog).toContainText('请选择地图位置');
+  await expect(dialog.locator('.region-picker')).not.toContainText('东华门街道');
+  await dialog.getByRole('button', { name: /取\s*消/ }).click();
+  console.log('CHECK: 新增');
   await main.getByRole('button', { name: '新增生活足迹', exact: true }).click();
+  await dialog.getByLabel('开始', { exact: true }).click();
   await dialog.getByLabel('开始', { exact: true }).click();
   await dialog.getByLabel('开始', { exact: true }).fill('2020-08-01');
   await dialog.getByLabel('开始', { exact: true }).press('Enter');
@@ -117,11 +171,12 @@ try {
   for (const width of [390, 768, 1440]) for (const theme of ['light', 'dark']) {
     await page.setViewportSize({ width, height: 1000 });
     await page.evaluate(async ({ module, theme }) => { const { updatePreferences } = await import(module); updatePreferences({ theme: { mode: theme } }); }, { module: `/@fs${new URL('../../packages/@core/preferences/src/index.ts', import.meta.url).pathname}`, theme });
-    state.delay = 1800; state.failRead = true;
+    let releaseRead; state.readGate = new Promise(resolve => { releaseRead = resolve; }); state.delay = 0; state.failRead = true;
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(main.locator('.list-loading')).toBeVisible();
     const region = main.locator('.footprint-map-area');
     const initial = await region.boundingBox();
+    releaseRead(); state.readGate = null;
     await expect(main.locator('.footprint-read-error')).toBeVisible();
     const failed = await region.boundingBox();
     assert.equal(failed.y, initial.y); assert.equal(failed.height, initial.height);
@@ -132,6 +187,22 @@ try {
     const empty = await region.boundingBox();
     assert.equal(empty.y, initial.y); assert.equal(empty.height, initial.height);
   }
+  state.searchEnabled = false;
+  await page.reload();
+  await expect(main.locator('.tencent-fixture-canvas')).toBeVisible();
+  await main.getByRole('button', { name: '新增生活足迹', exact: true }).click();
+  await dialog.getByLabel('开始', { exact: true }).click();
+  await dialog.getByLabel('开始', { exact: true }).fill('2020-08-01');
+  await dialog.getByLabel('开始', { exact: true }).press('Enter');
+  await dialog.getByRole('textbox', { name: '地点', exact: true }).fill('无 AK 手动选点');
+  await dialog.locator('.footprint-map-canvas').click({ position: { x: 130, y: 110 } });
+  await expect(dialog).toContainText('位置已确认');
+  await dialog.getByRole('button', { name: /保\s*存/ }).click();
+  await expect(dialog).not.toBeVisible();
+  assert.equal(state.writes.at(-1).coordinateSystem, 'GCJ02');
+  assert.equal(typeof state.writes.at(-1).longitude, 'number');
+  assert.deepEqual(state.sdkRequests, []);
+  assert.deepEqual(state.invalidTileRequests, [], '地图跨越日期变更线时不能请求越界瓦片');
   assert.deepEqual(errors, []);
-  console.log('PASS: Web 全量标记、聚合选择、编辑清空、失败恢复、新增确认、删除、六布局、小圆点、长备注与加载重试；API/SDK为模拟。');
+  console.log('PASS: Web 四级地区、编码保存回显、地区失败重试、地址上下文、全量标记、聚合选择、编辑清空、失败恢复、新增确认、删除、六布局、小圆点、长备注与加载重试；腾讯 SDK 替身 + 编辑器真实 Leaflet，API/底图为模拟；无百度 SDK，底图失败重试及无 AK 选点通过。');
 } finally { await browser.close(); }

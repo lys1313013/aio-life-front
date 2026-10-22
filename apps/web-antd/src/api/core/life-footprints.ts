@@ -25,10 +25,13 @@ export async function deleteFootprint(id: string) {
 export async function getFootprintMapConfig() {
   return await requestClient.get<MapConfig>('/life-footprints/map/config');
 }
-export async function searchFootprintLocations(keyword: string) {
+export async function searchFootprintLocations(
+  keyword: string,
+  region = '全国',
+) {
   return await requestClient.get<LocationResult[]>(
     '/life-footprints/map/search',
-    { params: { keyword } },
+    { params: { keyword, region } },
   );
 }
 export async function geocodeFootprintAddress(address: string) {

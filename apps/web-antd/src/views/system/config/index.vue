@@ -22,6 +22,8 @@ import {
 } from '#/api/system/system-config';
 import ContentLoading from '#/components/ContentLoading.vue';
 
+import FootprintMapConfigEditor from './FootprintMapConfigEditor.vue';
+import TencentMapConfigEditor from './TencentMapConfigEditor.vue';
 import WechatConfigEditor from './WechatConfigEditor.vue';
 
 const loading = ref(false);
@@ -76,7 +78,11 @@ onMounted(async () => {
 });
 
 const handleSave = async (key: string) => {
-  if (savingKey.value !== null || key === 'wechat.mini') return;
+  if (
+    savingKey.value !== null ||
+    ['footprints.baidu', 'footprints.tencent', 'wechat.mini'].includes(key)
+  )
+    return;
   try {
     savingKey.value = key;
     let value: string;
@@ -103,15 +109,15 @@ const handleSave = async (key: string) => {
   }
 };
 
-async function saveWechat(value: string) {
+async function saveManagedConfig(key: string, value: string) {
   if (savingKey.value !== null) return;
-  savingKey.value = 'wechat.mini';
+  savingKey.value = key;
   try {
-    const updated = await updateSystemConfig('wechat.mini', value);
+    const updated = await updateSystemConfig(key, value);
     configs.value = configs.value.map((item) =>
       item.configKey === updated.configKey ? updated : item,
     );
-    message.success('微信配置已保存并生效');
+    message.success('配置已保存并生效');
   } catch {
     // 请求拦截器已提示，不记录含密钥的请求对象。
   } finally {
@@ -135,7 +141,11 @@ async function saveWechat(value: string) {
           data-enter-submit-scope
           @keydown.capture="
             (event: KeyboardEvent) =>
-              cfg.configKey !== 'wechat.mini' &&
+              ![
+                'wechat.mini',
+                'footprints.baidu',
+                'footprints.tencent',
+              ].includes(cfg.configKey) &&
               handleEnterSubmit(
                 event,
                 () => handleSave(cfg.configKey),
@@ -163,7 +173,19 @@ async function saveWechat(value: string) {
             v-if="cfg.configKey === 'wechat.mini'"
             :config="cfg"
             :saving="savingKey === 'wechat.mini'"
-            @save="saveWechat"
+            @save="(value) => saveManagedConfig('wechat.mini', value)"
+          />
+          <FootprintMapConfigEditor
+            v-else-if="cfg.configKey === 'footprints.baidu'"
+            :config="cfg"
+            :saving="savingKey === 'footprints.baidu'"
+            @save="(value) => saveManagedConfig('footprints.baidu', value)"
+          />
+          <TencentMapConfigEditor
+            v-else-if="cfg.configKey === 'footprints.tencent'"
+            :config="cfg"
+            :saving="savingKey === 'footprints.tencent'"
+            @save="(value) => saveManagedConfig('footprints.tencent', value)"
           />
           <!-- JSON 类型 - 管理员选择器 -->
           <div
@@ -222,7 +244,13 @@ async function saveWechat(value: string) {
           </div>
 
           <div
-            v-if="cfg.configKey !== 'wechat.mini'"
+            v-if="
+              ![
+                'wechat.mini',
+                'footprints.baidu',
+                'footprints.tencent',
+              ].includes(cfg.configKey)
+            "
             class="mt-3 flex justify-end"
           >
             <AButton
