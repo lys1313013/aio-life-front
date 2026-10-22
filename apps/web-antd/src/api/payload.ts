@@ -255,6 +255,10 @@ export interface ExpenseCreateReq {
   transactionStatus?: null | string;
 }
 
+export interface ExpenseDeviceBindReq {
+  deviceId?: null | string;
+}
+
 export interface ExpenseUpdateReq {
   id?: null | string;
   transactionAmt?: null | number | string;
@@ -407,6 +411,7 @@ export interface LifeFootprintSaveReq {
   placeName?: null | string;
   address?: null | string;
   city?: null | string;
+  regionCode?: null | string;
   longitude?: null | number | string;
   latitude?: null | number | string;
   coordinateSystem?: null | string;
@@ -1184,6 +1189,7 @@ export interface ApiRequests {
   ExerciseRecordCreateReq: ExerciseRecordCreateReq;
   ExerciseRecordUpdateReq: ExerciseRecordUpdateReq;
   ExpenseCreateReq: ExpenseCreateReq;
+  ExpenseDeviceBindReq: ExpenseDeviceBindReq;
   ExpenseUpdateReq: ExpenseUpdateReq;
   FeedbackBatchReq: FeedbackBatchReq;
   FeedbackCommentCreateReq: FeedbackCommentCreateReq;
@@ -1528,6 +1534,9 @@ const fields: Record<string, Record<string, null | string>> = {
     merchantOrderNo: null,
     transactionStatus: null,
   },
+  ExpenseDeviceBindReq: {
+    deviceId: null,
+  },
   ExpenseUpdateReq: {
     id: null,
     transactionAmt: null,
@@ -1664,6 +1673,7 @@ const fields: Record<string, Record<string, null | string>> = {
     placeName: null,
     address: null,
     city: null,
+    regionCode: null,
     longitude: null,
     latitude: null,
     coordinateSystem: null,
@@ -2424,7 +2434,7 @@ const queryFields: Record<string, string[]> = {
   '/csdn/articles': ['limit', 'username'],
   '/dashboard/tasks': [],
   '/dashboard/card/{type}': [],
-  '/device/query': ['page', 'pageSize', 'type'],
+  '/device/query': ['name', 'page', 'pageSize', 'type'],
   '/device/{id}': [],
   '/exerciseRecord/query': [
     'description',
@@ -2468,6 +2478,7 @@ const queryFields: Record<string, string[]> = {
   ],
   '/expense/statisticsByYear': [],
   '/expense/statisticsByMonth': [],
+  '/expense/{expenseId}/device': [],
   '/life-footprints/map/config': [],
   '/life-footprints/map/search': ['keyword', 'region'],
   '/life-footprints/map/geocode': ['address'],
@@ -2631,6 +2642,8 @@ const queryFields: Record<string, string[]> = {
   '/system/storage/download': ['key'],
   '/system-config/list': ['keyPrefix'],
   '/system-config/{key}': [],
+  '/system/regions': ['parentCode'],
+  '/system/regions/{code}/path': [],
   '/menu/preferences': ['client'],
   '/wardrobe/items': ['categoryId', 'keyword', 'season'],
   '/wardrobe/items/{id}': [],
@@ -2853,6 +2866,18 @@ const requestModels: Array<{
     method: 'POST',
     path: '/expense/deleteBatch',
     model: 'CommonReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/expense/{expenseId}/device',
+    model: 'ExpenseDeviceBindReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/expense/{expenseId}/device',
+    model: 'DeviceCreateReq',
     list: false,
   },
   { method: 'POST', path: '/goals', model: 'GoalCreateReq', list: false },
