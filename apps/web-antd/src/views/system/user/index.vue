@@ -17,7 +17,7 @@ import { deleteUserApi, getUserListApi } from '#/api/system/user';
 import FormModal from './form-modal.vue';
 
 interface RowType {
-  id: number;
+  id: string;
   username: string;
   nickname: string;
   role: string;

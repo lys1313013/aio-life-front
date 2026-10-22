@@ -38,8 +38,8 @@ const records = ref<ReadRecordApi.ReadRecordVO[]>([]);
 const total = ref(0);
 
 const queryForm = ref({
-  current: 1,
-  size: 24, // 增加单页数据量以适应滚动加载
+  page: 1,
+  pageSize: 24, // 增加单页数据量以适应滚动加载
   title: '',
   type: undefined as number | undefined,
   statuses: loadStatusFilter(STATUS_FILTER_STORAGE_KEY),
@@ -56,7 +56,7 @@ const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
 const loadData = async (isLoadMore = false) => {
   if (!isLoadMore) {
     loading.value = true;
-    queryForm.value.current = 1;
+    queryForm.value.page = 1;
     hasMore.value = true;
   }
 
@@ -91,7 +91,7 @@ const handleScroll = (e: Event) => {
     hasMore.value
   ) {
     loading.value = true;
-    queryForm.value.current += 1;
+    queryForm.value.page += 1;
     loadData(true);
   }
 };

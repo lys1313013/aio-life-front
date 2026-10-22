@@ -11,7 +11,7 @@ export interface AnniversaryRecordCreateReq {
 
 export interface AnniversaryRecordUpdateReq {
   isPinned?: null | number;
-  id?: null | string;
+  id: string;
   title?: null | string;
   targetDate?: null | string;
   type?: null | string;
@@ -77,23 +77,23 @@ export interface BVideoUpdateReq {
 }
 
 export interface BankCardCoverEnabledReq {
-  isEnabled?: null | number;
+  isEnabled: number;
 }
 
 export interface BankCardCoverTemplateReq {
-  name?: null | string;
-  bankId?: null | string;
-  cardType?: null | string;
+  name: string;
+  bankId: string;
+  cardType: string;
   sourceUrl?: null | string;
-  isEnabled?: null | number;
-  sortOrder?: null | number;
-  fileId?: null | string;
+  isEnabled?: number;
+  sortOrder?: number;
+  fileId: string;
 }
 
 export interface BankCardMoveReq {
-  id?: null | string;
-  targetId?: null | string;
-  after?: boolean | null;
+  id: string;
+  targetId: string;
+  after: boolean;
 }
 
 export interface BankCardReq {
@@ -101,10 +101,10 @@ export interface BankCardReq {
   customBankName?: null | string;
   cardName?: null | string;
   alias?: null | string;
-  cardType?: null | string;
+  cardType: string;
   cardNo?: null | string;
   branchName?: null | string;
-  status?: null | string;
+  status: string;
   openedDate?: null | string;
   expiryMonth?: null | string;
   creditLimit?: null | number | string;
@@ -116,18 +116,18 @@ export interface BankCardReq {
   coverSourceUrl?: null | string;
   sortOrder?: null | number;
   remark?: null | string;
-  tagIds?: Array<string> | null;
-  coverFileIds?: Array<string> | null;
+  tagIds?: Array<string>;
+  coverFileIds?: Array<string>;
 }
 
 export interface BankCardTagReq {
-  name?: null | string;
+  name: string;
   color?: null | string;
-  status?: null | string;
+  status: string;
 }
 
 export interface BodyProfileSaveReq {
-  version?: null | number;
+  version: number;
   heightCm?: null | number | string;
   weightKg?: null | number | string;
   bodyFatPercent?: null | number | string;
@@ -227,8 +227,8 @@ export interface DoubanMovieImportReq {
 }
 
 export interface ExerciseRecordCreateReq {
-  exerciseTypeId?: null | string;
-  exerciseDate?: null | string;
+  exerciseTypeId: string;
+  exerciseDate: string;
   exerciseCount?: null | number;
   description?: null | string;
 }
@@ -256,11 +256,11 @@ export interface ExpenseCreateReq {
 }
 
 export interface ExpenseDeviceBindReq {
-  deviceId?: null | string;
+  deviceId: string;
 }
 
 export interface ExpenseUpdateReq {
-  id?: null | string;
+  id: string;
   transactionAmt?: null | number | string;
   amt?: null | number | string;
   expTypeId?: null | string;
@@ -324,7 +324,7 @@ export interface GoalCreateReq {
 
 export interface GoalUpdateReq {
   isPinned?: null | number;
-  id?: null | string;
+  id: string;
   type?: null | number;
   title?: null | string;
   description?: null | string;
@@ -342,20 +342,20 @@ export interface GoalUpdateReq {
 }
 
 export interface HomeCardOrderReq {
-  group?: null | string;
-  keys?: Array<unknown> | null;
+  group: string;
+  keys: Array<string>;
 }
 
 export interface HomeCardToggleReq {
-  enabled?: boolean | null;
+  enabled: boolean;
 }
 
 export interface HomePinReq {
-  isPinned?: null | number;
+  isPinned: number;
 }
 
 export interface HomePinnedOrderReq {
-  ids?: Array<string> | null;
+  ids: Array<string>;
 }
 
 export interface HonorRecordCreateReq {
@@ -374,7 +374,7 @@ export interface HonorRecordCreateReq {
 }
 
 export interface HonorRecordUpdateReq {
-  id?: null | string;
+  id: string;
   title?: null | string;
   description?: null | string;
   honorDate?: null | string;
@@ -406,15 +406,15 @@ export interface IncomeUpdateReq {
 }
 
 export interface LifeFootprintSaveReq {
-  startDate?: null | string;
-  endDate?: null | string;
-  placeName?: null | string;
+  startDate: string;
+  endDate: string;
+  placeName: string;
   address?: null | string;
   city?: null | string;
   regionCode?: null | string;
-  longitude?: null | number | string;
-  latitude?: null | number | string;
-  coordinateSystem?: null | string;
+  longitude: number | string;
+  latitude: number | string;
+  coordinateSystem: string;
   providerUid?: null | string;
   note?: null | string;
 }
@@ -451,11 +451,11 @@ export interface MembershipCreateReq {
 }
 
 export interface MembershipProviderReq {
-  name?: null | string;
-  category?: null | string;
+  name: string;
+  category: string;
   iconKey?: null | string;
-  sortOrder?: null | number;
-  isEnabled?: null | number;
+  sortOrder?: number;
+  isEnabled?: number;
 }
 
 export interface MembershipReq {
@@ -502,11 +502,11 @@ export interface MenuSaveReq {
 }
 
 export interface MenuSortUpdateReq {
-  sort?: null | number;
+  sort: number;
 }
 
 export interface MenuStatusUpdateReq {
-  status?: null | number;
+  status: number;
 }
 
 export interface MessageCreateReq {
@@ -526,7 +526,7 @@ export interface MilestoneCreateReq {
 }
 
 export interface MilestoneUpdateReq {
-  id?: null | string;
+  id: string;
   title?: null | string;
   description?: null | string;
   date?: null | string;
@@ -618,7 +618,7 @@ export interface PerformanceCreateReq {
 }
 
 export interface PerformanceUpdateReq {
-  id?: null | string;
+  id: string;
   performanceName?: null | string;
   performer?: null | string;
   performanceType?: null | string;
@@ -650,32 +650,32 @@ export interface PersonReq {
 }
 
 export interface QrLoginModels_BrowserRequest {
-  id?: null | string;
-  browserSecret?: null | string;
+  id: string;
+  browserSecret: string;
 }
 
 export interface QrLoginModels_DecisionRequest {
-  id?: null | string;
-  ticket?: null | string;
-  approve?: boolean | null;
+  id: string;
+  ticket: string;
+  approve: boolean;
 }
 
 export interface QrLoginModels_ScanRequest {
-  id?: null | string;
-  ticket?: null | string;
+  id: string;
+  ticket: string;
 }
 
 export interface QueryAccessModels_CheckTokenRequest {
-  dataset?: null | string;
+  dataset: string;
 }
 
 export interface QueryAccessModels_EvaluateRequest {
-  token?: null | string;
-  dataset?: null | string;
+  token: string;
+  dataset: string;
 }
 
 export interface QueryAccessModels_IssueRequest {
-  appId?: null | string;
+  appId: string;
 }
 
 export interface QuickNavSaveReq {
@@ -820,14 +820,14 @@ export interface SystemConfigUpdateReq {
 }
 
 export interface TaskColumnCreateReq {
-  title?: null | string;
+  title: string;
   sortOrder?: null | number;
   bgColor?: null | string;
 }
 
 export interface TaskColumnSortReq {
-  id?: null | string;
-  sortOrder?: null | number;
+  id: string;
+  sortOrder: number;
 }
 
 export interface TaskColumnUpdateReq {
@@ -837,17 +837,17 @@ export interface TaskColumnUpdateReq {
 }
 
 export interface TaskCreateReq {
-  content?: null | string;
+  content: string;
   detail?: null | string;
-  columnId?: null | string;
+  columnId: string;
   dueDate?: null | string;
   sortOrder?: null | number;
 }
 
 export interface TaskDetailCreateReq {
   isStarred?: null | number;
-  taskId?: null | string;
-  content?: null | string;
+  taskId: string;
+  content: string;
   isCompleted?: null | number;
   sort?: null | number;
   priority?: null | number;
@@ -856,12 +856,12 @@ export interface TaskDetailCreateReq {
 }
 
 export interface TaskDetailSortReq {
-  id?: null | string;
-  sort?: null | number;
+  id: string;
+  sort: number;
 }
 
 export interface TaskDetailUpdateReq {
-  id?: null | string;
+  id: string;
   taskId?: null | string;
   content?: null | string;
   isCompleted?: null | number;
@@ -873,9 +873,9 @@ export interface TaskDetailUpdateReq {
 }
 
 export interface TaskSortReq {
-  id?: null | string;
+  id: string;
   columnId?: null | string;
-  sortOrder?: null | number;
+  sortOrder: number;
 }
 
 export interface TaskUpdateReq {
@@ -892,11 +892,11 @@ export interface ThoughtEventUpdateReq {
 }
 
 export interface ThoughtSaveEventReq {
-  content?: null | string;
+  content: string;
 }
 
 export interface ThoughtSaveReq {
-  content?: null | string;
+  content: string;
   isPinned?: null | number;
   events?: Array<ThoughtSaveEventReq> | null;
 }
@@ -909,7 +909,7 @@ export interface ThoughtUpdateReq {
 }
 
 export interface TimeRecordDeleteByDateReq {
-  date?: null | string;
+  date: string;
 }
 
 export interface TimeRecordExerciseReq {
@@ -971,11 +971,11 @@ export interface TimeTrackerCategoryCreateReq {
 export interface TimeTrackerCategorySortReq {
   id?: null | string;
   templateId?: null | string;
-  sort?: null | number;
+  sort: number;
 }
 
 export interface TimeTrackerCategoryUpdateReq {
-  id?: null | string;
+  id: string;
   parentId?: null | string;
   name?: null | string;
   color?: null | string;
@@ -1007,7 +1007,7 @@ export interface UserBindCreateReq {
 }
 
 export interface UserBindUpdateReq {
-  id?: null | string;
+  id: string;
   platform?: null | string;
   platformUsername?: null | string;
   accessToken?: null | string;
@@ -1075,7 +1075,7 @@ export interface UserDictDataReSortReq {
 }
 
 export interface UserDictDataUpdateReq {
-  id?: null | string;
+  id: string;
   templateId?: null | string;
   dictType?: null | string;
   dictSort?: null | number;
@@ -1095,7 +1095,7 @@ export interface UserMenuHiddenSaveReq {
 }
 
 export interface UserUpdateReq {
-  id?: null | string;
+  id: string;
   username?: null | string;
   nickname?: null | string;
   avatarFileId?: null | string;
@@ -1125,40 +1125,40 @@ export interface WardrobeItemSaveReq {
 }
 
 export interface WechatAuthRequests_Bind {
-  loginTicket?: null | string;
-  password?: null | string;
+  loginTicket: string;
+  password: string;
 }
 
 export interface WechatAuthRequests_InitializePassword {
-  loginCode?: null | string;
-  newPassword?: null | string;
+  loginCode: string;
+  newPassword: string;
 }
 
 export interface WechatAuthRequests_Login {
-  loginCode?: null | string;
+  loginCode: string;
 }
 
 export interface WechatAuthRequests_PhoneLogin {
-  loginTicket?: null | string;
-  phoneCode?: null | string;
+  loginTicket: string;
+  phoneCode: string;
 }
 
 export interface WechatAuthRequests_Register {
-  loginTicket?: null | string;
+  loginTicket: string;
 }
 
 export interface WechatWebLoginController_BrowserRequest {
-  scene?: null | string;
-  browserSecret?: null | string;
+  scene: string;
+  browserSecret: string;
 }
 
 export interface WechatWebLoginController_ConfirmRequest {
-  scene?: null | string;
-  loginCode?: null | string;
+  scene: string;
+  loginCode: string;
 }
 
 export interface WechatWebLoginController_ScanRequest {
-  scene?: null | string;
+  scene: string;
 }
 
 export interface WereadConnectionReq {
@@ -2354,7 +2354,7 @@ export function pickPayload<K extends keyof ApiRequests>(
           : pickPayload(nested as K, item)
         : item;
   }
-  return result as ApiRequests[K];
+  return result as unknown as ApiRequests[K];
 }
 
 export function pickPayloadList<K extends keyof ApiRequests>(
@@ -2377,9 +2377,12 @@ const queryFields: Record<string, string[]> = {
     'isEnabled',
     'keyword',
     'page',
-    'size',
+    'pageSize',
   ],
   '/system/bank-card-covers/banks': [],
+  '/capture/purchase/{id}': [],
+  '/capture/options': [],
+  '/capture/search': ['keyword', 'kind'],
   '/docs/catalog': [],
   '/docs/operations': ['keyword', 'module', 'page', 'pageSize'],
   '/docs/operations/{operationId}': [],
@@ -2416,6 +2419,7 @@ const queryFields: Record<string, string[]> = {
   '/anniversaryRecords': ['isPinned'],
   '/anniversaryRecords/{id}': [],
   '/b-video/query': ['page', 'pageSize', 'status'],
+  '/b-video/{id}': [],
   '/b-video/covers': ['ids'],
   '/b-video/getStatusCount': [],
   '/b-video/statistics': [],
@@ -2483,8 +2487,12 @@ const queryFields: Record<string, string[]> = {
   '/life-footprints/map/search': ['keyword', 'region'],
   '/life-footprints/map/geocode': ['address'],
   '/life-footprints/map/reverse': ['latitude', 'longitude'],
-  '/github/recent-commits': ['page', 'perPage'],
+  '/github/recent-commits': ['page', 'pageSize'],
   '/goals': ['isPinned', 'keyword', 'status', 'type'],
+  '/home/sections/memo': [],
+  '/home/sections/finance': [],
+  '/home/sections/video': [],
+  '/home/sections/device': [],
   '/honorCategories': [],
   '/honorRecords': [],
   '/honorRecords/{id}': [],
@@ -2504,13 +2512,14 @@ const queryFields: Record<string, string[]> = {
   '/mbti/results': [],
   '/mbti/result/{id}': [],
   '/memo/query': ['content', 'page', 'pageSize'],
+  '/memo/{id}': [],
   '/milestones': [],
   '/movie/page': [
     'activeOnly',
-    'current',
     'director',
     'inProgressFirst',
-    'size',
+    'page',
+    'pageSize',
     'status',
     'statuses',
     'title',
@@ -2529,9 +2538,9 @@ const queryFields: Record<string, string[]> = {
   '/public/images/{id:[a-fA-F0-9]{32}}.{extension:png|jpg|webp|gif|bmp}': [],
   '/read-record/page': [
     'activeOnly',
-    'current',
     'inProgressFirst',
-    'size',
+    'page',
+    'pageSize',
     'status',
     'statuses',
     'title',
@@ -2546,7 +2555,7 @@ const queryFields: Record<string, string[]> = {
   '/file/preview/{id:[a-fA-F0-9]{32}}': [],
   '/file/download/{id:[a-fA-F0-9]{32}}': [],
   '/taskColumn/query': ['page', 'pageSize'],
-  '/tasks': ['get', 'pageSize', 'taskId'],
+  '/tasks': ['page', 'pageSize', 'taskId'],
   '/taskDetails': ['taskId'],
   '/taskDetails/watched': [],
   '/thought/query': [
@@ -2589,7 +2598,7 @@ const queryFields: Record<string, string[]> = {
   '/userDictType/dictTypeEnum': [],
   '/userDictType/getByDictType': ['dictType'],
   '/notification/channels/wechat-mini': [],
-  '/weread/recent': ['cursor', 'size'],
+  '/weread/recent': ['cursor', 'pageSize'],
   '/weread/connection': [],
   '/weread/stats': ['baseTime', 'mode'],
   '/weread/notes': ['bookId'],
@@ -2602,9 +2611,9 @@ const queryFields: Record<string, string[]> = {
   '/api-key/list': [],
   '/file/preview/{*fileName}': [],
   '/message/list': ['isRead'],
-  '/message/page': ['current', 'isRead', 'size'],
+  '/message/page': ['isRead', 'page', 'pageSize'],
   '/message/unread-count': [],
-  '/message/admin/list': ['current', 'size', 'userId'],
+  '/message/admin/list': ['page', 'pageSize', 'userId'],
   '/auth/qr-login/{id}/status': ['secret'],
   '/user-center/list': ['keyword', 'page', 'pageSize'],
   '/auth/info': [],

@@ -244,7 +244,8 @@ const handleSubmitCategory = async () => {
     submitting.value = true;
 
     if (isEdit.value) {
-      await adminUpdateCategory(formState.value);
+      if (!formState.value.id) return;
+      await adminUpdateCategory({ ...formState.value, id: formState.value.id });
     } else {
       await adminSaveCategory(formState.value);
     }

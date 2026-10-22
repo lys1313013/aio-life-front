@@ -68,7 +68,7 @@ export async function add(data: ApiRequests['ExerciseRecordCreateReq']) {
  * 修改运动记录
  */
 export async function update(
-  data: ApiRequests['ExerciseRecordUpdateReq'] & { id?: string },
+  data: ApiRequests['ExerciseRecordUpdateReq'] & { id: string },
 ) {
   return await requestClient.put(
     `/exerciseRecord/${data.id}`,
@@ -89,7 +89,7 @@ export async function deleteBatch(data: ApiRequests['CommonReq']) {
 /**
  * 获取运动记录详情
  */
-export async function get(data: any) {
+export async function get(data: { id: string }) {
   return await requestClient.get(`/exerciseRecord/get/${data.id}`);
 }
 

@@ -1,9 +1,11 @@
 <script lang="ts" setup>
+import type { ApiRequests } from '#/api/payload';
+
 import { onMounted, ref, watch } from 'vue';
 
 import dayjs from 'dayjs';
 
-import { useAppForm } from '#/adapter/form';
+import { useAppForm, z } from '#/adapter/form';
 import { add, update } from '#/api/core/exerciseRecord';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModalFooter } from '#/components/app-modal';
@@ -74,14 +76,16 @@ const [Form, formApi] = useAppForm({
       defaultValue: dayjs().format('YYYY-MM-DD'),
     },
     {
-      component: 'Input',
+      component: 'InputNumber',
       componentProps: {
         placeholder: '请输入',
-        type: 'number',
+        min: 0,
+        precision: 0,
         style: { width: '100%' },
       },
       fieldName: 'exerciseCount',
       label: '运动数量',
+      rules: z.number().int('请输入整数').min(0, '数量不能为负数').nullish(),
     },
     {
       component: 'Input',
@@ -122,11 +126,12 @@ const handleSubmit = async () => {
   try {
     const { valid } = await formApi.validate();
     if (!valid) return;
-    const formData = await formApi.getValues();
+    const formData =
+      await formApi.getValues<ApiRequests['ExerciseRecordCreateReq']>();
     let res;
     if (props.values && props.values.id) {
       // 编辑模式
-      res = await update(formData);
+      res = await update({ ...formData, id: props.values.id });
     } else {
       // 新增模式
       res = await add(formData);

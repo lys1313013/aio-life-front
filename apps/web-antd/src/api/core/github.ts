@@ -141,8 +141,8 @@ export async function getGithubContributionStats(
 /**
  * 通过后端代理获取当前绑定 GitHub 账号的最近提交列表（规避浏览器 CORS）
  */
-export const getRecentCommitsApi = (perPage = 20, page = 1) => {
+export const getRecentCommitsApi = (pageSize = 20, page = 1) => {
   return requestClient.get<GithubCommitVO[]>('/github/recent-commits', {
-    params: { page, perPage },
+    params: { page, pageSize },
   });
 };

@@ -108,12 +108,12 @@ try {
       (item) =>
         !query.get('cardType') || item.cardType === query.get('cardType'),
     );
-    const start = (Number(query.get('page')) - 1) * Number(query.get('size'));
+    const start = (Number(query.get('page')) - 1) * Number(query.get('pageSize'));
     return route.fulfill({
       json: {
         code: 0,
         data: {
-          items: list.slice(start, start + Number(query.get('size'))),
+          items: list.slice(start, start + Number(query.get('pageSize'))),
           total: list.length,
         },
       },

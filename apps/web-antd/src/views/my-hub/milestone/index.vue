@@ -241,7 +241,7 @@ const handleSave = async () => {
     };
 
     await (formState.value.id
-      ? updateMilestone(payload)
+      ? updateMilestone({ ...payload, id: formState.value.id })
       : createMilestone(payload));
 
     modalVisible.value = false;

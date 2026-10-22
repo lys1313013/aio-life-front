@@ -127,8 +127,8 @@ describe('最小请求契约', () => {
   it('首页阅读和观影保留服务端状态排序条件', () => {
     for (const path of ['/read-record/page', '/movie/page']) {
       const query = {
-        current: 2,
-        size: 20,
+        page: 2,
+        pageSize: 20,
         activeOnly: true,
         inProgressFirst: true,
       };
@@ -248,12 +248,12 @@ describe('最小请求契约', () => {
     ).toEqual({ keyword: '人' });
     expect(
       pickQuery('/movie/page', {
-        current: 0,
-        size: 20,
+        page: 0,
+        pageSize: 20,
         activeOnly: false,
         userId: '11',
       }),
-    ).toEqual({ current: 0, size: 20, activeOnly: false });
+    ).toEqual({ page: 0, pageSize: 20, activeOnly: false });
   });
 
   it('删除关系和动态 MCP 参数有各自的契约', () => {

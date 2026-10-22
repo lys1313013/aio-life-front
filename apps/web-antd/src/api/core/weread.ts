@@ -78,7 +78,7 @@ export interface WereadRecent {
 }
 export function getWereadRecent(cursor?: string) {
   return requestClient.get<WereadRecent>('/weread/recent', {
-    params: { cursor, size: 6 },
+    params: { cursor, pageSize: 6 },
     timeout: 120_000,
   });
 }

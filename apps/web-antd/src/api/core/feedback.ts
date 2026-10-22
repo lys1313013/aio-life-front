@@ -20,7 +20,7 @@ export interface PageResp<T> {
  */
 export interface FeedbackVO {
   id: string;
-  userId: number;
+  userId: string;
   userName: string;
   title: string;
   summary: string;
@@ -46,7 +46,7 @@ export interface FeedbackDetailVO extends FeedbackVO {
  */
 export interface FeedbackCommentVO {
   id: string;
-  userId: number;
+  userId: string;
   userName: string;
   roleType: 'ADMIN' | 'USER';
   content: string;
@@ -79,7 +79,7 @@ export interface FeedbackCommentCreateReq {
 export interface FeedbackAdminQuery {
   status?: string;
   feedbackType?: string;
-  userId?: number;
+  userId?: string;
   keyword?: string;
   startTime?: string;
   endTime?: string;
@@ -168,7 +168,7 @@ export async function queryAllFeedbacks(params: {
   pageSize?: number;
   startTime?: string;
   status?: string;
-  userId?: number;
+  userId?: string;
 }) {
   return await requestClient.get<PageResp<FeedbackVO>>('/feedback/admin/list', {
     params,
@@ -211,7 +211,7 @@ export async function adminUpdateFeedbackStatus(
 /**
  * 管理员：批量操作
  */
-export async function adminBatchFeedback(idList: number[], action: string) {
+export async function adminBatchFeedback(idList: string[], action: string) {
   return await requestClient.post<void>(
     '/feedback/admin/batch',
     pickPayload('FeedbackBatchReq', {

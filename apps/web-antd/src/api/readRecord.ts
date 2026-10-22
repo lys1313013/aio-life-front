@@ -19,8 +19,8 @@ export namespace ReadRecordApi {
     statuses?: ProgressStatus[];
     activeOnly?: boolean;
     inProgressFirst?: boolean;
-    current?: number;
-    size?: number;
+    page?: number;
+    pageSize?: number;
   }
 
   export interface ReadRecordVO {
@@ -111,7 +111,7 @@ export namespace ReadRecordApi {
   /**
    * 根据ID获取详情
    */
-  export function getById(id: number | string) {
+  export function getById(id: string) {
     return requestClient.get<ReadRecordVO>(`/read-record/${id}`);
   }
 

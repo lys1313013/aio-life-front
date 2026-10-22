@@ -250,7 +250,7 @@ const handleAddComment = async () => {
   }
 };
 
-const getImageUrl = (fileId: number | string) => {
+const getImageUrl = (fileId: string) => {
   return imageUrlMap.value[String(fileId)] || '';
 };
 </script>

@@ -24,7 +24,7 @@ export interface CoverTemplate extends CoverOption {
 const path = '/system/bank-card-covers';
 export interface CoverTemplateQuery {
   page: number;
-  size: number;
+  pageSize: number;
   keyword?: string;
   bankId?: string;
   cardType?: string;

@@ -10,7 +10,7 @@ export interface TaskColumnQuery {
 }
 
 export interface TaskQuery {
-  get?: number;
+  page?: number;
   pageSize?: number;
   taskId?: string;
 }

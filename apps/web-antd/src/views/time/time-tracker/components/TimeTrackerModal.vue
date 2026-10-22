@@ -49,7 +49,7 @@ const loadCategories = async () => {
     const data = await listCategories(true);
     if (data) {
       categories.value = data.map((cat) => {
-        const isPublic = Number(cat.userId) === 0;
+        const isPublic = cat.userId === '0';
         const isOverride = !!cat.templateId;
         return {
           id: cat.id as string,

@@ -107,7 +107,7 @@ export async function adminSaveCategory(
 }
 
 export async function adminUpdateCategory(
-  data: ApiRequests['TimeTrackerCategoryAdminUpdateReq'] & { id?: string },
+  data: ApiRequests['TimeTrackerCategoryAdminUpdateReq'] & { id: string },
 ): Promise<boolean> {
   return await requestClient.put(
     `/timeTrackerCategory/admin/${data.id}`,

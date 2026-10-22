@@ -42,6 +42,7 @@ import {
   saveTask,
   updateColumn,
 } from '#/api/core/todo';
+import { fetchAllPages } from '#/api/pagination';
 import { AppModal as AModal } from '#/components/app-modal';
 
 import TaskEditModal from './task-edit-modal.vue';
@@ -91,17 +92,15 @@ const loading = ref(false);
 onMounted(async () => {
   loading.value = true;
   try {
-    const res = await getTaskColumnList();
-    columns.value = res.items.map((item) => ({
+    const allColumns = await fetchAllPages(getTaskColumnList);
+    columns.value = allColumns.map((item) => ({
       ...item,
       tasks: [],
     }));
 
-    const tasksRes = await getTaskList();
+    const tasks = await fetchAllPages(getTaskList);
     columns.value.forEach((column) => {
-      column.tasks = tasksRes.items.filter(
-        (item) => item.columnId === column.id,
-      );
+      column.tasks = tasks.filter((item) => item.columnId === column.id);
     });
   } catch (error) {
     console.error('初始化数据失败', error);

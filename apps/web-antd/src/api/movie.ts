@@ -19,8 +19,8 @@ export namespace MovieApi {
     statuses?: ProgressStatus[];
     activeOnly?: boolean;
     inProgressFirst?: boolean;
-    current?: number;
-    size?: number;
+    page?: number;
+    pageSize?: number;
   }
 
   export interface MovieVO {
@@ -173,7 +173,7 @@ export namespace MovieApi {
   /**
    * 根据ID获取详情
    */
-  export function getById(id: number | string) {
+  export function getById(id: string) {
     return requestClient.get<MovieVO>(`/movie/${id}`);
   }
 

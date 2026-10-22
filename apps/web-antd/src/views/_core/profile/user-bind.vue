@@ -188,7 +188,7 @@ const handleOk = async () => {
   modalLoading.value = true;
   try {
     await (formState.value.id
-      ? updateUserBindApi(formState.value)
+      ? updateUserBindApi({ ...formState.value, id: formState.value.id })
       : addUserBindApi(formState.value));
     if (formState.value.platform === 'github') {
       clearGithubBindCache();

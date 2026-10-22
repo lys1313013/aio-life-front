@@ -46,8 +46,8 @@ const gridScrollRef = ref<HTMLElement>();
 let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 
 const queryForm = ref({
-  current: 1,
-  size: 24,
+  page: 1,
+  pageSize: 24,
   title: '',
   type: undefined as number | undefined,
   statuses: loadStatusFilter(STATUS_FILTER_STORAGE_KEY),
@@ -65,7 +65,7 @@ const getGridColumnCount = () => {
 
 const calculatePageSize = () => {
   const container = gridScrollRef.value;
-  if (!container) return queryForm.value.size;
+  if (!container) return queryForm.value.pageSize;
 
   const columns = getGridColumnCount();
   const horizontalGap = 16;
@@ -80,7 +80,7 @@ const calculatePageSize = () => {
   );
 
   // 多取一行作为滚动缓冲，避免首屏刚填满就立即触发下一页请求。
-  return columns * (visibleRows + 1);
+  return Math.min(200, columns * (visibleRows + 1));
 };
 
 // 状态映射
@@ -94,7 +94,7 @@ const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
 const loadData = async (isLoadMore = false) => {
   if (!isLoadMore) {
     loading.value = true;
-    queryForm.value.current = 1;
+    queryForm.value.page = 1;
     hasMore.value = true;
   }
 
@@ -129,14 +129,14 @@ const handleScroll = (e: Event) => {
     hasMore.value
   ) {
     loading.value = true;
-    queryForm.value.current += 1;
+    queryForm.value.page += 1;
     loadData(true);
   }
 };
 
 onMounted(async () => {
   await nextTick();
-  queryForm.value.size = calculatePageSize();
+  queryForm.value.pageSize = calculatePageSize();
   loadData();
 });
 
@@ -144,8 +144,8 @@ useResizeObserver(gridScrollRef, () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     const nextPageSize = calculatePageSize();
-    if (nextPageSize !== queryForm.value.size) {
-      queryForm.value.size = nextPageSize;
+    if (nextPageSize !== queryForm.value.pageSize) {
+      queryForm.value.pageSize = nextPageSize;
       loadData();
     }
   }, 200);

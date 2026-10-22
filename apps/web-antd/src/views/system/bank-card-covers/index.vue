@@ -82,7 +82,7 @@ const formRef = ref<FormInstance>();
 function empty(): ApiRequests['BankCardCoverTemplateReq'] {
   return {
     name: '',
-    bankId: null,
+    bankId: '',
     cardType: 'debit',
     sourceUrl: null,
     fileId: '',
@@ -212,7 +212,7 @@ async function load(reset = true) {
   try {
     const result = await listCoverTemplates({
       page: nextPage,
-      size: pageSize.value,
+      pageSize: pageSize.value,
       keyword: search.value.trim() || undefined,
       bankId: bankFilter.value,
       cardType: typeFilter.value,
@@ -585,7 +585,7 @@ onActivated(() => {
             <Select
               :value="form.bankId ?? undefined"
               @update:value="
-                form.bankId = $event == null ? null : String($event)
+                form.bankId = $event == null ? '' : String($event)
               "
               :options="bankOptions"
               show-search

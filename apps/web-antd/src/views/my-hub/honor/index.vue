@@ -299,7 +299,7 @@ const handleSave = async () => {
     };
 
     if (formState.value.id) {
-      await updateHonorRecord(payload);
+      await updateHonorRecord({ ...payload, id: formState.value.id });
     } else {
       await createHonorRecord(payload);
     }

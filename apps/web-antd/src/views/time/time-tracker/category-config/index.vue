@@ -182,7 +182,7 @@ const fetchCategories = async () => {
     const merged: MergedCategory[] = [];
 
     visibleList.forEach((item) => {
-      const isPublic = Number(item.userId) === 0;
+      const isPublic = item.userId === '0';
       const isOverride = !!item.templateId;
       merged.push({
         id: item.id as string,
@@ -301,7 +301,7 @@ const handleHide = async (record: any) => {
       id: record.realId!,
       templateId: record.originalId,
       isEnabled: 0,
-    } as TimeTrackerCategoryEntity);
+    });
     message.success('已隐藏');
     fetchCategories();
   } catch {
@@ -318,7 +318,7 @@ const handleToggleTrackTime = async (record: any, checked: any) => {
       id: record.realId!,
       templateId: record.originalId,
       isTrackTime: checked ? 1 : 0,
-    } as TimeTrackerCategoryEntity);
+    });
     fetchCategories();
   } catch {
     // 全局拦截器已提示
@@ -334,7 +334,7 @@ const handleUnhide = async (record: any) => {
       id: record.realId!,
       templateId: record.originalId,
       isEnabled: 1,
-    } as TimeTrackerCategoryEntity);
+    });
     message.success('已恢复');
     fetchCategories();
   } catch {
@@ -368,7 +368,8 @@ const handleSaveCategory = async () => {
       };
       if (data.parentId === editingCategory.value?.parentId)
         delete data.parentId;
-      await updateCategory(data);
+      if (!data.id) return;
+      await updateCategory({ ...data, id: data.id });
       message.success('设置已保存');
     } else if (editingCategory.value?.id) {
       // 更新私有分类

@@ -20,9 +20,9 @@ export async function getMessageListApi(params?: { isRead?: boolean }) {
 }
 
 export async function getMessagePageApi(params: {
-  current: number;
+  page: number;
   isRead?: boolean;
-  size: number;
+  pageSize: number;
 }) {
   return requestClient.get<MessagePageResult>('/message/page', { params });
 }
@@ -64,8 +64,8 @@ export interface MessagePageResult {
 }
 
 export async function adminGetMessageListApi(params: {
-  current?: number;
-  size?: number;
+  page?: number;
+  pageSize?: number;
   userId?: string;
 }) {
   return requestClient.get<MessagePageResult>('/message/admin/list', {

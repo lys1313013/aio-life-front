@@ -54,7 +54,7 @@ export async function getById(id: string): Promise<TimeRecordEntity> {
  * 更新数据
  */
 export async function update(
-  data: ApiRequests['TimeRecordSaveReq'] & { id?: string },
+  data: ApiRequests['TimeRecordSaveReq'] & { id: string },
 ): Promise<void> {
   return await requestClient.put(
     `/timeRecord/${data.id}`,

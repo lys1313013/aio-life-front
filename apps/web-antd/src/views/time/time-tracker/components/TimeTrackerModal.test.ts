@@ -7,6 +7,7 @@ import TimeSlotEditForm from './TimeSlotEditForm.vue';
 import TimeTrackerModal from './TimeTrackerModal.vue';
 
 const mocks = vi.hoisted(() => ({
+  listCategories: vi.fn(),
   save: vi.fn(),
   update: vi.fn(),
   recommendNext: vi.fn(),
@@ -28,7 +29,7 @@ vi.mock('#/api/core/time-tracker', () => ({
 }));
 
 vi.mock('#/api/core/time-tracker-category', () => ({
-  listCategories: async () => [],
+  listCategories: mocks.listCategories,
 }));
 
 vi.mock('ant-design-vue', () => ({
@@ -48,7 +49,10 @@ vi.mock('ant-design-vue', () => ({
 }));
 
 vi.mock('./TimeSlotEditForm.vue', () => ({
-  default: { props: ['slot'], template: '<div data-test="editor" />' },
+  default: {
+    props: ['slot', 'categories'],
+    template: '<div data-test="editor" />',
+  },
 }));
 
 function recommendation(startTime: number, endTime: number) {
@@ -64,6 +68,7 @@ function recommendation(startTime: number, endTime: number) {
 describe('新增时迹前检查当天剩余时间', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listCategories.mockResolvedValue([]);
     mocks.loading.mockReturnValue(mocks.hideLoading);
     mocks.query.mockResolvedValue({ items: [], total: 0 });
     mocks.getById.mockResolvedValue({});
@@ -124,6 +129,35 @@ describe('新增时迹前检查当天剩余时间', () => {
     wrapper.unmount();
   });
 
+  it('公共分类按字符串零判断，用户 ID 保留完整精度', async () => {
+    const ids = ['0', '9223372036854775807', undefined];
+    mocks.listCategories.mockResolvedValue(
+      ids.map((userId, index) => ({
+        id: `922337203685477580${index}`,
+        userId,
+        name: `分类 ${index}`,
+        color: '#123456',
+        isTrackTime: 1,
+        isEnabled: 1,
+      })),
+    );
+    mocks.recommendNext.mockResolvedValue({
+      recommend: recommendation(540, 569),
+      records: [],
+    });
+    const wrapper = mount(TimeTrackerModal);
+    await wrapper.vm.open(undefined, '2026-09-12', []);
+    await flushPromises();
+    expect(
+      wrapper.findComponent(TimeSlotEditForm).props('categories'),
+    ).toMatchObject([
+      { id: '9223372036854775800', categoryType: 'public' },
+      { id: '9223372036854775801', categoryType: 'private' },
+      { id: '9223372036854775802', categoryType: 'private' },
+    ]);
+    wrapper.unmount();
+  });
+
   it('普通空闲区间检查完成后打开预填的新增表单', async () => {
     mocks.recommendNext.mockResolvedValue({
       recommend: recommendation(540, 569),
@@ -175,6 +209,7 @@ describe('新增时迹前检查当天剩余时间', () => {
 describe('时迹服务端 ID', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listCategories.mockResolvedValue([]);
     mocks.loading.mockReturnValue(mocks.hideLoading);
   });
 
@@ -223,6 +258,7 @@ describe('时迹服务端 ID', () => {
 describe('录入日期选择', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.listCategories.mockResolvedValue([]);
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2026, 8, 22, 9));
     mocks.loading.mockReturnValue(mocks.hideLoading);
@@ -258,7 +294,9 @@ describe('录入日期选择', () => {
       const wrapper = mount(TimeTrackerModal);
       await wrapper.vm.open(undefined, date);
       expect(mocks.recommendNext).toHaveBeenCalledExactlyOnceWith({ date });
-      expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(date);
+      expect(wrapper.findComponent(TimeSlotEditForm).props('slot').date).toBe(
+        date,
+      );
       wrapper.unmount();
     },
   );

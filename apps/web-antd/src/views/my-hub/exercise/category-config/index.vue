@@ -29,6 +29,7 @@ import {
 
 import { deleteData, insert, query, update } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
+import { fetchAllPages } from '#/api/pagination';
 import { AppModal as Modal } from '#/components/app-modal';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
 
@@ -119,16 +120,15 @@ const fetchCategories = async () => {
   if (!activeTab.value) return;
   loading.value = true;
   try {
-    const res = await query({
-      page: 1,
-      pageSize: 500, // 假设数据量不大
-      condition: {
-        dictType: activeTab.value,
-        status: statusFilter.value === '' ? undefined : statusFilter.value,
-      },
-    });
-    // @ts-ignore
-    categories.value = res.items || [];
+    categories.value = await fetchAllPages((params) =>
+      query({
+        ...params,
+        condition: {
+          dictType: activeTab.value,
+          status: statusFilter.value === '' ? undefined : statusFilter.value,
+        },
+      }),
+    );
     // 按 dictSort 排序
     categories.value.sort((a, b) => (a.dictSort || 0) - (b.dictSort || 0));
   } catch (error) {

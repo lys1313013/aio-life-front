@@ -147,7 +147,7 @@ const handleOk = async () => {
     };
     const saved =
       isEdit.value && formState.value.id
-        ? await updateAnniversaryRecord(payload)
+        ? await updateAnniversaryRecord({ ...payload, id: formState.value.id })
         : await createAnniversaryRecord(payload);
     emit('saved', saved);
     modalVisible.value = false;

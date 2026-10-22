@@ -16,7 +16,7 @@ export async function save(data: ApiRequests['ThoughtSaveReq']) {
 }
 
 export async function update(
-  data: ApiRequests['ThoughtUpdateReq'] & { id?: string },
+  data: ApiRequests['ThoughtUpdateReq'] & { id: string },
 ) {
   return await requestClient.put(
     `/thought/${data.id}`,

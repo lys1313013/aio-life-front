@@ -54,7 +54,7 @@ export async function adminInsert(
 }
 
 export async function adminUpdate(
-  data: ApiRequests['UserDictDataAdminUpdateReq'] & { id?: string },
+  data: ApiRequests['UserDictDataAdminUpdateReq'] & { id: string },
 ) {
   return await requestClient.put(
     `/userDictData/admin/${data.id}`,

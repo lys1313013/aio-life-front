@@ -7,8 +7,8 @@ import { requestClient } from '#/api/request';
  * PasswordVault 实体接口
  */
 export interface PasswordVaultEntity {
-  id?: number;
-  userId?: number;
+  id?: string;
+  userId?: string;
   title: string;
   website?: string;
   category?: string;
@@ -17,8 +17,8 @@ export interface PasswordVaultEntity {
   salt?: string;
   remark?: string;
   favorite?: boolean;
-  createUser?: number;
-  updateUser?: number;
+  createUser?: string;
+  updateUser?: string;
   createTime?: string;
   updateTime?: string;
   isDeleted?: number;
@@ -34,7 +34,7 @@ export async function queryPasswordVault() {
 /**
  * 获取单条密码
  */
-export async function getPasswordVault(id: number) {
+export async function getPasswordVault(id: string) {
   return await requestClient.get<PasswordVaultEntity>(`/password/${id}`);
 }
 
@@ -54,7 +54,7 @@ export async function createPasswordVault(
  * 更新密码
  */
 export async function updatePasswordVault(
-  data: ApiRequests['PasswordVaultUpdateReq'] & { id?: string },
+  data: ApiRequests['PasswordVaultUpdateReq'] & { id: string },
 ) {
   return await requestClient.put<PasswordVaultEntity>(
     `/password/${data.id}`,
@@ -65,7 +65,7 @@ export async function updatePasswordVault(
 /**
  * 删除密码
  */
-export async function deletePasswordVault(id: number) {
+export async function deletePasswordVault(id: string) {
   return await requestClient.delete(`/password/${id}`);
 }
 

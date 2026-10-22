@@ -39,6 +39,7 @@ import {
   adminUpdate,
 } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
+import { fetchAllPages } from '#/api/pagination';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
@@ -246,27 +247,9 @@ const handleDelete = async (row: any) => {
 };
 
 const queryAllDictData = async (dictType: string) => {
-  const queryParams = {
-    page: 1,
-    pageSize: 1,
-    condition: { dictType },
-  };
-  const firstPage = await adminQuery(queryParams);
-  const total = firstPage.total ?? 0;
-
-  if (total === 0) {
-    return [];
-  }
-
-  const allDataPage =
-    total === 1
-      ? firstPage
-      : await adminQuery({
-          ...queryParams,
-          pageSize: total,
-        });
-
-  return allDataPage.items || [];
+  return fetchAllPages((params) =>
+    adminQuery({ ...params, condition: { dictType } }),
+  );
 };
 
 const queryNextDictSort = async (dictType: string) => {

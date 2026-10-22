@@ -337,7 +337,7 @@ describe('公共卡面滚动分页', () => {
     api.listCoverTemplates.mockReturnValueOnce(pending.promise);
     const wrapper = await render();
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 1, size }),
+      expect.objectContaining({ page: 1, pageSize: size }),
     );
     expect(wrapper.findAll('.cover-placeholder')).toHaveLength(size);
     pending.resolve(pageResult([{ ...original }]));
@@ -348,12 +348,12 @@ describe('公共卡面滚动分页', () => {
     mockLayout(5, 1800);
     const wrapper = await render();
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ size: 40 }),
+      expect.objectContaining({ pageSize: 40 }),
     );
     vi.stubGlobal('innerHeight', 10_000);
     await wrapper.get('[aria-label="刷新卡面"]').trigger('click');
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ size: 100 }),
+      expect.objectContaining({ pageSize: 100 }),
     );
   });
   it('窗口变宽后分页仍使用原批量，刷新才重新计算', async () => {
@@ -373,7 +373,7 @@ describe('公共卡面滚动分页', () => {
     await flushPromises();
     expect(api.listCoverTemplates).toHaveBeenCalledTimes(2);
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 2, size: 25 }),
+      expect.objectContaining({ page: 2, pageSize: 25 }),
     );
     expect(wrapper.findAll('.cover-item')).toHaveLength(25);
     expect(wrapper.findAll('.cover-placeholder')).toHaveLength(25);
@@ -383,7 +383,7 @@ describe('公共卡面滚动分页', () => {
     expect(wrapper.findAll('.cover-item')).toHaveLength(25);
     await wrapper.get('[aria-label="刷新卡面"]').trigger('click');
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 1, size: 24 }),
+      expect.objectContaining({ page: 1, pageSize: 24 }),
     );
   });
   const firstPage = Array.from({ length: 24 }, (_, index) => ({
@@ -396,7 +396,7 @@ describe('公共卡面滚动分页', () => {
     const wrapper = await render();
     expect(api.listCoverTemplates).toHaveBeenCalledTimes(1);
     expect(api.listCoverTemplates).toHaveBeenLastCalledWith(
-      expect.objectContaining({ page: 1, size: 24 }),
+      expect.objectContaining({ page: 1, pageSize: 24 }),
     );
     const next = deferred<CoverTemplatePage>();
     api.listCoverTemplates.mockReturnValueOnce(next.promise);

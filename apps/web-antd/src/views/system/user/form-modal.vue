@@ -81,7 +81,8 @@ const [Modal, modalApi] = useVbenModal({
       const values = await formApi.getValues();
       try {
         if (isUpdate.value) {
-          await updateUserApi(values);
+          if (!values.id) return;
+          await updateUserApi({ ...values, id: values.id });
           message.success('修改成功');
         } else {
           await addUserApi(values);

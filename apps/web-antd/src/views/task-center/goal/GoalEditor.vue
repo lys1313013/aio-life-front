@@ -247,7 +247,7 @@ const handleSave = async () => {
     };
 
     const saved = formState.value.id
-      ? await updateGoal(payload)
+      ? await updateGoal({ ...payload, id: formState.value.id })
       : await createGoal(payload);
     emit('saved', saved);
 

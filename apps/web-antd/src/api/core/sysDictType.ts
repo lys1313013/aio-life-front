@@ -25,7 +25,7 @@ export async function add(data: ApiRequests['SysDictTypeCreateReq']) {
  * 更新
  */
 export async function update(
-  dictId: number | string,
+  dictId: string,
   data: ApiRequests['SysDictTypeUpdateReq'],
 ) {
   return await requestClient.put(
@@ -37,6 +37,6 @@ export async function update(
 /**
  * 删除
  */
-export async function deleteData(data: any) {
+export async function deleteData(data: { dictId: string }) {
   return await requestClient.delete(`/sysDictType/${data.dictId}`);
 }

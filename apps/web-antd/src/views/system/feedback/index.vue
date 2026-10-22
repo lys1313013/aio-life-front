@@ -250,7 +250,7 @@ const handleChangeStatus = async () => {
   }
 };
 
-const getImageUrl = (fileId: number | string) => {
+const getImageUrl = (fileId: string) => {
   return imageUrlMap.value[String(fileId)] || '';
 };
 </script>

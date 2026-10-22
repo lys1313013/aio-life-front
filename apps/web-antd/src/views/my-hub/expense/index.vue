@@ -33,7 +33,7 @@ interface RowType {
   productName: string;
   releaseDate: string;
   amt: number;
-  expTypeId: number;
+  expTypeId: string;
   payTypeId: string;
   remark: string;
   expTime: string;

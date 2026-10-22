@@ -97,8 +97,8 @@ const loadData = async (loadMore = false) => {
   try {
     const query = {
       activeOnly: !showAll.value,
-      current: targetPage,
-      size: PAGE_SIZE,
+      page: targetPage,
+      pageSize: PAGE_SIZE,
       title: searchKeyword.value.trim() || undefined,
     };
     const response =

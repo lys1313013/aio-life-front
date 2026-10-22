@@ -28,6 +28,6 @@ export async function updateUserApi(data: ApiRequests['UserUpdateReq']) {
 /**
  * 删除用户
  */
-export async function deleteUserApi(id: number) {
+export async function deleteUserApi(id: string) {
   return requestClient.delete(`/user-center/${id}`);
 }

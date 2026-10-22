@@ -27,6 +27,6 @@ export async function generateApiKeyApi(
  * 删除 API Key
  * @param id API Key ID
  */
-export async function deleteApiKeyApi(id: number | string) {
+export async function deleteApiKeyApi(id: string) {
   return requestClient.delete(`/api-key/${id}`);
 }
