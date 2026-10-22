@@ -1,4 +1,4 @@
-FROM node:22-slim AS builder
+FROM node:22.23.4-slim AS builder
 
 # --max-old-space-size
 ENV PNPM_HOME="/pnpm"
@@ -23,7 +23,7 @@ RUN pnpm run build --filter=\!./docs
 
 RUN echo "Builder Success 🎉"
 
-FROM nginx:stable-alpine AS production
+FROM nginx:1.30.6-alpine3.24 AS production
 
 # 配置 nginx
 RUN echo "types { application/javascript js mjs; }" > /etc/nginx/conf.d/mjs.conf \

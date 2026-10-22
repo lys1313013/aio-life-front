@@ -1,7 +1,7 @@
 # ================================
 # Stage 1: Build
 # ================================
-FROM node:22-alpine AS builder
+FROM node:22.23.4-alpine AS builder
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
@@ -29,7 +29,7 @@ RUN pnpm run build --filter=@vben/web-antd
 # ================================
 # Stage 2: Runtime (Nginx)
 # ================================
-FROM nginx:stable-alpine AS production
+FROM nginx:1.30.6-alpine3.24 AS production
 
 # 时区
 RUN apk add --no-cache tzdata \

@@ -1,5 +1,5 @@
 # CI 在 runner 上构建前端，构建上下文仅包含 dist、nginx.conf 和本文件。
-FROM nginx:stable-alpine AS production
+FROM nginx:1.30.6-alpine3.24 AS production
 
 RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
