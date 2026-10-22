@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { ExpenseDeviceChange } from '#/api/core/expense-device';
 
 import { onMounted, ref } from 'vue';
 
@@ -10,6 +11,7 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
+  LinkOutlined,
 } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
 
@@ -20,10 +22,11 @@ import { getByDictType } from '#/api/core/userDictType';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
+import DeviceModal from './device-modal.vue';
 import FormModalDemo from './form-modal.vue';
 
 interface RowType {
-  id: any;
+  id: string;
   category: string;
   color: string;
   price: string;
@@ -39,6 +42,26 @@ interface RowType {
   transactionId: string;
   createTime: string;
   updateTime: string;
+}
+
+const deviceExpenseId = ref('');
+let deviceRevision = 0;
+const deviceChanges = new Map<
+  string,
+  ExpenseDeviceChange & { revision: number }
+>();
+function updateDevice(change: ExpenseDeviceChange) {
+  deviceChanges.set(change.expenseId, {
+    ...change,
+    revision: ++deviceRevision,
+  });
+  const { fullData } = gridApi.grid.getTableData();
+  const row = fullData.find((item) => item.id === change.expenseId);
+  if (row)
+    Object.assign(row, {
+      deviceId: change.deviceId,
+      deviceName: change.deviceName,
+    });
 }
 
 const dashboardRef = ref<InstanceType<typeof TransactionDashboard>>();
@@ -228,6 +251,12 @@ const gridOptions: VxeGridProps<RowType> = {
         return getPayTypeLabel(cellValue);
       },
     },
+    {
+      field: 'deviceName',
+      title: '关联设备',
+      width: 160,
+      slots: { default: 'device' },
+    },
     { field: 'remark', title: '备注', sortable: true, width: 100 },
     { field: 'expTime', title: '时间', sortable: true, width: 180 },
     { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
@@ -250,7 +279,7 @@ const gridOptions: VxeGridProps<RowType> = {
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 120,
+      width: 150,
     },
   ],
   showFooter: true, // 显示底部合计行
@@ -280,6 +309,7 @@ const gridOptions: VxeGridProps<RowType> = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues) => {
+        const startedRevision = deviceRevision;
         await loadExpTypes();
         // 处理查询条件
         const processedCondition = processQueryCondition(formValues);
@@ -289,6 +319,16 @@ const gridOptions: VxeGridProps<RowType> = {
           condition: processedCondition,
         });
 
+        // 绑定期间返回的旧列表不能覆盖刚保存的关联。
+        for (const row of result.items) {
+          const change = deviceChanges.get(row.id);
+          if (change && change.revision > startedRevision) {
+            Object.assign(row, {
+              deviceId: change.deviceId,
+              deviceName: change.deviceName,
+            });
+          }
+        }
         return result;
       },
     },
@@ -393,6 +433,12 @@ const handleYearChange = (_year: 'all' | number) => {
 
 <template>
   <div class="vp-raw w-full">
+    <DeviceModal
+      v-if="deviceExpenseId"
+      :expense-id="deviceExpenseId"
+      @close="deviceExpenseId = ''"
+      @updated="updateDevice"
+    />
     <FormModal
       @table-reload="tableReload"
       @update-success="handleUpdateSuccess"
@@ -405,7 +451,7 @@ const handleYearChange = (_year: 'all' | number) => {
       @year-change="handleYearChange"
     />
     <!-- 表格区域 -->
-    <Grid :separator="false">
+    <Grid :separator="false" viewport-fill="section">
       <template #toolbar-tools>
         <Button class="mr-2" type="primary" @click="openAddFormModal">
           新增
@@ -417,7 +463,25 @@ const handleYearChange = (_year: 'all' | number) => {
           <ColumnWidthOutlined />
         </Button>
       </template>
+      <template #device="{ row }">
+        <Button
+          v-if="row.deviceName"
+          type="link"
+          class="max-w-full truncate"
+          @click="deviceExpenseId = row.id"
+        >
+          {{ row.deviceName }}
+        </Button>
+      </template>
       <template #action="{ row }">
+        <Button
+          type="link"
+          size="small"
+          aria-label="关联设备"
+          @click="deviceExpenseId = row.id"
+        >
+          <template #icon><LinkOutlined /></template>
+        </Button>
         <Button type="link" size="small" @click="openFormModal(row)">
           <template #icon><EditOutlined /></template>
         </Button>
