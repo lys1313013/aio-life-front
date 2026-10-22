@@ -3,7 +3,14 @@ import type { SystemConfigVO } from '#/api/system/system-config';
 
 import { reactive, ref, watch } from 'vue';
 
-import { Button, Checkbox, Form, Input, Select } from 'ant-design-vue';
+import {
+  Button,
+  Checkbox,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+} from 'ant-design-vue';
 
 import { DEFAULT_MAP_SOURCE } from '#/views/my-hub/life-footprints/map-config';
 
@@ -13,6 +20,7 @@ const serviceAkConfigured = ref(false);
 const advanced = ref(false);
 const defaults = {
   serviceAk: '',
+  timeoutMs: 5000,
   clearServiceAk: false,
   tileUrl: DEFAULT_MAP_SOURCE.url,
   tileAttribution: DEFAULT_MAP_SOURCE.attribution,
@@ -60,6 +68,20 @@ function save() {
         >
           清除服务端 AK
         </Checkbox>
+      </Form.Item>
+      <Form.Item
+        label="请求超时（毫秒）"
+        name="timeoutMs"
+        :rules="[{ required: true, type: 'integer', min: 1000, max: 15000 }]"
+      >
+        <InputNumber
+          v-model:value="form.timeoutMs"
+          aria-label="地图请求超时（毫秒）"
+          :min="1000"
+          :max="15000"
+          :precision="0"
+          class="w-full"
+        />
       </Form.Item>
     </div>
     <Button type="link" class="mb-3 px-0" @click="advanced = !advanced">

@@ -42,6 +42,7 @@ describe('生活足迹地图配置', () => {
     await flushPromises();
     expect(JSON.parse(wrapper.emitted('save')![0]![0] as string)).toEqual({
       serviceAk: '',
+      timeoutMs: 5000,
       clearServiceAk: false,
       tileUrl: DEFAULT_MAP_SOURCE.url,
       tileAttribution: DEFAULT_MAP_SOURCE.attribution,
@@ -83,6 +84,7 @@ describe('生活足迹地图配置', () => {
     expect(JSON.parse(wrapper.emitted('save')![0]![0] as string)).toMatchObject(
       {
         serviceAk: '',
+        timeoutMs: 5000,
         clearServiceAk: true,
       },
     );

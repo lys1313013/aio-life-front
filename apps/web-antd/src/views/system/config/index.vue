@@ -23,9 +23,17 @@ import {
 import ContentLoading from '#/components/ContentLoading.vue';
 
 import FootprintMapConfigEditor from './FootprintMapConfigEditor.vue';
+import IntegrationConfigEditor from './IntegrationConfigEditor.vue';
 import TencentMapConfigEditor from './TencentMapConfigEditor.vue';
 import WechatConfigEditor from './WechatConfigEditor.vue';
 
+const managedKeys = new Set([
+  'footprints.baidu',
+  'footprints.tencent',
+  'mbti.api',
+  'typesafe.recommendation',
+  'wechat.mini',
+]);
 const loading = ref(false);
 const configs = ref<SystemConfigVO[]>([]);
 const savingKey = ref<null | string>(null);
@@ -78,11 +86,7 @@ onMounted(async () => {
 });
 
 const handleSave = async (key: string) => {
-  if (
-    savingKey.value !== null ||
-    ['footprints.baidu', 'footprints.tencent', 'wechat.mini'].includes(key)
-  )
-    return;
+  if (savingKey.value !== null || managedKeys.has(key)) return;
   try {
     savingKey.value = key;
     let value: string;
@@ -141,11 +145,7 @@ async function saveManagedConfig(key: string, value: string) {
           data-enter-submit-scope
           @keydown.capture="
             (event: KeyboardEvent) =>
-              ![
-                'wechat.mini',
-                'footprints.baidu',
-                'footprints.tencent',
-              ].includes(cfg.configKey) &&
+              !managedKeys.has(cfg.configKey) &&
               handleEnterSubmit(
                 event,
                 () => handleSave(cfg.configKey),
@@ -186,6 +186,14 @@ async function saveManagedConfig(key: string, value: string) {
             :config="cfg"
             :saving="savingKey === 'footprints.tencent'"
             @save="(value) => saveManagedConfig('footprints.tencent', value)"
+          />
+          <IntegrationConfigEditor
+            v-else-if="
+              ['typesafe.recommendation', 'mbti.api'].includes(cfg.configKey)
+            "
+            :config="cfg"
+            :saving="savingKey === cfg.configKey"
+            @save="(value) => saveManagedConfig(cfg.configKey, value)"
           />
           <!-- JSON 类型 - 管理员选择器 -->
           <div
@@ -244,13 +252,7 @@ async function saveManagedConfig(key: string, value: string) {
           </div>
 
           <div
-            v-if="
-              ![
-                'wechat.mini',
-                'footprints.baidu',
-                'footprints.tencent',
-              ].includes(cfg.configKey)
-            "
+            v-if="!managedKeys.has(cfg.configKey)"
             class="mt-3 flex justify-end"
           >
             <AButton
