@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { nextTick, onMounted, ref, toRaw } from 'vue';
 
+import { Radio } from 'ant-design-vue';
+import dayjs from 'dayjs';
+
 import { useAppForm } from '#/adapter/form';
 import { useVbenModal } from '#/adapter/modal';
 import { insertData, updateData } from '#/api/core/expense';
@@ -10,7 +13,13 @@ defineOptions({
   name: 'FormModalDemo',
 });
 
-const emit = defineEmits(['tableReload', 'updateSuccess']);
+defineProps<{ showKindSwitch?: boolean }>();
+const emit = defineEmits([
+  'tableReload',
+  'updateSuccess',
+  'saved',
+  'kindChange',
+]);
 
 // 连续录入模式开关
 const continuousMode = ref(false);
@@ -22,6 +31,7 @@ const tableReload = () => {
   emit('tableReload');
 };
 
+const saving = ref(false);
 const dictOptions = ref<Array<any>>([]);
 const payTypeOptions = ref<Array<any>>([]);
 
@@ -163,6 +173,8 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
+    if (saving.value) return;
+    saving.value = true;
     modalApi.lock();
     try {
       const { valid } = await formApi.validate();
@@ -180,10 +192,12 @@ const [Modal, modalApi] = useVbenModal({
       }
 
       if (processedData.id) {
-        await updateData(processedData);
+        await updateData({ ...processedData, id: processedData.id });
       } else {
         await insertData(processedData);
       }
+
+      emit('saved');
 
       // 根据连续录入模式决定是否关闭弹窗
       if (continuousMode.value) {
@@ -200,6 +214,7 @@ const [Modal, modalApi] = useVbenModal({
         }
       }
     } finally {
+      saving.value = false;
       modalApi.unlock();
     }
   },
@@ -208,32 +223,27 @@ const [Modal, modalApi] = useVbenModal({
       // 使用 nextTick 确保 DOM 已经渲染完成
       nextTick(() => {
         formApi.resetForm();
-        const { values } = modalApi.getData<Record<string, any>>();
-        if (values) {
-          // 处理日期字段显示
-          const processedValues = { ...values };
-          if (processedValues.expTime) {
-            // 确保日期格式正确，直接使用后端返回的日期时间格式
-            // DatePicker 会自动根据 format 和 valueFormat 进行显示
-            if (
-              typeof processedValues.expTime === 'string' &&
-              processedValues.expTime.includes('T')
-            ) {
-              // 如果是 ISO 格式，转换为本地格式
-              processedValues.expTime = processedValues.expTime.replace(
-                'T',
-                ' ',
-              );
-            }
-          } else {
-            // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
-            const now = new Date();
-            const today = now.toISOString().split('T')[0];
-            processedValues.expTime = `${today} 00:00:00`;
+        const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
+        // 处理日期字段显示
+        const processedValues = { ...values };
+        if (processedValues.expTime) {
+          // 确保日期格式正确，直接使用后端返回的日期时间格式
+          // DatePicker 会自动根据 format 和 valueFormat 进行显示
+          if (
+            typeof processedValues.expTime === 'string' &&
+            processedValues.expTime.includes('T')
+          ) {
+            // 如果是 ISO 格式，转换为本地格式
+            processedValues.expTime = processedValues.expTime.replace('T', ' ');
           }
-          formApi.setValues(processedValues);
-          prevTransactionAmt.value = processedValues.transactionAmt;
+        } else {
+          // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
+          processedValues.expTime = dayjs()
+            .startOf('day')
+            .format('YYYY-MM-DD HH:mm:ss');
         }
+        formApi.setValues(processedValues);
+        prevTransactionAmt.value = processedValues.transactionAmt;
       });
     } else {
       // 弹窗关闭时重置连续录入模式
@@ -245,6 +255,17 @@ const [Modal, modalApi] = useVbenModal({
 </script>
 <template>
   <Modal>
+    <Radio.Group
+      v-if="showKindSwitch"
+      value="expense"
+      class="mb-5"
+      :disabled="saving"
+      aria-label="收支类型"
+      @change="emit('kindChange', 'income')"
+    >
+      <Radio.Button value="expense">支出</Radio.Button>
+      <Radio.Button value="income">收入</Radio.Button>
+    </Radio.Group>
     <Form />
 
     <template #prepend-footer>

@@ -1,6 +1,9 @@
 <script lang="ts" setup>
 import { onMounted, ref, toRaw } from 'vue';
 
+import { Radio } from 'ant-design-vue';
+import dayjs from 'dayjs';
+
 import { useAppForm } from '#/adapter/form';
 import { useVbenModal } from '#/adapter/modal';
 import { add, update } from '#/api/core/income';
@@ -10,11 +13,13 @@ defineOptions({
   name: 'FormModal',
 });
 
-const emit = defineEmits(['tableReload']);
+defineProps<{ showKindSwitch?: boolean }>();
+const emit = defineEmits(['tableReload', 'saved', 'kindChange']);
 const tableReload = () => {
   emit('tableReload');
 };
 
+const saving = ref(false);
 const dictOptions = ref<Array<any>>([]);
 
 async function loadDictOptions() {
@@ -97,6 +102,8 @@ const [Modal, modalApi] = useVbenModal({
     modalApi.close();
   },
   onConfirm: async () => {
+    if (saving.value) return;
+    saving.value = true;
     modalApi.lock();
     try {
       const { valid } = await formApi.validate();
@@ -109,17 +116,17 @@ const [Modal, modalApi] = useVbenModal({
       }
       modalApi.close();
       tableReload();
+      emit('saved');
     } finally {
+      saving.value = false;
       modalApi.unlock();
     }
   },
   onOpenChange(isOpen: boolean) {
     if (isOpen) {
       formApi.resetForm();
-      const { values } = modalApi.getData<Record<string, any>>();
-      if (values) {
-        formApi.setValues(values);
-      }
+      const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
+      formApi.setValues({ incDate: dayjs().format('YYYY-MM-DD'), ...values });
     }
   },
   title: '',
@@ -127,6 +134,17 @@ const [Modal, modalApi] = useVbenModal({
 </script>
 <template>
   <Modal>
+    <Radio.Group
+      v-if="showKindSwitch"
+      value="income"
+      class="mb-5"
+      :disabled="saving"
+      aria-label="收支类型"
+      @change="emit('kindChange', 'expense')"
+    >
+      <Radio.Button value="expense">支出</Radio.Button>
+      <Radio.Button value="income">收入</Radio.Button>
+    </Radio.Group>
     <Form />
   </Modal>
 </template>

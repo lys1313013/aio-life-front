@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { onScopeDispose, ref } from 'vue';
 
 import { defineStore } from 'pinia';
 
@@ -6,6 +6,9 @@ import {
   getSecondaryLockMenusApi,
   saveSecondaryLockMenusApi,
 } from '#/api/core/auth';
+
+// 后端授权有效期为 30 分钟，前端提前一分钟收起受保护内容。
+const UNLOCK_TTL_MS = 29 * 60 * 1000;
 
 /**
  * 用户级二级锁状态管理。
@@ -19,6 +22,18 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
 
   /** 当前会话已解锁的菜单路径 */
   const unlockedPaths = ref<Set<string>>(new Set());
+
+  const unlockTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const unlockVersions = new Map<string, symbol>();
+
+  function clearUnlockedPaths() {
+    for (const timer of unlockTimers.values()) clearTimeout(timer);
+    unlockTimers.clear();
+    unlockVersions.clear();
+    unlockedPaths.value = new Set();
+  }
+
+  onScopeDispose(clearUnlockedPaths);
 
   /** 待解锁后跳转的目标路径 */
   const pendingTargetPath = ref<null | string>(null);
@@ -56,6 +71,20 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   }
 
   function unlock(menuPath: string) {
+    const previousTimer = unlockTimers.get(menuPath);
+    if (previousTimer !== undefined) clearTimeout(previousTimer);
+    const version = Symbol(menuPath);
+    unlockVersions.set(menuPath, version);
+    unlockTimers.set(
+      menuPath,
+      setTimeout(() => {
+        // 已排入任务队列的旧定时器不能撤销后来获得的授权。
+        if (unlockVersions.get(menuPath) !== version) return;
+        unlockTimers.delete(menuPath);
+        unlockVersions.delete(menuPath);
+        unlockedPaths.value.delete(menuPath);
+      }, UNLOCK_TTL_MS),
+    );
     unlockedPaths.value.add(menuPath);
     showModal.value = false;
   }
@@ -75,7 +104,7 @@ export const useSecondaryLockStore = defineStore('secondary-lock', () => {
   function $reset() {
     lockedMenuIds.value = new Set();
     loaded.value = false;
-    unlockedPaths.value = new Set();
+    clearUnlockedPaths();
     navigateAfterUnlock.value = true;
     pendingTargetPath.value = null;
     showModal.value = false;

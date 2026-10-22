@@ -212,14 +212,14 @@ describe('首页复用阅读观影编辑器闭环', () => {
       await flushPromises();
       if (label === '阅读') {
         for (const status of ['in_progress', 'not_started']) {
-          expect(page).toHaveBeenCalledWith({ status, current: 1, size: 20 });
+          expect(page).toHaveBeenCalledWith({ status, page: 1, pageSize: 20 });
         }
       } else {
         expect(page).toHaveBeenCalledWith({
           activeOnly: true,
           inProgressFirst: true,
-          current: 1,
-          size: 20,
+          page: 1,
+          pageSize: 20,
         });
       }
       await wrapper.get(`[aria-label="编辑${title}"]`).trigger('click');

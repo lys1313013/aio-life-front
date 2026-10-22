@@ -65,6 +65,9 @@ vi.mock('../../time/time-tracker/components/TimeTrackerModal.vue', () => ({
 vi.mock('./analytics-time-tracker.vue', () => ({
   default: { template: '<div />', methods: { loadData: vi.fn() } },
 }));
+vi.mock('./components/SummaryHomeCard.vue', () => ({
+  default: { template: '<div />' },
+}));
 vi.mock('./components/BusinessCards.vue', () => ({
   default: { template: '<div />' },
 }));

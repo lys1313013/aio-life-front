@@ -5,6 +5,7 @@ import type { ApiRequests } from '#/api/payload';
 import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
+import { afterHomeSectionWrite } from '#/utils/home-section-change';
 
 /**
  * B站视频学习记录接口
@@ -14,7 +15,7 @@ export interface BilibiliVideo {
   title: string; // 视频标题
   url: string; // B站视频URL
   coverFileId?: string;
-  coverState?: 'NONE' | 'PENDING' | 'READY' | 'FAILED';
+  coverState?: 'FAILED' | 'NONE' | 'PENDING' | 'READY';
   cover?: string; // 视频封面
   duration?: number; // 视频时长
   watchedDuration?: number; // 已学习时长
@@ -69,6 +70,10 @@ export async function query(data: any) {
   return await getQuery('/b-video/query', data);
 }
 
+export async function getBilibiliVideo(id: string) {
+  return requestClient.get<BilibiliVideo | null>(`/b-video/${id}`);
+}
+
 /**
  * 查询各个状态的数量
  */
@@ -80,9 +85,9 @@ export async function getStatusCount(data: any) {
  * 新增学习视频
  */
 export async function insertBVideo(data: ApiRequests['BVideoCreateReq']) {
-  return await requestClient.post(
-    '/b-video',
-    pickPayload('BVideoCreateReq', data),
+  return afterHomeSectionWrite(
+    'video',
+    requestClient.post('/b-video', pickPayload('BVideoCreateReq', data)),
   );
 }
 
@@ -93,9 +98,9 @@ export async function updateBiVideo(
   id: string,
   data: ApiRequests['BVideoUpdateReq'],
 ) {
-  return await requestClient.put(
-    `/b-video/${id}`,
-    pickPayload('BVideoUpdateReq', data),
+  return afterHomeSectionWrite(
+    'video',
+    requestClient.put(`/b-video/${id}`, pickPayload('BVideoUpdateReq', data)),
   );
 }
 
@@ -103,7 +108,7 @@ export async function updateBiVideo(
  * 删除学习视频
  */
 export async function deleteBilibiliVideo(id: string) {
-  return await requestClient.delete(`/b-video/${id}`);
+  return afterHomeSectionWrite('video', requestClient.delete(`/b-video/${id}`));
 }
 
 export async function statistics(data: any) {
@@ -479,9 +484,12 @@ function formatVideoInfo(data: any) {
 
 export async function queryVideoCovers(ids: string[]) {
   return requestClient.get<
-    Array<Pick<BilibiliVideo, 'id' | 'coverFileId' | 'coverState'>>
+    Array<Pick<BilibiliVideo, 'coverFileId' | 'coverState' | 'id'>>
   >('/b-video/covers', { params: { ids: ids.join(',') } });
 }
 export async function retryVideoCover(id: string) {
-  return requestClient.post(`/b-video/${id}/cover/retry`);
+  return afterHomeSectionWrite(
+    'video',
+    requestClient.post(`/b-video/${id}/cover/retry`),
+  );
 }

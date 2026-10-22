@@ -9,6 +9,7 @@ export function useHomeRequest<T>(options: {
   onError?: (error: unknown) => void;
   onSettled?: () => void;
   onStart?: () => void;
+  reloadOnActivate?: () => boolean;
 }) {
   const loading = ref(options.initialLoading ?? false);
   const loaded = ref(false);
@@ -60,7 +61,7 @@ export function useHomeRequest<T>(options: {
   onActivated(() => {
     if (active) return;
     active = true;
-    void load();
+    if (options.reloadOnActivate?.() !== false) void load();
   });
   onBeforeUnmount(() => {
     active = false;

@@ -102,9 +102,9 @@ async function fetchNotifications() {
   );
   if (!myId) return;
   const { items: messages, total } = await getMessagePageApi({
-    current: 1,
+    page: 1,
     isRead: false,
-    size: NOTIFICATION_PAGE_SIZE,
+    pageSize: NOTIFICATION_PAGE_SIZE,
   });
 
   const unreadMsgs = messages.filter(

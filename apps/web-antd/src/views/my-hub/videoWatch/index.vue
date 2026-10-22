@@ -19,6 +19,7 @@ import {
 
 import {
   deleteBilibiliVideo,
+  getBilibiliVideo,
   getStatusCount,
   insertBVideo,
   parseBilibiliUrl,
@@ -32,6 +33,7 @@ import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
+import { useRecordDeepLink } from '../composables/useRecordDeepLink';
 import VideoCover from './VideoCover.vue';
 
 export default {
@@ -54,6 +56,12 @@ export default {
     ReloadOutlined,
     CaretRightOutlined,
     GlobalFloatBtn,
+  },
+  setup() {
+    return useRecordDeepLink(
+      ['/record/videoWatch', '/my-hub/videoWatch'],
+      getBilibiliVideo,
+    );
   },
   data() {
     return {
@@ -110,6 +118,18 @@ export default {
         totalCount: 0,
       },
     };
+  },
+  watch: {
+    deepLinkResetVersion: {
+      flush: 'sync',
+      handler() {
+        this.handleCancel();
+      },
+    },
+    deepLinkRecord(record) {
+      if (record) this.showEditModal(record);
+      else this.handleCancel();
+    },
   },
   async mounted() {
     await this.query();
@@ -443,6 +463,18 @@ export default {
 
 <template>
   <div class="video-watch min-h-full bg-background/50 p-3 sm:p-4">
+    <AModal
+      :open="deepLinkLoading || deepLinkError"
+      :footer="null"
+      aria-label="打开详情"
+      @update:open="cancelDeepLink"
+    >
+      <div class="flex min-h-32 items-center justify-center">
+        <ASpin v-if="deepLinkLoading" aria-label="加载中" />
+        <AButton v-else @click="retryDeepLink">重新加载详情</AButton>
+      </div>
+    </AModal>
+
     <section
       class="video-summary relative"
       aria-label="观看统计"

@@ -1,5 +1,6 @@
 <script>
-// 添加moment导入
+import { VbenIcon } from '@vben/common-ui';
+
 import {
   DeleteOutlined,
   VerticalAlignTopOutlined,
@@ -21,12 +22,21 @@ import {
 import dayjs from 'dayjs';
 
 import { getByDictType } from '#/api/core/common';
-import { add, deleteData, query, update, uploadImage } from '#/api/core/device';
+import {
+  add,
+  deleteData,
+  getDevice,
+  query,
+  update,
+  uploadImage,
+} from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
 import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
+
+import { useRecordDeepLink } from '../composables/useRecordDeepLink';
 
 export default {
   components: {
@@ -50,6 +60,10 @@ export default {
     VerticalAlignTopOutlined,
     GlobalFloatBtn,
     ImageUpload,
+    VbenIcon,
+  },
+  setup() {
+    return useRecordDeepLink('/my-hub/device', getDevice);
   },
   data() {
     return {
@@ -83,6 +97,33 @@ export default {
       deletingDeviceId: null,
     };
   },
+  computed: {
+    deviceTypeVisuals() {
+      return Object.fromEntries(
+        this.typeOptions.map((type) => [
+          type.value,
+          {
+            icon: type.icon?.trim() || 'solar:devices-line-duotone',
+            color: /^#[\da-f]{6}$/i.test(type.color || '')
+              ? type.color
+              : undefined,
+          },
+        ]),
+      );
+    },
+  },
+  watch: {
+    deepLinkResetVersion: {
+      flush: 'sync',
+      handler() {
+        this.handleCancel();
+      },
+    },
+    deepLinkRecord(record) {
+      if (record) this.showEditModal(record);
+      else this.handleCancel();
+    },
+  },
   async mounted() {
     this.listLoading = true;
     try {
@@ -95,6 +136,13 @@ export default {
     }
   },
   methods: {
+    deviceVisual(type) {
+      return (
+        this.deviceTypeVisuals[type] || {
+          icon: 'solar:devices-line-duotone',
+        }
+      );
+    },
     onImageError(fileId) {
       if (fileId in this.authImageUrls) {
         this.authImageUrls[fileId] = '';
@@ -348,6 +396,17 @@ export default {
     :active-tab-key="tabKey"
     @tab-change="(key) => onTabChange(key, 'tabKey')"
   >
+    <AModal
+      :open="deepLinkLoading || deepLinkError"
+      :footer="null"
+      aria-label="打开详情"
+      @update:open="cancelDeepLink"
+    >
+      <div class="flex min-h-32 items-center justify-center">
+        <ASpin v-if="deepLinkLoading" aria-label="加载中" />
+        <AButton v-else @click="retryDeepLink">重新加载详情</AButton>
+      </div>
+    </AModal>
     <div class="electronics-container">
       <!-- 维护设备弹窗 -->
       <AModal
@@ -507,55 +566,31 @@ export default {
             <div class="status-badge" :class="getStatusClass(item.status)">
               {{ getStatusText(item.status) }}
             </div>
-            <!-- 图片三态：加载中骨架 / 已加载图片 / 无图或失败回退 -->
-            <template v-if="item.fileId">
-              <div
-                v-if="
-                  !(item.fileId in authImageUrls) ||
-                  authImageUrls[item.fileId] === null
-                "
-                class="image-skeleton"
-                aria-label="loading"
-              >
-                <div class="shimmer"></div>
-              </div>
-              <img
-                v-else-if="authImageUrls[item.fileId]"
-                :src="authImageUrls[item.fileId]"
-                :alt="item.name"
-                class="device-img"
-                @error="onImageError(item.fileId)"
+            <!-- 上传图片优先；无图或加载失败时使用分类图标。 -->
+            <div
+              v-if="
+                item.fileId &&
+                (!(item.fileId in authImageUrls) ||
+                  authImageUrls[item.fileId] === null)
+              "
+              class="image-skeleton"
+              aria-label="loading"
+            >
+              <div class="shimmer"></div>
+            </div>
+            <img
+              v-else-if="item.fileId && authImageUrls[item.fileId]"
+              :src="authImageUrls[item.fileId]"
+              :alt="item.name"
+              class="device-img"
+              @error="onImageError(item.fileId)"
+            />
+            <div v-else class="default-icon" aria-hidden="true">
+              <VbenIcon
+                :icon="deviceVisual(item.type).icon"
+                :style="{ color: deviceVisual(item.type).color }"
+                class="device-type-icon"
               />
-              <div v-else class="default-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </div>
-            </template>
-            <div v-else class="default-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M4 16L8.586 11.414C8.961 11.039 9.47 10.828 10 10.828C10.53 10.828 11.039 11.039 11.414 11.414L16 16M14 14L15.586 12.414C15.961 12.039 16.47 11.828 17 11.828C17.53 11.828 18.039 12.039 18.414 12.414L20 14M14 8H14.01M6 20H18C19.105 20 20 19.105 20 18V6C20 4.895 19.105 4 18 4H6C4.895 4 4 4.895 4 6V18C4 19.105 4.895 20 6 20Z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
             </div>
             <APopconfirm
               title="确定要删除这个设备吗？"
@@ -795,10 +830,9 @@ export default {
   background-color: hsl(var(--secondary, 210 10% 96%));
 }
 
-.default-icon svg {
-  width: 50%;
-  height: 50%;
-  opacity: 0.5;
+.default-icon .device-type-icon {
+  width: 64px;
+  height: 64px;
 }
 
 /* 添加新的样式 */

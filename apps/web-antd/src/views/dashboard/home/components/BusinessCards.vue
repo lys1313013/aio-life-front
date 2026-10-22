@@ -145,8 +145,8 @@ const configurations = [
         (['in_progress', 'not_started'] as const).map((status) =>
           ReadRecordApi.pageList({
             status,
-            current: page,
-            size: BUSINESS_CARD_PAGE_SIZE,
+            page,
+            pageSize: BUSINESS_CARD_PAGE_SIZE,
           }),
         ),
       );
@@ -202,8 +202,8 @@ const configurations = [
       const result = await MovieApi.pageList({
         activeOnly: true,
         inProgressFirst: true,
-        current: page,
-        size: BUSINESS_CARD_PAGE_SIZE,
+        page,
+        pageSize: BUSINESS_CARD_PAGE_SIZE,
       });
       return {
         hasMore: hasMoreRecords(

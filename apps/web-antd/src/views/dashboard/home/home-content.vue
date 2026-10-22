@@ -2,6 +2,7 @@
 import type { Component } from 'vue';
 
 import type { WatchedTaskDetail } from '#/api/core/dashboard';
+import type { HomeSectionKind } from '#/api/core/home-sections';
 
 import {
   computed,
@@ -48,6 +49,7 @@ import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import HomeCardSortGrid from './components/HomeCardSortGrid.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
+import SummaryHomeCard from './components/SummaryHomeCard.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 import WereadRecentCard from './components/WereadRecentCard.vue';
 import { useHomeRequest } from './composables/useHomeRequest';
@@ -68,6 +70,10 @@ interface OverviewItem {
   error?: boolean;
   type?: string;
   refreshInterval?: number;
+}
+
+function sectionKind(key: string): HomeSectionKind {
+  return key.slice(8) as HomeSectionKind;
 }
 
 const homeCards = useHomeCardsStore();
@@ -1009,6 +1015,21 @@ function navTo(nav: { url?: string }) {
             ].includes(section.cardKey)
           "
           :only="section.cardKey.slice(8)"
+          @visibility="sectionVisibility[section.cardKey] = $event"
+        />
+
+        <SummaryHomeCard
+          v-if="
+            [
+              'section.memo',
+              'section.finance',
+              'section.income',
+              'section.expense',
+              'section.video',
+              'section.device',
+            ].includes(section.cardKey)
+          "
+          :kind="sectionKind(section.cardKey)"
           @visibility="sectionVisibility[section.cardKey] = $event"
         />
 

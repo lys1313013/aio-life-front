@@ -3,6 +3,7 @@ import type { ApiRequests } from '#/api/payload';
 import { pickPayload, pickPayloadList } from '#/api/payload';
 import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
+import { afterHomeSectionWrite } from '#/utils/home-section-change';
 
 /**
  * 查询
@@ -15,9 +16,9 @@ export async function query(data: any) {
  * 新增
  */
 export async function insertData(data: ApiRequests['ExpenseCreateReq']) {
-  return await requestClient.post(
-    '/expense',
-    pickPayload('ExpenseCreateReq', data),
+  return afterHomeSectionWrite(
+    'expense',
+    requestClient.post('/expense', pickPayload('ExpenseCreateReq', data)),
   );
 }
 
@@ -25,30 +26,36 @@ export async function insertData(data: ApiRequests['ExpenseCreateReq']) {
  * 修改
  */
 export async function updateData(data: ApiRequests['ExpenseUpdateReq']) {
-  return await requestClient.put(
-    '/expense',
-    pickPayload('ExpenseUpdateReq', data),
+  return afterHomeSectionWrite(
+    'expense',
+    requestClient.put('/expense', pickPayload('ExpenseUpdateReq', data)),
   );
 }
 
 export async function saveBatch(dataList: ApiRequests['ExpenseCreateReq'][]) {
-  return await requestClient.post(
-    '/expense/saveBatch',
-    pickPayloadList('ExpenseCreateReq', dataList),
+  return afterHomeSectionWrite(
+    'expense',
+    requestClient.post(
+      '/expense/saveBatch',
+      pickPayloadList('ExpenseCreateReq', dataList),
+    ),
   );
 }
 
 /**
  * 删除
  */
-export async function deleteData(data: any) {
-  return await requestClient.delete(`/expense/${data.id}`);
+export async function deleteData(data: { id: string }) {
+  return afterHomeSectionWrite(
+    'expense',
+    requestClient.delete(`/expense/${data.id}`),
+  );
 }
 
 export async function deleteBatch(data: ApiRequests['CommonReq']) {
-  return await requestClient.post(
-    '/expense/deleteBatch',
-    pickPayload('CommonReq', data),
+  return afterHomeSectionWrite(
+    'expense',
+    requestClient.post('/expense/deleteBatch', pickPayload('CommonReq', data)),
   );
 }
 
