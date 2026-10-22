@@ -33,7 +33,7 @@ const minuteColumn = ref<HTMLElement>();
 const hours = Array.from({ length: 24 }, (_, i) => i);
 // 绝对分钟连续排列：09:59 的下一行就是 10:00，不把跨小时误判成跳选。
 const minutes = Array.from({ length: 1440 }, (_, i) => i);
-const rowHeight = 44;
+const rowHeight = 32;
 const available = computed(() => props.min <= props.max && !props.disabled);
 const nowMinute = ref(0);
 let resizeObserver: ResizeObserver | undefined;
@@ -198,6 +198,7 @@ onBeforeUnmount(() => {
     <template #content>
       <div
         class="time-wheel-panel"
+        :style="{ '--time-wheel-row-height': `${rowHeight}px` }"
         role="dialog"
         :aria-label="`选择${label}`"
         data-enter-submit="ignore"
@@ -309,8 +310,8 @@ onBeforeUnmount(() => {
 
 .time-wheel-columns::before {
   position: absolute;
-  inset: 88px 0;
-  height: 44px;
+  inset: calc(var(--time-wheel-row-height) * 3) 0;
+  height: var(--time-wheel-row-height);
   pointer-events: none;
   content: '';
   background: hsl(var(--primary) / 10%);
@@ -320,8 +321,8 @@ onBeforeUnmount(() => {
 .time-wheel-column {
   z-index: 1;
   width: 50%;
-  height: 220px;
-  padding-block: 88px;
+  height: calc(var(--time-wheel-row-height) * 7);
+  padding-block: calc(var(--time-wheel-row-height) * 3);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -334,7 +335,7 @@ onBeforeUnmount(() => {
 .time-wheel-column button {
   display: block;
   width: 100%;
-  height: 44px;
+  height: var(--time-wheel-row-height);
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }

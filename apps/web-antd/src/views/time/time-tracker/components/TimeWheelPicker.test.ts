@@ -33,7 +33,7 @@ async function scrollMinute(
   minute: number,
 ) {
   const column = wrapper.get('[aria-label="分钟"]');
-  (column.element as HTMLElement).scrollTop = minute * 44;
+  (column.element as HTMLElement).scrollTop = minute * 32;
   await column.trigger('scroll');
   await vi.advanceTimersByTimeAsync(120);
 }
@@ -82,7 +82,7 @@ describe('时迹时间滚轮', () => {
     vi.useFakeTimers();
     const wrapper = await openPicker('09:59');
     const column = wrapper.get('[aria-label="分钟"]');
-    (column.element as HTMLElement).scrollTop = 600 * 44;
+    (column.element as HTMLElement).scrollTop = 600 * 32;
     await column.trigger('scroll');
     expect(
       (wrapper.emitted('preview')!.at(-1)![0] as dayjs.Dayjs).format('HH:mm'),
