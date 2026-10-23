@@ -710,8 +710,7 @@ watch(
         <div class="editor-workspace">
           <aside class="editor-sidebar">
             <div class="detail-heading">
-              <span>地点明细</span
-              ><span class="footprint-time">{{ details.length }} 条</span>
+              <span>地点明细</span>
             </div>
             <div class="editor-detail-list">
               <button
@@ -745,6 +744,49 @@ watch(
             </Button>
           </aside>
           <div class="editor-main">
+            <div v-if="details.length > 0" class="position-actions">
+              <Button
+                v-if="draft.confirmed || !point"
+                type="text"
+                :disabled="saving"
+                :aria-pressed="picking"
+                :aria-label="picking ? '取消选点' : '调整位置'"
+                @click="picking = !picking"
+              >
+                <IconifyIcon
+                  class="size-5"
+                  :icon="
+                    picking ? 'mdi:close' : 'mdi:map-marker-radius-outline'
+                  "
+                />
+              </Button>
+              <span
+                class="footprint-time"
+                :class="{ 'field-error': fieldErrors.position }"
+                :role="fieldErrors.position ? 'alert' : undefined"
+                aria-live="polite"
+                ><span class="required-mark" aria-hidden="true">*</span
+                >{{
+                  fieldErrors.position ||
+                  (draft.confirmed
+                    ? '位置已确认'
+                    : point
+                      ? '请确认所选位置'
+                      : '请选择地图位置')
+                }}</span
+              >
+              <Button
+                v-if="point && !draft.confirmed"
+                type="link"
+                :disabled="saving"
+                @click="confirmPosition"
+              >
+                确认位置
+              </Button>
+            </div>
+            <span v-if="details.length > 0 && mapHint" class="footprint-time">{{
+              mapHint
+            }}</span>
             <div class="editor-shared-map">
               <FootprintMap
                 ref="editorMap"
@@ -790,11 +832,6 @@ watch(
                   ><span class="footprint-time">{{ record.note }}</span>
                 </button>
               </div>
-            </div>
-            <div class="editor-map-summary footprint-time">
-              {{ editorRecords.length }} 条已定位<span v-if="picking">
-                · 点击地图调整当前明细位置</span
-              >
             </div>
             <div v-if="details.length > 0" class="editor-fields">
               <div class="detail-heading">
@@ -906,47 +943,6 @@ watch(
                   >{{ fieldErrors.note }}</span
                 ></label
               >
-              <div class="position-actions">
-                <Button
-                  v-if="draft.confirmed || !point"
-                  type="text"
-                  :disabled="saving"
-                  :aria-pressed="picking"
-                  :aria-label="picking ? '取消选点' : '调整位置'"
-                  @click="picking = !picking"
-                >
-                  <IconifyIcon
-                    class="size-5"
-                    :icon="
-                      picking ? 'mdi:close' : 'mdi:map-marker-radius-outline'
-                    "
-                  />
-                </Button>
-                <span
-                  class="footprint-time"
-                  :class="{ 'field-error': fieldErrors.position }"
-                  :role="fieldErrors.position ? 'alert' : undefined"
-                  aria-live="polite"
-                  ><span class="required-mark" aria-hidden="true">*</span
-                  >{{
-                    fieldErrors.position ||
-                    (draft.confirmed
-                      ? '位置已确认'
-                      : point
-                        ? '请确认所选位置'
-                        : '请选择地图位置')
-                  }}</span
-                >
-                <Button
-                  v-if="point && !draft.confirmed"
-                  type="link"
-                  :disabled="saving"
-                  @click="confirmPosition"
-                >
-                  确认位置
-                </Button>
-              </div>
-              <span v-if="mapHint" class="footprint-time">{{ mapHint }}</span>
             </div>
             <p v-else class="footprint-time editor-deleted">
               本时间段的全部明细将在保存后删除，也可继续添加明细。
@@ -1136,7 +1132,6 @@ watch(
 
 .editor-fields {
   padding-top: 14px;
-  border-top: 1px solid hsl(var(--border));
   display: grid;
   gap: 14px;
   min-width: 0;
@@ -1180,6 +1175,8 @@ watch(
 
 .position-actions {
   min-height: 24px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .location-result {
@@ -1253,10 +1250,6 @@ watch(
 
 .editor-shared-map {
   position: relative;
-}
-
-.editor-map-summary {
-  margin: 8px 0 16px;
 }
 
 .editor-detail-list {
