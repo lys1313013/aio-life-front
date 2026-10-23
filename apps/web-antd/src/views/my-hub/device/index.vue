@@ -5,61 +5,30 @@ import {
   DeleteOutlined,
   VerticalAlignTopOutlined,
 } from '@ant-design/icons-vue';
-import {
-  Button,
-  Card,
-  Col,
-  DatePicker,
-  FloatButton,
-  Form,
-  Input,
-  InputNumber,
-  Popconfirm,
-  Row,
-  Select,
-  Spin,
-} from 'ant-design-vue';
-import dayjs from 'dayjs';
+import { Button, Card, FloatButton, Popconfirm, Spin } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
-import {
-  add,
-  deleteData,
-  getDevice,
-  query,
-  update,
-  uploadImage,
-} from '#/api/core/device';
+import { deleteData, getDevice, query } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
-import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
+import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
-import ImageUpload from '#/components/ImageUpload.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 import { useRecordDeepLink } from '../composables/useRecordDeepLink';
+import DeviceEditorModal from './DeviceEditorModal.vue';
 
 export default {
   components: {
     AButton: Button,
     AModal: Modal,
-    AppModalDelete,
-    AForm: Form,
-    AFormItem: Form.Item,
-    AInput: Input,
-    AInputNumber: InputNumber,
     APopconfirm: Popconfirm,
-    ADatePicker: DatePicker,
-    ASelect: Select,
-    ASelectOption: Select.Option,
     ASpin: Spin,
     ACard: Card,
-    ARow: Row,
-    ACol: Col,
     AFloatButtonBackTop: FloatButton.BackTop,
     DeleteOutlined,
     VerticalAlignTopOutlined,
     GlobalFloatBtn,
-    ImageUpload,
+    DeviceEditorModal,
     VbenIcon,
   },
   setup() {
@@ -67,7 +36,6 @@ export default {
   },
   data() {
     return {
-      uploadImage,
       totalAmt: 0,
       totalCount: 0,
       totalDailyCost: 0,
@@ -75,17 +43,7 @@ export default {
       visible: false,
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
-      newDevice: {
-        name: '',
-        spec: '',
-        purchasePrice: 0,
-        purchaseDate: null,
-        fileId: null,
-        status: '1',
-        purchasePlace: '',
-        endDate: null,
-        remark: '',
-      },
+      selectedDevice: null,
       electronics: [],
       tabList: [], // 页签列表
       tabKey: '', // 当前选中的页签
@@ -93,7 +51,6 @@ export default {
       previewImage: '', // 预览图片地址
       authImageUrls: {}, // 认证后的图片 blob URL 缓存
       listLoading: false,
-      saving: false,
       deletingDeviceId: null,
     };
   },
@@ -201,82 +158,16 @@ export default {
     },
 
     showModal() {
-      this.newDevice = {
-        name: '',
-        spec: '',
-        purchasePrice: null,
-        purchaseDate: dayjs(),
-        status: '1',
-        fileId: null,
-        purchasePlace: '',
-        endDate: null,
-        remark: '',
-        type: this.tabKey,
-      };
+      this.selectedDevice = null;
       this.visible = true;
     },
     showEditModal(item) {
-      this.newDevice = {
-        ...item,
-        purchaseDate: dayjs(item.purchaseDate),
-        endDate: item.endDate ? dayjs(item.endDate) : null,
-      };
+      this.selectedDevice = item;
       this.visible = true;
-    },
-    async handleOk() {
-      if (this.saving) return;
-      this.saving = true;
-      try {
-        let formattedPurchaseDate = null;
-        if (this.newDevice.purchaseDate) {
-          formattedPurchaseDate =
-            typeof this.newDevice.purchaseDate === 'string'
-              ? this.newDevice.purchaseDate
-              : this.newDevice.purchaseDate.format('YYYY-MM-DD');
-        }
-
-        let formattedEndDate = null;
-        if (this.newDevice.endDate) {
-          formattedEndDate =
-            typeof this.newDevice.endDate === 'string'
-              ? this.newDevice.endDate
-              : this.newDevice.endDate.format('YYYY-MM-DD');
-        }
-
-        const deviceData = {
-          ...this.newDevice,
-          purchaseDate: formattedPurchaseDate,
-          endDate: formattedEndDate,
-        };
-
-        if (deviceData.id) {
-          await update(deviceData.id, deviceData);
-        } else {
-          await add(deviceData);
-        }
-
-        await this.query({ showLoading: false });
-        this.visible = false;
-        this.resetForm();
-      } finally {
-        this.saving = false;
-      }
     },
     handleCancel() {
       this.visible = false;
-      this.resetForm();
-    },
-    resetForm() {
-      this.newDevice = {
-        name: '',
-        spec: '',
-        purchasePrice: 0,
-        purchaseDate: null,
-        fileId: null,
-        purchasePlace: '',
-        endDate: null,
-        remark: '',
-      };
+      this.selectedDevice = null;
     },
     calculateAvgCost(price, purchaseDate, endDate) {
       const usageDays = this.getUsageDays(purchaseDate, endDate);
@@ -372,15 +263,6 @@ export default {
         this.deletingDeviceId = null;
       }
     },
-    async handleDeleteFromModal() {
-      if (this.newDevice.id) {
-        const deleted = await this.handleDelete(this.newDevice);
-        if (deleted) {
-          this.visible = false;
-          this.resetForm();
-        }
-      }
-    },
     isDeleting(id) {
       return this.deletingDeviceId === id;
     },
@@ -408,105 +290,14 @@ export default {
       </div>
     </AModal>
     <div class="electronics-container">
-      <!-- 维护设备弹窗 -->
-      <AModal
+      <DeviceEditorModal
+        v-if="visible"
         v-model:open="visible"
-        :title="newDevice.id ? '编辑设备' : '新增设备'"
-        :confirm-loading="saving"
-        :busy="isDeleting(newDevice.id)"
-        :closable="false"
-        centered
-        @ok="handleOk"
-        @cancel="handleCancel"
-      >
-        <template #footer-leading>
-          <AppModalDelete
-            v-if="newDevice.id"
-            :action="handleDeleteFromModal"
-            :disabled="saving"
-            :loading="isDeleting(newDevice.id)"
-            title="确定要删除这个设备吗？"
-          />
-        </template>
-        <AForm :model="newDevice" layout="vertical" class="device-form">
-          <AFormItem label="设备名称">
-            <AInput v-model:value="newDevice.name" />
-          </AFormItem>
-          <AFormItem label="配置">
-            <AInput v-model:value="newDevice.spec" placeholder="" />
-          </AFormItem>
-          <ARow :gutter="16">
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="设备类型">
-                <ASelect
-                  v-model:value="newDevice.type"
-                  style="width: 100%"
-                  :options="typeOptions"
-                />
-              </AFormItem>
-            </ACol>
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="设备状态">
-                <ASelect
-                  v-model:value="newDevice.status"
-                  style="width: 100%"
-                  :options="statusOptions"
-                />
-              </AFormItem>
-            </ACol>
-          </ARow>
-          <ARow :gutter="16">
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="价格">
-                <AInputNumber
-                  v-model:value="newDevice.purchasePrice"
-                  style="width: 100%"
-                />
-              </AFormItem>
-            </ACol>
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="购买平台">
-                <AInput v-model:value="newDevice.purchasePlace" />
-              </AFormItem>
-            </ACol>
-          </ARow>
-          <ARow :gutter="16">
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="购买日期">
-                <ADatePicker
-                  format="YYYY-MM-DD"
-                  v-model:value="newDevice.purchaseDate"
-                  style="width: 100%"
-                />
-              </AFormItem>
-            </ACol>
-            <ACol :xs="24" :sm="12">
-              <AFormItem label="退役日期">
-                <ADatePicker
-                  format="YYYY-MM-DD"
-                  v-model:value="newDevice.endDate"
-                  style="width: 100%"
-                  placeholder="留空则计算至今日"
-                />
-              </AFormItem>
-            </ACol>
-          </ARow>
-          <AFormItem label="设备图片">
-            <ImageUpload
-              v-model:file-id="newDevice.fileId"
-              :upload-fn="uploadImage"
-            />
-          </AFormItem>
-          <AFormItem label="备注">
-            <AInput
-              v-model:value="newDevice.remark"
-              type="textarea"
-              :rows="3"
-              placeholder="其他备注信息"
-            />
-          </AFormItem>
-        </AForm>
-      </AModal>
+        :record="selectedDevice"
+        :initial-type="tabKey"
+        @saved="query({ showLoading: false })"
+        @deleted="query({ showLoading: false })"
+      />
 
       <!-- 图片预览弹窗 -->
       <AModal
@@ -1034,10 +825,6 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.device-form :deep(.ant-form-item) {
-  margin-bottom: 12px;
 }
 
 @media screen and (max-width: 1024px) {

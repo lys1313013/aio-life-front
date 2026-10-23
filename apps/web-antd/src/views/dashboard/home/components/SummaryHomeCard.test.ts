@@ -8,6 +8,7 @@ import SummaryHomeCard from './SummaryHomeCard.vue';
 const mocks = vi.hoisted(() => ({ push: vi.fn(), load: vi.fn() }));
 const data = ref<any>(null);
 const identity = ref('one');
+const locked = ref(false);
 vi.mock('#/api/core/home-sections', () => ({
   isFinancialSection: (kind: string) =>
     ['expense', 'finance', 'income'].includes(kind),
@@ -27,7 +28,7 @@ vi.mock('../composables/useHomeSection', () => ({
     loading: ref(false),
     failed: ref(false),
     available: ref(true),
-    locked: ref(false),
+    locked,
     path: ref(`/${kind}`),
     identity,
     period: ref('month'),
@@ -47,11 +48,19 @@ vi.mock('#/views/my-hub/finance-dashboard/FinanceEntryModal.vue', () => ({
   __esModule: true,
   default: { template: '<div />' },
 }));
+vi.mock('#/views/my-hub/device/DeviceEditorModal.vue', () => ({
+  __esModule: true,
+  default: {
+    props: ['deviceId'],
+    template: '<div data-device-editor :data-id="deviceId" />',
+  },
+}));
 enableAutoUnmount(afterEach);
 beforeEach(() => {
   mocks.push.mockClear();
   mocks.load.mockClear();
   identity.value = 'one';
+  locked.value = false;
 });
 it('笔记仅显示标题和日期，以字符串 ID 加载编辑器；切换身份销毁编辑器', async () => {
   data.value = {
@@ -115,7 +124,7 @@ it('视频只使用可信 B站链接；非法链接定位记录，不执行URL',
     query: { id: '9007199254740993' },
   });
 });
-it('缺失设备日期保持未知语义；点击记录保留字符串 ID', async () => {
+it('设备条目在首页打开弹窗，标题仍导航，锁定后销毁编辑器', async () => {
   data.value = {
     items: [
       {
@@ -133,8 +142,17 @@ it('缺失设备日期保持未知语义；点击记录保留字符串 ID', asyn
     .findAll('button')
     .find((button) => button.text().includes('电脑'))!
     .trigger('click');
-  expect(mocks.push).toHaveBeenCalledWith({
-    path: '/device',
-    query: { id: '9007199254740993' },
-  });
+  await flushPromises();
+  expect(mocks.push).not.toHaveBeenCalled();
+  expect(wrapper.get('[data-device-editor]').attributes('data-id')).toBe(
+    '9007199254740993',
+  );
+  locked.value = true;
+  await flushPromises();
+  expect(wrapper.find('[data-device-editor]').exists()).toBe(false);
+  await wrapper
+    .findAll('button')
+    .find((button) => button.text() === '我的设备')!
+    .trigger('click');
+  expect(mocks.push).toHaveBeenCalledWith('/device');
 });

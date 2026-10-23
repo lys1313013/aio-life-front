@@ -24,6 +24,11 @@ const MemoEditor = defineAsyncComponent(
 const FinanceEntry = defineAsyncComponent(
   () => import('#/views/my-hub/finance-dashboard/FinanceEntryModal.vue'),
 );
+const DeviceEditor = defineAsyncComponent(
+  () => import('#/views/my-hub/device/DeviceEditorModal.vue'),
+);
+const deviceOpen = ref(false);
+const deviceId = ref<string>();
 const router = useRouter();
 const card = useHomeSection(props.kind);
 const { data, loaded, loading, failed, available, locked } = card;
@@ -82,6 +87,8 @@ watch(financeRef, openFinanceEntry);
 
 watch(available, (value) => emit('visibility', value), { immediate: true });
 watch(card.identity, () => {
+  deviceOpen.value = false;
+  deviceId.value = undefined;
   memoOpen.value = false;
   memoId.value = undefined;
   financeMounted.value = false;
@@ -89,6 +96,8 @@ watch(card.identity, () => {
 });
 watch(locked, (value) => {
   if (value) {
+    deviceOpen.value = false;
+    deviceId.value = undefined;
     memoOpen.value = false;
     financeMounted.value = false;
     pendingEntry = false;
@@ -98,6 +107,12 @@ function navigate() {
   if (card.path.value) void router.push(card.path.value);
 }
 function openRecord(id: string) {
+  if (locked.value || !available.value) return;
+  if (props.kind === 'device') {
+    deviceId.value = id;
+    deviceOpen.value = true;
+    return;
+  }
   if (card.path.value)
     void router.push({ path: card.path.value, query: { id } });
 }
@@ -325,7 +340,7 @@ function resumeUrl(url: null | string) {
             class="min-w-0 flex-1 rounded-lg hover:text-primary"
             :aria-label="`继续观看：${item.title || '未命名视频'}`"
             ><span
-              class="line-clamp-2 break-words text-sm font-medium leading-4"
+              class="line-clamp-2 break-words text-xs font-normal leading-4"
               >{{ item.title || '未命名视频' }}</span
             ><span class="mt-1 block text-xs text-muted-foreground"
               >第 {{ item.currentEpisode }} / {{ item.episodes }} 集 ·
@@ -337,9 +352,9 @@ function resumeUrl(url: null | string) {
             class="min-w-0 flex-1 text-left"
             @click="openRecord(item.id)"
           >
-            <span class="line-clamp-2 break-words text-sm leading-4">{{
-              item.title || '未命名视频'
-            }}</span
+            <span
+              class="line-clamp-2 break-words text-xs font-normal leading-4"
+              >{{ item.title || '未命名视频' }}</span
             ><span class="mt-1 block text-xs text-muted-foreground"
               >第 {{ item.currentEpisode }} / {{ item.episodes }} 集 ·
               {{ item.progressPercent }}%</span
@@ -386,6 +401,11 @@ function resumeUrl(url: null | string) {
       :pending="card.period.value"
       :loading="loading"
       @select="card.selectPeriod"
+    />
+    <DeviceEditor
+      v-if="kind === 'device' && deviceOpen && !locked"
+      v-model:open="deviceOpen"
+      :device-id="deviceId"
     />
     <MemoEditor
       v-if="kind === 'memo' && memoOpen"
