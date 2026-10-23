@@ -10,6 +10,7 @@ import {
   sortFootprints,
   timeLabel,
   validDate,
+  validateDraft,
 } from './model';
 
 const draft = () => ({
@@ -23,6 +24,25 @@ const draft = () => ({
 });
 
 describe('生活足迹契约', () => {
+  it('按字段提示必填，补选或勾选至今后不再保留旧错误', () => {
+    expect(validateDraft(emptyDraft())).toMatchObject({
+      startDate: '请选择开始日期',
+      endDate: '请选择结束日期',
+      placeName: '请选择或填写地点',
+      position: '请选择地图位置',
+    });
+    expect(validateDraft(draft())).toEqual({});
+    expect(validateDraft({ ...draft(), endDate: PRESENT_DATE })).toEqual({});
+    expect(validateDraft({ ...draft(), endDate: '' }).endDate).toBe(
+      '请选择结束日期',
+    );
+    expect(validateDraft({ ...draft(), endDate: '2016-12-29' }).endDate).toBe(
+      '结束日期不能早于开始日期',
+    );
+    expect(validateDraft({ ...draft(), endDate: '2099-01-01' }).endDate).toBe(
+      '结束日期不能晚于今天',
+    );
+  });
   it('只接受完整日期，并检查闰年、未来和起止顺序', () => {
     expect(draftPayload(draft()).endDate).toBe('2016-12-31');
     expect(validDate('2024-02-29')).toBe(true);

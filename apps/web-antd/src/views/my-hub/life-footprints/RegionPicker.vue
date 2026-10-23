@@ -15,7 +15,7 @@ const emit = defineEmits<{
   restored: [path: SystemRegion[]];
   'update:value': [value: null | string];
 }>();
-const labels = ['省份', '城市', '区县', '乡镇 / 街道'];
+const labels = ['省份', '市', '区县', '乡镇 / 街道'];
 const options = ref<SystemRegion[][]>([[], [], [], []]);
 const selected = ref<SystemRegion[]>([]);
 const busy = ref<boolean[]>([false, false, false, false]);
@@ -61,7 +61,10 @@ async function choose(level: number, code: unknown) {
   busy.value[level + 1] = true;
   try {
     const list = await getRegionChildren(item.code);
-    if (current === revision) options.value[level + 1] = list;
+    if (current !== revision) return;
+    options.value[level + 1] = list;
+    // 省下只有一个市时直接选中，沿用手选流程加载区县。
+    if (level === 0 && list.length === 1) await choose(1, list[0]!.code);
   } catch {
     if (current === revision) failed.value = true;
   } finally {

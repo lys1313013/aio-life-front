@@ -1,33 +1,30 @@
 <script setup lang="ts">
-import type { FootprintMapHandle } from './footprint-map';
-import type { MapTileSource, TencentMapConfig } from './map-config';
-import type { Coordinate, Footprint, LocationGroup } from './model';
+import type { TencentMapConfig } from './map-config';
+import type { FootprintMapHandle } from './map-handle';
+import type { Coordinate, FootprintMapRecord, LocationGroup } from './model';
 
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
 import { usePreferences } from '@vben/preferences';
 
 import { Button, Spin } from 'ant-design-vue';
 
-import leafletLicenseUrl from './assets/leaflet-license.txt?url';
-import { mountFootprintMap } from './footprint-map';
-import { DEFAULT_MAP_SOURCE } from './map-config';
 import { mountTencentFootprintMap } from './tencent-map';
 
-import 'leaflet/dist/leaflet.css';
 import './map-dots.css';
 
 const props = withDefaults(
   defineProps<{
     height?: number;
+    numbered?: boolean;
+    overview?: boolean;
     pending?: boolean;
     picking?: boolean;
     point?: Coordinate | null;
-    records?: Footprint[];
+    records?: FootprintMapRecord[];
     selectedId?: null | string;
     small?: boolean;
-    source?: MapTileSource;
     tencent?: TencentMapConfig;
   }>(),
   {
@@ -38,8 +35,9 @@ const props = withDefaults(
     picking: false,
     pending: false,
     small: false,
+    numbered: false,
+    overview: false,
     height: undefined,
-    source: () => ({ ...DEFAULT_MAP_SOURCE }),
   },
 );
 const emit = defineEmits<{
@@ -54,14 +52,6 @@ const failed = ref(false);
 const tilesLoading = ref(false);
 const tilesFailed = ref(false);
 const tilted = ref(false);
-const attributionUrl = computed(() => {
-  try {
-    const url = new URL(props.source.attributionUrl);
-    return url.protocol === 'https:' ? url.href : undefined;
-  } catch {
-    return undefined;
-  }
-});
 let disposed = false;
 let handle: FootprintMapHandle | null = null;
 let revision = 0;
@@ -91,22 +81,21 @@ async function start() {
       tilesFailed.value = state === 'error';
     };
     tilted.value = false;
-    const map = props.picking
-      ? mountFootprintMap(container.value, {
-          source: props.source,
-          picking: props.picking,
-          small: props.small,
-          onSelect: (group) => emit('select', group),
-          onPick: (point) => emit('pick', point),
-          onTileState: tileState,
-        })
-      : await mountTencentFootprintMap(container.value, {
-          config: props.tencent ?? { key: '', mapStyleId: 'style1' },
-          cancelled: () => disposed || current !== revision,
-          small: props.small,
-          onSelect: (group) => emit('select', group),
-          onTileState: tileState,
-        });
+    const map = await mountTencentFootprintMap(container.value, {
+      picking: props.picking,
+      initialPoint: props.point,
+      onPick: (point) => emit('pick', point),
+      config: props.tencent ?? {
+        enabled: false,
+        serviceHost: '',
+        mapStyleId: 'style1',
+      },
+      cancelled: () => disposed || current !== revision,
+      small: props.small,
+      numbered: props.numbered,
+      onSelect: (group) => emit('select', group),
+      onTileState: tileState,
+    });
     if (disposed || current !== revision) {
       map.destroy();
       return;
@@ -132,9 +121,13 @@ onBeforeUnmount(() => {
   revision++;
   handle?.destroy();
 });
-watch(() => [props.source, props.tencent, props.pending], start, {
+watch(() => [props.tencent, props.pending], start, {
   deep: true,
 });
+watch(
+  () => props.picking,
+  (enabled) => handle?.setPicking?.(enabled),
+);
 watch(
   () => [props.records, props.selectedId] as const,
   () => handle?.setRecords(props.records, props.selectedId),
@@ -147,21 +140,15 @@ watch(
 );
 watch(isDark, (dark) => handle?.setDark(dark));
 function china() {
-  handle?.china();
-}
-function zoomIn() {
-  handle?.zoomIn();
-}
-function zoomOut() {
-  handle?.zoomOut();
+  if (props.overview && props.records.length > 0) focus(props.records);
+  else handle?.china();
 }
 function toggle3D() {
   tilted.value = !tilted.value;
   handle?.toggle3D?.();
 }
 function retryTiles() {
-  if (props.picking) handle?.retryTiles();
-  else void start();
+  void start();
 }
 defineExpose({ focus, china: () => handle?.china() });
 </script>
@@ -180,9 +167,7 @@ defineExpose({ focus, china: () => handle?.china() });
     <div v-if="loading" class="map-cover"><Spin /></div>
     <div v-else-if="failed" class="map-cover" role="alert">
       <span>{{
-        !picking && !tencent?.key
-          ? '请在系统配置填写腾讯地图 Key'
-          : '地图暂不可用'
+        !tencent?.enabled ? '请在系统配置填写腾讯地图 Key' : '地图暂不可用'
       }}</span>
       <Button aria-label="重试地图" @click="start">
         <IconifyIcon class="size-5" icon="mdi:reload" />
@@ -198,46 +183,28 @@ defineExpose({ focus, china: () => handle?.china() });
           <IconifyIcon class="size-5" icon="mdi:reload" />
         </Button>
       </div>
-      <Button class="map-country" aria-label="返回中国地图" @click="china">
-        <IconifyIcon class="size-5" icon="mdi:map-outline" />
-      </Button>
-      <Button
-        v-if="!picking"
-        class="map-3d"
-        aria-label="切换3D视角"
-        :aria-pressed="tilted"
-        @click="toggle3D"
-      >
-        <IconifyIcon class="size-5" icon="mdi:cube-outline" />
-      </Button>
-      <div class="map-zoom">
-        <Button aria-label="放大地图" @click="zoomIn">
-          <IconifyIcon class="size-5" icon="mdi:plus" />
+      <div class="map-controls">
+        <Button
+          class="map-country"
+          :aria-label="overview ? '查看全部地点' : '返回中国地图'"
+          @click="china"
+        >
+          <IconifyIcon
+            class="size-5"
+            :icon="overview ? 'mdi:fit-to-screen-outline' : 'mdi:map-outline'"
+          />
         </Button>
-        <Button aria-label="缩小地图" @click="zoomOut">
-          <IconifyIcon class="size-5" icon="mdi:minus" />
+        <Button
+          v-if="!picking"
+          class="map-3d"
+          aria-label="切换3D视角"
+          :aria-pressed="tilted"
+          @click="toggle3D"
+        >
+          <IconifyIcon class="size-5" icon="mdi:cube-outline" />
         </Button>
       </div>
     </template>
-    <div v-if="picking" class="map-attribution">
-      <a
-        :href="leafletLicenseUrl"
-        download="Leaflet-LICENSE.txt"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Leaflet 开源许可"
-        >Leaflet</a
-      >
-      ·
-      <a
-        v-if="attributionUrl"
-        :href="attributionUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        >{{ source.attribution }}</a
-      >
-      <span v-else>{{ source.attribution }}</span>
-    </div>
   </div>
 </template>
 
@@ -290,59 +257,28 @@ defineExpose({ focus, china: () => handle?.china() });
   pointer-events: none;
 }
 
-.map-attribution {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 1;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  padding: 2px 6px;
-  font-size: 11px;
-  color: hsl(var(--foreground));
-  background: hsl(var(--background) / 90%);
-}
-
-.footprint-map :deep(.leaflet-container) {
-  background: hsl(var(--muted));
-}
-
-.footprint-map :deep(.footprint-map-dark .leaflet-tile-pane) {
-  filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.65);
-}
-
 .footprint-map :deep(.ant-btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 44px;
   height: 44px;
+  padding: 0;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
   border-color: hsl(var(--border));
 }
 
-.map-3d {
-  position: absolute;
-  top: 12px;
-  left: 62px;
-  z-index: 1;
-}
-
-.map-3d[aria-pressed='true'] {
-  color: hsl(var(--primary));
-}
-
-.map-country {
+.map-controls {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 1;
+  display: flex;
+  gap: 6px;
 }
 
-.map-zoom {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: grid;
-  z-index: 1;
-  gap: 4px;
+.map-3d[aria-pressed='true'] {
+  color: hsl(var(--primary));
 }
 </style>

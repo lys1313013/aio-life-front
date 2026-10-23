@@ -13,6 +13,7 @@ export const DEFAULT_MAP_SOURCE: MapTileSource = {
 };
 
 export interface TencentMapConfig {
-  key: string;
+  enabled: boolean;
+  serviceHost: string;
   mapStyleId: string;
 }

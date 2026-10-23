@@ -49,7 +49,7 @@ function save() {
 <template>
   <Form layout="vertical" :model="form" :disabled="saving" @finish="save">
     <div class="grid grid-cols-1 gap-x-4 md:grid-cols-2">
-      <Form.Item label="服务端 AK">
+      <Form.Item label="百度搜索解析 AK（优先）">
         <Input.Password
           v-model:value="form.serviceAk"
           aria-label="百度地图服务端 AK"
@@ -57,7 +57,9 @@ function save() {
           :maxlength="256"
           :disabled="saving || form.clearServiceAk"
           :placeholder="
-            serviceAkConfigured ? '已配置，留空保留' : '用于地点搜索与地址解析'
+            serviceAkConfigured
+              ? '已配置，留空保留'
+              : '百度额度耗尽后自动使用腾讯搜索解析 Key'
           "
         />
         <Checkbox
@@ -85,7 +87,7 @@ function save() {
       </Form.Item>
     </div>
     <Button type="link" class="mb-3 px-0" @click="advanced = !advanced">
-      {{ advanced ? '收起底图设置' : '底图设置' }}
+      {{ advanced ? '收起移动端 H5 底图设置' : '移动端 H5 底图设置' }}
     </Button>
     <div v-if="advanced">
       <Form.Item label="底图地址">

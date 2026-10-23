@@ -21,7 +21,17 @@ export interface FootprintRequest extends Coordinate {
 export interface Footprint extends FootprintRequest {
   id: string;
 }
+/** 地图展示用编号，不参与请求或持久化。 */
+export interface FootprintMapRecord extends Footprint {
+  markerNumber?: number;
+}
+export interface LocationRegion {
+  districtCode: string;
+  townCode?: null | string;
+  townName: string;
+}
 export interface LocationResult extends Coordinate {
+  region?: LocationRegion | null;
   placeName: string;
   address: string;
   city: string;
@@ -54,7 +64,7 @@ export function emptyDraft(): Draft {
   return {
     id: null,
     startDate: '',
-    endDate: PRESENT_DATE,
+    endDate: '',
     placeName: '',
     address: null,
     city: null,
@@ -83,24 +93,37 @@ export function validDate(value: string): boolean {
   );
 }
 
-export function draftPayload(draft: Draft): FootprintRequest {
+export function validateDraft(draft: Draft) {
+  const errors: Partial<
+    Record<'endDate' | 'note' | 'placeName' | 'position' | 'startDate', string>
+  > = {};
   const startDate = draft.startDate.trim();
   const endDate = draft.endDate.trim();
   const today = new Date(Date.now() + 8 * 3_600_000).toISOString().slice(0, 10);
-  if (!validDate(startDate) || !validDate(endDate))
-    throw new Error('请填写有效的完整日期 YYYY-MM-DD');
-  if (startDate > today || (endDate !== PRESENT_DATE && endDate > today))
-    throw new Error('日期不能位于未来');
-  if (endDate < startDate) throw new Error('结束日期不能早于开始日期');
-  if (!draft.placeName.trim()) throw new Error('请填写地点');
-  if (!draft.confirmed || !validCoordinate(draft))
-    throw new Error('请先选择并确认地图位置');
-  if (
-    draft.placeName.trim().length > 100 ||
-    (draft.address?.length ?? 0) > 500 ||
-    (draft.note?.length ?? 0) > 5000
-  )
-    throw new Error('地点、地址或备注过长');
+  if (!validDate(startDate)) errors.startDate = '请选择开始日期';
+  else if (startDate > today) errors.startDate = '开始日期不能晚于今天';
+  if (!validDate(endDate)) errors.endDate = '请选择结束日期';
+  else if (endDate !== PRESENT_DATE && endDate > today)
+    errors.endDate = '结束日期不能晚于今天';
+  else if (validDate(startDate) && endDate < startDate)
+    errors.endDate = '结束日期不能早于开始日期';
+  if (!draft.placeName.trim()) errors.placeName = '请选择或填写地点';
+  else if (draft.placeName.trim().length > 100)
+    errors.placeName = '地点名称不能超过100字';
+  if (!validCoordinate(draft)) errors.position = '请选择地图位置';
+  else if (!draft.confirmed) errors.position = '请确认所选位置';
+  if ((draft.note?.length ?? 0) > 5000) errors.note = '备注不能超过5000字';
+  return errors;
+}
+
+export function draftPayload(draft: Draft): FootprintRequest {
+  const errors = validateDraft(draft);
+  const message = Object.values(errors)[0];
+  if (message) throw new Error(message);
+  if ((draft.address?.length ?? 0) > 500)
+    throw new Error('地点地址过长，请重新选择地点');
+  const startDate = draft.startDate.trim();
+  const endDate = draft.endDate.trim();
   return {
     startDate,
     endDate,

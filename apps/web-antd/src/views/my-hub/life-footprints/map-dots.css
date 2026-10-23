@@ -74,6 +74,22 @@
   pointer-events: none;
 }
 
+.footprint-map-number,
+.footprint-map-number[data-active='true'] {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+  background: hsl(var(--background));
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary));
+}
+
+.footprint-map-number[data-active='true'] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 18%);
+}
+
 .footprint-tencent-markers .footprint-map-hit {
   pointer-events: auto;
 }
