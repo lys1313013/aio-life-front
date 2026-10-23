@@ -1,25 +1,47 @@
 <script lang="ts" setup>
 import { onMounted, ref, toRaw } from 'vue';
 
-import { Radio } from 'ant-design-vue';
+import { message, Radio } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useAppForm } from '#/adapter/form';
 import { useVbenModal } from '#/adapter/modal';
-import { add, update } from '#/api/core/income';
+import { add, deleteData, update } from '#/api/core/income';
 import { getByDictType } from '#/api/core/userDictType';
+import { AppModalDelete } from '#/components/app-modal';
 
 defineOptions({
   name: 'FormModal',
 });
 
 defineProps<{ showKindSwitch?: boolean }>();
-const emit = defineEmits(['tableReload', 'saved', 'kindChange']);
+const emit = defineEmits(['tableReload', 'saved', 'kindChange', 'deleted']);
 const tableReload = () => {
   emit('tableReload');
 };
 
 const saving = ref(false);
+const deleting = ref(false);
+const originalValues = ref<Record<string, any>>({});
+async function remove() {
+  const id = originalValues.value.id;
+  if (!id || saving.value || deleting.value) return;
+  deleting.value = true;
+  try {
+    const result = await deleteData(id);
+    if (result === false) {
+      message.error('记录未删除，请重试');
+      return;
+    }
+    modalApi.close();
+    emit('deleted', id);
+    tableReload();
+  } catch {
+    // API 错误由请求客户端提示，保留表单供重试。
+  } finally {
+    deleting.value = false;
+  }
+}
 const dictOptions = ref<Array<any>>([]);
 
 async function loadDictOptions() {
@@ -99,10 +121,10 @@ const [Form, formApi] = useAppForm({
 });
 const [Modal, modalApi] = useVbenModal({
   onCancel() {
-    modalApi.close();
+    if (!deleting.value) modalApi.close();
   },
   onConfirm: async () => {
-    if (saving.value) return;
+    if (saving.value || deleting.value) return;
     saving.value = true;
     modalApi.lock();
     try {
@@ -110,7 +132,7 @@ const [Modal, modalApi] = useVbenModal({
       if (!valid) return;
       const newVar = toRaw(await formApi.submitForm());
       if (newVar.id) {
-        await update(newVar.id, newVar);
+        await update(newVar.id, { ...originalValues.value, ...newVar });
       } else {
         await add(newVar);
       }
@@ -126,6 +148,7 @@ const [Modal, modalApi] = useVbenModal({
     if (isOpen) {
       formApi.resetForm();
       const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
+      originalValues.value = { ...values };
       formApi.setValues({ incDate: dayjs().format('YYYY-MM-DD'), ...values });
     }
   },
@@ -133,7 +156,11 @@ const [Modal, modalApi] = useVbenModal({
 });
 </script>
 <template>
-  <Modal>
+  <Modal
+    :confirm-disabled="deleting"
+    :close-on-click-modal="!deleting"
+    :close-on-press-escape="!deleting"
+  >
     <Radio.Group
       v-if="showKindSwitch"
       value="income"
@@ -146,5 +173,15 @@ const [Modal, modalApi] = useVbenModal({
       <Radio.Button value="income">收入</Radio.Button>
     </Radio.Group>
     <Form />
+    <template #prepend-footer>
+      <AppModalDelete
+        v-if="originalValues.id"
+        class="mr-auto"
+        title="确认删除？"
+        :action="remove"
+        :disabled="saving"
+        :loading="deleting"
+      />
+    </template>
   </Modal>
 </template>

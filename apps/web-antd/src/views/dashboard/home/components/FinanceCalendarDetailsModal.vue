@@ -12,9 +12,12 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button, Pagination, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
+import { useVbenModal } from '#/adapter/modal';
 import { getFinanceCalendarDetails } from '#/api/core/finance-calendar';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModal } from '#/components/app-modal';
+import ExpenseFormModal from '#/views/my-hub/expense/form-modal.vue';
+import IncomeFormModal from '#/views/my-hub/income/form-modal.vue';
 
 import { formatFinanceAmount as money } from './finance-calendar';
 
@@ -24,6 +27,20 @@ const props = defineProps<{
   kind: FinanceKind;
 }>();
 const emit = defineEmits<{ close: [] }>();
+const [ExpenseModal, expenseApi] = useVbenModal({
+  connectedComponent: ExpenseFormModal,
+});
+const [IncomeModal, incomeApi] = useVbenModal({
+  connectedComponent: IncomeFormModal,
+});
+function edit(row: FinanceCalendarDetail) {
+  if (loading.value) return;
+  const api = displayedKind.value === 'expense' ? expenseApi : incomeApi;
+  api.setData({ values: { ...row } }).open();
+}
+function saved() {
+  void load(page.value, false);
+}
 const activeKind = ref<FinanceRecordKind>(
   props.kind === 'finance' ? (props.initialKind ?? 'expense') : props.kind,
 );
@@ -103,7 +120,7 @@ function metadata(row: FinanceCalendarDetail) {
     .filter(Boolean)
     .join(' · ');
 }
-async function load(next = page.value) {
+async function load(next = page.value, resetScroll = true) {
   const stamp = ++generation;
   const requestedKind = activeKind.value;
   targetPage = next;
@@ -129,6 +146,10 @@ async function load(next = page.value) {
         ),
     ]);
     if (!alive || stamp !== generation) return;
+    if (next > 1 && result.items.length === 0) {
+      void load(next - 1, resetScroll);
+      return;
+    }
     dictionaries.set(requestedKind, dicts);
     displayedKind.value = requestedKind;
     [categories.value, payments.value] = dicts;
@@ -137,7 +158,7 @@ async function load(next = page.value) {
     page.value = next;
     loaded.value = true;
     await nextTick();
-    if (alive && stamp === generation && listRef.value)
+    if (resetScroll && alive && stamp === generation && listRef.value)
       listRef.value.scrollTop = 0;
   } catch {
     if (alive && stamp === generation) failed.value = true;
@@ -219,39 +240,47 @@ onBeforeUnmount(() => {
             class="finance-detail-row"
             :data-finance-id="row.id"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0 flex-1">
-                <div class="break-words text-sm">
-                  {{ description(row) }}
+            <button
+              type="button"
+              class="finance-detail-edit w-full rounded text-left hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              :aria-label="`编辑${label}：${description(row)}`"
+              :disabled="loading"
+              @click="edit(row)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="break-words text-sm">
+                    {{ description(row) }}
+                  </div>
+                  <div
+                    v-if="row.counterparty && row.counterparty !== row.expDesc"
+                    class="mt-1 break-words text-xs text-muted-foreground"
+                  >
+                    {{ row.counterparty }}
+                  </div>
                 </div>
-                <div
-                  v-if="row.counterparty && row.counterparty !== row.expDesc"
-                  class="mt-1 break-words text-xs text-muted-foreground"
+                <span
+                  class="shrink-0 text-sm tabular-nums"
+                  aria-label="记账金额"
+                  >{{ row.amt == null ? '—' : money(row.amt) }}</span
                 >
-                  {{ row.counterparty }}
-                </div>
               </div>
-              <span
-                class="shrink-0 text-sm tabular-nums"
-                aria-label="记账金额"
-                >{{ row.amt == null ? '—' : money(row.amt) }}</span
+              <div class="mt-1 text-xs text-muted-foreground">
+                {{ metadata(row) }}
+              </div>
+              <div
+                v-if="row.remark && row.remark !== description(row)"
+                class="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground"
               >
-            </div>
-            <div class="mt-1 text-xs text-muted-foreground">
-              {{ metadata(row) }}
-            </div>
-            <div
-              v-if="row.remark && row.remark !== description(row)"
-              class="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground"
-            >
-              {{ row.remark }}
-            </div>
-            <div
-              v-if="row.tax != null"
-              class="mt-1 text-xs text-muted-foreground"
-            >
-              税额：{{ money(row.tax) }}
-            </div>
+                {{ row.remark }}
+              </div>
+              <div
+                v-if="row.tax != null"
+                class="mt-1 text-xs text-muted-foreground"
+              >
+                税额：{{ money(row.tax) }}
+              </div>
+            </button>
             <details
               v-if="
                 row.transactionId ||
@@ -305,11 +334,13 @@ onBeforeUnmount(() => {
           :disabled="loading"
           :show-size-changer="false"
           simple
-          @change="load"
+          @change="(next) => load(next)"
         />
       </div>
     </div>
   </AppModal>
+  <ExpenseModal @saved="saved" @deleted="saved" />
+  <IncomeModal @saved="saved" @deleted="saved" />
 </template>
 
 <style scoped>

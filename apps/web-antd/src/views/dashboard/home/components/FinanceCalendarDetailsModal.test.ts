@@ -4,7 +4,32 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import FinanceCalendarDetailsModal from './FinanceCalendarDetailsModal.vue';
 
-const mocks = vi.hoisted(() => ({ query: vi.fn(), dictionary: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  query: vi.fn(),
+  dictionary: vi.fn(),
+  apis: [] as any[],
+}));
+vi.mock('#/views/my-hub/expense/form-modal.vue', () => ({
+  default: { name: 'ExpenseEditor' },
+}));
+vi.mock('#/views/my-hub/income/form-modal.vue', () => ({
+  default: { name: 'IncomeEditor' },
+}));
+vi.mock('#/adapter/modal', () => ({
+  useVbenModal: ({ connectedComponent }: any) => {
+    const api: any = { open: vi.fn(), setData: vi.fn() };
+    api.setData.mockReturnValue(api);
+    mocks.apis.push(api);
+    return [
+      {
+        name: connectedComponent.name,
+        emits: ['saved', 'deleted'],
+        template: '<div />',
+      },
+      api,
+    ];
+  },
+}));
 vi.mock('#/api/core/finance-calendar', () => ({
   getFinanceCalendarDetails: mocks.query,
 }));
@@ -41,6 +66,7 @@ const row = {
 enableAutoUnmount(afterEach);
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.apis.length = 0;
   mocks.dictionary.mockImplementation((type: string) =>
     Promise.resolve({
       dictDetailList: [
@@ -52,6 +78,51 @@ beforeEach(() => {
     }),
   );
   mocks.query.mockResolvedValue({ items: [row], total: 1 });
+});
+it.each(['expense', 'income'] as const)(
+  '点击 %s 明细复用编辑器，保存后重新查询当前范围',
+  async (kind) => {
+    const wrapper = mount(FinanceCalendarDetailsModal, {
+      props: { bucket, kind },
+    });
+    await flushPromises();
+    await wrapper.get('.finance-detail-edit').trigger('click');
+    const api = mocks.apis[kind === 'expense' ? 0 : 1];
+    expect(api.setData).toHaveBeenCalledWith({ values: row });
+    expect(api.open).toHaveBeenCalledOnce();
+    mocks.query.mockResolvedValueOnce({
+      items: [{ ...row, remark: '已修改' }],
+      total: 1,
+    });
+    wrapper
+      .getComponent({
+        name: kind === 'expense' ? 'ExpenseEditor' : 'IncomeEditor',
+      })
+      .vm.$emit('saved');
+    await flushPromises();
+    expect(mocks.query).toHaveBeenLastCalledWith(kind, bucket, 1, 20);
+    expect(wrapper.text()).toContain('已修改');
+  },
+);
+it('展开交易信息不会打开编辑器；修改后末页变空回到上一页', async () => {
+  mocks.query.mockResolvedValue({
+    items: [{ ...row, transactionId: 'order' }],
+    total: 21,
+  });
+  const wrapper = mount(FinanceCalendarDetailsModal, {
+    props: { bucket, kind: 'expense' },
+  });
+  await flushPromises();
+  await wrapper.get('summary').trigger('click');
+  expect(mocks.apis[0].open).not.toHaveBeenCalled();
+  await wrapper.get('[data-next]').trigger('click');
+  await flushPromises();
+  mocks.query
+    .mockResolvedValueOnce({ items: [], total: 20 })
+    .mockResolvedValueOnce({ items: [row], total: 20 });
+  wrapper.getComponent({ name: 'ExpenseEditor' }).vm.$emit('deleted');
+  await flushPromises();
+  expect(mocks.query.mock.calls.map((call) => call[2])).toEqual([1, 2, 2, 1]);
 });
 it('加载所选范围真实明细，保留字符串 ID 并解析分类与支付方式', async () => {
   const wrapper = mount(FinanceCalendarDetailsModal, {

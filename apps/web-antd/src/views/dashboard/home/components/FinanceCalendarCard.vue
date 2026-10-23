@@ -186,11 +186,20 @@ watch(available, (value) => emit('visibility', value), { immediate: true });
 watch(data, (value, previous) => {
   if (
     value?.granularity !== previous?.granularity ||
-    value?.date !== previous?.date ||
-    !value?.buckets.some((bucket) => bucket.key === selected.value)
+    value?.date !== previous?.date
   ) {
     selected.value = '';
     details.value = null;
+  } else if (details.value && value) {
+    details.value = value.buckets.find(
+      (bucket) => bucket.key === selected.value,
+    ) ?? {
+      ...details.value,
+      amount: 0,
+      income: 0,
+      expense: 0,
+      balance: 0,
+    };
   }
 });
 watch([locked, available], ([isLocked, isAvailable]) => {

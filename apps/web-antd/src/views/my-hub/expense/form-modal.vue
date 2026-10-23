@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import { nextTick, onMounted, ref, toRaw } from 'vue';
 
-import { Radio } from 'ant-design-vue';
+import { message, Radio } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useAppForm } from '#/adapter/form';
 import { useVbenModal } from '#/adapter/modal';
-import { insertData, updateData } from '#/api/core/expense';
+import { deleteData, insertData, updateData } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
+import { AppModalDelete } from '#/components/app-modal';
 
 defineOptions({
   name: 'FormModalDemo',
@@ -19,6 +20,7 @@ const emit = defineEmits([
   'updateSuccess',
   'saved',
   'kindChange',
+  'deleted',
 ]);
 
 // 连续录入模式开关
@@ -32,6 +34,27 @@ const tableReload = () => {
 };
 
 const saving = ref(false);
+const deleting = ref(false);
+const originalValues = ref<Record<string, any>>({});
+async function remove() {
+  const id = originalValues.value.id;
+  if (!id || saving.value || deleting.value) return;
+  deleting.value = true;
+  try {
+    const result = await deleteData({ id });
+    if (result === false) {
+      message.error('记录未删除，请重试');
+      return;
+    }
+    modalApi.close();
+    emit('deleted', id);
+    tableReload();
+  } catch {
+    // API 错误由请求客户端提示，保留表单供重试。
+  } finally {
+    deleting.value = false;
+  }
+}
 const dictOptions = ref<Array<any>>([]);
 const payTypeOptions = ref<Array<any>>([]);
 
@@ -170,10 +193,10 @@ const resetForm = () => {
 
 const [Modal, modalApi] = useVbenModal({
   onCancel() {
-    modalApi.close();
+    if (!deleting.value) modalApi.close();
   },
   onConfirm: async () => {
-    if (saving.value) return;
+    if (saving.value || deleting.value) return;
     saving.value = true;
     modalApi.lock();
     try {
@@ -192,7 +215,11 @@ const [Modal, modalApi] = useVbenModal({
       }
 
       if (processedData.id) {
-        await updateData({ ...processedData, id: processedData.id });
+        await updateData({
+          ...originalValues.value,
+          ...processedData,
+          id: processedData.id,
+        });
       } else {
         await insertData(processedData);
       }
@@ -224,6 +251,7 @@ const [Modal, modalApi] = useVbenModal({
       nextTick(() => {
         formApi.resetForm();
         const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
+        originalValues.value = { ...values };
         // 处理日期字段显示
         const processedValues = { ...values };
         if (processedValues.expTime) {
@@ -254,7 +282,11 @@ const [Modal, modalApi] = useVbenModal({
 });
 </script>
 <template>
-  <Modal>
+  <Modal
+    :confirm-disabled="deleting"
+    :close-on-click-modal="!deleting"
+    :close-on-press-escape="!deleting"
+  >
     <Radio.Group
       v-if="showKindSwitch"
       value="expense"
@@ -269,8 +301,16 @@ const [Modal, modalApi] = useVbenModal({
     <Form />
 
     <template #prepend-footer>
+      <AppModalDelete
+        v-if="originalValues.id"
+        class="mr-auto"
+        title="确认删除？"
+        :action="remove"
+        :disabled="saving"
+        :loading="deleting"
+      />
       <!-- 连续录入模式开关 -->
-      <div class="mr-auto flex items-center gap-2">
+      <div v-else class="mr-auto flex items-center gap-2">
         <span class="text-sm text-gray-600">连续录入:</span>
         <div
           class="relative inline-block h-6 w-10 cursor-pointer"
