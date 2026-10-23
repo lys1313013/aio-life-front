@@ -405,6 +405,26 @@ export interface IncomeUpdateReq {
   tax?: null | number | string;
 }
 
+export interface LifeFootprintBatchItemReq {
+  startDate: string;
+  endDate: string;
+  placeName: string;
+  address?: null | string;
+  city?: null | string;
+  regionCode?: null | string;
+  longitude: number | string;
+  latitude: number | string;
+  coordinateSystem: string;
+  providerUid?: null | string;
+  note?: null | string;
+  id?: null | string;
+}
+
+export interface LifeFootprintBatchSaveReq {
+  items: Array<LifeFootprintBatchItemReq>;
+  deletedIds?: Array<string>;
+}
+
 export interface LifeFootprintSaveReq {
   startDate: string;
   endDate: string;
@@ -1206,6 +1226,8 @@ export interface ApiRequests {
   HonorRecordUpdateReq: HonorRecordUpdateReq;
   IncomeCreateReq: IncomeCreateReq;
   IncomeUpdateReq: IncomeUpdateReq;
+  LifeFootprintBatchItemReq: LifeFootprintBatchItemReq;
+  LifeFootprintBatchSaveReq: LifeFootprintBatchSaveReq;
   LifeFootprintSaveReq: LifeFootprintSaveReq;
   LoginReq: LoginReq;
   MbtiResultSaveReq: MbtiResultSaveReq;
@@ -1666,6 +1688,24 @@ const fields: Record<string, Record<string, null | string>> = {
     remark: null,
     incTypeId: null,
     tax: null,
+  },
+  LifeFootprintBatchItemReq: {
+    startDate: null,
+    endDate: null,
+    placeName: null,
+    address: null,
+    city: null,
+    regionCode: null,
+    longitude: null,
+    latitude: null,
+    coordinateSystem: null,
+    providerUid: null,
+    note: null,
+    id: null,
+  },
+  LifeFootprintBatchSaveReq: {
+    items: 'LifeFootprintBatchItemReq',
+    deletedIds: null,
   },
   LifeFootprintSaveReq: {
     startDate: null,
@@ -2380,9 +2420,7 @@ const queryFields: Record<string, string[]> = {
     'pageSize',
   ],
   '/system/bank-card-covers/banks': [],
-  '/capture/purchase/{id}': [],
   '/capture/options': [],
-  '/capture/search': ['keyword', 'kind'],
   '/docs/catalog': [],
   '/docs/operations': ['keyword', 'module', 'page', 'pageSize'],
   '/docs/operations/{operationId}': [],
@@ -2471,6 +2509,7 @@ const queryFields: Record<string, string[]> = {
   '/expense/query': [
     'counterparty',
     'endTime',
+    'endTimeBefore',
     'expDesc',
     'expTypeId',
     'page',
@@ -2478,11 +2517,15 @@ const queryFields: Record<string, string[]> = {
     'payTypeId',
     'remark',
     'startTime',
+    'undated',
     'year',
   ],
   '/expense/statisticsByYear': [],
   '/expense/statisticsByMonth': [],
   '/expense/{expenseId}/device': [],
+  '/home/sections/expense/calendar': ['date', 'granularity'],
+  '/home/sections/income/calendar': ['date', 'granularity'],
+  '/home/sections/finance/calendar': ['date', 'granularity'],
   '/life-footprints/map/config': [],
   '/life-footprints/map/search': ['keyword', 'region'],
   '/life-footprints/map/geocode': ['address'],
@@ -2490,7 +2533,9 @@ const queryFields: Record<string, string[]> = {
   '/github/recent-commits': ['page', 'pageSize'],
   '/goals': ['isPinned', 'keyword', 'status', 'type'],
   '/home/sections/memo': [],
-  '/home/sections/finance': [],
+  '/home/sections/finance': ['period'],
+  '/home/sections/income': ['period'],
+  '/home/sections/expense': ['period'],
   '/home/sections/video': [],
   '/home/sections/device': [],
   '/honorCategories': [],
@@ -2498,10 +2543,12 @@ const queryFields: Record<string, string[]> = {
   '/honorRecords/{id}': [],
   '/income/query': [
     'endTime',
+    'endTimeBefore',
     'incTypeId',
     'page',
     'pageSize',
     'startTime',
+    'undated',
     'year',
   ],
   '/income/statisticsByYear': [],
@@ -2933,6 +2980,12 @@ const requestModels: Array<{
     method: 'POST',
     path: '/life-footprints',
     model: 'LifeFootprintSaveReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/life-footprints/batch',
+    model: 'LifeFootprintBatchSaveReq',
     list: false,
   },
   {
