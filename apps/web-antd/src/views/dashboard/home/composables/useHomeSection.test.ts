@@ -76,12 +76,15 @@ beforeEach(() => {
   access.loginExpired = false;
 });
 afterEach(() => vi.useRealTimers());
-function fixture(kind: HomeSectionKind = 'memo') {
+function fixture(
+  kind: HomeSectionKind = 'memo',
+  options?: Parameters<typeof useHomeSection>[1],
+) {
   let card!: ReturnType<typeof useHomeSection>;
   const visible = ref(true);
   const child = defineComponent({
     setup() {
-      card = useHomeSection(kind);
+      card = useHomeSection(kind, options);
       return () => h('div');
     },
   });
@@ -115,6 +118,44 @@ it('财务检测别名菜单链的收入锁，解锁前不请求；缺少业务�
   expect(f.card.available.value).toBe(false);
   expect(f.card.data.value).toBeNull();
   access.accessMenus.splice(2, 0, income);
+});
+
+it('自定义支出日历按独立查询键刷新，历史年份不被旧本月范围逻辑覆盖', async () => {
+  const key = ref('month:2025');
+  const fetch = vi.fn().mockResolvedValue(financialData('year', 15));
+  const f = fixture('expense', {
+    fetch,
+    requestKey: () => key.value,
+    isStale: () => false,
+  });
+  await flushPromises();
+  expect(fetch).toHaveBeenCalledTimes(1);
+  expect(mocks.fetch).not.toHaveBeenCalled();
+  expect(f.card.data.value).toMatchObject({ amount: 15, period: 'year' });
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(fetch).toHaveBeenCalledTimes(1);
+  let resolveOld!: (value: unknown) => void;
+  fetch.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveOld = resolve;
+      }),
+  );
+  key.value = 'day:2025-01';
+  await flushPromises();
+  expect(f.card.loading.value).toBe(true);
+  expect(f.card.data.value).toMatchObject({ amount: 15 });
+  fetch.mockResolvedValueOnce(financialData('all', 30));
+  key.value = 'year';
+  await flushPromises();
+  resolveOld(financialData('month', 10));
+  await flushPromises();
+  expect(f.card.data.value).toMatchObject({ amount: 30, period: 'all' });
+  fetch.mockRejectedValueOnce(new Error('offline'));
+  key.value = 'week:2025-01';
+  await flushPromises();
+  expect(f.card.failed.value).toBe(true);
+  expect(f.card.data.value).toMatchObject({ amount: 30 });
 });
 it('账号变更清空旧数据并拒绝旧响应，刷新失败保留成功数据', async () => {
   let resolve!: (value: unknown) => void;

@@ -46,6 +46,7 @@ import BusinessCards from './components/BusinessCards.vue';
 import BusinessCardSkeleton from './components/BusinessCardSkeleton.vue';
 import CardHeader from './components/CardHeader.vue';
 import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
+import FinanceCalendarCard from './components/FinanceCalendarCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import HomeCardSortGrid from './components/HomeCardSortGrid.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
@@ -1018,16 +1019,26 @@ function navTo(nav: { url?: string }) {
           @visibility="sectionVisibility[section.cardKey] = $event"
         />
 
+        <FinanceCalendarCard
+          v-if="
+            section.cardKey === 'section.expense' ||
+            section.cardKey === 'section.income' ||
+            section.cardKey === 'section.finance'
+          "
+          :kind="
+            section.cardKey === 'section.income'
+              ? 'income'
+              : section.cardKey === 'section.finance'
+                ? 'finance'
+                : 'expense'
+          "
+          @visibility="sectionVisibility[section.cardKey] = $event"
+        />
         <SummaryHomeCard
           v-if="
-            [
-              'section.memo',
-              'section.finance',
-              'section.income',
-              'section.expense',
-              'section.video',
-              'section.device',
-            ].includes(section.cardKey)
+            ['section.memo', 'section.video', 'section.device'].includes(
+              section.cardKey,
+            )
           "
           :kind="sectionKind(section.cardKey)"
           @visibility="sectionVisibility[section.cardKey] = $event"

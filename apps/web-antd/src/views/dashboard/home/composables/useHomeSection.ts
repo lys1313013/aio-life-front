@@ -28,7 +28,14 @@ import { useHomeRequest } from './useHomeRequest';
 const sessionPeriods = new Map<string, FinancePeriod>();
 
 /** 摘要卡共享权限、锁、请求竞态、返回时效及前台周期刷新。 */
-export function useHomeSection<K extends HomeSectionKind>(kind: K) {
+export function useHomeSection<K extends HomeSectionKind>(
+  kind: K,
+  options?: {
+    fetch: () => Promise<HomeSections[K]>;
+    isStale: (data: HomeSections[K]) => boolean;
+    requestKey: () => string;
+  },
+) {
   const access = useAccessStore();
   const user = useUserStore();
   const visuals = useMenuVisualsStore();
@@ -105,7 +112,13 @@ export function useHomeSection<K extends HomeSectionKind>(kind: K) {
     }).format(date);
   const stale = () => {
     if (!lastSuccess) return true;
-    if (isFinancialSection(kind) && data.value && 'period' in data.value) {
+    if (options && data.value && options.isStale(data.value)) return true;
+    if (
+      !options &&
+      isFinancialSection(kind) &&
+      data.value &&
+      'period' in data.value
+    ) {
       const currentDate = businessDate(new Date());
       if (data.value.period !== period.value) return true;
       if (
@@ -129,10 +142,15 @@ export function useHomeSection<K extends HomeSectionKind>(kind: K) {
   const request = useHomeRequest({
     enabled: () => active.value && available.value && !locked.value,
     fetch: () =>
-      getHomeSection(kind, isFinancialSection(kind) ? period.value : undefined),
+      options
+        ? options.fetch()
+        : getHomeSection(
+            kind,
+            isFinancialSection(kind) ? period.value : undefined,
+          ),
     reloadOnActivate: () => false,
     apply: (result) => {
-      if ('period' in result) {
+      if (!options && 'period' in result) {
         if (result.period !== period.value)
           throw new Error('摘要范围与请求不一致');
         sessionPeriods.set(periodKey(), result.period);
@@ -181,6 +199,17 @@ export function useHomeSection<K extends HomeSectionKind>(kind: K) {
     );
   }
   watch(() => data.value?.refreshInterval, resume);
+  if (options) {
+    watch(
+      options.requestKey,
+      () => {
+        request.invalidate();
+        lastSuccess = 0;
+        resume();
+      },
+      { flush: 'sync' },
+    );
+  }
   watch(
     identity,
     () => {
