@@ -8,23 +8,21 @@
 > 本项目为开源项目，使用者必须在网站标注作者名称以及指向本项目的链接。如果不想保留署名，必须首先获得授权。不得用于非法用途，请勿商用和二次售卖。
 
 > [!NOTE]
-> 在线体验地址：https://aiolife.top  (配置管理的数据隔离权限还没有弄好，所以页面没有放出来)
+> 在线体验：[aiolife.top](https://aiolife.top)。可见功能由账号角色、菜单配置和二级锁决定。
 >
-> 前端地址：https://github.com/lys1313013/aio-life-front
+> 前端：[aio-life-front](https://github.com/lys1313013/aio-life-front)
 >
-> 后端地址：https://github.com/lys1313013/aio-life-serve
+> 后端：[aio-life-server](https://github.com/lys1313013/aio-life-server)
 
-# 项目背景
+## 项目背景
 
 个人比较喜欢看各种数据统计，希望能够通过一个系统量化自己的人生数据。也希望通过数据的支撑，更好地驱动和掌控自己的生活节奏。
 
-
-# 效果
+## 使用效果
 
 - 用上了这个系统之后，因为在首页设置了四个每日卡片，除了一些意外的情况，基本上每天都可以完成卡片上的事项（比如坚持运动，Leetcode 每日打卡，Github持续提交等）。
 
 - 因为会记录每一分钟时间的花费，也会尽可能的避免浪费时间和频繁切换任务（切换任务会导致多次记录，因为懒得多次记录，就尽可能一次性完成任务）。
-
 
 ## 功能
 
@@ -118,7 +116,6 @@
 - **字典类型**：维护系统全局字典类型
 - **字典数据**：维护系统全局字典数据
 
-
 ## 截图展示
 ### 首页
 
@@ -133,11 +130,11 @@
 
 ![img_5.png](images/img_5.png)
 
-### Github 
+### GitHub
 
 ![img_3.png](images/img_3.png)
 
-### leetcode
+### LeetCode
 
 ![img_4.png](images/img_4.png)
 
@@ -157,19 +154,24 @@
 
 ![img_7.png](images/img_7.png)
 
-
 ## 技术栈
 
 - **Frontend**: [Vue 3](https://vuejs.org/), [Vite](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)
 - **UI Framework**: [Ant Design Vue](https://antdv.com/), [Tailwind CSS](https://tailwindcss.com/)
 - **Charts**: [ECharts](https://echarts.apache.org/)
 
+## 文档入口
+
+- [Web 文档目录](docs/README.md)：组件、图片鉴权、密码库与图标维护。
+- [开发规范](AGENTS.md)：请求客户端、类型、附件、路由与 UI 约定。
+- [跨端需求与验收目录](https://github.com/lys1313013/aio-life/blob/main/docs/README.md)。
+
 ## 快速开始
 
 ### 环境准备
 
-- Node.js >= 20.10.0
-- pnpm >= 9.12.0
+- Node.js：与 CI 一致可使用 `22.23.4`；Vite 7 要求至少 `20.19` 或 `22.12`。根 `package.json` 的 `>=20.12.0` 不能代替构建工具要求。
+- pnpm：使用 `package.json#packageManager` 固定的 `10.22.0`，避免其他主版本改写 lockfile。
 
 ### 安装依赖
 
@@ -178,22 +180,35 @@
 corepack enable
 
 # 安装依赖
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 ### 启动项目
 
 ```bash
-# 启动应用
-pnpm run dev
+# 直接启动 web-antd
+pnpm run dev:antd
 ```
+
+API 地址由 `apps/web-antd/.env*` 中的 `VITE_GLOB_API_URL` 配置；开发环境默认为同源 `/api`，由 Vite 代理到 `http://localhost:45678/api`，生产地址按目标部署环境设置。`VITE_*` 会进入客户端包，不放入服务端密钥。开发服务地址以启动日志为准。
 
 ### 构建项目
 
 ```bash
-# 构建应用
-pnpm run build
+# 仅构建 web-antd
+pnpm run build:antd
 ```
+
+### 检查与测试
+
+```bash
+pnpm run check:type    # monorepo 类型检查
+pnpm run test:unit     # 单元测试（执行后退出）
+pnpm run test:critical # CI 关键路径回归
+pnpm run lint          # 代码与样式检查
+```
+
+`pnpm run dev` 提供交互式应用选择；`pnpm run build` 构建工作区任务。业务与 UI 改动按规范执行相关验证，纯文档只检查差异和引用。
 
 ## 开源与贡献
 

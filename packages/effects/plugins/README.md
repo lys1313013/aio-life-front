@@ -8,15 +8,17 @@
 
 以 `echarts` 为例，引入方式如下：
 
-**packages.json**
+**package.json**
 
 ```json
-"exports": {
+{
+  "exports": {
     "./echarts": {
       "types": "./src/echarts/index.ts",
       "default": "./src/echarts/index.ts"
     }
   }
+}
 ```
 
 **使用方式**

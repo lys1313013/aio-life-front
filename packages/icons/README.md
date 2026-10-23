@@ -18,7 +18,7 @@ pnpm add @vben/icons
 import { X } from '@vben/icons';
 ```
 
-# 自定义运动图标
+## 自定义运动图标
 
 健腹轮图标：`svg:ab-wheel`。SVG 使用 `currentColor`，可随文字颜色适配主题。
 

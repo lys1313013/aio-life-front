@@ -26,7 +26,7 @@ pnpm run dev            # 启动开发服务器
 pnpm run build          # 生产环境构建
 pnpm run lint           # 代码检查
 pnpm run format         # 代码格式化
-pnpm run typecheck      # 类型检查
+pnpm run check:type     # monorepo 类型检查
 pnpm run check          # 全量检查（循环依赖、依赖、类型、拼写）
 pnpm run test:unit      # 运行单元测试
 pnpm run test:e2e       # 运行端到端测试
@@ -70,7 +70,7 @@ pnpm run test:e2e       # 运行端到端测试
 6. **按实际 JSON 声明类型** — 后端 `Long/long` 响应字段默认序列化为 string，不限于 ID；ID 全程保留字符串，数字计数直接比较，旧版字符串计数须在读取边界解析后判断，禁止用真假值判断数量。具体见“Long 响应与数值判断”
 7. **界面简洁、图标优先** — 图标已能清楚表达含义时，只展示图标，不再重复显示按钮文字、平台名称、状态文案或解释性说明。确需解释时，优先收进问号图标的按需提示中，不常驻展示文字。具体约定见下文
 8. 确认弹窗尽可能在按钮旁边弹出
-9. 编辑弹窗要上下居中（出一些场景要跟手外），编辑弹窗可以没有 title
+9. 编辑弹窗上下居中；需要跟随触发位置的场景除外，可以没有 title
 10. 普通编辑表单默认支持回车保存：`AppModal` 和应用层 `useVbenModal` 统一调用确认按钮的保存流程；笔记、导入等例外使用 `:submit-on-enter="false"` / `submitOnEnter: false`。多行编辑、输入法选词、选择器和按钮保留原有键盘行为，保存中不重复提交。不要在弹窗内部再单独绑定回车提交；字段若有独立回车行为，用 `data-enter-submit="ignore"` 标记其容器。
 
 ## 界面表达规范
@@ -115,6 +115,8 @@ pnpm run test:e2e       # 运行端到端测试
 
 ```ts
 import { requestClient } from '#/api/request';
+import { FILE_BIZ_TYPE, uploadFile } from '#/api/core/common';
+import type { FileVO } from '#/api/core/common';
 
 // 实体类型在此文件内定义并导出
 export interface HonorRecordEntity { ... }
@@ -135,9 +137,9 @@ export async function deleteHonorRecords(idList: string[]) {
   return await requestClient.post<void>('/honorRecords/batchDelete', { idList });
 }
 
-// 上传 → requestClient.upload
+// 上传 → 公共 uploadFile，内部使用 requestClient.upload
 export async function uploadHonorAttachment(file: File) {
-  return await requestClient.upload<FileVO>('/honorRecords/upload-attachment', { file });
+  return await uploadFile(file, FILE_BIZ_TYPE.HONOR_RECORD);
 }
 ```
 
@@ -190,28 +192,21 @@ export async function createFeedback(data: FeedbackCreateRequest) {
 export async function queryMyFeedbacks(params: {
   status?: string;
   page: number;
-  size: number;
+  pageSize: number;
 }) {
-  return await requestClient.get<Page<FeedbackVO>>('/feedback/my', { params });
+  return await requestClient.get<PageResp<FeedbackVO>>('/feedback/my', { params });
 }
 ```
 
 ### 文件 / 附件处理模式
 
-项目**没有**全局 `/file/upload` 接口。每个业务模块各自包装一个 `/<biz>/upload-attachment` 接口，内部统一调用后端 `IFileService.uploadAndSave(file, bizType, bucket, objectName, isPublic)`，文件元信息写入全局 `file` 表。
+统一上传入口为 `POST /file/upload`（API 基址包含 `/api`），multipart 字段为 `file` 和 `bizType`。前端复用 `api/core/common.ts` 的 `uploadFile(file, FILE_BIZ_TYPE.XXX)`，服务端按业务类型校验权限、文件格式、大小与绑定规则。不要新增业务上传入口或复用其他业务的类型绕过检查。
 
-**统一三步走**：
+1. **上传**：写入全局 `file` 表，绑定业务记录前 `biz_id` 可为空。
+2. **绑定**：创建／更新业务记录时提交 `fileIds: string[]`，由后端校验文件归属并完成关联。未提交与空数组的语义以 DTO 为准。
+3. **查询**：响应 VO 返回 `files: FileVO[]`；不要为了带附件而将 Entity 整体当作请求模型。
 
-1. **上传**：前端调 `/<biz>/upload-attachment` → 后端写 `file` 表，`biz_type` 按业务传（如 `honor_record`、`feedback`、`feedback_comment`），此时 `biz_id` 为空
-2. **绑定**：业务记录创建 / 更新后，后端调 `fileService.bindBizId(fileIds, bizType, bizId)` 把文件与业务记录关联
-3. **查询**：调 `fileService.getByBiz(bizType, bizId)` 反查该业务的所有文件
-
-**前端约定**：
-
-- 业务 API 文件提供 `uploadXxxAttachment(file: File): Promise<FileVO>` 函数，封装业务专属的上传接口
-- 业务 Entity / 表单入参包含 `fileIds: string[]`（提交时传给后端用于绑定）
-- 业务 Entity 响应包含 `files: FileVO[]`（查询时后端填充）
-- 文件展示（尤其图片）需要鉴权时，用 `fetchAuthImageUrl(id)` 或 `useAuthImageUrl` composable
+`FileVO`、`FileBizType` 和业务类型常量统一从 `api/core/common.ts` 引用。私有图片通过 `fetchAuthImageUrl`、`useAuthImageUrl` 或 `AuthImage` 获取；不能把私有预览地址直接赋给 `img.src`。详细说明见 [图片鉴权](docs/image-auth-401-fix.md)。
 
 ### 路由与权限
 
@@ -294,7 +289,7 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 
 - 使用 Tailwind 响应式断点：`grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
 - 过滤器区域用 `flex-wrap`
-- 弹窗宽度用百分比或固定 `600px`（移动端 Ant Design Vue 会自动处理）
+- 弹窗宽度设置视口上限，长内容在弹窗内滚动；实际检查手机、平板和桌面，不能只依赖组件默认适配
 
 ### 关键依赖
 
@@ -308,7 +303,7 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 ### 运行单个测试
 
 ```bash
-pnpm run test:unit -- --run --reporter=verbose path/to/test.test.ts
+pnpm exec vitest run path/to/test.test.ts --dom --reporter=verbose
 # 或 watch 模式
-pnpm run test:unit path/to/test.test.ts
+pnpm exec vitest path/to/test.test.ts --dom
 ```
