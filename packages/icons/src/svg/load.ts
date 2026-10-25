@@ -62,6 +62,7 @@ async function loadSvgIcons() {
   // 显式依赖保证新增品牌图标在开发服务器的 glob 缓存中也能加载。
   addIcon('svg:weread', parseSvg(wereadSvg));
 
+  // 包含健身房动作 SVG；统一注册 svg:*，与移动端生成目录使用相同名称。
   const svgEagers = import.meta.glob('./icons/*.svg', {
     eager: true,
     query: '?raw',
