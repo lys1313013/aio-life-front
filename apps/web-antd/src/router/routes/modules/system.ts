@@ -14,6 +14,16 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:calendar-clock',
+          title: '定时任务',
+          authority: ['admin'],
+        },
+        name: 'ScheduledJobAdmin',
+        path: '/system/scheduled-jobs',
+        component: () => import('#/views/system/scheduled-jobs/index.vue'),
+      },
+      {
+        meta: {
           icon: 'lucide:crown',
           title: '会员平台',
           authority: ['admin'],
