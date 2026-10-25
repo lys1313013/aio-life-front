@@ -7,6 +7,7 @@ import { useUserStore } from '@vben/stores';
 
 import ProfileBase from './base-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
+import DataExportSetting from './data-export/index.vue';
 import HomeCardSetting from './home-card-setting.vue';
 import MbtiSetting from './mbti-setting.vue';
 import MenuDisplaySetting from './menu-display-setting.vue';
@@ -20,6 +21,7 @@ const router = useRouter();
 const userStore = useUserStore();
 
 const tabs = ref([
+  { label: '数据导出', value: 'data-export' },
   {
     label: '基本设置',
     value: 'basic',
@@ -97,6 +99,7 @@ watch(
     :tabs="tabs"
   >
     <template #content>
+      <DataExportSetting v-if="tabsValue === 'data-export'" />
       <ProfileBase v-if="tabsValue === 'basic'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />

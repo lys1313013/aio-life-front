@@ -19,6 +19,9 @@ vi.mock('@vben/common-ui', () => ({
     template: '<div><slot name="content" /></div>',
   },
 }));
+vi.mock('./data-export/index.vue', () => ({
+  default: { template: '<div>个人数据导出</div>' },
+}));
 vi.mock('./base-setting.vue', () => ({
   default: { template: '<div>基本设置</div>' },
 }));
