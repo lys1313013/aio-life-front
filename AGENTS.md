@@ -102,12 +102,13 @@ pnpm run test:e2e       # 运行端到端测试
 
 ### GET 请求自动重试
 
-`requestClient` 内置 **GET 请求自动重试机制**（实现在 `request.ts` 响应拦截器链最前面）：
+`requestClient` 内置 **GET 请求自动重试机制**（由 `apps/web-antd/src/api/request.ts` 挂载 `packages/effects/request/src/request-client/get-retry.ts` 的传输层 adapter）：
 
 - **触发条件**：仅 GET 请求，且错误为网络错误 / 超时（无响应）或 HTTP 5xx
-- **重试策略**：最多重试 2 次（共 3 次尝试），指数退避（300ms → 600ms）
+- **重试策略**：最多重试 3 次（共 4 次尝试），指数退避（300ms → 600ms → 1200ms）
 - **不重试的情况**：POST/PUT/DELETE 等非 GET 请求（避免重复提交）、4xx 客户端错误、业务错误（`code != 0`）、被取消的请求
-- 重试全部失败后才会弹出全局错误提示，业务代码无需感知重试过程
+- 重试全部失败后才进入统一错误处理（沿用上述静默例外），业务响应解包与错误拦截器仅执行一次，业务代码无需感知重试过程
+- `baseRequestClient` 未挂载该 adapter，不具备此自动重试策略
 
 ### API 层编码模式
 
