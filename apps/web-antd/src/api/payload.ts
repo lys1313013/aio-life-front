@@ -275,6 +275,18 @@ export interface ExpenseUpdateReq {
   transactionStatus?: null | string;
 }
 
+export interface ExportAuthorizeReq {
+  purpose: string;
+  datasetKeys?: Array<string> | null;
+  jobId?: null | string;
+  password: string;
+}
+
+export interface ExportCreateReq {
+  datasetKeys: Array<string>;
+  catalogVersion: string;
+}
+
 export interface FeedbackBatchReq {
   idList?: Array<string> | null;
   action?: null | string;
@@ -783,6 +795,12 @@ export interface SaveSecondaryLockMenusReq {
   secondaryPassword?: null | string;
 }
 
+export interface ScheduledJobUpdateReq {
+  cron: string;
+  enabled: boolean;
+  revision: number;
+}
+
 export interface SecondaryVerifyReq {
   password?: null | string;
   menuPath?: null | string;
@@ -1211,6 +1229,8 @@ export interface ApiRequests {
   ExpenseCreateReq: ExpenseCreateReq;
   ExpenseDeviceBindReq: ExpenseDeviceBindReq;
   ExpenseUpdateReq: ExpenseUpdateReq;
+  ExportAuthorizeReq: ExportAuthorizeReq;
+  ExportCreateReq: ExportCreateReq;
   FeedbackBatchReq: FeedbackBatchReq;
   FeedbackCommentCreateReq: FeedbackCommentCreateReq;
   FeedbackCreateReq: FeedbackCreateReq;
@@ -1268,6 +1288,7 @@ export interface ApiRequests {
   ResetPasswordReq: ResetPasswordReq;
   ResetSecondaryPasswordReq: ResetSecondaryPasswordReq;
   SaveSecondaryLockMenusReq: SaveSecondaryLockMenusReq;
+  ScheduledJobUpdateReq: ScheduledJobUpdateReq;
   SecondaryVerifyReq: SecondaryVerifyReq;
   SendEmailCodeReq: SendEmailCodeReq;
   SetSecondaryPasswordReq: SetSecondaryPasswordReq;
@@ -1573,6 +1594,16 @@ const fields: Record<string, Record<string, null | string>> = {
     expDesc: null,
     merchantOrderNo: null,
     transactionStatus: null,
+  },
+  ExportAuthorizeReq: {
+    purpose: null,
+    datasetKeys: null,
+    jobId: null,
+    password: null,
+  },
+  ExportCreateReq: {
+    datasetKeys: null,
+    catalogVersion: null,
   },
   FeedbackBatchReq: {
     idList: null,
@@ -2025,6 +2056,11 @@ const fields: Record<string, Record<string, null | string>> = {
     menuIds: null,
     secondaryPassword: null,
   },
+  ScheduledJobUpdateReq: {
+    cron: null,
+    enabled: null,
+    revision: null,
+  },
   SecondaryVerifyReq: {
     password: null,
     menuPath: null,
@@ -2424,6 +2460,12 @@ const queryFields: Record<string, string[]> = {
   '/docs/catalog': [],
   '/docs/operations': ['keyword', 'module', 'page', 'pageSize'],
   '/docs/operations/{operationId}': [],
+  '/system/data-export-audits': ['page', 'pageSize', 'userId'],
+  '/me/data-exports/catalog': [],
+  '/me/data-exports/quota': [],
+  '/me/data-exports': ['page', 'pageSize'],
+  '/me/data-exports/{id}': [],
+  '/me/data-exports/{id}/download': [],
   '/feedback/admin/list': [
     'endTime',
     'feedbackType',
@@ -2655,13 +2697,15 @@ const queryFields: Record<string, string[]> = {
   '/relationships/persons': [],
   '/relationships/persons/{id}': [],
   '/relationships/persons/search': ['keyword'],
+  '/system/scheduled-jobs': [],
+  '/system/scheduled-jobs/{id}/logs': ['page', 'pageSize'],
   '/api-key/list': [],
   '/file/preview/{*fileName}': [],
   '/message/list': ['isRead'],
   '/message/page': ['isRead', 'page', 'pageSize'],
   '/message/unread-count': [],
   '/message/admin/list': ['page', 'pageSize', 'userId'],
-  '/auth/qr-login/{id}/status': ['secret'],
+  '/auth/qr-login/{id}/status': [],
   '/user-center/list': ['keyword', 'page', 'pageSize'],
   '/auth/info': [],
   '/user/info': [],
@@ -2760,6 +2804,18 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/system/bank-card-covers/{id}/enabled',
     model: 'BankCardCoverEnabledReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/me/data-exports/authorizations',
+    model: 'ExportAuthorizeReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/me/data-exports',
+    model: 'ExportCreateReq',
     list: false,
   },
   {
@@ -3277,6 +3333,12 @@ const requestModels: Array<{
     method: 'DELETE',
     path: '/relationships',
     model: 'RelationshipDeleteReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/system/scheduled-jobs/{id}',
+    model: 'ScheduledJobUpdateReq',
     list: false,
   },
   {
