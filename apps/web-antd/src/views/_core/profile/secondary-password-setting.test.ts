@@ -4,12 +4,14 @@ import { Button, message, Tree } from 'ant-design-vue';
 import { describe, expect, it, vi } from 'vitest';
 
 import { AppModal } from '#/components/app-modal';
-import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
+import NumericPasswordPad from '#/components/NumericPasswordPad.vue';
 
 import Setting from './secondary-password-setting.vue';
 
 const api = vi.hoisted(() => ({ save: vi.fn(async () => {}) }));
-vi.mock('@vben/stores', () => ({ useUserStore: () => ({ userInfo: {} }) }));
+vi.mock('@vben/stores', () => ({
+  useAccessStore: () => ({ accessToken: 'fixture' }),
+}));
 vi.mock('#/store/secondary-lock', () => ({
   useSecondaryLockStore: () => ({ saveLockedMenus: api.save }),
 }));
@@ -60,13 +62,11 @@ describe('菜单锁设置 ID 往返', () => {
     const modal = wrapper
       .findAllComponents(AppModal)
       .find((m) => m.props('open'))!;
-    modal
-      .findComponent(MaskedPasswordInput)
-      .vm.$emit('update:value', 'test-only');
+    modal.findComponent(NumericPasswordPad).vm.$emit('update:value', '001234');
     await wrapper.vm.$nextTick();
-    modal.vm.$emit('ok');
+    modal.findComponent(NumericPasswordPad).vm.$emit('submit');
     await flushPromises();
-    expect(api.save).toHaveBeenCalledWith(['9007199254740993'], 'test-only');
+    expect(api.save).toHaveBeenCalledWith(['9007199254740993'], '001234');
     wrapper.unmount();
   });
 });

@@ -2,6 +2,8 @@ import type { IconifyIconStructure } from '@vben-core/icons';
 
 import { addIcon } from '@vben-core/icons';
 
+import keypadBackspaceSvg from './icons/keypad-backspace.svg?raw';
+import keypadConfirmSvg from './icons/keypad-confirm.svg?raw';
 import wereadSvg from './icons/weread.svg?raw';
 
 let loaded = false;
@@ -61,6 +63,8 @@ function parseSvg(svgData: string): IconifyIconStructure {
 async function loadSvgIcons() {
   // 显式依赖保证新增品牌图标在开发服务器的 glob 缓存中也能加载。
   addIcon('svg:weread', parseSvg(wereadSvg));
+  addIcon('svg:keypad-backspace', parseSvg(keypadBackspaceSvg));
+  addIcon('svg:keypad-confirm', parseSvg(keypadConfirmSvg));
 
   // 包含健身房动作 SVG；统一注册 svg:*，与移动端生成目录使用相同名称。
   const svgEagers = import.meta.glob('./icons/*.svg', {
