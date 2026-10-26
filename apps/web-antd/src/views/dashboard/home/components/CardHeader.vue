@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 
 const props = defineProps<{
+  caption?: string;
   disabled?: boolean;
   error?: boolean;
   label: string;
@@ -35,6 +36,11 @@ async function handleRefresh() {
       @click.stop="handleRefresh"
     ></button>
     <slot></slot>
+    <span
+      v-if="caption"
+      class="card-header-caption pointer-events-none max-w-[50%] truncate text-center text-xs font-normal text-muted-foreground"
+      >{{ caption }}</span
+    >
     <button
       v-if="error"
       type="button"
@@ -70,9 +76,21 @@ async function handleRefresh() {
 /* 标题和操作位于空白刷新区域上方，互不触发。 */
 .card-header
   > :deep(
-    :not(.card-header-refresh, .card-header-progress, .card-header-error)
+    :not(
+      .card-header-refresh,
+      .card-header-progress,
+      .card-header-error,
+      .card-header-caption
+    )
   ) {
   position: relative;
   z-index: 1;
+}
+
+.card-header > .card-header-caption {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

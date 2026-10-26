@@ -1,5 +1,6 @@
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 
+import dayjs from 'dayjs';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 import TimeTracker from './analytics-time-tracker.vue';
@@ -85,4 +86,69 @@ it('首次加载失败提供重试，不显示成功空态', async () => {
   await flushPromises();
   expect(wrapper.vm.failed).toBe(false);
   expect(wrapper.text()).toContain('工作');
+});
+
+async function swipe(wrapper: ReturnType<typeof mount>, dx: number) {
+  const surface = wrapper.get('.time-day-swipe');
+  const point = (x: number) => ({ clientX: x, clientY: 100 });
+  await surface.trigger('touchstart', {
+    touches: [point(200)],
+    changedTouches: [],
+  });
+  await surface.trigger('touchmove', {
+    touches: [point(200 + dx)],
+    changedTouches: [],
+  });
+  await surface.trigger('touchend', {
+    touches: [],
+    changedTouches: [point(200 + dx)],
+  });
+  await flushPromises();
+}
+
+it('右滑前一天、左滑后一天；跨月刷新保留浏览日期且不进入未来', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-03-01T12:00:00'));
+  try {
+    const wrapper = mount(TimeTracker, {
+      global: { directives: { loading: {} } },
+    });
+    await flushPromises();
+    await swipe(wrapper, -120);
+    expect(mocks.records).toHaveBeenCalledTimes(1);
+    await swipe(wrapper, 120);
+    expect(wrapper.vm.date).toBe('2026-02-28');
+    expect(mocks.records).toHaveBeenLastCalledWith({
+      condition: { date: '2026-02-28' },
+    });
+    expect(wrapper.get('[role="region"]').attributes('aria-label')).toBe(
+      '2026-02-28时迹明细',
+    );
+    await wrapper.vm.loadData();
+    expect(mocks.records).toHaveBeenLastCalledWith({
+      condition: { date: '2026-02-28' },
+    });
+    await swipe(wrapper, -120);
+    expect(wrapper.vm.date).toBe('2026-03-01');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it('翻日失败保留已显示日期和记录，重试加载原目标日期', async () => {
+  const wrapper = mount(TimeTracker, {
+    global: { directives: { loading: {} } },
+  });
+  await flushPromises();
+  const today = dayjs().format('YYYY-MM-DD');
+  mocks.records.mockRejectedValueOnce(new Error('offline'));
+  await swipe(wrapper, 120);
+  expect(wrapper.vm.failed).toBe(true);
+  expect(wrapper.vm.date).toBe(today);
+  expect(wrapper.text()).toContain('工作');
+  await wrapper.vm.loadData();
+  expect(wrapper.vm.date).toBe(
+    dayjs(today).subtract(1, 'day').format('YYYY-MM-DD'),
+  );
+  expect(wrapper.vm.failed).toBe(false);
 });

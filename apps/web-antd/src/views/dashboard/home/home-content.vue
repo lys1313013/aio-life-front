@@ -19,6 +19,7 @@ import { useUserStore } from '@vben/stores';
 import { openWindow } from '@vben/utils';
 
 import { PushpinOutlined } from '@ant-design/icons-vue';
+import dayjs from 'dayjs';
 
 import {
   getDashboardCardDetail,
@@ -151,12 +152,23 @@ const editingThoughtId = ref<null | string>(null);
 const timeTrackerModalRef = ref();
 // 上次时迹记录末分钟结束后的边界（分钟数，0 表示今日无记录）
 const timeTrackerLastEnd = ref(0);
+const timeTrackerDate = ref('');
+const timeTrackerToday = ref(dayjs().format('YYYY-MM-DD'));
+const timeTrackerDateCaption = computed(() =>
+  timeTrackerDate.value && timeTrackerDate.value !== timeTrackerToday.value
+    ? timeTrackerDate.value
+    : '',
+);
 // 当前时间（分钟数），每分钟更新，用于计算"距离上次记录已过去多久"
 const nowMinutes = ref(new Date().getHours() * 60 + new Date().getMinutes());
 const timeTrackerNowTimer = ref<ReturnType<typeof setInterval>>();
 // 距离上次记录已过去的时长（格式化）
 const timeTrackerElapsedText = computed(() => {
-  if (timeTrackerLastEnd.value <= 0) return '';
+  if (
+    timeTrackerDate.value !== timeTrackerToday.value ||
+    timeTrackerLastEnd.value <= 0
+  )
+    return '';
   const elapsed = nowMinutes.value - timeTrackerLastEnd.value;
   if (elapsed <= 0) return '0m';
   const h = Math.floor(elapsed / 60);
@@ -179,6 +191,16 @@ const timeTrackerCardRef = ref();
 const githubRecentCommitsRef = ref();
 const githubBound = ref(false);
 const githubUsername = ref('');
+
+function openTimeTracker() {
+  if (
+    !timeTrackerCardRef.value?.date ||
+    timeTrackerCardRef.value?.loading ||
+    timeTrackerCardRef.value?.ignoreClick()
+  )
+    return;
+  timeTrackerModalRef.value?.open(undefined, timeTrackerCardRef.value.date);
+}
 
 async function refreshTimeTracker() {
   if (!homeCards.enabled('section.time')) return;
@@ -494,9 +516,11 @@ onActivated(() => {
 let timeDay = new Date().toDateString();
 function startNowTimer() {
   const now = new Date();
+  timeTrackerToday.value = dayjs(now).format('YYYY-MM-DD');
   nowMinutes.value = now.getHours() * 60 + now.getMinutes();
   timeTrackerNowTimer.value = setInterval(() => {
     const now = new Date();
+    timeTrackerToday.value = dayjs(now).format('YYYY-MM-DD');
     nowMinutes.value = now.getHours() * 60 + now.getMinutes();
     if (now.toDateString() !== timeDay) {
       timeDay = now.toDateString();
@@ -725,7 +749,10 @@ function navTo(nav: { url?: string }) {
         >
           <CardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
-            label="刷新时迹"
+            :label="`刷新时迹${
+              timeTrackerDateCaption ? ` ${timeTrackerDateCaption}` : ''
+            }`"
+            :caption="timeTrackerDateCaption"
             :error="timeTrackerCardRef?.failed && timeTrackerCardRef?.loaded"
             :loading="timeTrackerCardRef?.loading"
             :refresh="refreshTimeTracker"
@@ -739,10 +766,12 @@ function navTo(nav: { url?: string }) {
                 class="mr-2 inline-block size-4 align-middle"
               />时迹</span
             >
-            <span
-              class="flex cursor-pointer items-center gap-1 rounded-full bg-secondary/60 px-2 py-1 transition-colors hover:bg-secondary"
-              title="记录时迹"
-              @click.stop="timeTrackerModalRef?.open()"
+            <button
+              type="button"
+              class="relative flex min-w-11 items-center justify-center gap-1 rounded-full bg-secondary/60 px-2 py-1 transition-colors before:absolute before:inset-x-0 before:top-1/2 before:h-11 before:-translate-y-1/2 hover:bg-secondary disabled:opacity-50"
+              aria-label="记录时迹"
+              :disabled="!timeTrackerDate || timeTrackerCardRef?.loading"
+              @click.stop="openTimeTracker"
             >
               <span
                 v-if="timeTrackerElapsedText"
@@ -751,7 +780,7 @@ function navTo(nav: { url?: string }) {
                 {{ timeTrackerElapsedText }}
               </span>
               <span class="text-sm leading-none text-muted-foreground">+</span>
-            </span>
+            </button>
           </CardHeader>
           <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
             <AnalyticsTimeTracker
@@ -762,6 +791,7 @@ function navTo(nav: { url?: string }) {
               "
               @success="handleTimeTrackerSuccess"
               @update:last-end="(v) => (timeTrackerLastEnd = v)"
+              @update:date="(v) => (timeTrackerDate = v)"
             />
           </div>
         </div>

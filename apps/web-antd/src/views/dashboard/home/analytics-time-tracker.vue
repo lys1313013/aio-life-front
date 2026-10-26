@@ -3,7 +3,14 @@ import type { EchartsUIType } from '@vben/plugins/echarts';
 
 import type { TimeSlot } from '#/views/time/time-tracker/types';
 
-import { onMounted, ref } from 'vue';
+import {
+  computed,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  ref,
+} from 'vue';
 
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 
@@ -16,12 +23,15 @@ import {
   categoryStatistics,
 } from '#/views/time/time-tracker/category-tree';
 import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerModal.vue';
+import { daySwipeStyle } from '#/views/time/time-tracker/day-swipe';
 import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
 import { useHomeRequest } from './composables/useHomeRequest';
+import { createTimeCardSwipe } from './utils/time-card-swipe';
 
 const emit = defineEmits<{
   success: [];
+  'update:date': [value: string];
   'update:last-end': [value: number];
 }>();
 
@@ -48,6 +58,20 @@ interface TimelineBlock {
 const recentRecords = ref<RecentRecord[]>([]);
 const timelineBlocks = ref<TimelineBlock[]>([]);
 const existingSlots = ref<TimeSlot[]>([]);
+// 空值跟随今天；历史日期在刷新和返回首页时保留。
+const selectedDate = ref('');
+const displayedDate = ref('');
+const dateLabel = computed(() =>
+  displayedDate.value && displayedDate.value !== dayjs().format('YYYY-MM-DD')
+    ? displayedDate.value
+    : '今日',
+);
+const swipeOffset = ref(0);
+const swipeDragging = ref(false);
+const swipeStyle = computed(() =>
+  daySwipeStyle(swipeOffset.value, swipeDragging.value),
+);
+let active = true;
 
 const formatTime = (minutes: number) => {
   const h = Math.floor(minutes / 60)
@@ -59,24 +83,29 @@ const formatTime = (minutes: number) => {
 
 const request = useHomeRequest({
   fetch: async () => {
-    const today = dayjs().format('YYYY-MM-DD');
+    const date = selectedDate.value || dayjs().format('YYYY-MM-DD');
     const [categories, records] = await Promise.all([
       listCategories(true),
-      query({ condition: { date: today } }),
+      query({ condition: { date } }),
     ]);
-    return { categories, records, date: today };
+    return { categories, records, date };
   },
   apply: ({ categories: categoriesRes, records: recordsRes, date }) => {
-    if (date !== dayjs().format('YYYY-MM-DD')) {
+    if (date !== (selectedDate.value || dayjs().format('YYYY-MM-DD'))) {
       void Promise.resolve().then(() => loadData(true));
       return;
     }
 
     const categories = categoriesRes || [];
-    const records = recordsRes || [];
+    const records = (recordsRes || []).map((record) => ({
+      ...record,
+      date: record.date || date,
+    }));
+    displayedDate.value = date;
+    emit('update:date', date);
     existingSlots.value = records;
 
-    // 今日全部明细按开始时间倒序展示，由列表独立滚动。
+    // 当前日期全部明细按开始时间倒序展示，由列表独立滚动。
     const sortedRecords = [...records].sort(
       (a, b) => b.startTime - a.startTime,
     );
@@ -169,8 +198,6 @@ const request = useHomeRequest({
       totalStr = `${totalMins}m`;
     }
 
-    emit('update:last-end', lastEndTime);
-
     renderEcharts({
       title: {
         text: totalDuration > 0 ? totalStr : '',
@@ -233,7 +260,7 @@ const request = useHomeRequest({
               ? pieData
               : [
                   {
-                    name: '今日暂无记录',
+                    name: `${dateLabel.value}暂无记录`,
                     value: 0,
                     itemStyle: { color: '#ccc' },
                     label: { show: false },
@@ -286,6 +313,43 @@ const request = useHomeRequest({
 });
 const { loading, loaded, failed } = request;
 const loadData = (force = false) => request.load(force);
+const nextDate = (step: number) =>
+  dayjs(displayedDate.value).add(step, 'day').format('YYYY-MM-DD');
+const swipe = createTimeCardSwipe(
+  () => active && loaded.value && !loading.value,
+  (step) => {
+    const date = nextDate(step);
+    selectedDate.value = date === dayjs().format('YYYY-MM-DD') ? '' : date;
+    void loadData(true);
+  },
+  (step) => nextDate(step) <= dayjs().format('YYYY-MM-DD'),
+  (offset, dragging) => {
+    swipeOffset.value = offset;
+    swipeDragging.value = dragging;
+  },
+);
+function blockSwipeClick(event: MouseEvent) {
+  if (!swipe.ignoreClick()) return;
+  event.preventDefault();
+  event.stopPropagation();
+}
+function handleWheel(event: WheelEvent) {
+  if (!swipe.wheel(event)) handleRecordWheel(event);
+}
+onActivated(() => {
+  active = true;
+});
+onDeactivated(() => {
+  active = false;
+  swipe.cancel();
+});
+onBeforeUnmount(() => {
+  active = false;
+  swipe.cancel();
+  window.removeEventListener('mousemove', swipe.mouseMove);
+  window.removeEventListener('mouseup', swipe.mouseEnd);
+  window.removeEventListener('blur', swipe.cancel);
+});
 
 const handleRecordWheel = (event: WheelEvent) => {
   const list = recentRecordScrollRef.value;
@@ -312,7 +376,12 @@ const handleRecordWheel = (event: WheelEvent) => {
 };
 
 const handleEditRecord = (record: TimeSlot) => {
-  timeTrackerModalRef.value?.open(record, undefined, existingSlots.value);
+  if (loading.value || swipe.ignoreClick()) return;
+  timeTrackerModalRef.value?.open(
+    record,
+    displayedDate.value,
+    existingSlots.value,
+  );
 };
 
 const handleModalSuccess = () => {
@@ -320,10 +389,15 @@ const handleModalSuccess = () => {
 };
 
 onMounted(() => {
+  window.addEventListener('mousemove', swipe.mouseMove);
+  window.addEventListener('mouseup', swipe.mouseEnd);
+  window.addEventListener('blur', swipe.cancel);
   loadData();
 });
 
 defineExpose({
+  date: displayedDate,
+  ignoreClick: swipe.ignoreClick,
   loadData,
   loading,
   loaded,
@@ -337,8 +411,15 @@ defineExpose({
       spinning: loading,
       class: '!bg-transparent dark:!bg-transparent',
     }"
-    class="relative flex h-full w-full flex-row p-2 sm:py-4"
-    @wheel.capture="handleRecordWheel"
+    class="time-day-swipe relative flex h-full w-full flex-row p-2 sm:py-4"
+    :style="swipeStyle"
+    @touchstart.capture="swipe.touchStart"
+    @touchmove.capture="swipe.touchMove"
+    @touchend.capture="swipe.touchEnd"
+    @touchcancel.capture="swipe.cancel"
+    @mousedown.capture="swipe.mouseStart"
+    @click.capture="blockSwipeClick"
+    @wheel.capture="handleWheel"
   >
     <button
       v-if="failed && !loaded"
@@ -397,7 +478,7 @@ defineExpose({
           ref="recentRecordScrollRef"
           class="time-record-scroll h-[160px] w-[42%] min-w-0 shrink-0 overflow-y-auto overscroll-contain sm:h-[180px]"
           role="region"
-          aria-label="今日时迹明细"
+          :aria-label="`${dateLabel}时迹明细`"
           tabindex="0"
         >
           <div
@@ -427,7 +508,7 @@ defineExpose({
             v-else
             class="flex h-full items-center justify-center text-xs text-muted-foreground"
           >
-            今日暂无记录
+            {{ dateLabel }}暂无记录
           </div>
         </div>
       </div>
@@ -436,3 +517,9 @@ defineExpose({
     <TimeTrackerModal ref="timeTrackerModalRef" @success="handleModalSuccess" />
   </div>
 </template>
+
+<style scoped>
+.time-day-swipe {
+  touch-action: pan-y pinch-zoom;
+}
+</style>
