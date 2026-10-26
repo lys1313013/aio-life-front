@@ -786,13 +786,13 @@ export interface ResetPasswordReq {
 }
 
 export interface ResetSecondaryPasswordReq {
-  code?: null | string;
-  password?: null | string;
+  code: string;
+  password: string;
 }
 
 export interface SaveSecondaryLockMenusReq {
   menuIds?: Array<string> | null;
-  secondaryPassword?: null | string;
+  secondaryPassword: string;
 }
 
 export interface ScheduledJobUpdateReq {
@@ -802,7 +802,7 @@ export interface ScheduledJobUpdateReq {
 }
 
 export interface SecondaryVerifyReq {
-  password?: null | string;
+  password: string;
   menuPath?: null | string;
 }
 
@@ -811,7 +811,7 @@ export interface SendEmailCodeReq {
 }
 
 export interface SetSecondaryPasswordReq {
-  password?: null | string;
+  password: string;
   oldPassword?: null | string;
 }
 
