@@ -152,15 +152,7 @@ const loadData = async () => {
     const res = await queryMilestone();
     // Transform backend entity to frontend interface
     milestones.value = res.map((item) => {
-      let tags: string[] = [];
-      try {
-        if (item.tags) {
-          tags = JSON.parse(item.tags);
-        }
-      } catch {
-        // Fallback if not JSON
-        tags = item.tags ? [item.tags] : [];
-      }
+      const tags: string[] = item.tags ? JSON.parse(item.tags) : [];
 
       return {
         id: item.id!,

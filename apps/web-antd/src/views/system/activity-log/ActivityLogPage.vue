@@ -387,12 +387,7 @@ onBeforeUnmount(() => {
             <template #icon><FileSearchOutlined /></template>
           </Button>
           <template v-else-if="column.key === 'requestTime'">
-            <span>{{ record.requestTime || record.createTime }}</span>
-            <span
-              v-if="!record.requestTime"
-              class="block text-xs text-muted-foreground"
-              >历史记录时间</span
-            >
+            <span>{{ record.requestTime || '未采集' }}</span>
           </template>
           <template v-else-if="column.key === 'duration'">
             {{

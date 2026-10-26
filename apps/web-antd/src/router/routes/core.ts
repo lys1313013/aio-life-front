@@ -49,12 +49,6 @@ const coreRoutes: RouteRecordRaw[] = [
     ],
   },
   {
-    name: 'LegacyHome',
-    path: '/analytics',
-    redirect: (to) => ({ path: '/', query: to.query, hash: to.hash }),
-    meta: { hideInMenu: true, hideInTab: true, title: '主页' },
-  },
-  {
     component: () => import('#/views/intro/index.vue'),
     meta: {
       ignoreAccess: true,

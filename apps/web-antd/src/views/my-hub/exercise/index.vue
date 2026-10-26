@@ -957,21 +957,6 @@ const processQueryCondition = (formValues: any) => {
       .format('YYYY-MM-DD');
   }
 
-  // 兼容旧的表格查询条件，如果有的话（虽然已移除）
-  if (
-    condition.exerciseDateRange &&
-    Array.isArray(condition.exerciseDateRange)
-  ) {
-    const [startDate, endDate] = condition.exerciseDateRange;
-    if (startDate && !condition.startDate) {
-      condition.startDate = startDate;
-    }
-    if (endDate && !condition.endDate) {
-      condition.endDate = endDate;
-    }
-    // 删除原始的日期区间字段
-    delete condition.exerciseDateRange;
-  }
   return condition;
 };
 

@@ -44,7 +44,7 @@ describe('会员平台接口边界', () => {
       payload,
     );
   });
-  it('创建时忽略旧客户端传入的只读编码', async () => {
+  it('创建时只提交可写字段，不提交只读编码', async () => {
     await createMembershipProvider(data);
     expect(request.post).toHaveBeenCalledWith(
       '/system/membership-providers',

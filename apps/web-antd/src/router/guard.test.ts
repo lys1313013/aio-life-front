@@ -46,7 +46,7 @@ vi.mock('#/api/core/menu', () => ({
 vi.mock('#/locales', () => ({ $t: (key: string) => key }));
 vi.mock('#/router/routes', () => ({
   accessRoutes: [],
-  coreRouteNames: ['Root', 'Login', 'LegacyHome'],
+  coreRouteNames: ['Root', 'Login'],
 }));
 vi.mock('#/store', () => ({ useAuthStore: () => ({}) }));
 vi.mock('#/store/secondary-lock', () => ({
@@ -124,19 +124,9 @@ describe('根路径首页', () => {
     ).toEqual(['Root', 'Analytics']);
   });
 
-  it('旧书签重定向到根路径并保留查询参数和锚点', async () => {
+  it('登录回跳使用后端返回的当前 homePath', async () => {
     state.access.accessToken = 'test-token';
-    const router = makeRouter();
-    await router.push('/analytics?source=bookmark#today');
-    expect(router.currentRoute.value.fullPath).toBe('/?source=bookmark#today');
-    expect(router.currentRoute.value.name).toBe('Analytics');
-    await router.push('/analytics');
-    expect(router.currentRoute.value.fullPath).toBe('/');
-  });
-
-  it('登录回跳兼容后端返回的旧 homePath', async () => {
-    state.access.accessToken = 'test-token';
-    state.user.userInfo.homePath = '/analytics';
+    state.user.userInfo.homePath = '/';
     const router = makeRouter();
     await router.push('/auth/login');
     expect(router.currentRoute.value.path).toBe('/');

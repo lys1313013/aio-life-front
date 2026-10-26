@@ -1176,11 +1176,6 @@ export interface WechatAuthRequests_Login {
   loginCode: string;
 }
 
-export interface WechatAuthRequests_PhoneLogin {
-  loginTicket: string;
-  phoneCode: string;
-}
-
 export interface WechatAuthRequests_Register {
   loginTicket: string;
 }
@@ -1335,7 +1330,6 @@ export interface ApiRequests {
   WechatAuthRequests_Bind: WechatAuthRequests_Bind;
   WechatAuthRequests_InitializePassword: WechatAuthRequests_InitializePassword;
   WechatAuthRequests_Login: WechatAuthRequests_Login;
-  WechatAuthRequests_PhoneLogin: WechatAuthRequests_PhoneLogin;
   WechatAuthRequests_Register: WechatAuthRequests_Register;
   WechatWebLoginController_BrowserRequest: WechatWebLoginController_BrowserRequest;
   WechatWebLoginController_ConfirmRequest: WechatWebLoginController_ConfirmRequest;
@@ -2390,10 +2384,6 @@ const fields: Record<string, Record<string, null | string>> = {
   WechatAuthRequests_Login: {
     loginCode: null,
   },
-  WechatAuthRequests_PhoneLogin: {
-    loginTicket: null,
-    phoneCode: null,
-  },
   WechatAuthRequests_Register: {
     loginTicket: null,
   },
@@ -2510,6 +2500,7 @@ const queryFields: Record<string, string[]> = {
   '/cbti/personalities/{code}': [],
   '/cbti/results': [],
   '/cbti/result/{id}': [],
+  '/cbti/images/{*objectName}': [],
   '/github/calendar': [],
   '/github/repos': ['page'],
   '/github/repository/{section}': ['name'],
@@ -2575,9 +2566,6 @@ const queryFields: Record<string, string[]> = {
   '/github/recent-commits': ['page', 'pageSize'],
   '/goals': ['isPinned', 'keyword', 'status', 'type'],
   '/home/sections/memo': [],
-  '/home/sections/finance': ['period'],
-  '/home/sections/income': ['period'],
-  '/home/sections/expense': ['period'],
   '/home/sections/video': [],
   '/home/sections/device': [],
   '/honorCategories': [],
@@ -2660,7 +2648,7 @@ const queryFields: Record<string, string[]> = {
   '/timeRecord/queryByDateRange': ['endDate', 'page', 'pageSize', 'startDate'],
   '/timeRecord/queryByDateRangeForAI': [],
   '/timeRecord/{id}': [],
-  '/timeRecord/recommendType': ['date', 'previousCategoryId', 'time'],
+  '/timeRecord/recommendType': ['date', 'time'],
   '/timeRecord/recommendNext': ['date'],
   '/timeRecord/relateTypes': [],
   '/timeTrackerCategory/list': [],
@@ -2700,7 +2688,6 @@ const queryFields: Record<string, string[]> = {
   '/system/scheduled-jobs': [],
   '/system/scheduled-jobs/{id}/logs': ['page', 'pageSize'],
   '/api-key/list': [],
-  '/file/preview/{*fileName}': [],
   '/message/list': ['isRead'],
   '/message/page': ['isRead', 'page', 'pageSize'],
   '/message/unread-count': [],
@@ -3441,12 +3428,6 @@ const requestModels: Array<{
     method: 'POST',
     path: '/auth/wechat/mini/register',
     model: 'WechatAuthRequests_Register',
-    list: false,
-  },
-  {
-    method: 'POST',
-    path: '/auth/wechat/mini/phone-login',
-    model: 'WechatAuthRequests_PhoneLogin',
     list: false,
   },
   {

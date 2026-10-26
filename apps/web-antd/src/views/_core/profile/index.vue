@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
@@ -17,7 +17,6 @@ import SecondaryPasswordSetting from './secondary-password-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
 const route = useRoute();
-const router = useRouter();
 const userStore = useUserStore();
 
 const tabs = ref([
@@ -64,24 +63,10 @@ const tabsValue = ref(
   tabs.value.find((tab) => tab.value === requestedTab)?.value || 'basic',
 );
 
-const redirectPath = computed(() => {
-  if (route.query.tab === 'api-key') return '/mcp/api-keys';
-  if (route.query.tab === 'body-profile') return '/record/body-profile';
-  return '';
-});
-
-watch(
-  redirectPath,
-  (path) => {
-    if (path) void router.replace(path);
-  },
-  { immediate: true },
-);
-
 watch(
   tabsValue,
   (val) => {
-    if (!redirectPath.value && route.query.tab !== val) {
+    if (route.query.tab !== val) {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', val);
       window.history.replaceState({}, '', url.toString());
@@ -92,7 +77,6 @@ watch(
 </script>
 <template>
   <Profile
-    v-if="!redirectPath"
     v-model:model-value="tabsValue"
     title="个人中心"
     :user-info="userStore.userInfo"

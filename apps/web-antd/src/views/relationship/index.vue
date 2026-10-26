@@ -408,19 +408,16 @@ const handleRelationTypeChange = (type: unknown) => {
     : '双向';
 };
 
-// 后端历史数据带字面双引号（如 "\"配偶\""），回填表单时剥掉
-const stripQuotes = (val?: string) => val?.replaceAll(/^"|"$/g, '') ?? '';
-
 const openEditRelationshipForm = (rel: RelationshipDetailVO) => {
   if (!selectedPersonDetail.value || !rel.target?.id) return;
   editingRelationshipId.value = rel.id;
   relationshipForm.value = {
     sourcePersonId: selectedPersonDetail.value.id,
     targetPersonId: rel.target.id,
-    relationType: stripQuotes(rel.relationType),
-    direction: stripQuotes(rel.direction) || '双向',
-    description: stripQuotes(rel.description),
-    tags: stripQuotes(rel.tags),
+    relationType: rel.relationType ?? '',
+    direction: rel.direction || '双向',
+    description: rel.description ?? '',
+    tags: rel.tags ?? '',
   };
   relationshipFormVisible.value = true;
 };
