@@ -25,6 +25,7 @@ import {
 
 import { AppModal } from '#/components/app-modal';
 import MaskedPasswordInput from '#/components/MaskedPasswordInput.vue';
+import NumericPasswordPad from '#/components/NumericPasswordPad.vue';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 
 import { useDataExport } from './use-data-export';
@@ -232,19 +233,31 @@ function ready(job: ExportJob) {
       v-model:open="open"
       centered
       title="验证导出身份"
+      :width="catalog?.verificationMethod === 'SECONDARY_PASSWORD' ? 320 : 640"
+      :footer="
+        catalog?.verificationMethod === 'SECONDARY_PASSWORD' ? false : undefined
+      "
+      :body-style="
+        catalog?.verificationMethod === 'SECONDARY_PASSWORD'
+          ? { padding: '16px' }
+          : undefined
+      "
       ok-text="确认验证"
       :confirm-loading="!!action"
       @ok="confirm"
       @cancel="password = ''"
     >
+      <NumericPasswordPad
+        v-if="catalog?.verificationMethod === 'SECONDARY_PASSWORD'"
+        v-model:value="password"
+        :busy="!!action"
+        @submit="confirm"
+      />
       <MaskedPasswordInput
+        v-else
         v-model:value="password"
         :disabled="!!action"
-        :placeholder="
-          catalog?.verificationMethod === 'SECONDARY_PASSWORD'
-            ? '输入二级密码'
-            : '输入登录密码'
-        "
+        placeholder="输入登录密码"
       />
     </AppModal>
   </section>
