@@ -25,15 +25,17 @@ function fixture() {
     },
   };
 }
-const mouse = (x: number, extra = {}) =>
-  ({
-    clientX: x,
-    clientY: 50,
-    button: 0,
-    buttons: 1,
-    preventDefault: vi.fn(),
-    ...extra,
-  }) as MouseEvent;
+const mouse = (x: number, extra: MouseEventInit = {}) =>
+  Object.assign(
+    new MouseEvent('mousemove', {
+      clientX: x,
+      clientY: 50,
+      button: 0,
+      buttons: 1,
+      ...extra,
+    }),
+    { preventDefault: vi.fn() },
+  );
 function drag(swipe: ReturnType<typeof createTimeCardSwipe>, dx: number) {
   swipe.mouseStart(mouse(200));
   swipe.mouseMove(mouse(200 + dx));
