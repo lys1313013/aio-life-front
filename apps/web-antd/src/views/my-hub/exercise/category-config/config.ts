@@ -27,6 +27,7 @@ export const PRESET_ICONS = [
   { icon: 'svg:pull-up' },
   { icon: 'svg:chin-up' },
   { icon: 'svg:bench-press' },
+  { icon: 'svg:pec-deck' },
   { icon: 'svg:barbell-curl' },
   { icon: 'svg:reverse-crunch' },
   { icon: 'svg:lat-pulldown' },

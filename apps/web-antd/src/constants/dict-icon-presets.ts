@@ -17,6 +17,7 @@ const EXERCISE_ICON_LABELS: Record<string, string> = {
   'svg:pull-up': '引体向上',
   'svg:chin-up': '反手引体向上',
   'svg:bench-press': '卧推',
+  'svg:pec-deck': '蝴蝶机夹胸',
   'svg:barbell-curl': '杠铃弯举',
   'svg:reverse-crunch': '反向卷腹',
   'svg:lat-pulldown': '高位下拉',

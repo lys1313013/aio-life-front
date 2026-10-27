@@ -4,6 +4,7 @@ import { addIcon } from '@vben-core/icons';
 
 import keypadBackspaceSvg from './icons/keypad-backspace.svg?raw';
 import keypadConfirmSvg from './icons/keypad-confirm.svg?raw';
+import pecDeckSvg from './icons/pec-deck.svg?raw';
 import wereadSvg from './icons/weread.svg?raw';
 
 let loaded = false;
@@ -65,6 +66,7 @@ async function loadSvgIcons() {
   addIcon('svg:weread', parseSvg(wereadSvg));
   addIcon('svg:keypad-backspace', parseSvg(keypadBackspaceSvg));
   addIcon('svg:keypad-confirm', parseSvg(keypadConfirmSvg));
+  addIcon('svg:pec-deck', parseSvg(pecDeckSvg));
 
   // 包含健身房动作 SVG；统一注册 svg:*，与移动端生成目录使用相同名称。
   const svgEagers = import.meta.glob('./icons/*.svg', {
