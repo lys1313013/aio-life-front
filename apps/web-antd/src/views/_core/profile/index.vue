@@ -13,6 +13,7 @@ import MbtiSetting from './mbti-setting.vue';
 import MenuDisplaySetting from './menu-display-setting.vue';
 import ProfileNotificationSetting from './notification-setting.vue';
 import ProfilePasswordSetting from './password-setting.vue';
+import PrivacySetting from './privacy-setting.vue';
 import SecondaryPasswordSetting from './secondary-password-setting.vue';
 import UserBindSetting from './user-bind.vue';
 
@@ -20,6 +21,7 @@ const route = useRoute();
 const userStore = useUserStore();
 
 const tabs = ref([
+  { label: '隐私与账号', value: 'privacy' },
   { label: '数据导出', value: 'data-export' },
   {
     label: '基本设置',
@@ -83,6 +85,10 @@ watch(
     :tabs="tabs"
   >
     <template #content>
+      <PrivacySetting
+        v-if="tabsValue === 'privacy'"
+        @export-data="tabsValue = 'data-export'"
+      />
       <DataExportSetting v-if="tabsValue === 'data-export'" />
       <ProfileBase v-if="tabsValue === 'basic'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />

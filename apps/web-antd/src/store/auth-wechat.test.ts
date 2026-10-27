@@ -1,16 +1,19 @@
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useAuthStore } from './auth';
 
 const mocks = vi.hoisted(() => ({
   loginApi: vi.fn(),
+  logoutApi: vi.fn(),
+  replace: vi.fn(),
   exchange: vi.fn(),
   user: vi.fn(),
   codes: vi.fn(),
   push: vi.fn(),
   access: {
     setAccessToken: vi.fn(),
+    setRefreshToken: vi.fn(),
     setAccessCodes: vi.fn(),
     setLoginExpired: vi.fn(),
     loginExpired: false,
@@ -30,14 +33,16 @@ vi.mock('ant-design-vue', () => ({ notification: { success: vi.fn() } }));
 vi.mock('#/api/core/auth', () => ({
   loginApi: mocks.loginApi,
   getAccessCodesApi: mocks.codes,
-  logoutApi: vi.fn(),
+  logoutApi: mocks.logoutApi,
 }));
 vi.mock('#/api/core/user', () => ({ getUserInfoApi: mocks.user }));
 vi.mock('#/api/core/wechat-web', () => ({
   exchangeWechatWebLogin: mocks.exchange,
 }));
 vi.mock('#/locales', () => ({ $t: (key: string) => key }));
-vi.mock('#/router', () => ({ router: { push: mocks.push } }));
+vi.mock('#/router', () => ({
+  router: { push: mocks.push, replace: mocks.replace },
+}));
 vi.mock('#/utils/file', () => ({ clearImageCache: vi.fn() }));
 const credentials = { scene: 'a'.repeat(32), browserSecret: 'b'.repeat(64) };
 const user = {
@@ -46,6 +51,12 @@ const user = {
   homePath: '/dashboard/home',
 };
 beforeEach(() => {
+  const storage = new Map<string, string>();
+  vi.stubGlobal('localStorage', {
+    setItem: (key: string, value: string) => storage.set(key, value),
+    getItem: (key: string) => storage.get(key) ?? null,
+    removeItem: (key: string) => storage.delete(key),
+  });
   setActivePinia(createPinia());
   vi.clearAllMocks();
   mocks.access.loginExpired = false;
@@ -54,6 +65,7 @@ beforeEach(() => {
   mocks.user.mockResolvedValue(user);
   mocks.codes.mockResolvedValue(['user:read']);
 });
+afterEach(() => vi.unstubAllGlobals());
 describe('扫码登录复用会话初始化', () => {
   it('兑换后保存业务Token、用户与权限并跳转原有首页', async () => {
     const store = useAuthStore();
@@ -88,5 +100,26 @@ describe('扫码登录复用会话初始化', () => {
     expect(mocks.access.setAccessToken).toHaveBeenCalledWith('password-token');
     expect(callback).toHaveBeenCalledOnce();
     expect(mocks.exchange).not.toHaveBeenCalled();
+  });
+});
+
+describe('注销受理后的本地清理', () => {
+  it('清除核心身份及记住账号，不再调用已失效的退出接口', async () => {
+    localStorage.setItem(
+      `REMEMBER_ME_USERNAME_${location.hostname}`,
+      'fixture-user',
+    );
+    await useAuthStore().finishAccountClosure();
+    expect(mocks.access.setAccessToken).toHaveBeenCalledWith(null);
+    expect(mocks.access.setRefreshToken).toHaveBeenCalledWith(null);
+    expect(mocks.userStore.setUserInfo).toHaveBeenCalledWith(null);
+    expect(
+      localStorage.getItem(`REMEMBER_ME_USERNAME_${location.hostname}`),
+    ).toBeNull();
+    expect(mocks.logoutApi).not.toHaveBeenCalled();
+    expect(mocks.replace).toHaveBeenCalledWith({
+      path: '/auth/login',
+      query: {},
+    });
   });
 });

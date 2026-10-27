@@ -29,6 +29,8 @@ export namespace AuthApi {
 
   /** 注册接口参数 */
   export interface RegisterParams {
+    agreedPolicy?: boolean;
+    policyVersion?: string;
     username?: string;
     password?: string;
     email?: string;

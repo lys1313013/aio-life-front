@@ -40,7 +40,13 @@ export const usePasswordVaultStore = defineStore('password-vault', () => {
     return false;
   }
 
+  function $reset() {
+    lock();
+    lastActivityTime.value = 0;
+  }
+
   return {
+    $reset,
     isUnlocked,
     isLocked,
     masterKey,

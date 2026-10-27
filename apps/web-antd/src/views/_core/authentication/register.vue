@@ -2,20 +2,29 @@
 import type { VbenFormSchema } from '@vben/common-ui';
 import type { Recordable } from '@vben/types';
 
-import { computed, h, ref } from 'vue';
+import { computed, h, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { AuthenticationRegister, z } from '@vben/common-ui';
 import { $t } from '@vben/locales';
 
-import { message } from 'ant-design-vue';
+import { Button, message } from 'ant-design-vue';
 
 import { registerApi, sendEmailCodeApi } from '#/api/core/auth';
 import { AppModal as Modal } from '#/components/app-modal';
+import LegalPolicyContent from '#/components/legal-policy/LegalPolicyContent.vue';
+import { useLegalPolicy } from '#/components/legal-policy/use-legal-policy';
 
 defineOptions({ name: 'Register' });
 
 const loading = ref(false);
+const {
+  policy,
+  loading: policyLoading,
+  error: policyError,
+  load: loadPolicy,
+} = useLegalPolicy();
+onMounted(loadPolicy);
 const router = useRouter();
 
 const policyVisible = ref(false);
@@ -62,10 +71,14 @@ const formSchema = computed((): VbenFormSchema[] => {
         placeholder: $t('authentication.code'),
       },
       dependencies: {
-        triggerFields: ['email'],
+        triggerFields: ['email', 'agreePolicy'],
         componentProps(values) {
           return {
             handleSendCode: async () => {
+              if (!values.agreePolicy || !policy.value) {
+                message.warning('请先加载并同意隐私政策和服务条款');
+                throw new Error('Policy acceptance required');
+              }
               const { email } = values;
               if (!email) {
                 message.warning($t('authentication.emailTip'));
@@ -162,9 +175,18 @@ const formSchema = computed((): VbenFormSchema[] => {
 });
 
 async function handleSubmit(value: Recordable<any>) {
+  if (loading.value) return;
+  if (!value.agreePolicy || !policy.value) {
+    message.warning('请先加载并同意隐私政策和服务条款');
+    return;
+  }
   try {
     loading.value = true;
-    await registerApi(value);
+    await registerApi({
+      ...value,
+      agreedPolicy: true,
+      policyVersion: policy.value.version,
+    });
     message.success($t('authentication.registerSuccess'));
     router.push('/auth/login');
   } catch {
@@ -178,9 +200,13 @@ async function handleSubmit(value: Recordable<any>) {
 <template>
   <AuthenticationRegister
     :form-schema="formSchema"
-    :loading="loading"
+    :loading="loading || policyLoading"
     @submit="handleSubmit"
   />
+  <div v-if="policyError" class="mt-3" role="alert">
+    {{ policyError
+    }}<Button :loading="policyLoading" @click="loadPolicy">重新加载协议</Button>
+  </div>
   <Modal
     v-model:open="policyVisible"
     :title="
@@ -192,62 +218,9 @@ async function handleSubmit(value: Recordable<any>) {
     centered
     width="600px"
   >
-    <div class="policy-content">
-      <template v-if="policyType === 'privacy'">
-        <h4>1. 信息收集</h4>
-        <p>
-          注册邮箱仅用于账号验证、登录与密码找回；你主动接入的第三方平台（GitHub、LeetCode、CSDN
-          等）凭据仅用于同步你的公开数据。
-        </p>
-        <h4>2. 数据存储</h4>
-        <p>
-          你的所有记录数据均存储于本站私有部署的服务器中，不会出售、共享给任何第三方。密码经加密存储，敏感数据（如密码管理器内容）加密后保存。
-        </p>
-        <h4>3. Cookie 与本地存储</h4>
-        <p>仅用于维持登录状态与界面偏好设置，不用于任何跟踪或广告用途。</p>
-        <h4>4. 数据权利</h4>
-        <p>
-          你可以随时导出或删除自己的数据；注销账号后，相关数据将被彻底删除。
-        </p>
-      </template>
-      <template v-else>
-        <h4>1. 账号责任</h4>
-        <p>
-          你需妥善保管账号与密码，对账号下的所有操作负责。注册即表示你提供的信息真实有效。
-        </p>
-        <h4>2. 合法使用</h4>
-        <p>
-          不得利用本服务存储、传播违法违规内容，不得攻击、干扰服务的正常运行。违规账号将被停用。
-        </p>
-        <h4>3. 服务变更</h4>
-        <p>本服务可能随版本迭代调整功能，重要变更将通过站内通知告知。</p>
-        <h4>4. 免责声明</h4>
-        <p>
-          本服务按“现状”提供，因不可抗力或第三方平台接口变更导致的数据同步异常，本站不承担相应责任，请自行备份重要数据。
-        </p>
-      </template>
+    <div class="max-h-[60vh] overflow-y-auto">
+      <LegalPolicyContent v-if="policy" :policy="policy" :kind="policyType" />
+      <p v-else role="alert">协议尚未加载，请关闭后重试。</p>
     </div>
   </Modal>
 </template>
-
-<style scoped>
-.policy-content {
-  max-height: 60vh;
-  overflow-y: auto;
-  line-height: 1.8;
-}
-
-.policy-content h4 {
-  margin: 12px 0 4px;
-  font-weight: 600;
-}
-
-.policy-content h4:first-child {
-  margin-top: 0;
-}
-
-.policy-content p {
-  margin: 0;
-  color: hsl(var(--muted-foreground));
-}
-</style>

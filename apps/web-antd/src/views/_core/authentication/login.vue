@@ -96,6 +96,23 @@ const formSchema = computed((): VbenFormSchema[] => {
       </div>
     </template>
   </AuthenticationLogin>
+  <nav
+    aria-label="隐私与服务协议"
+    class="mt-4 flex flex-wrap justify-center gap-4 text-sm"
+  >
+    <RouterLink
+      class="inline-flex min-h-11 items-center text-muted-foreground"
+      to="/auth/policy?kind=privacy"
+    >
+      隐私政策
+    </RouterLink>
+    <RouterLink
+      class="inline-flex min-h-11 items-center text-muted-foreground"
+      to="/auth/policy?kind=terms"
+    >
+      服务条款
+    </RouterLink>
+  </nav>
 </template>
 
 <style scoped>

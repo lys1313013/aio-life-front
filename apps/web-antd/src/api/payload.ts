@@ -174,6 +174,14 @@ export interface ChangePasswordReq {
   newPassword?: null | string;
 }
 
+export interface CloseAccountReq {
+  confirmation: string;
+  password?: null | string;
+  loginCode?: null | string;
+  wechatScene?: null | string;
+  wechatBrowserSecret?: null | string;
+}
+
 export interface CommonReq {
   idList?: Array<string> | null;
 }
@@ -752,6 +760,8 @@ export interface ReadRecordReq {
 }
 
 export interface RegisterReq {
+  agreedPolicy: boolean;
+  policyVersion: string;
   username?: null | string;
   password?: null | string;
   email?: null | string;
@@ -1178,6 +1188,8 @@ export interface WechatAuthRequests_Login {
 
 export interface WechatAuthRequests_Register {
   loginTicket: string;
+  agreedPolicy: boolean;
+  policyVersion: string;
 }
 
 export interface WechatWebLoginController_BrowserRequest {
@@ -1214,6 +1226,7 @@ export interface ApiRequests {
   CbtiPersonalitySaveReq: CbtiPersonalitySaveReq;
   CbtiTestReq: CbtiTestReq;
   ChangePasswordReq: ChangePasswordReq;
+  CloseAccountReq: CloseAccountReq;
   CommonReq: CommonReq;
   DeviceCreateReq: DeviceCreateReq;
   DeviceUpdateReq: DeviceUpdateReq;
@@ -1497,6 +1510,13 @@ const fields: Record<string, Record<string, null | string>> = {
   ChangePasswordReq: {
     oldPassword: null,
     newPassword: null,
+  },
+  CloseAccountReq: {
+    confirmation: null,
+    password: null,
+    loginCode: null,
+    wechatScene: null,
+    wechatBrowserSecret: null,
   },
   CommonReq: {
     idList: null,
@@ -2014,6 +2034,8 @@ const fields: Record<string, Record<string, null | string>> = {
     remark: null,
   },
   RegisterReq: {
+    agreedPolicy: null,
+    policyVersion: null,
     username: null,
     password: null,
     email: null,
@@ -2386,6 +2408,8 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   WechatAuthRequests_Register: {
     loginTicket: null,
+    agreedPolicy: null,
+    policyVersion: null,
   },
   WechatWebLoginController_BrowserRequest: {
     scene: null,
@@ -2688,6 +2712,7 @@ const queryFields: Record<string, string[]> = {
   '/system/scheduled-jobs': [],
   '/system/scheduled-jobs/{id}/logs': ['page', 'pageSize'],
   '/api-key/list': [],
+  '': [],
   '/message/list': ['isRead'],
   '/message/page': ['isRead', 'page', 'pageSize'],
   '/message/unread-count': [],
@@ -3326,6 +3351,12 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/system/scheduled-jobs/{id}',
     model: 'ScheduledJobUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/auth/account/close',
+    model: 'CloseAccountReq',
     list: false,
   },
   {

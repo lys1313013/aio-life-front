@@ -108,6 +108,23 @@ export const useAuthStore = defineStore('auth', () => {
     } catch {
       // 不做任何处理
     }
+    await clearSessionAndRedirect(redirect);
+  }
+
+  async function finishAccountClosure() {
+    // 即使某个业务 store 的重置失败，也先清除核心身份及当前设备记住的账号。
+    accessStore.setAccessToken(null);
+    accessStore.setRefreshToken(null);
+    userStore.setUserInfo(null);
+    try {
+      localStorage.removeItem(`REMEMBER_ME_USERNAME_${location.hostname}`);
+    } catch {
+      /* 继续清理会话 */
+    }
+    await clearSessionAndRedirect(false);
+  }
+
+  async function clearSessionAndRedirect(redirect: boolean) {
     clearImageCache();
     try {
       resetAllStores();
@@ -145,6 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
     completeLogin,
     authWechatLogin,
     fetchUserInfo,
+    finishAccountClosure,
     loginLoading,
     logout,
   };

@@ -68,6 +68,12 @@ const coreRoutes: RouteRecordRaw[] = [
     redirect: LOGIN_PATH,
     children: [
       {
+        name: 'LegalPolicy',
+        path: 'policy',
+        component: () => import('#/views/_core/authentication/policy.vue'),
+        meta: { title: '隐私政策与服务条款' },
+      },
+      {
         name: 'Login',
         path: 'login',
         component: () => import('#/views/_core/authentication/login.vue'),
