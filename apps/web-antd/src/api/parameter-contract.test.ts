@@ -3,10 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listCoverTemplates } from './bank-card/covers';
 import { adminBatchFeedback, queryAllFeedbacks } from './core/feedback';
 import { getRecentCommitsApi } from './core/github';
-import { getWereadRecent } from './core/weread';
 import { getMessagePageApi } from './core/message';
-import { deletePasswordVault } from './core/passwordVault';
+import {
+  createPasswordApi,
+  deletePasswordApi,
+  updatePasswordApi,
+} from './core/password-manager';
 import { getTaskList, updateTaskDetail } from './core/todo';
+import { getWereadRecent } from './core/weread';
 import { MovieApi } from './movie';
 import { ReadRecordApi } from './readRecord';
 import { requestClient } from './request';
@@ -21,7 +25,7 @@ vi.mock('./request', () => ({
   },
 }));
 
-describe('Web 请求参数契约', () => {
+describe('web 请求参数契约', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('阅读、观影、待办、消息和卡面统一发送 page/pageSize', async () => {
@@ -60,7 +64,7 @@ describe('Web 请求参数契约', () => {
     const id = '9223372036854775807';
     await deleteUserApi(id);
     expect(requestClient.delete).toHaveBeenLastCalledWith(`/user-center/${id}`);
-    await deletePasswordVault(id);
+    await deletePasswordApi(id);
     expect(requestClient.delete).toHaveBeenLastCalledWith(`/password/${id}`);
     await queryAllFeedbacks({ userId: id, page: 1, pageSize: 20 });
     expect(requestClient.get).toHaveBeenLastCalledWith('/feedback/admin/list', {
@@ -73,6 +77,28 @@ describe('Web 请求参数契约', () => {
         idList: [id],
         action: 'CLOSE',
       },
+    );
+  });
+
+  it('密码库页面入口仅提交业务字段，并返回当前布尔契约', async () => {
+    const id = '9223372036854775807';
+    const payload = {
+      title: '工作账号',
+      username: 'encrypted-user',
+      password: 'encrypted-password',
+      salt: 'salt',
+      favorite: false,
+    };
+    const form = { ...payload, id, userId: 'untrusted-owner' };
+    vi.mocked(requestClient.post).mockResolvedValueOnce(true);
+    vi.mocked(requestClient.put).mockResolvedValueOnce(true);
+
+    expect(await createPasswordApi(form)).toBe(true);
+    expect(requestClient.post).toHaveBeenLastCalledWith('/password', payload);
+    expect(await updatePasswordApi(id, form)).toBe(true);
+    expect(requestClient.put).toHaveBeenLastCalledWith(
+      `/password/${id}`,
+      payload,
     );
   });
 
