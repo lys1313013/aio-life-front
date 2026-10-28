@@ -25,7 +25,7 @@ const items = [
     group: 'section',
     title: '目标',
     icon: 'lucide:crosshair',
-    enabled: true,
+    isEnabled: 1,
     sortOrder: 0,
   },
 ];

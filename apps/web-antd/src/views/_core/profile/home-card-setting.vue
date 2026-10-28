@@ -142,7 +142,7 @@ async function reset() {
               <BusinessIcon :card-key="item.cardKey" class="size-5 shrink-0" />
               <span class="min-w-0 flex-1 text-sm">{{ item.title }}</span>
               <Switch
-                :checked="item.enabled"
+                :checked="item.isEnabled === 1"
                 :aria-label="`显示${item.title}`"
                 :disabled="disabled"
                 :loading="store.busy === item.cardKey"

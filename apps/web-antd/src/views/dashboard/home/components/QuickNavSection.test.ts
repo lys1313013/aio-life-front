@@ -48,7 +48,7 @@ beforeEach(() => {
         menuId: '1',
         title: '模拟导航',
         path: '/task/todo',
-        enabled: 1,
+        isEnabled: 1,
         sortOrder: 0,
       },
     ],

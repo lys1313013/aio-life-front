@@ -19,11 +19,11 @@ import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteBatch, deleteData, query } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
+import FormModalDemo from '#/components/finance-entry/ExpenseFormModal.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
 import DeviceModal from './device-modal.vue';
-import FormModalDemo from './form-modal.vue';
 
 interface RowType {
   id: string;

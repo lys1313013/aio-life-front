@@ -3,7 +3,7 @@ import { defineComponent, h, KeepAlive, ref } from 'vue';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { useHomeRequest } from './useHomeRequest';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -16,10 +16,10 @@ function deferred<T>() {
 }
 function fixture(fetch: () => Promise<string[]>) {
   const data = ref<string[]>([]);
-  let request!: ReturnType<typeof useHomeRequest<string[]>>;
+  let request!: ReturnType<typeof useActiveRequest<string[]>>;
   const component = defineComponent({
     setup() {
-      request = useHomeRequest({
+      request = useActiveRequest({
         fetch,
         apply: (rows) => {
           data.value = rows;
@@ -96,12 +96,12 @@ describe('首页公共请求状态', () => {
       .mockResolvedValueOnce(['record'])
       .mockReturnValueOnce(pending.promise)
       .mockResolvedValueOnce(['new']);
-    let request!: ReturnType<typeof useHomeRequest<string[]>>;
+    let request!: ReturnType<typeof useActiveRequest<string[]>>;
     const data = ref<string[]>([]);
     const show = ref(true);
     const Child = defineComponent({
       setup() {
-        request = useHomeRequest({
+        request = useActiveRequest({
           fetch,
           apply: (rows) => {
             data.value = rows;

@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils';
 
 import { expect, it, vi } from 'vitest';
 
-import FinancialPeriodSelector from './FinancialPeriodSelector.vue';
+import FinancialPeriodSelector from '#/components/finance-calendar/FinancialPeriodSelector.vue';
 
 vi.mock('@vben/common-ui', () => ({ VbenIcon: { template: '<i />' } }));
 it('待请求范围只显示loading，选中状态与已展示数据的范围一致', async () => {

@@ -2,13 +2,13 @@ import { enableAutoUnmount, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import FinanceEntryModal from './FinanceEntryModal.vue';
+import FinanceEntryModal from '#/components/finance-entry/FinanceEntryModal.vue';
 
 const mocks = vi.hoisted(() => ({ apis: [] as any[] }));
-vi.mock('#/views/my-hub/expense/form-modal.vue', () => ({
+vi.mock('#/components/finance-entry/ExpenseFormModal.vue', () => ({
   default: { name: 'ExpenseEntry' },
 }));
-vi.mock('#/views/my-hub/income/form-modal.vue', () => ({
+vi.mock('#/components/finance-entry/IncomeFormModal.vue', () => ({
   default: { name: 'IncomeEntry' },
 }));
 vi.mock('#/adapter/modal', () => ({

@@ -30,6 +30,9 @@ import { getPinnedThoughts } from '#/api/core/think';
 import { updateTaskDetail } from '#/api/core/todo';
 import { getUserBindListApi } from '#/api/core/user-bind';
 import BusinessIcon from '#/components/BusinessIcon.vue';
+import FinanceCalendarCard from '#/components/finance-calendar/FinanceCalendarCard.vue';
+import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 import {
   ACTION_OPEN_EXERCISE_MODAL,
   ACTION_OPEN_TIME_TRACKER_MODAL,
@@ -45,16 +48,13 @@ import AnalyticsTimeTracker from './analytics-time-tracker.vue';
 import AnalysisCard from './components/analysis-card.vue';
 import BusinessCards from './components/BusinessCards.vue';
 import BusinessCardSkeleton from './components/BusinessCardSkeleton.vue';
-import CardHeader from './components/CardHeader.vue';
 import ExerciseSummaryCard from './components/ExerciseSummaryCard.vue';
-import FinanceCalendarCard from './components/FinanceCalendarCard.vue';
 import GithubRecentCommits from './components/GithubRecentCommits.vue';
 import HomeCardSortGrid from './components/HomeCardSortGrid.vue';
 import QuickNavSection from './components/QuickNavSection.vue';
 import SummaryHomeCard from './components/SummaryHomeCard.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 import WereadRecentCard from './components/WereadRecentCard.vue';
-import { useHomeRequest } from './composables/useHomeRequest';
 
 interface OverviewItem {
   cardKey: string;
@@ -97,7 +97,7 @@ function sectionVisible(section: { cardKey: string }) {
 const overviewCards = computed<OverviewItem[]>(() => {
   if (loading.value && overviewItems.value.length === 0)
     return homeCards.items
-      .filter((item) => item.group === 'overview' && item.enabled)
+      .filter((item) => item.group === 'overview' && item.isEnabled === 1)
       .map((item) => ({
         cardKey: item.cardKey,
         title: item.title,
@@ -120,7 +120,7 @@ const homeUser = useUserStore();
 const overviewItems = ref<OverviewItem[]>([]);
 
 const watchedTasks = ref<WatchedTaskDetail[]>([]);
-const watchedRequest = useHomeRequest({
+const watchedRequest = useActiveRequest({
   fetch: getWatchedTaskDetails,
   enabled: () => homeCards.enabled('section.watched'),
   apply: (data) => {
@@ -134,7 +134,7 @@ const {
   failed: watchedError,
 } = watchedRequest;
 const pinnedThoughts = ref<any[]>([]);
-const thoughtsRequest = useHomeRequest({
+const thoughtsRequest = useActiveRequest({
   fetch: getPinnedThoughts,
   enabled: () => homeCards.enabled('section.thoughts'),
   apply: (data) => {
@@ -530,7 +530,7 @@ function startNowTimer() {
 }
 onMounted(startNowTimer);
 
-const overviewRequest = useHomeRequest({
+const overviewRequest = useActiveRequest({
   initialLoading: true,
   fetch: getDashboardTasks,
   apply: (tasks) => {
@@ -747,7 +747,7 @@ function navTo(nav: { url?: string }) {
           v-if="section.cardKey === 'section.time'"
           class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
         >
-          <CardHeader
+          <RefreshableCardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             :label="`刷新时迹${
               timeTrackerDateCaption ? ` ${timeTrackerDateCaption}` : ''
@@ -781,7 +781,7 @@ function navTo(nav: { url?: string }) {
               </span>
               <span class="text-sm leading-none text-muted-foreground">+</span>
             </button>
-          </CardHeader>
+          </RefreshableCardHeader>
           <div class="flex-1 overflow-hidden p-1.5 pt-0 sm:p-2 sm:pt-0">
             <AnalyticsTimeTracker
               :ref="
@@ -810,7 +810,7 @@ function navTo(nav: { url?: string }) {
           "
           class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
-          <CardHeader
+          <RefreshableCardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新待办"
             :error="watchedError"
@@ -828,7 +828,7 @@ function navTo(nav: { url?: string }) {
                 />待办</span
               >
             </div>
-          </CardHeader>
+          </RefreshableCardHeader>
 
           <div
             v-if="watchedLoading && !watchedLoaded"
@@ -948,7 +948,7 @@ function navTo(nav: { url?: string }) {
           v-if="section.cardKey === 'section.thoughts'"
           class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
-          <CardHeader
+          <RefreshableCardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新闪念"
             :error="thoughtsError"
@@ -970,7 +970,7 @@ function navTo(nav: { url?: string }) {
               @click.stop="openNewThought"
               >+</span
             >
-          </CardHeader>
+          </RefreshableCardHeader>
 
           <div
             v-if="thoughtsLoading && !thoughtsLoaded"
@@ -1085,7 +1085,7 @@ function navTo(nav: { url?: string }) {
           v-show="exerciseLoading || !exerciseEmpty"
           class="dashboard-section relative flex h-auto min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all md:h-[250px] lg:h-[280px]"
         >
-          <CardHeader
+          <RefreshableCardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新运动"
             :loading="exerciseSummaryCardRef?.loading"
@@ -1112,7 +1112,7 @@ function navTo(nav: { url?: string }) {
             >
               <VbenIcon icon="mdi:plus" class="size-5" />
             </button>
-          </CardHeader>
+          </RefreshableCardHeader>
           <ExerciseSummaryCard
             :ref="
               (el) => {
@@ -1128,7 +1128,7 @@ function navTo(nav: { url?: string }) {
           v-if="section.cardKey === 'section.github' && githubBound"
           class="dashboard-section flex h-[240px] min-w-0 flex-col rounded-xl border border-border bg-card text-card-foreground transition-all sm:h-[250px] lg:h-[280px]"
         >
-          <CardHeader
+          <RefreshableCardHeader
             class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
             label="刷新最近提交"
             :error="
@@ -1165,7 +1165,7 @@ function navTo(nav: { url?: string }) {
                 >最近提交</span
               >
             </div>
-          </CardHeader>
+          </RefreshableCardHeader>
           <GithubRecentCommits
             :ref="
               (el) => {

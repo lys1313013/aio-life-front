@@ -1,5 +1,3 @@
-import type { Component } from 'vue';
-
 import type { MembershipVO } from '#/api/membership';
 
 import dayjs from 'dayjs';
@@ -75,28 +73,6 @@ export function sortMemberships(records: MembershipVO[]) {
     });
 }
 
-export interface HomeMenu {
-  icon?: Component | string;
-  iconColor?: string;
-  path: string;
-  menuId?: string;
-  children?: HomeMenu[];
-}
-export function findMenuChain(
-  menus: HomeMenu[],
-  paths: string[],
-  parents: HomeMenu[] = [],
-  menuId?: string,
-): HomeMenu[] {
-  for (const menu of menus) {
-    const chain = [...parents, menu];
-    if (menuId ? menu.menuId === menuId : paths.includes(menu.path))
-      return chain;
-    const nested = findMenuChain(menu.children ?? [], paths, chain, menuId);
-    if (nested.length > 0) return nested;
-  }
-  return [];
-}
 export function requirePinnedRows<T extends { isPinned?: number }>(
   rows: T[],
 ): T[] {

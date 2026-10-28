@@ -17,12 +17,13 @@ import dayjs from 'dayjs';
 
 import { getWereadRecent } from '#/api/core/weread';
 import BusinessIcon from '#/components/BusinessIcon.vue';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
+import { findMenuChain } from '#/utils/menu-chain';
 import BookLink from '#/views/my-hub/weread/book-link.vue';
 
-import { useHomeRequest } from '../composables/useHomeRequest';
-import { BUSINESS_CARD_MAX_HEIGHT, findMenuChain } from './business-card-data';
+import { BUSINESS_CARD_MAX_HEIGHT } from './business-card-data';
 import BusinessCardCover from './BusinessCardCover.vue';
 import CardRefreshIndicator from './CardRefreshIndicator.vue';
 
@@ -132,7 +133,7 @@ const locked = computed(
     ),
 );
 const available = computed(() => !!path.value && !access.loginExpired);
-const request = useHomeRequest({
+const request = useActiveRequest({
   enabled: () => available.value && !locked.value,
   fetch: () => getWereadRecent(),
   onStart: () => {

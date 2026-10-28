@@ -16,10 +16,9 @@ import { useVbenModal } from '#/adapter/modal';
 import { getFinanceCalendarDetails } from '#/api/core/finance-calendar';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModal } from '#/components/app-modal';
-import ExpenseFormModal from '#/views/my-hub/expense/form-modal.vue';
-import IncomeFormModal from '#/views/my-hub/income/form-modal.vue';
-
-import { formatFinanceAmount as money } from './finance-calendar';
+import { formatFinanceAmount as money } from '#/components/finance-calendar/finance-calendar';
+import ExpenseFormModal from '#/components/finance-entry/ExpenseFormModal.vue';
+import IncomeFormModal from '#/components/finance-entry/IncomeFormModal.vue';
 
 const props = defineProps<{
   bucket: FinanceCalendarBucket;

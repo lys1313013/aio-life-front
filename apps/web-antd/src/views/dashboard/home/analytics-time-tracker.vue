@@ -18,6 +18,7 @@ import dayjs from 'dayjs';
 
 import { query } from '#/api/core/time-tracker';
 import { listCategories } from '#/api/core/time-tracker-category';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 import {
   categoryPath,
   categoryStatistics,
@@ -26,7 +27,6 @@ import TimeTrackerModal from '#/views/time/time-tracker/components/TimeTrackerMo
 import { daySwipeStyle } from '#/views/time/time-tracker/day-swipe';
 import { getSlotDuration } from '#/views/time/time-tracker/utils';
 
-import { useHomeRequest } from './composables/useHomeRequest';
 import { createTimeCardSwipe } from './utils/time-card-swipe';
 
 const emit = defineEmits<{
@@ -81,7 +81,7 @@ const formatTime = (minutes: number) => {
   return `${h}:${m}`;
 };
 
-const request = useHomeRequest({
+const request = useActiveRequest({
   fetch: async () => {
     const date = selectedDate.value || dayjs().format('YYYY-MM-DD');
     const [categories, records] = await Promise.all([

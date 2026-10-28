@@ -137,8 +137,8 @@ it('只调整顺序保留内容实例，启用项变化才重新初始化', asyn
   mocks.contentUnmounted.mockClear();
   const preferences = reactive({
     items: [
-      { cardKey: 'section.time', enabled: true, sortOrder: 0 },
-      { cardKey: 'section.thoughts', enabled: true, sortOrder: 1 },
+      { cardKey: 'section.time', isEnabled: 1, sortOrder: 0 },
+      { cardKey: 'section.thoughts', isEnabled: 1, sortOrder: 1 },
     ],
     ready: true,
     error: false,
@@ -150,13 +150,13 @@ it('只调整顺序保留内容实例，启用项变化才重新初始化', asyn
   await flushPromises();
   const content = wrapper.get('[data-testid="content"]').element;
   preferences.items = [
-    { cardKey: 'section.thoughts', enabled: true, sortOrder: 0 },
-    { cardKey: 'section.time', enabled: true, sortOrder: 1 },
+    { cardKey: 'section.thoughts', isEnabled: 1, sortOrder: 0 },
+    { cardKey: 'section.time', isEnabled: 1, sortOrder: 1 },
   ];
   await flushPromises();
   expect(wrapper.get('[data-testid="content"]').element).toBe(content);
   expect(mocks.contentMounted).toHaveBeenCalledTimes(1);
-  preferences.items[0]!.enabled = false;
+  preferences.items[0]!.isEnabled = 0;
   await flushPromises();
   expect(mocks.contentMounted).toHaveBeenCalledTimes(2);
   wrapper.unmount();

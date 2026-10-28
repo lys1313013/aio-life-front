@@ -10,10 +10,10 @@ import dayjs from 'dayjs';
 
 import { isFinancialSection } from '#/api/core/home-sections';
 import BusinessIcon from '#/components/BusinessIcon.vue';
+import FinancialPeriodSelector from '#/components/finance-calendar/FinancialPeriodSelector.vue';
+import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
+import { useBusinessSection } from '#/composables/useBusinessSection';
 
-import { useHomeSection } from '../composables/useHomeSection';
-import CardHeader from './CardHeader.vue';
-import FinancialPeriodSelector from './FinancialPeriodSelector.vue';
 import SummaryMediaThumbnail from './SummaryMediaThumbnail.vue';
 
 const props = defineProps<{ kind: HomeSectionKind }>();
@@ -22,7 +22,7 @@ const MemoEditor = defineAsyncComponent(
   () => import('#/views/my-hub/memo/MemoEditorModal.vue'),
 );
 const FinanceEntry = defineAsyncComponent(
-  () => import('#/views/my-hub/finance-dashboard/FinanceEntryModal.vue'),
+  () => import('#/components/finance-entry/FinanceEntryModal.vue'),
 );
 const DeviceEditor = defineAsyncComponent(
   () => import('#/views/my-hub/device/DeviceEditorModal.vue'),
@@ -30,7 +30,7 @@ const DeviceEditor = defineAsyncComponent(
 const deviceOpen = ref(false);
 const deviceId = ref<string>();
 const router = useRouter();
-const card = useHomeSection(props.kind);
+const card = useBusinessSection(props.kind);
 const { data, loaded, loading, failed, available, locked } = card;
 const titles = {
   memo: '最近笔记',
@@ -164,7 +164,7 @@ function resumeUrl(url: null | string) {
     :aria-label="title"
     :aria-busy="loading"
   >
-    <CardHeader
+    <RefreshableCardHeader
       class="h-11 px-3"
       :label="`刷新${title}`"
       :loading="loading"
@@ -194,7 +194,7 @@ function resumeUrl(url: null | string) {
       >
         <VbenIcon icon="mdi:plus" class="size-5" />
       </button>
-    </CardHeader>
+    </RefreshableCardHeader>
     <div class="summary-body min-h-0 overflow-y-auto px-3 pb-3">
       <div
         v-if="locked"

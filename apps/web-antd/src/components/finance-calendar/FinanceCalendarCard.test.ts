@@ -3,7 +3,7 @@ import { ref } from 'vue';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import FinanceCalendarCard from './FinanceCalendarCard.vue';
+import FinanceCalendarCard from '#/components/finance-calendar/FinanceCalendarCard.vue';
 
 const mocks = vi.hoisted(() => ({ load: vi.fn() }));
 vi.mock('#/api/core/finance-calendar', () => ({ getFinanceCalendar: vi.fn() }));
@@ -21,18 +21,21 @@ vi.mock('#/components/BusinessIcon.vue', () => ({
 vi.mock('#/store/menu-visuals', () => ({
   useMenuVisualsStore: () => ({ visual: () => ({}) }),
 }));
-vi.mock('./CardHeader.vue', () => ({
+vi.mock('#/components/RefreshableCardHeader.vue', () => ({
   default: { template: '<header><slot /></header>' },
 }));
-vi.mock('./FinanceCalendarDetailsModal.vue', () => ({
-  default: {
-    props: ['kind', 'bucket', 'initialKind'],
-    template:
-      '<div role="dialog" :data-kind="kind" :data-bucket="bucket.key" :data-initial-kind="initialKind" />',
-  },
-}));
-vi.mock('../composables/useHomeSection', () => ({
-  useHomeSection: (kind: string) => ({
+vi.mock(
+  '#/components/finance-calendar/FinanceCalendarDetailsModal.vue',
+  () => ({
+    default: {
+      props: ['kind', 'bucket', 'initialKind'],
+      template:
+        '<div role="dialog" :data-kind="kind" :data-bucket="bucket.key" :data-initial-kind="initialKind" />',
+    },
+  }),
+);
+vi.mock('#/composables/useBusinessSection', () => ({
+  useBusinessSection: (kind: string) => ({
     data,
     loading,
     locked,

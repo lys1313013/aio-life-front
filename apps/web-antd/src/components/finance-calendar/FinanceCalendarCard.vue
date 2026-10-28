@@ -18,10 +18,6 @@ import dayjs from 'dayjs';
 
 import { getFinanceCalendar } from '#/api/core/finance-calendar';
 import BusinessIcon from '#/components/BusinessIcon.vue';
-import { useMenuVisualsStore } from '#/store/menu-visuals';
-
-import { useHomeSection } from '../composables/useHomeSection';
-import CardHeader from './CardHeader.vue';
 import {
   financeCalendarPlaceholder,
   financeGranularities,
@@ -29,8 +25,11 @@ import {
   formatFinanceAmount as money,
   readFinanceGranularity,
   saveFinanceGranularity,
-} from './finance-calendar';
-import FinanceCalendarDetailsModal from './FinanceCalendarDetailsModal.vue';
+} from '#/components/finance-calendar/finance-calendar';
+import FinanceCalendarDetailsModal from '#/components/finance-calendar/FinanceCalendarDetailsModal.vue';
+import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
+import { useBusinessSection } from '#/composables/useBusinessSection';
+import { useMenuVisualsStore } from '#/store/menu-visuals';
 
 const props = defineProps<{ kind: FinanceKind; page?: boolean }>();
 const emit = defineEmits<{ visibility: [visible: boolean] }>();
@@ -44,7 +43,7 @@ const metrics = [
   { value: 'balance', label: '结余' },
 ] as const;
 const FinanceEntry = defineAsyncComponent(
-  () => import('#/views/my-hub/finance-dashboard/FinanceEntryModal.vue'),
+  () => import('#/components/finance-entry/FinanceEntryModal.vue'),
 );
 const financeRef = ref<InstanceType<typeof FinanceEntry>>();
 const entryMounted = ref(false);
@@ -103,7 +102,7 @@ function query(): FinanceCalendarQuery {
       : { date: date.slice(0, mode === 'month' ? 4 : 7) }),
   };
 }
-const card = useHomeSection(props.kind, {
+const card = useBusinessSection(props.kind, {
   fetch: async () => {
     const params = query();
     const result = await getFinanceCalendar(props.kind, params);
@@ -273,7 +272,7 @@ function navigate() {
     :aria-busy="loading"
     :style="{ '--finance-accent': accent }"
   >
-    <CardHeader
+    <RefreshableCardHeader
       class="h-10 px-3"
       :label="`刷新${label}`"
       :loading="loading"
@@ -314,16 +313,20 @@ function navigate() {
           {{ option.label }}
         </button>
       </div>
-    </CardHeader>
-    <div v-if="locked" class="flex min-h-32 items-center justify-center">
-      <button
-        type="button"
-        class="min-h-11 px-3 text-sm text-muted-foreground"
-        @click="card.unlock"
-      >
-        点击解锁
-      </button>
-    </div>
+    </RefreshableCardHeader>
+    <button
+      v-if="locked"
+      type="button"
+      class="absolute left-1/2 top-1/2 flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:opacity-65"
+      :aria-label="`解锁${label}`"
+      @click.stop="card.unlock"
+    >
+      <VbenIcon
+        icon="ant-design:lock-outlined"
+        class="size-6"
+        aria-hidden="true"
+      />
+    </button>
     <div v-else class="finance-calendar-body px-3">
       <div class="finance-calendar-toolbar">
         <div

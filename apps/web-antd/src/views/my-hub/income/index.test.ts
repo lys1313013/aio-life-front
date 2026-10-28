@@ -2,7 +2,8 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import FormModal from './form-modal.vue';
+import FormModal from '#/components/finance-entry/IncomeFormModal.vue';
+
 import IncomePage from './index.vue';
 
 const mocks = vi.hoisted(() => ({

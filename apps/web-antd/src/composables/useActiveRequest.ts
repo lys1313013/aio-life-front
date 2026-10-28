@@ -1,7 +1,7 @@
 import { onActivated, onBeforeUnmount, onDeactivated, ref } from 'vue';
 
-/** 首页请求共同规则：普通刷新合并，写入后刷新使旧请求失效，离页保留展示数据。 */
-export function useHomeRequest<T>(options: {
+/** 活跃组件请求规则：普通刷新合并，写入后刷新使旧请求失效，离页保留展示数据。 */
+export function useActiveRequest<T>(options: {
   apply: (data: T) => void;
   enabled?: () => boolean;
   fetch: () => Promise<T>;

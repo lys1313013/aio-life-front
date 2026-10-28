@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVbenModal } from '#/adapter/modal';
-import ExpenseFormModal from '#/views/my-hub/expense/form-modal.vue';
-import IncomeFormModal from '#/views/my-hub/income/form-modal.vue';
+import ExpenseFormModal from '#/components/finance-entry/ExpenseFormModal.vue';
+import IncomeFormModal from '#/components/finance-entry/IncomeFormModal.vue';
 
 const props = defineProps<{ kind?: 'expense' | 'income' }>();
 const emit = defineEmits<{ saved: [] }>();

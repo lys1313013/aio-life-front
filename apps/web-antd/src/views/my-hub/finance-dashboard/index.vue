@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FinanceCalendarCard from '#/views/dashboard/home/components/FinanceCalendarCard.vue';
+import FinanceCalendarCard from '#/components/finance-calendar/FinanceCalendarCard.vue';
 </script>
 
 <template>

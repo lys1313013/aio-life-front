@@ -22,10 +22,10 @@ import draggable from 'vuedraggable';
 
 import { getQuickNavCandidatesApi, QUICK_NAV_MAX } from '#/api/core/quick-nav';
 import BusinessIcon from '#/components/BusinessIcon.vue';
+import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
 import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useQuickNavStore } from '#/store/quick-nav';
 
-import CardHeader from './CardHeader.vue';
 import QuickNavPickerModal from './QuickNavPickerModal.vue';
 
 const store = useQuickNavStore();
@@ -92,7 +92,7 @@ async function saveEdit() {
 
 async function persist(items: QuickNavItem[]) {
   const payload: QuickNavSaveItem[] = items.map((it, idx) => ({
-    enabled: it.enabled,
+    isEnabled: it.isEnabled,
     menuId: it.menuId,
     sortOrder: idx,
   }));
@@ -127,7 +127,7 @@ async function onPickerConfirm(newMenuIds: string[]) {
     if (!c) continue;
     additions.push({
       color: c.color,
-      enabled: 1,
+      isEnabled: 1,
       icon: c.icon,
       menuId: c.menuId,
       path: c.path,
@@ -185,7 +185,7 @@ function dragChange() {
   <div
     class="quick-nav-shell flex h-[240px] min-w-0 select-none flex-col overflow-hidden rounded-xl bg-card text-card-foreground sm:h-[250px] lg:h-[280px]"
   >
-    <CardHeader
+    <RefreshableCardHeader
       class="p-2.5 pb-1.5 sm:p-3 sm:pb-1.5"
       label="刷新快捷导航"
       :refresh="retryLoad"
@@ -226,7 +226,7 @@ function dragChange() {
           <VbenIcon icon="lucide:settings-2" class="size-4" />
         </AButton>
       </div>
-    </CardHeader>
+    </RefreshableCardHeader>
 
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <!-- 加载/失败/空态 -->
@@ -333,7 +333,9 @@ function dragChange() {
                 />
                 <span
                   class="mt-1 truncate text-[10px] sm:mt-1.5 sm:text-xs"
-                  :class="{ 'line-through opacity-50': element.enabled === 0 }"
+                  :class="{
+                    'line-through opacity-50': element.isEnabled === 0,
+                  }"
                   >{{ element.title }}</span
                 >
               </div>

@@ -26,11 +26,11 @@ import { ReadRecordApi } from '#/api/readRecord';
 import { AppModal } from '#/components/app-modal';
 import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
+import { findMenuChain } from '#/utils/menu-chain';
 
 import {
   BUSINESS_CARD_PAGE_SIZE,
   dateDistance,
-  findMenuChain,
   hasMoreRecords,
   requirePinnedRows,
   sortMemberships,

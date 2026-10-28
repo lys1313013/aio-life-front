@@ -2,9 +2,10 @@ import type { MembershipVO } from '#/api/membership';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { findMenuChain } from '#/utils/menu-chain';
+
 import {
   dateDistance,
-  findMenuChain,
   hasMoreRecords,
   requirePinnedRows,
   sortMemberships,

@@ -19,6 +19,7 @@ import { useSortable } from '@vben/hooks';
 
 import { Dropdown, Menu, MenuItem } from 'ant-design-vue';
 
+import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
 import MembershipLogo from '#/views/membership/MembershipLogo.vue';
 
 import {
@@ -27,7 +28,6 @@ import {
 } from './business-card-data';
 import BusinessCardCover from './BusinessCardCover.vue';
 import BusinessCardSkeleton from './BusinessCardSkeleton.vue';
-import CardHeader from './CardHeader.vue';
 import CardRefreshIndicator from './CardRefreshIndicator.vue';
 import ReadingShelves from './ReadingShelves.vue';
 
@@ -340,7 +340,7 @@ defineExpose({ reload: () => load(true) });
     :style="{ maxHeight: `${BUSINESS_CARD_MAX_HEIGHT}px` }"
     :aria-label="title"
   >
-    <CardHeader
+    <RefreshableCardHeader
       class="px-2.5 sm:px-3"
       :label="`刷新${title}`"
       :loading="loading"
@@ -373,7 +373,7 @@ defineExpose({ reload: () => load(true) });
           <VbenIcon icon="mdi:plus" class="size-5" />
         </button>
       </div>
-    </CardHeader>
+    </RefreshableCardHeader>
     <button
       v-if="locked"
       type="button"

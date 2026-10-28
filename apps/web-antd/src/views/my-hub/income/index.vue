@@ -17,10 +17,10 @@ import { useVbenModal } from '#/adapter/modal';
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteData, query } from '#/api/core/income';
 import { getByDictType } from '#/api/core/userDictType';
+import FormModalDemo from '#/components/finance-entry/IncomeFormModal.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
-import FormModalDemo from './form-modal.vue';
 
 interface RowType {
   id: string;

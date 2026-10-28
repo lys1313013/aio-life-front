@@ -6,7 +6,7 @@ export interface HomeCardPreference {
   title: string;
   icon: string;
   iconColor?: null | string;
-  enabled: boolean;
+  isEnabled: number;
   sortOrder: number;
 }
 export const getHomeCards = () =>
@@ -14,7 +14,7 @@ export const getHomeCards = () =>
 export const toggleHomeCard = (key: string, enabled: boolean) =>
   requestClient.put<HomeCardPreference[]>(
     `/home/cards/${encodeURIComponent(key)}`,
-    { enabled },
+    { isEnabled: enabled ? 1 : 0 },
   );
 export const orderHomeCards = (group: string, keys: string[]) =>
   requestClient.put<HomeCardPreference[]>('/home/cards/order', { group, keys });

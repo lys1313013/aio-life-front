@@ -7,7 +7,7 @@ import {
   formatFinanceAmount,
   readFinanceGranularity,
   saveFinanceGranularity,
-} from './finance-calendar';
+} from '#/components/finance-calendar/finance-calendar';
 
 beforeEach(() => {
   const values = new Map<string, string>();

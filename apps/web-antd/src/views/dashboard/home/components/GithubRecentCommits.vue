@@ -7,8 +7,7 @@ import { Skeleton } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getRecentCommitsApi } from '#/api/core/github';
-
-import { useHomeRequest } from '../composables/useHomeRequest';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 
 const PAGE_SIZE = 10;
 
@@ -94,7 +93,7 @@ function setupObserver() {
   observer.observe(sentinel.value);
 }
 
-const request = useHomeRequest({
+const request = useActiveRequest({
   initialLoading: true,
   onStart: () => {
     observer?.disconnect();

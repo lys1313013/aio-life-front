@@ -2,17 +2,17 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import FinanceCalendarDetailsModal from './FinanceCalendarDetailsModal.vue';
+import FinanceCalendarDetailsModal from '#/components/finance-calendar/FinanceCalendarDetailsModal.vue';
 
 const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   dictionary: vi.fn(),
   apis: [] as any[],
 }));
-vi.mock('#/views/my-hub/expense/form-modal.vue', () => ({
+vi.mock('#/components/finance-entry/ExpenseFormModal.vue', () => ({
   default: { name: 'ExpenseEditor' },
 }));
-vi.mock('#/views/my-hub/income/form-modal.vue', () => ({
+vi.mock('#/components/finance-entry/IncomeFormModal.vue', () => ({
   default: { name: 'IncomeEditor' },
 }));
 vi.mock('#/adapter/modal', () => ({

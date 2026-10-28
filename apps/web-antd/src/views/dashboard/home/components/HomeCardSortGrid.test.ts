@@ -15,7 +15,7 @@ const cards = (): HomeCardPreference[] =>
     title: key,
     group: 'section',
     icon: '',
-    enabled: key !== 'links',
+    isEnabled: key !== 'links' ? 1 : 0,
     sortOrder,
   }));
 beforeEach(() => {
@@ -30,7 +30,7 @@ function mountGrid() {
   return mount(Grid, {
     props: {
       items: mocks.store.items.filter(
-        (item: HomeCardPreference) => item.enabled,
+        (item: HomeCardPreference) => item.isEnabled === 1,
       ),
       group: 'section',
     },

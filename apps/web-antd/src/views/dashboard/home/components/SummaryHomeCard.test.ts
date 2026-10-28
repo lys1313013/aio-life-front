@@ -21,8 +21,8 @@ vi.mock('@vben/common-ui', () => ({ VbenIcon: { template: '<i />' } }));
 vi.mock('#/components/BusinessIcon.vue', () => ({
   default: { template: '<i />' },
 }));
-vi.mock('../composables/useHomeSection', () => ({
-  useHomeSection: (kind: string) => ({
+vi.mock('#/composables/useBusinessSection', () => ({
+  useBusinessSection: (kind: string) => ({
     data,
     loaded: ref(true),
     loading: ref(false),
@@ -44,7 +44,7 @@ vi.mock('#/views/my-hub/memo/MemoEditorModal.vue', () => ({
     template: '<div data-editor :data-id="memoId" />',
   },
 }));
-vi.mock('#/views/my-hub/finance-dashboard/FinanceEntryModal.vue', () => ({
+vi.mock('#/components/finance-entry/FinanceEntryModal.vue', () => ({
   __esModule: true,
   default: { template: '<div />' },
 }));

@@ -2,8 +2,8 @@ import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-import ExpenseForm from '../expense/form-modal.vue';
-import IncomeForm from '../income/form-modal.vue';
+import ExpenseForm from '#/components/finance-entry/ExpenseFormModal.vue';
+import IncomeForm from '#/components/finance-entry/IncomeFormModal.vue';
 
 const mocks = vi.hoisted(() => ({
   options: undefined as any,

@@ -11,8 +11,8 @@ import { VbenIcon } from '@vben/common-ui';
 import dayjs from 'dayjs';
 
 import { getDashboardSummaryApi } from '#/api/core/exerciseRecord';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 
-import { useHomeRequest } from '../composables/useHomeRequest';
 import BusinessCardSkeleton from './BusinessCardSkeleton.vue';
 import ExerciseTrend from './ExerciseTrend.vue';
 
@@ -104,7 +104,7 @@ async function loadPage() {
   }
 }
 
-const request = useHomeRequest({
+const request = useActiveRequest({
   initialLoading: true,
   onStart: () => {
     observer?.disconnect();

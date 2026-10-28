@@ -13,7 +13,7 @@ export interface QuickNavCandidate {
 
 export interface QuickNavItem {
   color?: string;
-  enabled: number;
+  isEnabled: number;
   icon: string;
   menuId: string;
   path: string;
@@ -23,7 +23,7 @@ export interface QuickNavItem {
 }
 
 export interface QuickNavSaveItem {
-  enabled: number;
+  isEnabled: number;
   menuId: string;
   sortOrder: number;
 }

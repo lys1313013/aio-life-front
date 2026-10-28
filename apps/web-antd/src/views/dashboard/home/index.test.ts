@@ -68,6 +68,9 @@ vi.mock('./analytics-time-tracker.vue', () => ({
 vi.mock('./components/SummaryHomeCard.vue', () => ({
   default: { template: '<div />' },
 }));
+vi.mock('#/components/finance-calendar/FinanceCalendarCard.vue', () => ({
+  default: { template: '<div />' },
+}));
 vi.mock('./components/BusinessCards.vue', () => ({
   default: { template: '<div />' },
 }));

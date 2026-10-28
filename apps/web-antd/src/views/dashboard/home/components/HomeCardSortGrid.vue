@@ -18,7 +18,7 @@ const dragging = ref(false);
 const disabled = computed(() => store.loading || !!store.busy);
 const signature = () =>
   JSON.stringify(
-    store.items.map((item) => [item.cardKey, item.enabled, item.sortOrder]),
+    store.items.map((item) => [item.cardKey, item.isEnabled, item.sortOrder]),
   );
 let startedWith = '';
 let suppressUntil = 0;

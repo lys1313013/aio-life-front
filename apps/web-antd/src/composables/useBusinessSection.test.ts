@@ -5,9 +5,8 @@ import { defineComponent, h, KeepAlive, reactive, ref } from 'vue';
 
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
+import { useBusinessSection } from '#/composables/useBusinessSection';
 import { HOME_SECTION_CHANGED } from '#/utils/home-section-change';
-
-import { useHomeSection } from './useHomeSection';
 
 const mocks = vi.hoisted(() => ({ fetch: vi.fn(), unlock: vi.fn() }));
 const access = reactive({
@@ -78,13 +77,13 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 function fixture(
   kind: HomeSectionKind = 'memo',
-  options?: Parameters<typeof useHomeSection>[1],
+  options?: Parameters<typeof useBusinessSection>[1],
 ) {
-  let card!: ReturnType<typeof useHomeSection>;
+  let card!: ReturnType<typeof useBusinessSection>;
   const visible = ref(true);
   const child = defineComponent({
     setup() {
-      card = useHomeSection(kind, options);
+      card = useBusinessSection(kind, options);
       return () => h('div');
     },
   });

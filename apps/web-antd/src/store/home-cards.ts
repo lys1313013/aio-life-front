@@ -77,12 +77,12 @@ export const useHomeCardsStore = defineStore('home-cards', () => {
     }
   }
   const sections = computed(() =>
-    items.value.filter((item) => item.group === 'section' && item.enabled),
+    items.value.filter((item) => item.group === 'section' && item.isEnabled),
   );
   function enabled(key: string) {
     return (
       ready.value &&
-      items.value.some((item) => item.cardKey === key && item.enabled)
+      items.value.some((item) => item.cardKey === key && item.isEnabled)
     );
   }
   function order(key: string) {

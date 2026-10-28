@@ -18,17 +18,16 @@ import {
 import { useAccessStore, useUserStore } from '@vben/stores';
 
 import { getHomeSection, isFinancialSection } from '#/api/core/home-sections';
+import { useActiveRequest } from '#/composables/useActiveRequest';
 import { useMenuVisualsStore } from '#/store/menu-visuals';
 import { useSecondaryLockStore } from '#/store/secondary-lock';
 import { HOME_SECTION_CHANGED } from '#/utils/home-section-change';
-
-import { findMenuChain } from '../components/business-card-data';
-import { useHomeRequest } from './useHomeRequest';
+import { findMenuChain } from '#/utils/menu-chain';
 
 const sessionPeriods = new Map<string, FinancePeriod>();
 
 /** 摘要卡共享权限、锁、请求竞态、返回时效及前台周期刷新。 */
-export function useHomeSection<K extends HomeSectionKind>(
+export function useBusinessSection<K extends HomeSectionKind>(
   kind: K,
   options?: {
     fetch: () => Promise<HomeSections[K]>;
@@ -139,7 +138,7 @@ export function useHomeSection<K extends HomeSectionKind>(
       return true;
     return interval() > 0 && Date.now() - lastSuccess >= interval();
   };
-  const request = useHomeRequest({
+  const request = useActiveRequest({
     enabled: () => active.value && available.value && !locked.value,
     fetch: () =>
       options

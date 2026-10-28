@@ -17,7 +17,7 @@ const item = (title: string) => ({
   menuId: '9223372036854775807',
   title,
   path: '/task/todo',
-  enabled: 1,
+  isEnabled: 1,
   sortOrder: 0,
 });
 function gate<T>() {
