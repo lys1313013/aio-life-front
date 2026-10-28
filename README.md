@@ -1,223 +1,129 @@
-# AIO Life
+# AIO Life Web
 
-> 记录、统计、分析人生的所有数据
->
-> **AIO Life** 是一款 All-in-One 人生管理系统，致力于全方位记录、统计与分析人生的所有数据。通过主动录入与第三方数据拉取，实现人生痕迹的全面数字化，助您洞察数据，掌控生活节奏。
+AIO Life 的 Web 客户端，用于记录、查看和管理个人生活数据。基于 Vue Vben Admin 5.5.9，使用 Vue 3、TypeScript、Vite、Ant Design Vue、Pinia 和 ECharts，采用 pnpm + Turborepo monorepo。
 
-> [!NOTE]
-> 本项目为开源项目，使用者必须在网站标注作者名称以及指向本项目的链接。如果不想保留署名，必须首先获得授权。不得用于非法用途，请勿商用和二次售卖。
+[站点入口](https://aiolife.top) · [项目总览](https://github.com/lys1313013/aio-life) · [后端](https://github.com/lys1313013/aio-life-server) · [移动端](https://github.com/lys1313013/aio-life-mobile) · [Web 文档](docs/README.md)
 
-> [!NOTE]
-> 在线体验：[aiolife.top](https://aiolife.top)。可见功能由账号角色、菜单配置和二级锁决定。
->
-> 前端：[aio-life-front](https://github.com/lys1313013/aio-life-front)
->
-> 后端：[aio-life-server](https://github.com/lys1313013/aio-life-server)
+项目仍在开发中；可见功能由账号权限、菜单配置和二级锁决定，第三方同步需另行绑定账号或配置服务。
 
-## 项目背景
+## 功能概览
 
-个人比较喜欢看各种数据统计，希望能够通过一个系统量化自己的人生数据。也希望通过数据的支撑，更好地驱动和掌控自己的生活节奏。
+| 领域 | 主要功能 |
+| --- | --- |
+| 首页 | 可配置卡片、今日时迹、每日统计、关注待办、固定闪念、快捷导航与近期记录 |
+| 时间与任务 | 时迹录入和统计、时间分类、待办、长期目标 |
+| 生活记录 | 运动、身体数据、生活足迹、阅读、微信读书、视频观看、活动、笔记、闪念、里程碑、纪念日与荣誉 |
+| 财务与物品 | 收支统计、银行卡、账单导入、设备、衣柜与会员记录 |
+| 连接与工具 | 人际关系图谱、GitHub／LeetCode／CSDN 看板、密码库、MCP 工具调试 |
+| 个人与系统 | 账号与第三方绑定、消息通知、用户与菜单、字典、对象存储、定时任务、操作／访问日志及反馈管理 |
 
-## 使用效果
-
-- 用上了这个系统之后，因为在首页设置了四个每日卡片，除了一些意外的情况，基本上每天都可以完成卡片上的事项（比如坚持运动，Leetcode 每日打卡，Github持续提交等）。
-
-- 因为会记录每一分钟时间的花费，也会尽可能的避免浪费时间和频繁切换任务（切换任务会导致多次记录，因为懒得多次记录，就尽可能一次性完成任务）。
-
-## 功能
-
-### 主页
-
-动态化、可配置的数据看板，五张每日卡片由后端下发，支持以下类型：
-
-- **今日阅读**：微信读书当日阅读时长与累计统计（需连接微信读书）
-- **今日运动**：当日运动记录汇总
-- **GitHub**：调用 GitHub 接口查询提交情况（需配置 Github账号）
-- **LeetCode**：每日一题完成情况，点击跳转到对应题目（需配置 leetcode账号）
-- **扇贝单词**：调用扇贝单词接口查询打卡状态(需配置扇贝账号)
-
-此外主页还包含：时迹统计面板、关注的待办、固定闪念、快捷导航、目标、纪念日、阅读、会员、观影、运动汇总、GitHub 最近提交和微信读书最近阅读。时迹／运动通过明确点击入口录入，长按卡片用于排序；概览点击与内容卡片顶部空白点击刷新当前卡片。
-
-共同需求维护在根项目 [首页功能说明](../docs/首页功能说明.md) 和 [今日时迹卡片设计](../docs/今日时迹卡片设计.md)，Web / Mobile 差异见 [首页核查清单](../docs/mobile-migration/home-card-audit.md)。单独克隆本仓库时可查阅 [根项目文档目录](https://github.com/lys1313013/aio-life/tree/main/docs)。
-
-### 任务中心
-
-- **待办**：跟踪待办事项，支持优先级、关注、完成时间
-- **目标管理**：长期目标的制定与跟踪
-
-### 时间管理
-
-- **时迹**：精确记录每一分钟的时间花费，任务完成后即时录入；提供列表 / 卡片两种视图
-- **看板**：时间投入的可视化统计
-- **我的分类**：个人时间分类管理
-- **分类管理**（管理员）：全局时间分类维护
-
-### 生活记录
-
-- **运动**：日常运动记录与分类配置，含每日统计图表
-- **视频观看**：通过浏览器插件在 B 站观看时自动同步指定视频进度
-- **阅读**：记录书籍阅读进度与笔记
-- **闪念**：随时记录灵感与想法，支持置顶展示在主页
-- **笔记**：随手记录文章与备忘
-- **活动**：记录演出、展览等线下事件
-- **里程碑**：记录生活与成长的关键节点
-- **纪念日**：记录重要日期
-- **荣誉中心**：记录获得的成就与荣誉
-
-### 财务中心
-
-- **概览**：收入、支出与结余看板
-- **收入**：记录每一笔收入
-- **支出**：记录每一笔支出，移动端适配
-- **账单导入**：支持支付宝和微信账单导入，手机支付宝账单可自动匹配分类
-
-### 物品中心
-
-- **设备墙**：记录电子设备等
-- **衣柜**：记录衣服、裤子和鞋子等，支持购买日期等属性
-
-### 关系图谱
-
-以可视化图谱展示人际关系网络，基于 Neo4j 图数据库，支持节点交互浏览与深度关系发掘。
-
-### 编程看板
-
-- **GitHub 看板**：提交记录与统计
-- **LeetCode 看板**：刷题记录与统计
-- **CSDN 看板**：博客数据统计
-
-### 密码管理
-
-集中管理各类账号密码，支持密码安全存储与编辑。
-
-### MCP 工具
-
-支持在界面中管理与模拟调用各种 MCP 工具。
-
-### 个人中心
-
-- **密码修改**：修改登录密码
-- **头像修改**：上传与更换头像
-- **第三方账号绑定**：GitHub、LeetCode、扇贝等
-
-### 消息中心
-
-- **邮件通知**：通过邮件接收系统消息
-- **站内通知**：站内信通知
-
-### 系统管理
-
-- **用户中心**：查看与管理系统用户
-- **权限菜单**：管理系统菜单与权限
-- **用户字典管理**：管理用户自定义的字典数据（如支出分类、支付方式等）
-
-### 配置管理
-
-- **字典类型**：维护系统全局字典类型
-- **字典数据**：维护系统全局字典数据
-
-## 截图展示
-### 首页
-
-![img.png](images/img.png)
-
-### 时迹
-
-![img_1.png](images/img_1.png)
-![img_2.png](images/img_2.png)
-
-### 设备墙
-
-![img_5.png](images/img_5.png)
-
-### GitHub
-
-![img_3.png](images/img_3.png)
-
-### LeetCode
-
-![img_4.png](images/img_4.png)
-
-### 视频观看
-
-![img_6.png](images/img_6.png)
-
-### 财务概览
-
-![img_9.png](images/img_9.png)
-
-### 收入
-
-![img_8.png](images/img_8.png)
-
-### 支出
-
-![img_7.png](images/img_7.png)
-
-## 技术栈
-
-- **Frontend**: [Vue 3](https://vuejs.org/), [Vite](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)
-- **UI Framework**: [Ant Design Vue](https://antdv.com/), [Tailwind CSS](https://tailwindcss.com/)
-- **Charts**: [ECharts](https://echarts.apache.org/)
-
-## 文档入口
-
-- [Web 文档目录](docs/README.md)：组件、图片鉴权、密码库与图标维护。
-- [开发规范](AGENTS.md)：请求客户端、类型、附件、路由与 UI 约定。
-- [跨端需求与验收目录](https://github.com/lys1313013/aio-life/blob/main/docs/README.md)。
+功能范围和跨端规则集中维护在[主项目文档目录](https://github.com/lys1313013/aio-life/blob/main/docs/README.md)。首页交互见[首页功能说明](https://github.com/lys1313013/aio-life/blob/main/docs/首页功能说明.md)，不要用截图或旧验收记录判断当前功能是否完成。
 
 ## 快速开始
 
-### 环境准备
+### 环境
 
-- Node.js：与 CI 一致可使用 `22.23.4`；Vite 7 要求至少 `20.19` 或 `22.12`。根 `package.json` 的 `>=20.12.0` 不能代替构建工具要求。
-- pnpm：使用 `package.json#packageManager` 固定的 `10.22.0`，避免其他主版本改写 lockfile。
+- Node.js：使用与 [CI](.github/workflows/docker.yml) 一致的 `22.23.4`。根 `package.json` 的 `engines` 下限不能替代 Vite 等工具的实际要求。
+- pnpm：使用 `package.json#packageManager` 固定的 `10.22.0`。
+- 后端：先按[后端 README](https://github.com/lys1313013/aio-life-server/blob/main/README.md)准备数据库、Redis 和环境变量，启动业务 API。Web 不会自动启动后端，也不提供可替代真实业务服务的 mock 应用。
 
-### 安装依赖
+首次获取代码后，在本仓库根目录安装依赖并启动：
 
 ```bash
-# 启用 corepack (如果尚未启用)
+git clone https://github.com/lys1313013/aio-life-front.git
+cd aio-life-front
 corepack enable
-
-# 安装依赖
 pnpm install --frozen-lockfile
-```
-
-### 启动项目
-
-```bash
-# 直接启动 web-antd
 pnpm run dev:antd
 ```
 
-API 地址由 `apps/web-antd/.env*` 中的 `VITE_GLOB_API_URL` 配置；开发环境默认为同源 `/api`，由 Vite 代理到 `http://localhost:45678/api`，生产地址按目标部署环境设置。`VITE_*` 会进入客户端包，不放入服务端密钥。开发服务地址以启动日志为准。
+开发页默认使用 `http://localhost:5666`，实际地址以启动日志为准。请求 `/api` 由 [Vite 配置](apps/web-antd/vite.config.mts)代理到 `http://localhost:45678/api`；需要连接其他后端时调整该代理目标。
 
-### 构建项目
+### 配置
+
+环境文件位于 `apps/web-antd/`，个人覆盖配置写入 `.env.development.local` 或 `.env.production.local`，修改后重启开发服务或重新构建。
+
+| 配置 | 用途 |
+| --- | --- |
+| `VITE_PORT` | 开发端口，当前为 `5666` |
+| `VITE_GLOB_API_URL` | API 基址，开发和生产默认均为 `/api` |
+| `VITE_BASE` | 应用部署路径，默认为 `/` |
+| `VITE_APP_TITLE` / `VITE_APP_NAMESPACE` | 页面标题和本地缓存命名空间 |
+| `VITE_ROUTER_HISTORY` | 路由模式，生产配置为 `hash` |
+| `VITE_PWA` | PWA 开关，生产配置默认关闭 |
+
+`VITE_*` 配置会暴露给浏览器，不能放入数据库密码、服务端密钥或访问 Token；`VITE_APP_STORE_SECURE_KEY` 也不是服务端保密凭据。保持同源 `/api` 时，由开发代理或部署反向代理连接业务服务。
+
+## 开发与验证
+
+以下命令均在本仓库根目录执行，按改动范围选择：
+
+| 命令 | 用途 |
+| --- | --- |
+| `pnpm run dev:antd` | 启动主应用 |
+| `pnpm run build:antd` | 构建主应用，产物在 `apps/web-antd/dist/` |
+| `pnpm --filter @vben/web-antd typecheck` | 检查应用类型 |
+| `pnpm run check:type` | 检查整个工作区类型 |
+| `pnpm run test:unit` | 执行 Vitest 单元测试并退出 |
+| `pnpm run test:critical` | CI 使用的关键路径回归 |
+| `pnpm run lint` | 代码与样式检查 |
+| `pnpm run check` | 循环依赖、依赖、类型及拼写检查 |
+| `pnpm run icons:check` | 检查本地图标生成资源是否同步 |
+
+运行单个测试：
 
 ```bash
-# 仅构建 web-antd
+pnpm exec vitest run apps/web-antd/src/api/payload.test.ts --dom
+```
+
+`pnpm run dev` 提供交互式应用选择，`pnpm run build` 构建工作区任务。当前业务应用是 `apps/web-antd`；`package.json` 中部分其他 UI 变体和示例命令来自上游模板，不是本项目的启动入口。移动端已迁入独立仓库，不参与此工作区安装与检查。
+
+开发前阅读 [AGENTS.md](AGENTS.md)，其中维护请求响应、字符串 ID、附件鉴权、路由权限、弹窗和响应式布局约定。UI 改动需检查手机、平板、桌面及深浅主题；纯文档修改只检查差异和引用。跨端请求 DTO 变更及统一推送流程见[API 参数规范](https://github.com/lys1313013/aio-life/blob/main/docs/API参数规范.md)。
+
+## 构建与部署
+
+```bash
 pnpm run build:antd
 ```
 
-### 检查与测试
+将 `apps/web-antd/dist/` 部署到静态服务器，并配置 `/api` 反向代理。Vite 的开发代理不随构建产物部署；仅上传静态文件不会启动业务 API。
 
-```bash
-pnpm run check:type    # monorepo 类型检查
-pnpm run test:unit     # 单元测试（执行后退出）
-pnpm run test:critical # CI 关键路径回归
-pnpm run lint          # 代码与样式检查
+现行镜像流水线见 [.github/workflows/docker.yml](.github/workflows/docker.yml)：先检查应用类型、运行关键测试并构建，再通过 [Dockerfile.runtime](scripts/deploy/Dockerfile.runtime)打包静态产物。镜像监听 `8080`，[Nginx 配置](scripts/deploy/nginx.conf)默认将 `/api` 转发到 `backend:45678`，部署时需提供对应网络和服务名。旧 `build:docker` 入口仍引用上游 `playground/dist`，不适用于当前应用。
+
+构建或镜像推送成功只说明产物已生成；目标环境的 API、登录和业务流程仍需部署后验证。
+
+## 目录与文档
+
+```text
+aio-life-front/
+├── apps/web-antd/       # Web 主应用，# 别名指向 src/
+│   └── src/
+│       ├── api/         # 请求客户端、业务 API 与契约
+│       ├── components/  # 应用公共组件
+│       ├── router/      # 路由与权限
+│       ├── store/       # 应用状态
+│       └── views/       # 业务页面
+├── packages/            # 共享框架、组件、图标、样式与工具
+├── internal/            # Vite、TypeScript 与 lint 配置
+├── scripts/             # 工作区命令、图标生成与部署文件
+└── docs/                # Web 实现说明与历史变更
 ```
 
-`pnpm run dev` 提供交互式应用选择；`pnpm run build` 构建工作区任务。业务与 UI 改动按规范执行相关验证，纯文档只检查差异和引用。
+- [Web 文档目录](docs/README.md)：图片鉴权、密码库、首页设计和工作区工具。
+- [应用弹窗](apps/web-antd/src/components/app-modal/README.md)：公共表单与弹窗用法。
+- [图标本地化](scripts/icons/README.md)、[图标包](packages/icons/README.md)：资源生成、校验与跨端同步。
+- [跨端文档目录](https://github.com/lys1313013/aio-life/blob/main/docs/README.md)：业务需求、API 契约、部署和历史验收。
 
-## 开源与贡献
+## 界面预览
 
-欢迎参与贡献
+以下为仓库保留的界面截图，实际布局以当前代码为准。
 
-### 贡献流程
+| 首页 | 时迹 | 设备墙 |
+| --- | --- | --- |
+| ![首页](images/img.png) | ![时迹](images/img_1.png) | ![设备墙](images/img_5.png) |
 
-1. **Fork 仓库** ➜ 点击 GitHub 右上角 `Fork` 按钮。
-2. **创建分支** ➜ 推荐使用有意义的分支名，如 `feature/data-scraper-optimization`。
-3. **提交代码** ➜ 确保代码可读性高，符合规范。
-4. **提交 Pull Request（PR）** ➜ 详细描述您的更改内容，并关联相关 issue（如有）。
-5. **等待审核** ➜ 维护者会进行代码审核并合并。
+## 使用与贡献
+
+使用者必须在网站标注作者名称以及指向本项目的链接。如果不想保留署名，必须首先获得授权。不得用于非法用途，请勿商用和二次售卖。
+
+提交贡献前阅读开发规范，在 PR 中说明解决的问题、变更范围、实际验证及未验证项。各客户端和服务是独立仓库，请将改动提交到所属仓库，不提交凭据或本地运行产物。
