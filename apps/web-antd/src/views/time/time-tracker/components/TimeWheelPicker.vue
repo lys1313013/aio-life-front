@@ -22,7 +22,6 @@ const props = withDefaults(
   { min: 0, max: 1439, value: undefined },
 );
 const emit = defineEmits<{
-  preview: [value: Dayjs | undefined];
   'update:value': [value: Dayjs];
 }>();
 const open = ref(false);
@@ -37,7 +36,6 @@ const rowHeight = 32;
 const available = computed(() => props.min <= props.max && !props.disabled);
 const nowMinute = ref(0);
 let resizeObserver: ResizeObserver | undefined;
-let pendingValue: number | undefined;
 let scrollTimer: ReturnType<typeof setTimeout> | undefined;
 let clockTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -59,46 +57,45 @@ function alignColumns() {
   if (minuteColumn.value)
     minuteColumn.value.scrollTop = selected.value * rowHeight;
 }
-function preview(value: number) {
-  if (!open.value || !available.value) return;
-  emit(
-    'preview',
-    (props.value || dayjs())
-      .startOf('day')
-      .add(clampTimeSelection(value, props.min, props.max), 'minute'),
-  );
+function updateSelection(value: number) {
+  const next = clampTimeSelection(value, props.min, props.max);
+  selected.value = next;
+  const time = (props.value || dayjs()).startOf('day').add(next, 'minute');
+  inputText.value = time.format('HH:mm');
+  emit('update:value', time);
 }
 function select(value: number) {
   clearTimeout(scrollTimer);
-  pendingValue = undefined;
   if (!available.value) return;
-  selected.value = clampTimeSelection(value, props.min, props.max);
-  preview(selected.value);
+  updateSelection(value);
   alignColumns();
 }
 function selectHour(hour: number) {
   if (!hourDisabled(hour)) select(hour * 60 + (selected.value % 60));
 }
 function onScroll(field: 'hour' | 'minute', event: Event) {
-  if (!open.value) return;
+  if (!open.value || !available.value) return;
   const column = event.target as HTMLElement;
   const expected =
     (field === 'hour' ? Math.floor(selected.value / 60) : selected.value) *
     rowHeight;
-  if (Math.abs(column.scrollTop - expected) < 1) {
-    if (pendingValue !== undefined) {
-      clearTimeout(scrollTimer);
-      pendingValue = undefined;
-      preview(selected.value);
-    }
-    return;
-  }
+  // 另一列的联动定位和父表单回写不参与当前列的吸附计时。
+  if (Math.abs(column.scrollTop - expected) < 1) return;
   clearTimeout(scrollTimer);
   const index = Math.round(column.scrollTop / rowHeight);
-  pendingValue = field === 'hour' ? index * 60 + (selected.value % 60) : index;
-  preview(pendingValue);
+  const value = clampTimeSelection(
+    field === 'hour' ? index * 60 + (selected.value % 60) : index,
+    props.min,
+    props.max,
+  );
+  if (value !== selected.value) updateSelection(value);
+  if (field === 'minute' && hourColumn.value) {
+    hourColumn.value.scrollTop = Math.floor(selected.value / 60) * rowHeight;
+  } else if (field === 'hour' && minuteColumn.value) {
+    minuteColumn.value.scrollTop = selected.value * rowHeight;
+  }
   scrollTimer = setTimeout(() => {
-    if (open.value && pendingValue !== undefined) select(pendingValue);
+    if (open.value) alignColumns();
   }, 100);
 }
 function onKey(field: 'hour' | 'minute', event: KeyboardEvent) {
@@ -109,46 +106,46 @@ function onKey(field: 'hour' | 'minute', event: KeyboardEvent) {
       (event.key === 'ArrowUp' ? -1 : 1) * (field === 'hour' ? 60 : 1),
   );
 }
-function commit(value: number) {
+function selectAndClose(value: number) {
   if (isDisabled(value)) return;
-  emit(
-    'update:value',
-    (props.value || dayjs()).startOf('day').add(value, 'minute'),
-  );
+  select(value);
   open.value = false;
-}
-function confirm() {
-  if (pendingValue !== undefined) select(pendingValue);
-  commit(selected.value);
 }
 function changeInput(event: Event) {
   const input = event.target as HTMLInputElement;
   const match = /^(\d{1,2}):(\d{2})$/.exec(input.value);
   if (match && Number(match[1]) < 24 && Number(match[2]) < 60) {
     const value = Number(match[1]) * 60 + Number(match[2]);
-    if (!isDisabled(value)) commit(value);
+    if (!isDisabled(value)) selectAndClose(value);
   }
-  input.value = props.value?.format('HH:mm') || '';
+  input.value = inputText.value;
 }
 function useNow() {
   updateClock();
-  commit(nowMinute.value);
+  selectAndClose(nowMinute.value);
 }
 watch(
   () => props.value,
   (value) => {
     inputText.value = value?.format('HH:mm') || '';
+    if (!open.value) return;
+    const next = clampTimeSelection(
+      value ? value.hour() * 60 + value.minute() : props.min,
+      props.min,
+      props.max,
+    );
+    // 选择即写入父表单；相同值的回写不能打断正在进行的滚动。
+    if (next === selected.value) return;
+    clearTimeout(scrollTimer);
+    selected.value = next;
+    alignColumns();
   },
   { immediate: true },
 );
 watch(open, async (visible) => {
   clearTimeout(scrollTimer);
   clearInterval(clockTimer);
-  pendingValue = undefined;
-  if (!visible) {
-    emit('preview', undefined);
-    return;
-  }
+  if (!visible) return;
   updateClock();
   clockTimer = setInterval(updateClock, 1000);
   selected.value = clampTimeSelection(
@@ -204,24 +201,6 @@ onBeforeUnmount(() => {
         data-enter-submit="ignore"
         @keydown.esc="open = false"
       >
-        <div class="time-wheel-toolbar">
-          <button type="button" @click="open = false">取消</button>
-          <button
-            v-if="showNow"
-            type="button"
-            :disabled="isDisabled(nowMinute)"
-            @click="useNow"
-          >
-            此刻
-          </button>
-          <button
-            type="button"
-            :disabled="isDisabled(selected)"
-            @click="confirm"
-          >
-            完成
-          </button>
-        </div>
         <div class="time-wheel-columns">
           <div
             ref="hourColumn"
@@ -269,6 +248,16 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+        <div v-if="showNow" class="time-wheel-toolbar">
+          <button
+            type="button"
+            :aria-label="`${label}设为此刻`"
+            :disabled="isDisabled(nowMinute)"
+            @click="useNow"
+          >
+            此刻
+          </button>
+        </div>
       </div>
     </template>
     <input
@@ -294,7 +283,7 @@ onBeforeUnmount(() => {
 
 .time-wheel-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .time-wheel-toolbar button {
@@ -306,16 +295,6 @@ onBeforeUnmount(() => {
 .time-wheel-columns {
   position: relative;
   display: flex;
-}
-
-.time-wheel-columns::before {
-  position: absolute;
-  inset: calc(var(--time-wheel-row-height) * 3) 0;
-  height: var(--time-wheel-row-height);
-  pointer-events: none;
-  content: '';
-  background: hsl(var(--primary) / 10%);
-  border-radius: 6px;
 }
 
 .time-wheel-column {

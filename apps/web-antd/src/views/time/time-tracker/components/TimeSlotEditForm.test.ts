@@ -1,6 +1,6 @@
 import type { TimeSlot } from '../types';
 
-import { shallowMount } from '@vue/test-utils';
+import { flushPromises, shallowMount } from '@vue/test-utils';
 
 import { Button, Form } from 'ant-design-vue';
 import dayjs from 'dayjs';
@@ -38,6 +38,12 @@ function mountForm(
     global: {
       renderStubDefaultSlot: true,
       stubs: {
+        AForm: {
+          props: ['model', 'rules', 'disabled'],
+          emits: ['finish'],
+          methods: { validate: () => Promise.resolve() },
+          template: '<form><slot /></form>',
+        },
         AInput: { inheritAttrs: false, template: '<div />' },
         AInputNumber: {
           inheritAttrs: false,
@@ -83,33 +89,34 @@ describe('时迹编辑器的闭区间输入', () => {
     wrapper.unmount();
   });
 
-  it('修改结束时间后按闭区间实时显示时长', async () => {
+  it('选择立即写入表单并按闭区间显示时长，保存时提交当前起止分钟', async () => {
     const wrapper = mountForm(540, 540);
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
     const [start, end] = wrapper.findAllComponents(TimeWheelPicker);
-    end!.vm.$emit('preview', dayjs('2026-09-12T10:00:00'));
+    end!.vm.$emit('update:value', dayjs('2026-09-12T10:00:00'));
     await wrapper.vm.$nextTick();
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1小时1分');
-    expect(getEndTimeValue(wrapper)).toBe('09:00');
-    end!.vm.$emit('preview', undefined);
+    expect(getEndTimeValue(wrapper)).toBe('10:00');
+    start!.vm.$emit('update:value', dayjs('2026-09-12T09:30:00'));
     await wrapper.vm.$nextTick();
-    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
-    start!.vm.$emit('preview', dayjs('2026-09-12T00:00:00'));
-    await wrapper.vm.$nextTick();
-    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('9小时1分');
-    start!.vm.$emit('preview', undefined);
-    await wrapper.vm.$nextTick();
-    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
-    wrapper
-      .findAllComponents(TimeWheelPicker)[1]!
-      .vm.$emit('update:value', dayjs('2026-09-12T09:29:00'));
+    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('31分');
+    end!.vm.$emit('update:value', dayjs('2026-09-12T09:59:00'));
     await wrapper.vm.$nextTick();
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('30分');
-    wrapper
-      .findAllComponents(TimeWheelPicker)[1]!
-      .vm.$emit('update:value', dayjs('2026-09-12T10:00:00'));
-    await wrapper.vm.$nextTick();
-    expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1小时1分');
+    expect(getEndTimeValue(wrapper)).toBe('09:59');
+    expect(wrapper.emitted('save')).toBeUndefined();
+    wrapper.findComponent(Form).vm.$emit('finish');
+    await flushPromises();
+    expect(wrapper.emitted('save')).toEqual([
+      [
+        expect.objectContaining({
+          id: 'current',
+          categoryId: 'read',
+          startTime: 570,
+          endTime: 599,
+        }),
+      ],
+    ]);
     wrapper.unmount();
   });
 
