@@ -2513,6 +2513,7 @@ const queryFields: Record<string, string[]> = {
   '/anniversaryRecords': ['isPinned'],
   '/anniversaryRecords/{id}': [],
   '/b-video/query': ['page', 'pageSize', 'status'],
+  '/b-video/by-bvid': ['bvid'],
   '/b-video/{id}': [],
   '/b-video/covers': ['ids'],
   '/b-video/getStatusCount': [],
