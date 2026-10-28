@@ -26,6 +26,6 @@ const { blobUrl, loading, error } = useAuthImageUrl(() => record.value?.fileId);
 
 ## 独立移动端
 
-旧的 `apps/mobile-uniapp` 路径已不适用。现有客户端位于独立 `aio-life-mobile` 仓库，通过 `src/services/attachments.ts` 的 `authFileUrl(id)` 使用 `uni.downloadFile`，在请求头携带 Bearer，返回临时文件路径；完成后检查账号仍为发起下载的账号，401 清理会话。
+旧的 `apps/mobile-uniapp` 已从 Web 工作区移除。现有客户端位于独立 `aio-life-mobile` 仓库，通过 `src/services/attachments.ts` 的 `authFileUrl(id)` 使用 `uni.downloadFile`，在请求头携带 Bearer，返回临时文件路径；完成后检查账号仍为发起下载的账号，401 清理会话。
 
 移动端规则见[开发规范](../../aio-life-mobile/AGENTS.md)和[功能与接口](../../aio-life-mobile/docs/功能与接口.md)；独立克隆 Web 时可查看[移动仓库](https://github.com/lys1313013/aio-life-mobile)。Web Blob 缓存不等于移动端临时文件缓存，不能将浏览器实现直接复制到 App。
