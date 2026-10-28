@@ -1,4 +1,6 @@
-import type { Coordinate, FootprintMapRecord } from './model';
+import type { FootprintMapRecord } from './model';
+
+import type { Coordinate } from '#/api/core/life-footprints';
 
 export interface FootprintMapHandle {
   setRecords(records: FootprintMapRecord[], selected: null | string): void;

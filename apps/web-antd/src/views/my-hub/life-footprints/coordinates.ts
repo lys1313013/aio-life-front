@@ -1,4 +1,4 @@
-import type { Coordinate } from './model';
+import type { Coordinate } from '#/api/core/life-footprints';
 
 // 仅在地图展示边界转换；API 和历史记录始终使用 GCJ02。
 const A = 6_378_245;

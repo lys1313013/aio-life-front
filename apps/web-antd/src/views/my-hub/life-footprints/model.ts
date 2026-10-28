@@ -1,50 +1,15 @@
-/** 结束日期的特殊值；界面展示为“至今”。 */
-import type { MapTileSource, TencentMapConfig } from './map-config';
+import type {
+  Coordinate,
+  Footprint,
+  FootprintRequest,
+} from '#/api/core/life-footprints';
 
+/** 结束日期的特殊值；界面展示为“至今”。 */
 export const PRESENT_DATE = '9999-12-31';
 
-export interface Coordinate {
-  longitude: number;
-  latitude: number;
-}
-export interface FootprintRequest extends Coordinate {
-  startDate: string;
-  endDate: string;
-  placeName: string;
-  address: null | string;
-  city: null | string;
-  regionCode?: null | string;
-  coordinateSystem: 'GCJ02';
-  providerUid: null | string;
-  note: null | string;
-}
-export interface Footprint extends FootprintRequest {
-  id: string;
-}
 /** 地图展示用编号，不参与请求或持久化。 */
 export interface FootprintMapRecord extends Footprint {
   markerNumber?: number;
-}
-export interface LocationRegion {
-  districtCode: string;
-  townCode?: null | string;
-  townName: string;
-}
-export interface LocationResult extends Coordinate {
-  region?: LocationRegion | null;
-  placeName: string;
-  address: string;
-  city: string;
-  coordinateSystem: 'GCJ02';
-  providerUid: null | string;
-  precise: boolean;
-  level: string;
-}
-export interface MapConfig {
-  tiles?: MapTileSource;
-  tencent?: TencentMapConfig;
-  searchEnabled: boolean;
-  coordinateSystem: 'GCJ02';
 }
 export interface Draft extends Omit<
   FootprintRequest,
@@ -73,7 +38,7 @@ export function emptyDraft(): Draft {
     longitude: null,
     coordinateSystem: 'GCJ02',
     providerUid: null,
-    note: null,
+    remark: null,
     confirmed: false,
   };
 }
@@ -95,7 +60,10 @@ export function validDate(value: string): boolean {
 
 export function validateDraft(draft: Draft) {
   const errors: Partial<
-    Record<'endDate' | 'note' | 'placeName' | 'position' | 'startDate', string>
+    Record<
+      'endDate' | 'placeName' | 'position' | 'remark' | 'startDate',
+      string
+    >
   > = {};
   const startDate = draft.startDate.trim();
   const endDate = draft.endDate.trim();
@@ -112,7 +80,7 @@ export function validateDraft(draft: Draft) {
     errors.placeName = '地点名称不能超过100字';
   if (!validCoordinate(draft)) errors.position = '请选择地图位置';
   else if (!draft.confirmed) errors.position = '请确认所选位置';
-  if ((draft.note?.length ?? 0) > 5000) errors.note = '备注不能超过5000字';
+  if ((draft.remark?.length ?? 0) > 5000) errors.remark = '备注不能超过5000字';
   return errors;
 }
 
@@ -135,7 +103,7 @@ export function draftPayload(draft: Draft): FootprintRequest {
     latitude: draft.latitude!,
     coordinateSystem: 'GCJ02',
     providerUid: draft.providerUid || null,
-    note: draft.note?.trim() || null,
+    remark: draft.remark?.trim() || null,
   };
 }
 

@@ -77,14 +77,14 @@ describe('生活足迹契约', () => {
       ...draft(),
       endDate: PRESENT_DATE,
       address: '',
-      note: '',
+      remark: '',
       id: '9223372036854775807',
     });
     expect(payload).toMatchObject({
       placeName: '住所',
       endDate: PRESENT_DATE,
       address: null,
-      note: null,
+      remark: null,
       coordinateSystem: 'GCJ02',
     });
     expect(payload).not.toHaveProperty('id');

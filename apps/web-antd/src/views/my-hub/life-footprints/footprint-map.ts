@@ -1,5 +1,10 @@
-import type { MapTileSource } from './map-config';
-import type { Coordinate, Footprint, LocationGroup } from './model';
+import type { LocationGroup } from './model';
+
+import type {
+  Coordinate,
+  Footprint,
+  MapTileSource,
+} from '#/api/core/life-footprints';
 
 import * as L from 'leaflet';
 

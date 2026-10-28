@@ -4,7 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { DEFAULT_MAP_SOURCE } from '#/views/my-hub/life-footprints/map-config';
+import { DEFAULT_MAP_SOURCE } from '#/constants/footprint-map';
 
 import Editor from './FootprintMapConfigEditor.vue';
 

@@ -1,6 +1,7 @@
-import type { TencentMapConfig } from './map-config';
 import type { FootprintMapHandle } from './map-handle';
-import type { Coordinate, FootprintMapRecord, LocationGroup } from './model';
+import type { FootprintMapRecord, LocationGroup } from './model';
+
+import type { Coordinate, TencentMapConfig } from '#/api/core/life-footprints';
 
 import { groupLocations } from './model';
 

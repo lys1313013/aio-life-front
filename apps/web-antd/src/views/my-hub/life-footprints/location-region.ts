@@ -1,4 +1,4 @@
-import type { LocationRegion } from './model';
+import type { LocationRegion } from '#/api/core/life-footprints';
 
 import { getRegionChildren, getRegionPath } from '#/api/core/system-region';
 

@@ -1,4 +1,4 @@
-import type { Footprint } from './model';
+import type { Footprint } from '#/api/core/life-footprints';
 
 import { describe, expect, it } from 'vitest';
 
@@ -18,7 +18,7 @@ const record = (
   longitude: 116.3,
   latitude: 40.07,
   coordinateSystem: 'GCJ02',
-  note: '居住',
+  remark: '居住',
 });
 
 describe('生活足迹时间段批量编辑', () => {
@@ -44,7 +44,7 @@ describe('生活足迹时间段批量编辑', () => {
       { startDate: '2020-01-01', endDate: '2026-01-01' },
       [
         { key: value.id, value },
-        { key: 'draft-1', value: { ...value, id: null, note: '' } },
+        { key: 'draft-1', value: { ...value, id: null, remark: '' } },
       ],
       ['9223372036854775806'],
     );
@@ -60,7 +60,7 @@ describe('生活足迹时间段批量编辑', () => {
     expect(request.items[1]).not.toHaveProperty('id');
     expect(request.items[1]).not.toHaveProperty('confirmed');
     expect(request.items[1]).not.toHaveProperty('key');
-    expect(request.items[1]?.note).toBeNull();
+    expect(request.items[1]?.remark).toBeNull();
     expect(request.deletedIds).toEqual(['9223372036854775806']);
   });
 

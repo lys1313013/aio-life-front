@@ -1,5 +1,6 @@
-import type { Draft, Footprint } from './model';
+import type { Draft } from './model';
 
+import type { Footprint } from '#/api/core/life-footprints';
 import type { LifeFootprintBatchSaveReq } from '#/api/payload';
 
 import { draftPayload, sortFootprints } from './model';

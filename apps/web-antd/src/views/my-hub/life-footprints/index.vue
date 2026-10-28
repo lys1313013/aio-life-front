@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import type {
-  Coordinate,
-  Draft,
-  Footprint,
-  FootprintMapRecord,
-  LocationGroup,
-  LocationResult,
-  MapConfig,
-} from './model';
+import type { Draft, FootprintMapRecord, LocationGroup } from './model';
 import type { DetailDraft, FootprintPeriod } from './periods';
 
+import type {
+  Coordinate,
+  Footprint,
+  LocationResult,
+  MapConfig,
+} from '#/api/core/life-footprints';
 import type { SystemRegion } from '#/api/core/system-region';
 
 import {
@@ -571,8 +569,8 @@ watch(
             @click="choose(record)"
           >
             <span>{{ record.placeName }}</span>
-            <span v-if="record.note" class="footprint-time detail-note">{{
-              record.note
+            <span v-if="record.remark" class="footprint-time detail-remark">{{
+              record.remark
             }}</span>
           </button>
         </div>
@@ -727,7 +725,7 @@ watch(
                 ><span class="detail-copy"
                   >{{ item.value.placeName || '新地点'
                   }}<small>{{
-                    item.value.note ||
+                    item.value.remark ||
                     (item.value.confirmed ? '已定位' : '待确认位置')
                   }}</small></span
                 >
@@ -829,7 +827,7 @@ watch(
                       details.findIndex((item) => item.key === record.id) + 1
                     }}
                     · {{ record.placeName }}</span
-                  ><span class="footprint-time">{{ record.note }}</span>
+                  ><span class="footprint-time">{{ record.remark }}</span>
                 </button>
               </div>
             </div>
@@ -926,10 +924,10 @@ watch(
               </label>
               <label class="editor-field"
                 >备注<Input.TextArea
-                  :value="draft.note ?? undefined"
+                  :value="draft.remark ?? undefined"
                   @update:value="
                     (value) => {
-                      draft.note = value == null ? null : String(value);
+                      draft.remark = value == null ? null : String(value);
                     }
                   "
                   aria-label="备注"
@@ -937,10 +935,10 @@ watch(
                   :rows="2"
                   :disabled="saving"
                 /><span
-                  v-if="fieldErrors.note"
+                  v-if="fieldErrors.remark"
                   class="field-error"
                   role="alert"
-                  >{{ fieldErrors.note }}</span
+                  >{{ fieldErrors.remark }}</span
                 ></label
               >
             </div>
@@ -1112,7 +1110,7 @@ watch(
   background: hsl(var(--accent));
 }
 
-.detail-note {
+.detail-remark {
   white-space: pre-wrap;
 }
 

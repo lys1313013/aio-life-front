@@ -12,7 +12,7 @@ import {
   Select,
 } from 'ant-design-vue';
 
-import { DEFAULT_MAP_SOURCE } from '#/views/my-hub/life-footprints/map-config';
+import { DEFAULT_MAP_SOURCE } from '#/constants/footprint-map';
 
 const props = defineProps<{ config: SystemConfigVO; saving: boolean }>();
 const emit = defineEmits<{ save: [value: string] }>();
