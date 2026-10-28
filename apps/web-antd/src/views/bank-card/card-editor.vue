@@ -114,8 +114,8 @@ const bankOptions = computed(() =>
     .map((b) => ({
       value: b.name,
       bankId: b.id,
-      label: b.name + (b.enabled ? '' : '（已停用）'),
-      disabled: !b.enabled && b.id !== props.card?.bankId,
+      label: b.name + (b.isEnabled ? '' : '（已停用）'),
+      disabled: !b.isEnabled && b.id !== props.card?.bankId,
     })),
 );
 function changeBankName(value: unknown) {
@@ -134,7 +134,7 @@ const tagOptions = computed(() =>
     value: tag.id,
     label: tag.name,
     disabled:
-      tag.status !== '0' && !props.card?.tags.some((t) => t.id === tag.id),
+      tag.isEnabled !== 1 && !props.card?.tags.some((t) => t.id === tag.id),
   })),
 );
 watch(
@@ -208,7 +208,7 @@ async function submit() {
         const tag = await saveTag({
           name: value.trim(),
           color: null,
-          status: '0',
+          isEnabled: 1,
         });
         emit('tagCreated', tag);
         ids.push(tag.id);
@@ -266,13 +266,13 @@ async function submit() {
         />
         <div class="mt-3 flex items-center justify-center gap-1">
           <Button
-            :disabled="!form.bankId || !bank?.enabled || saving || uploading"
+            :disabled="!form.bankId || !bank?.isEnabled || saving || uploading"
             @click="templateOpen = true"
           >
             选择公共卡面
           </Button>
           <Popover
-            v-if="!form.bankId || !bank?.enabled"
+            v-if="!form.bankId || !bank?.isEnabled"
             :trigger="['hover', 'focus', 'click']"
             :content="
               form.bankId

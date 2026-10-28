@@ -213,7 +213,7 @@ export function mergeCategoriesWithOverrides(
             color:
               override?.color === pubCat.color ? undefined : override.color,
             icon: override?.icon === pubCat.icon ? undefined : override.icon,
-            sort: override?.sort === pubCat.sort ? undefined : override.sort,
+            sortOrder: override?.sortOrder === pubCat.sortOrder ? undefined : override.sortOrder,
           }
         : undefined,
     });
@@ -251,7 +251,7 @@ export function generateOverrideRecord(
     icon: changes.icon ?? publicCategory.icon,
     description: changes.description ?? publicCategory.description,
     isTrackTime: changes.isTrackTime ?? publicCategory.isTrackTime,
-    sort: changes.sort,
+    sortOrder: changes.sortOrder,
     isHidden: false,
   };
 }

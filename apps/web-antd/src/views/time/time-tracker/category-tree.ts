@@ -4,7 +4,7 @@ interface CategoryNode {
   id?: string;
   parentId?: null | string;
   name: string;
-  sort?: number;
+  sortOrder?: number;
 }
 
 export function isRootCategory(category: { parentId?: null | string }) {
@@ -35,7 +35,7 @@ export function categoryMatches(
 export function orderCategoryTree<T extends CategoryNode>(
   categories: T[],
 ): T[] {
-  const sorted = [...categories].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const sorted = [...categories].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   const roots = sorted.filter((category) => isRootCategory(category));
   const result = roots.flatMap((root) => [
     root,

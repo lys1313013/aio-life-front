@@ -314,7 +314,7 @@ async function onDetailDragEnd() {
     await reSortTaskDetail(
       details.value.map((detail, index) => ({
         id: detail.id,
-        sort: index + 1,
+        sortOrder: index + 1,
       })),
     );
   } catch {

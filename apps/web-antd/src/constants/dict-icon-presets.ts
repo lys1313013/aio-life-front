@@ -1,4 +1,4 @@
-import { PRESET_ICONS } from '#/views/my-hub/exercise/category-config/config';
+import { EXERCISE_ICON_PRESETS } from './dict-category';
 
 interface DictIconPreset {
   icon: string;
@@ -78,7 +78,7 @@ const DEFAULT_ICONS: DictIconPreset[] = [
 ];
 
 const DICT_ICON_PRESETS: Record<string, DictIconPreset[]> = {
-  exercise_type: PRESET_ICONS.map(({ icon }) => ({
+  exercise_type: EXERCISE_ICON_PRESETS.map(({ icon }) => ({
     icon,
     label: EXERCISE_ICON_LABELS[icon] ?? icon,
   })),
@@ -94,7 +94,10 @@ const DICT_ICON_PRESETS: Record<string, DictIconPreset[]> = {
     { icon: 'solar:devices-line-duotone', label: '其他' },
     { icon: 'solar:speaker-minimalistic-line-duotone', label: '音箱' },
     { icon: 'solar:camera-line-duotone', label: '相机' },
-    { icon: 'solar:book-bookmark-minimalistic-line-duotone', label: '电子阅读器' },
+    {
+      icon: 'solar:book-bookmark-minimalistic-line-duotone',
+      label: '电子阅读器',
+    },
     { icon: 'solar:gamepad-minimalistic-line-duotone', label: '游戏主机' },
     { icon: 'solar:gameboy-line-duotone', label: '游戏掌机' },
     { icon: 'solar:gamepad-line-duotone', label: '游戏手柄' },

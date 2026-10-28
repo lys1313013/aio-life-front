@@ -130,7 +130,7 @@ const formState = ref<TimeTrackerCategoryEntity>({
   description: '',
   isTrackTime: 0,
   isEnabled: 1,
-  sort: 0,
+  sortOrder: 0,
   timeType: TimeType.REQUIRED,
 });
 
@@ -198,7 +198,7 @@ const fetchCategories = async () => {
         isOverridden: isOverride,
         isHidden: false,
         originalId: item.templateId?.toString() || item.id,
-        sort: item.sort,
+        sortOrder: item.sortOrder,
       } as MergedCategory);
     });
 
@@ -217,7 +217,7 @@ const fetchCategories = async () => {
         isOverridden: false,
         isHidden: true,
         originalId: item.templateId?.toString() || item.id,
-        sort: item.sort,
+        sortOrder: item.sortOrder,
       } as MergedCategory);
     });
 
@@ -265,7 +265,7 @@ const handleEdit = (record: any) => {
     description: record.description,
     isTrackTime: record.isTrackTime ? 1 : 0,
     isEnabled: record.isHidden ? 0 : 1,
-    sort: record.sort,
+    sortOrder: record.sortOrder,
     timeType: record.timeType ?? TimeType.REQUIRED,
   };
   isOverrideMode.value = false;
@@ -285,7 +285,7 @@ const handleOverride = (record: any) => {
     description: record.description,
     isTrackTime: record.isTrackTime ? 1 : 0,
     isEnabled: record.isHidden ? 0 : 1,
-    sort: record.sort,
+    sortOrder: record.sortOrder,
     timeType: record.timeType ?? TimeType.REQUIRED,
   };
   isOverrideMode.value = true;
@@ -435,7 +435,7 @@ const initSortable = () => {
         const sortData = list.map((item, index) => ({
           id: item.realId,
           templateId: item.originalId,
-          sort: index * 10,
+          sortOrder: index * 10,
         }));
 
         try {
@@ -445,7 +445,7 @@ const initSortable = () => {
             const category = mergedCategories.value.find(
               (c) => c.id === item.id,
             );
-            if (category) category.sort = item.sort;
+            if (category) category.sortOrder = item.sortOrder;
           }
         } catch {
           await fetchCategories();

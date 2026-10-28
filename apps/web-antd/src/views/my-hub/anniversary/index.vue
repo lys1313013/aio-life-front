@@ -241,11 +241,11 @@ const sortedAnniversaries = computed(() => {
                     {{ item.targetDate }}
                   </span>
                   <span
-                    v-if="item.note"
+                    v-if="item.remark"
                     class="max-w-[50%] truncate"
-                    :title="item.note"
+                    :title="item.remark"
                   >
-                    {{ item.note }}
+                    {{ item.remark }}
                   </span>
                 </div>
               </div>

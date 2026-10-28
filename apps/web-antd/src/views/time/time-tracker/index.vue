@@ -153,7 +153,7 @@ const loadCategories = async () => {
           isOverridden: isOverride,
           isHidden: item.isEnabled === 0,
           originalId: item.templateId?.toString() || item.id,
-          sort: item.sort,
+          sortOrder: item.sortOrder,
         };
       });
 

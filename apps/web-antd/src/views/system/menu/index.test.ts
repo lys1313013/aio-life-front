@@ -47,15 +47,15 @@ vi.mock('#/router/navigation', () => ({
 }));
 
 const parentId = '90071992547409930';
-function menu(id: string, parent = '0', sort = 0): SysMenuAdminItem {
+function menu(id: string, parent = '0', sortOrder = 0): SysMenuAdminItem {
   return {
     id,
     parentId: parent,
     name: id,
     path: `/${id}`,
-    sort,
-    status: 1,
-    mobileStatus: 1,
+    sortOrder,
+    webIsEnabled: 1,
+    mobileIsEnabled: 1,
   };
 }
 function fixture(): SysMenuAdminItem[] {
@@ -89,8 +89,8 @@ async function mountPage() {
           props: ['dataSource', 'expandedRowKeys'],
           template: `<div>
             <div v-for="record in dataSource" :key="record.id">
-              <slot name="bodyCell" :column="{ key: 'status' }" :record="record" />
-              <slot name="bodyCell" :column="{ key: 'mobileStatus' }" :record="record" />
+              <slot name="bodyCell" :column="{ key: 'webIsEnabled' }" :record="record" />
+              <slot name="bodyCell" :column="{ key: 'mobileIsEnabled' }" :record="record" />
               <slot name="bodyCell" :column="{ key: 'action' }" :record="record" />
             </div>
           </div>`,
@@ -206,11 +206,11 @@ describe('菜单树与明细联动', () => {
   it('启停父节点使用接口返回值局部更新，不丢失子菜单', async () => {
     const wrapper = await mountPage();
     await select(wrapper, parentId);
-    api.updateMenuStatusApi.mockResolvedValue({ ...menu(parentId), status: 0 });
+    api.updateMenuStatusApi.mockResolvedValue({ ...menu(parentId), webIsEnabled: 0 });
     wrapper.findComponent(Switch).vm.$emit('change', false);
     await flushPromises();
     const parent = wrapper.findComponent(Table).props('dataSource')?.[0];
-    expect(parent?.status).toBe(0);
+    expect(parent?.webIsEnabled).toBe(0);
     expect(parent?.children).toHaveLength(2);
     expect(parent?.children?.[0]?.children?.[0]?.id).toBe('grandchild');
     expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(1);
@@ -235,11 +235,11 @@ describe('菜单树与明细联动', () => {
     expect(api.updateMenuStatusApi).not.toHaveBeenCalled();
     expect(switches[1]!.props('loading')).toBe(true);
     expect(switches[0]!.props('loading')).toBe(false);
-    resolve({ ...menu(parentId), mobileStatus: 0 });
+    resolve({ ...menu(parentId), mobileIsEnabled: 0 });
     await flushPromises();
     const parent = wrapper.findComponent(Table).props('dataSource')?.[0];
-    expect(parent.status).toBe(1);
-    expect(parent.mobileStatus).toBe(0);
+    expect(parent.webIsEnabled).toBe(1);
+    expect(parent.mobileIsEnabled).toBe(0);
     expect(parent.children).toHaveLength(2);
     expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(1);
   });
@@ -251,7 +251,7 @@ describe('菜单树与明细联动', () => {
     wrapper.findAllComponents(Switch)[1]!.vm.$emit('change', false);
     await flushPromises();
     expect(
-      wrapper.findComponent(Table).props('dataSource')?.[0]?.mobileStatus,
+      wrapper.findComponent(Table).props('dataSource')?.[0]?.mobileIsEnabled,
     ).toBe(1);
     expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(2);
   });
@@ -276,7 +276,7 @@ describe('菜单树与明细联动', () => {
   it('排序部分失败时等待所有请求结束后恢复服务端数据', async () => {
     api.getMenuAdminTreeApi.mockImplementation(async () => {
       const data = fixture();
-      data[0]!.children![1]!.sort = 8;
+      data[0]!.children![1]!.sortOrder = 8;
       return data;
     });
     let finish: (() => void) | undefined;

@@ -4,7 +4,7 @@ export interface AnniversaryRecordCreateReq {
   title?: null | string;
   targetDate?: null | string;
   type?: null | string;
-  note?: null | string;
+  remark?: null | string;
   color?: null | string;
   icon?: null | string;
 }
@@ -15,7 +15,7 @@ export interface AnniversaryRecordUpdateReq {
   title?: null | string;
   targetDate?: null | string;
   type?: null | string;
-  note?: null | string;
+  remark?: null | string;
   color?: null | string;
   icon?: null | string;
 }
@@ -123,7 +123,7 @@ export interface BankCardReq {
 export interface BankCardTagReq {
   name: string;
   color?: null | string;
-  status: string;
+  isEnabled: number;
 }
 
 export interface BodyProfileSaveReq {
@@ -318,7 +318,7 @@ export interface FeedbackStatusUpdateReq {
 }
 
 export interface FeishuChannelSaveReq {
-  enabled?: boolean | null;
+  isEnabled?: null | number;
   appId?: null | string;
   appSecret?: null | string;
   openId?: null | string;
@@ -367,7 +367,7 @@ export interface HomeCardOrderReq {
 }
 
 export interface HomeCardToggleReq {
-  enabled: boolean;
+  isEnabled: number;
 }
 
 export interface HomePinReq {
@@ -436,7 +436,7 @@ export interface LifeFootprintBatchItemReq {
   latitude: number | string;
   coordinateSystem: string;
   providerUid?: null | string;
-  note?: null | string;
+  remark?: null | string;
   id?: null | string;
 }
 
@@ -456,7 +456,7 @@ export interface LifeFootprintSaveReq {
   latitude: number | string;
   coordinateSystem: string;
   providerUid?: null | string;
-  note?: null | string;
+  remark?: null | string;
 }
 
 export interface LoginReq {
@@ -487,7 +487,7 @@ export interface MembershipCreateReq {
   billingCycle?: null | string;
   monthlyAmount?: null | number | string;
   autoRenew?: null | number;
-  note?: null | string;
+  remark?: null | string;
 }
 
 export interface MembershipProviderReq {
@@ -512,7 +512,7 @@ export interface MembershipReq {
   billingCycle?: null | string;
   monthlyAmount?: null | number | string;
   autoRenew?: null | number;
-  note?: null | string;
+  remark?: null | string;
 }
 
 export interface MemoCreateReq {
@@ -536,17 +536,17 @@ export interface MenuSaveReq {
   redirect?: null | string;
   meta?: null | Record<string, unknown>;
   roles?: null | string;
-  sort?: null | number;
-  status?: null | number;
-  mobileStatus?: null | number;
+  sortOrder?: null | number;
+  webIsEnabled?: null | number;
+  mobileIsEnabled?: null | number;
 }
 
 export interface MenuSortUpdateReq {
-  sort: number;
+  sortOrder: number;
 }
 
 export interface MenuStatusUpdateReq {
-  status: number;
+  isEnabled: number;
 }
 
 export interface MessageCreateReq {
@@ -615,7 +615,7 @@ export interface NotificationPreferenceUpdateReq {
 export interface NotificationPreferenceUpdateReq_Item {
   bizType?: null | string;
   channel?: null | string;
-  enabled?: boolean | null;
+  isEnabled?: null | number;
 }
 
 export interface PasswordVaultCreateReq {
@@ -725,7 +725,7 @@ export interface QuickNavSaveReq {
 export interface QuickNavSaveReq_Item {
   menuId?: null | string;
   sortOrder?: null | number;
-  enabled?: null | number;
+  isEnabled?: null | number;
 }
 
 export interface ReadRecordCreateReq {
@@ -807,7 +807,7 @@ export interface SaveSecondaryLockMenusReq {
 
 export interface ScheduledJobUpdateReq {
   cron: string;
-  enabled: boolean;
+  isEnabled: number;
   revision: number;
 }
 
@@ -827,39 +827,39 @@ export interface SetSecondaryPasswordReq {
 
 export interface SysDictDataCreateReq {
   dictId?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   cssClass?: null | string;
   listClass?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   remark?: null | string;
 }
 
 export interface SysDictDataUpdateReq {
   dictId?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   cssClass?: null | string;
   listClass?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   remark?: null | string;
 }
 
 export interface SysDictTypeCreateReq {
   dictName?: null | string;
   dictType?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   remark?: null | string;
 }
 
 export interface SysDictTypeUpdateReq {
   dictName?: null | string;
   dictType?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   remark?: null | string;
 }
 
@@ -897,7 +897,7 @@ export interface TaskDetailCreateReq {
   taskId: string;
   content: string;
   isCompleted?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   priority?: null | number;
   startTime?: null | string;
   endTime?: null | string;
@@ -905,7 +905,7 @@ export interface TaskDetailCreateReq {
 
 export interface TaskDetailSortReq {
   id: string;
-  sort: number;
+  sortOrder: number;
 }
 
 export interface TaskDetailUpdateReq {
@@ -913,7 +913,7 @@ export interface TaskDetailUpdateReq {
   taskId?: null | string;
   content?: null | string;
   isCompleted?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   priority?: null | number;
   isStarred?: null | number;
   startTime?: null | string;
@@ -986,7 +986,7 @@ export interface TimeTrackerCategoryAdminCreateReq {
   icon?: null | string;
   description?: null | string;
   isTrackTime?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   isEnabled?: null | number;
   timeType?: null | number;
 }
@@ -998,7 +998,7 @@ export interface TimeTrackerCategoryAdminUpdateReq {
   icon?: null | string;
   description?: null | string;
   isTrackTime?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   isEnabled?: null | number;
   timeType?: null | number;
 }
@@ -1010,7 +1010,7 @@ export interface TimeTrackerCategoryCreateReq {
   icon?: null | string;
   description?: null | string;
   isTrackTime?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   isEnabled?: null | number;
   timeType?: null | number;
   templateId?: null | string;
@@ -1019,7 +1019,7 @@ export interface TimeTrackerCategoryCreateReq {
 export interface TimeTrackerCategorySortReq {
   id?: null | string;
   templateId?: null | string;
-  sort: number;
+  sortOrder: number;
 }
 
 export interface TimeTrackerCategoryUpdateReq {
@@ -1030,7 +1030,7 @@ export interface TimeTrackerCategoryUpdateReq {
   icon?: null | string;
   description?: null | string;
   isTrackTime?: null | number;
-  sort?: null | number;
+  sortOrder?: null | number;
   isEnabled?: null | number;
   timeType?: null | number;
   templateId?: null | string;
@@ -1074,28 +1074,28 @@ export interface UserCreateReq {
 
 export interface UserDictDataAdminCreateReq {
   dictType?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   isReadonly?: null | string;
   remark?: null | string;
 }
 
 export interface UserDictDataAdminUpdateReq {
   dictType?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   isReadonly?: null | string;
   remark?: null | string;
 }
@@ -1103,14 +1103,14 @@ export interface UserDictDataAdminUpdateReq {
 export interface UserDictDataCreateReq {
   templateId?: null | string;
   dictType?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   isReadonly?: null | string;
   remark?: null | string;
 }
@@ -1126,14 +1126,14 @@ export interface UserDictDataUpdateReq {
   id: string;
   templateId?: null | string;
   dictType?: null | string;
-  dictSort?: null | number;
+  sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
   isDefault?: null | string;
-  status?: null | string;
+  isEnabled?: null | number;
   isReadonly?: null | string;
   remark?: null | string;
 }
@@ -1156,7 +1156,7 @@ export interface WardrobeCategorySaveReq {
   name?: null | string;
   icon?: null | string;
   parentId?: null | string;
-  sort?: null | number;
+  sortOrder?: null | number;
 }
 
 export interface WardrobeItemSaveReq {
@@ -1169,7 +1169,7 @@ export interface WardrobeItemSaveReq {
   price?: null | number | string;
   fileId?: null | string;
   size?: null | string;
-  memo?: null | string;
+  remark?: null | string;
 }
 
 export interface WechatAuthRequests_Bind {
@@ -1356,7 +1356,7 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     targetDate: null,
     type: null,
-    note: null,
+    remark: null,
     color: null,
     icon: null,
   },
@@ -1366,7 +1366,7 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     targetDate: null,
     type: null,
-    note: null,
+    remark: null,
     color: null,
     icon: null,
   },
@@ -1465,7 +1465,7 @@ const fields: Record<string, Record<string, null | string>> = {
   BankCardTagReq: {
     name: null,
     color: null,
-    status: null,
+    isEnabled: null,
   },
   BodyProfileSaveReq: {
     version: null,
@@ -1638,7 +1638,7 @@ const fields: Record<string, Record<string, null | string>> = {
     status: null,
   },
   FeishuChannelSaveReq: {
-    enabled: null,
+    isEnabled: null,
     appId: null,
     appSecret: null,
     openId: null,
@@ -1683,7 +1683,7 @@ const fields: Record<string, Record<string, null | string>> = {
     keys: null,
   },
   HomeCardToggleReq: {
-    enabled: null,
+    isEnabled: null,
   },
   HomePinReq: {
     isPinned: null,
@@ -1745,7 +1745,7 @@ const fields: Record<string, Record<string, null | string>> = {
     latitude: null,
     coordinateSystem: null,
     providerUid: null,
-    note: null,
+    remark: null,
     id: null,
   },
   LifeFootprintBatchSaveReq: {
@@ -1763,7 +1763,7 @@ const fields: Record<string, Record<string, null | string>> = {
     latitude: null,
     coordinateSystem: null,
     providerUid: null,
-    note: null,
+    remark: null,
   },
   LoginReq: {
     username: null,
@@ -1791,7 +1791,7 @@ const fields: Record<string, Record<string, null | string>> = {
     billingCycle: null,
     monthlyAmount: null,
     autoRenew: null,
-    note: null,
+    remark: null,
   },
   MembershipProviderReq: {
     name: null,
@@ -1814,7 +1814,7 @@ const fields: Record<string, Record<string, null | string>> = {
     billingCycle: null,
     monthlyAmount: null,
     autoRenew: null,
-    note: null,
+    remark: null,
   },
   MemoCreateReq: {
     title: null,
@@ -1835,15 +1835,15 @@ const fields: Record<string, Record<string, null | string>> = {
     redirect: null,
     meta: null,
     roles: null,
-    sort: null,
-    status: null,
-    mobileStatus: null,
+    sortOrder: null,
+    webIsEnabled: null,
+    mobileIsEnabled: null,
   },
   MenuSortUpdateReq: {
-    sort: null,
+    sortOrder: null,
   },
   MenuStatusUpdateReq: {
-    status: null,
+    isEnabled: null,
   },
   MessageCreateReq: {
     receiverId: null,
@@ -1905,7 +1905,7 @@ const fields: Record<string, Record<string, null | string>> = {
   NotificationPreferenceUpdateReq_Item: {
     bizType: null,
     channel: null,
-    enabled: null,
+    isEnabled: null,
   },
   PasswordVaultCreateReq: {
     title: null,
@@ -2002,7 +2002,7 @@ const fields: Record<string, Record<string, null | string>> = {
   QuickNavSaveReq_Item: {
     menuId: null,
     sortOrder: null,
-    enabled: null,
+    isEnabled: null,
   },
   ReadRecordCreateReq: {
     title: null,
@@ -2074,7 +2074,7 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   ScheduledJobUpdateReq: {
     cron: null,
-    enabled: null,
+    isEnabled: null,
     revision: null,
   },
   SecondaryVerifyReq: {
@@ -2090,36 +2090,36 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   SysDictDataCreateReq: {
     dictId: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     cssClass: null,
     listClass: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     remark: null,
   },
   SysDictDataUpdateReq: {
     dictId: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     cssClass: null,
     listClass: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     remark: null,
   },
   SysDictTypeCreateReq: {
     dictName: null,
     dictType: null,
-    status: null,
+    isEnabled: null,
     remark: null,
   },
   SysDictTypeUpdateReq: {
     dictName: null,
     dictType: null,
-    status: null,
+    isEnabled: null,
     remark: null,
   },
   SystemConfigUpdateReq: {
@@ -2151,21 +2151,21 @@ const fields: Record<string, Record<string, null | string>> = {
     taskId: null,
     content: null,
     isCompleted: null,
-    sort: null,
+    sortOrder: null,
     priority: null,
     startTime: null,
     endTime: null,
   },
   TaskDetailSortReq: {
     id: null,
-    sort: null,
+    sortOrder: null,
   },
   TaskDetailUpdateReq: {
     id: null,
     taskId: null,
     content: null,
     isCompleted: null,
-    sort: null,
+    sortOrder: null,
     priority: null,
     isStarred: null,
     startTime: null,
@@ -2228,7 +2228,7 @@ const fields: Record<string, Record<string, null | string>> = {
     icon: null,
     description: null,
     isTrackTime: null,
-    sort: null,
+    sortOrder: null,
     isEnabled: null,
     timeType: null,
   },
@@ -2239,7 +2239,7 @@ const fields: Record<string, Record<string, null | string>> = {
     icon: null,
     description: null,
     isTrackTime: null,
-    sort: null,
+    sortOrder: null,
     isEnabled: null,
     timeType: null,
   },
@@ -2250,7 +2250,7 @@ const fields: Record<string, Record<string, null | string>> = {
     icon: null,
     description: null,
     isTrackTime: null,
-    sort: null,
+    sortOrder: null,
     isEnabled: null,
     timeType: null,
     templateId: null,
@@ -2258,7 +2258,7 @@ const fields: Record<string, Record<string, null | string>> = {
   TimeTrackerCategorySortReq: {
     id: null,
     templateId: null,
-    sort: null,
+    sortOrder: null,
   },
   TimeTrackerCategoryUpdateReq: {
     id: null,
@@ -2268,7 +2268,7 @@ const fields: Record<string, Record<string, null | string>> = {
     icon: null,
     description: null,
     isTrackTime: null,
-    sort: null,
+    sortOrder: null,
     isEnabled: null,
     timeType: null,
     templateId: null,
@@ -2306,41 +2306,41 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   UserDictDataAdminCreateReq: {
     dictType: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     color: null,
     icon: null,
     extData: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     isReadonly: null,
     remark: null,
   },
   UserDictDataAdminUpdateReq: {
     dictType: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     color: null,
     icon: null,
     extData: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     isReadonly: null,
     remark: null,
   },
   UserDictDataCreateReq: {
     templateId: null,
     dictType: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     color: null,
     icon: null,
     extData: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     isReadonly: null,
     remark: null,
   },
@@ -2354,14 +2354,14 @@ const fields: Record<string, Record<string, null | string>> = {
     id: null,
     templateId: null,
     dictType: null,
-    dictSort: null,
+    sortOrder: null,
     dictLabel: null,
     dictValue: null,
     color: null,
     icon: null,
     extData: null,
     isDefault: null,
-    status: null,
+    isEnabled: null,
     isReadonly: null,
     remark: null,
   },
@@ -2381,7 +2381,7 @@ const fields: Record<string, Record<string, null | string>> = {
     name: null,
     icon: null,
     parentId: null,
-    sort: null,
+    sortOrder: null,
   },
   WardrobeItemSaveReq: {
     name: null,
@@ -2393,7 +2393,7 @@ const fields: Record<string, Record<string, null | string>> = {
     price: null,
     fileId: null,
     size: null,
-    memo: null,
+    remark: null,
   },
   WechatAuthRequests_Bind: {
     loginTicket: null,
@@ -2684,17 +2684,17 @@ const queryFields: Record<string, string[]> = {
   '/userDictData/query': [
     'dictLabel',
     'dictType',
+    'isEnabled',
     'page',
     'pageSize',
-    'status',
   ],
   '/userDictData/{id}': [],
   '/userDictData/admin/query': [
     'dictLabel',
     'dictType',
+    'isEnabled',
     'page',
     'pageSize',
-    'status',
   ],
   '/userDictType/dictTypeEnum': [],
   '/userDictType/getByDictType': ['dictType'],

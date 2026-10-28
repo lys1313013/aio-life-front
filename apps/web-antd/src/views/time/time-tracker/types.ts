@@ -39,7 +39,7 @@ export interface TimeSlotCategory {
   id: string;
   parentId?: null | string;
   isHidden?: boolean;
-  sort?: number;
+  sortOrder?: number;
   name: string;
   color: string;
   icon?: string; // 图标名称(Iconify格式)
@@ -61,7 +61,7 @@ export interface MergedCategory extends TimeSlotCategory {
     color?: string;
     icon?: string; // 图标字段
     name?: string;
-    sort?: number;
+    sortOrder?: number;
   };
 }
 
@@ -74,7 +74,7 @@ export interface CategoryConfigItem {
   icon?: string; // 图标名称(Iconify格式)
   description?: string;
   isTrackTime: boolean;
-  sort: number;
+  sortOrder: number;
   categoryType: 'override' | 'private' | 'public';
   originalPublicId?: string; // 原始公共分类ID
 }

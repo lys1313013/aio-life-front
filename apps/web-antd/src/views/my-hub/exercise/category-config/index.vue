@@ -31,21 +31,17 @@ import { deleteData, insert, query, update } from '#/api/core/userDictData';
 import { getDictTypeEnum } from '#/api/core/userDictType';
 import { fetchAllPages } from '#/api/pagination';
 import { AppModal as Modal } from '#/components/app-modal';
+import { CATEGORY_COLOR_PRESETS } from '#/constants/dict-category';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
-
-import {
-  CATEGORY_COLOR_PRESETS,
-  extractIconSet,
-  getCategoryIcon,
-} from './config';
+import { extractIconSet, getCategoryIcon } from '#/utils/dict-icon';
 
 // 状态
 const loading = ref(false);
 const categories = ref<any[]>([]);
 const activeTab = ref('');
 const tabList = ref<any[]>([]);
-// 状态过滤: '' 全部 / '0' 已启用 / '1' 已禁用（与后端 char(1) 状态字段一致）
-const statusFilter = ref<'0' | '1' | ''>('');
+// 状态过滤: '' 全部 / 1 已启用 / 0 已禁用
+const statusFilter = ref<0 | 1 | ''>('');
 
 // 表格列配置
 const columns = [
@@ -60,8 +56,8 @@ const columns = [
   },
   {
     title: '状态',
-    dataIndex: 'status',
-    key: 'status',
+    dataIndex: 'isEnabled',
+    key: 'isEnabled',
     width: 100,
     align: 'center',
   },
@@ -85,8 +81,8 @@ const formState = ref<any>({
   dictLabel: '',
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
-  dictSort: 0,
-  status: '0',
+  sortOrder: 0,
+  isEnabled: 1,
 });
 
 const presetIcons = computed(() =>
@@ -125,12 +121,12 @@ const fetchCategories = async () => {
         ...params,
         condition: {
           dictType: activeTab.value,
-          status: statusFilter.value === '' ? undefined : statusFilter.value,
+          isEnabled: statusFilter.value === '' ? undefined : statusFilter.value,
         },
       }),
     );
-    // 按 dictSort 排序
-    categories.value.sort((a, b) => (a.dictSort || 0) - (b.dictSort || 0));
+    // 按 sortOrder 排序
+    categories.value.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   } catch (error) {
     // 全局拦截器已提示
     console.error('Failed to fetch categories:', error);
@@ -162,8 +158,8 @@ const handleAddCategory = () => {
     dictLabel: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
-    status: '0',
-    dictSort: categories.value.length * 10,
+    isEnabled: 1,
+    sortOrder: categories.value.length * 10,
   };
   showEditModal.value = true;
 };
@@ -176,18 +172,18 @@ const handleEditClick = (record: any) => {
 };
 
 const handleToggleStatus = async (record: any, checked: boolean) => {
-  const newStatus = checked ? '0' : '1';
-  const previousStatus = record.status;
+  const newIsEnabled = checked ? 1 : 0;
+  const previousIsEnabled = record.isEnabled;
   // 乐观更新：先改本地状态，避免整页 refetch 造成的 loading 闪烁
-  record.status = newStatus;
+  record.isEnabled = newIsEnabled;
   try {
     await update({
       ...record,
-      status: newStatus,
+      isEnabled: newIsEnabled,
     });
   } catch {
     // 失败时回滚到原状态
-    record.status = previousStatus;
+    record.isEnabled = previousIsEnabled;
     // 全局拦截器已提示
   }
 };
@@ -255,8 +251,8 @@ const initSortable = () => {
           // 暂时采用逐条更新的方式更新所有的排序字段
           const updatePromises = list.map((item, index) => {
             const newSort = index * 10;
-            if (item.dictSort !== newSort) {
-              return update({ ...item, dictSort: newSort });
+            if (item.sortOrder !== newSort) {
+              return update({ ...item, sortOrder: newSort });
             }
             return Promise.resolve();
           });
@@ -305,8 +301,8 @@ onMounted(async () => {
               @change="handleStatusFilterChange"
             >
               <Radio.Button value="">全部</Radio.Button>
-              <Radio.Button value="0">已启用</Radio.Button>
-              <Radio.Button value="1">已禁用</Radio.Button>
+              <Radio.Button :value="1">已启用</Radio.Button>
+              <Radio.Button :value="0">已禁用</Radio.Button>
             </Radio.Group>
             <Button
               type="primary"
@@ -365,9 +361,9 @@ onMounted(async () => {
                 {{ record.dictLabel }}
               </div>
             </template>
-            <template v-else-if="column.key === 'status'">
+            <template v-else-if="column.key === 'isEnabled'">
               <Switch
-                :checked="record.status === '0'"
+                :checked="record.isEnabled === 1"
                 size="small"
                 @change="(checked: any) => handleToggleStatus(record, checked)"
               />
@@ -524,11 +520,11 @@ onMounted(async () => {
           </div>
         </Form.Item>
 
-        <Form.Item label="状态" name="status">
+        <Form.Item label="状态" name="isEnabled">
           <Switch
-            v-model:checked="formState.status"
-            checked-value="0"
-            un-checked-value="1"
+            v-model:checked="formState.isEnabled"
+            :checked-value="1"
+            :un-checked-value="0"
           />
         </Form.Item>
       </Form>

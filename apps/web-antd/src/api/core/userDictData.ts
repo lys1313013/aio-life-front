@@ -63,7 +63,7 @@ export async function adminUpdate(
 }
 
 export interface UserDictDataSortItem {
-  dictSort: number;
+  sortOrder: number;
   id: string;
 }
 

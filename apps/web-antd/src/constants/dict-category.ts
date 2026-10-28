@@ -1,5 +1,3 @@
-import { createIconifyIcon } from '@vben/icons';
-
 // 分类颜色预设
 export const CATEGORY_COLOR_PRESETS = [
   '#1890ff', // 蓝色
@@ -15,7 +13,7 @@ export const CATEGORY_COLOR_PRESETS = [
 ];
 
 // 预设图标列表 (运动相关)
-export const PRESET_ICONS = [
+export const EXERCISE_ICON_PRESETS = [
   { icon: 'mdi:run' },
   { icon: 'mdi:bike' },
   { icon: 'mdi:swim' },
@@ -79,24 +77,3 @@ export const PRESET_ICONS = [
   { icon: 'mdi:star' },
   { icon: 'mdi:lightning-bolt' },
 ];
-
-// 获取分类图标的渲染组件
-export function getCategoryIcon(icon: string | undefined) {
-  if (!icon) return null;
-  try {
-    return createIconifyIcon(icon);
-  } catch (error) {
-    console.warn(`Failed to create icon: ${icon}`, error);
-    return null;
-  }
-}
-
-// 从图标名称提取图标集前缀
-export function extractIconSet(icon: string | undefined): string {
-  if (!icon) return 'lucide';
-  if (icon.includes(':')) {
-    const parts = icon.split(':');
-    return parts[0] || 'lucide';
-  }
-  return 'lucide';
-}

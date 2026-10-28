@@ -113,7 +113,7 @@ const existing: MembershipVO = {
   billingCycle: 'year',
   monthlyAmount: 8,
   autoRenew: 1,
-  note: '自定义月均金额需要保留',
+  remark: '自定义月均金额需要保留',
   status: 'active',
   remainingDays: 89,
 };
@@ -314,7 +314,7 @@ describe('会员共享编辑器', () => {
       billingCycle: 'year',
       monthlyAmount: 8,
       autoRenew: true,
-      note: existing.note,
+      remark: existing.remark,
     });
     expect(model.startDate.format('YYYY-MM-DD')).toBe(existing.startDate);
     expect(model.expiryDate.format('YYYY-MM-DD')).toBe(existing.expiryDate);
@@ -334,7 +334,7 @@ describe('会员共享编辑器', () => {
       'monthlyAmount',
       'color',
       'autoRenew',
-      'note',
+      'remark',
     ]);
     submit(wrapper);
     await flushPromises();

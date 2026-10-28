@@ -9,11 +9,11 @@ import { requestClient } from '#/api/request';
 export interface AnniversaryRecord {
   id?: string;
   isPinned?: 0 | 1;
-  pinnedSort?: number;
+  pinnedSortOrder?: number;
   title: string;
   targetDate: string; // ISO string, e.g., 'YYYY-MM-DD'
   type: 'anniversary' | 'countdown';
-  note?: string;
+  remark?: string;
   color?: string; // gradient color class
   icon?: string; // Emoji
 }

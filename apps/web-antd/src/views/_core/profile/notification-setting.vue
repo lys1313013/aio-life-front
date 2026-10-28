@@ -56,7 +56,7 @@ const feishuModalVisible = ref(false);
 const config = ref<FeishuChannelConfig>({
   bound: false,
   configured: false,
-  enabled: false,
+  isEnabled: 0,
 });
 const recipients = ref<FeishuRecipient[]>([]);
 const recipientWarning = ref('');
@@ -70,19 +70,19 @@ const wechat = ref<WechatSubscriptionConfig>({
 const formState = reactive({
   appId: '',
   appSecret: '',
-  enabled: false,
+  isEnabled: 0,
   openId: '',
 });
 
 const feishuStatus = computed(() => {
   if (!config.value.configured) return '未配置';
   if (!config.value.bound) return '已配置凭证，待绑定接收人';
-  return config.value.enabled ? '已启用' : '已停用';
+  return config.value.isEnabled ? '已启用' : '已停用';
 });
 
 const feishuStatusColor = computed(() => {
   if (!config.value.configured) return 'default';
-  if (config.value.enabled) return 'success';
+  if (config.value.isEnabled) return 'success';
   return 'warning';
 });
 
@@ -143,7 +143,7 @@ async function fetchData() {
     config.value = channelConfig;
     preferences.value = preferenceList;
     wechat.value = wechatConfig;
-    formState.enabled = channelConfig.enabled;
+    formState.isEnabled = channelConfig.isEnabled;
     formState.openId = channelConfig.receiverOpenId || '';
     resetCredentialForm();
     await fetchRecipients();
@@ -174,12 +174,12 @@ async function handleSaveConfig() {
       appSecret: editingCredentials.value
         ? formState.appSecret.trim()
         : undefined,
-      enabled: formState.enabled,
+      isEnabled: formState.isEnabled,
       openId: editingCredentials.value
         ? undefined
         : formState.openId.trim() || undefined,
     });
-    formState.enabled = config.value.enabled;
+    formState.isEnabled = config.value.isEnabled;
     formState.openId = config.value.receiverOpenId || '';
     resetCredentialForm();
     await fetchRecipients();
@@ -213,10 +213,10 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await deleteFeishuChannelConfigApi();
-    config.value = { bound: false, configured: false, enabled: false };
+    config.value = { bound: false, configured: false, isEnabled: 0 };
     recipients.value = [];
     recipientWarning.value = '';
-    formState.enabled = false;
+    formState.isEnabled = 0;
     formState.openId = '';
     manualOpenId.value = false;
     resetCredentialForm();
@@ -378,7 +378,7 @@ onMounted(fetchData);
           <Form.Item label="启用飞书渠道">
             <div class="flex items-center gap-3">
               <Switch
-                v-model:checked="formState.enabled"
+                v-model:checked="formState.isEnabled" :checked-value="1" :un-checked-value="0"
                 :disabled="!config.bound"
               />
               <span class="text-sm text-gray-500 dark:text-gray-400">
@@ -442,7 +442,7 @@ onMounted(fetchData);
                   CHANNEL_LABELS[ch.channel] || ch.channel
                 }}</span>
                 <Switch
-                  v-model:checked="ch.enabled"
+                  v-model:checked="ch.isEnabled" :checked-value="1" :un-checked-value="0"
                   :aria-label="item.description + CHANNEL_LABELS[ch.channel]"
                   :disabled="
                     preferenceSaving ||

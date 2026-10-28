@@ -47,7 +47,7 @@ const formData = ref<WardrobeItemReq>({
   price: undefined,
   fileId: undefined,
   size: '',
-  memo: '',
+  remark: '',
 });
 
 const flatCategories = computed(() => {
@@ -100,7 +100,7 @@ watch(
           price: props.item.price,
           fileId: props.item.fileId,
           size: props.item.size,
-          memo: props.item.memo,
+          remark: props.item.remark,
         };
       } else {
         formData.value = {
@@ -113,7 +113,7 @@ watch(
           price: undefined,
           fileId: undefined,
           size: '',
-          memo: '',
+          remark: '',
         };
       }
     }
@@ -220,9 +220,9 @@ const handleSubmit = async () => {
         />
       </FormItem>
 
-      <FormItem label="备注" name="memo">
+      <FormItem label="备注" name="remark">
         <Input.TextArea
-          v-model:value="formData.memo"
+          v-model:value="formData.remark"
           :rows="3"
           placeholder="备注信息"
         />

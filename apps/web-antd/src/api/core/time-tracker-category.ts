@@ -16,7 +16,7 @@ export interface TimeTrackerCategoryEntity {
   icon?: string;
   description?: string;
   isTrackTime?: number;
-  sort?: number;
+  sortOrder?: number;
   isEnabled?: number;
   isHidden?: boolean;
   timeType?: 1 | 2 | 3; // 时间类型: 1-必须, 2-积极, 3-休闲

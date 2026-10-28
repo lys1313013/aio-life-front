@@ -99,7 +99,7 @@ describe('最小请求契约', () => {
       expect(
         minimalRequestPayload(`${path}/${ids[0]}/pin`, 'PUT', {
           isPinned: 0,
-          pinnedSort: -99,
+          pinnedSortOrder: -99,
           userId: 'other',
         }),
       ).toEqual({ isPinned: 0 });
@@ -117,7 +117,7 @@ describe('最小请求契约', () => {
         minimalRequestPayload(path, 'PUT', {
           id: ids[0],
           isPinned: 0,
-          pinnedSort: -99,
+          pinnedSortOrder: -99,
           userId: 'other',
         }),
       ).toEqual({ id: ids[0], isPinned: 0 });

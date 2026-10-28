@@ -7,13 +7,13 @@ export interface BankOption {
   id: string;
   name: string;
   code: string;
-  enabled: boolean;
+  isEnabled: number;
 }
 export interface CardTag {
   id: string;
   name: string;
   color: null | string;
-  status: string;
+  isEnabled: number;
 }
 export interface BankCard {
   id: string;

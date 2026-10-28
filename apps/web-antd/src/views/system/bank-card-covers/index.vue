@@ -99,7 +99,7 @@ const bankOptions = computed(() =>
   banks.value.map((b) => ({
     value: b.id,
     label: b.name,
-    disabled: !b.enabled && b.id !== editing.value?.bankId,
+    disabled: !b.isEnabled && b.id !== editing.value?.bankId,
   })),
 );
 const filtered = computed(() =>

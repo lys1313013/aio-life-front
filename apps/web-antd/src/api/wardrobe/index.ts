@@ -19,7 +19,7 @@ export interface WardrobeItemReq {
   price?: number;
   fileId?: string;
   size?: string;
-  memo?: string;
+  remark?: string;
 }
 
 /**
@@ -37,7 +37,7 @@ export interface WardrobeItemVO {
   price?: number;
   fileId?: string;
   size?: string;
-  memo?: string;
+  remark?: string;
   createTime?: string;
 }
 
@@ -49,7 +49,7 @@ export interface CategoryReq {
   name: string;
   icon?: string;
   parentId?: string;
-  sort?: number;
+  sortOrder?: number;
 }
 
 /**
@@ -60,7 +60,7 @@ export interface CategoryVO {
   name: string;
   icon?: string;
   parentId?: string;
-  sort?: number;
+  sortOrder?: number;
   categoryType?: number;
   children?: CategoryVO[];
 }

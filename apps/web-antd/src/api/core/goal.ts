@@ -8,7 +8,7 @@ import { requestClient } from '#/api/request';
 export interface GoalEntity {
   id?: string;
   isPinned?: 0 | 1;
-  pinnedSort?: number;
+  pinnedSortOrder?: number;
   title: string;
   type: number; // 1: 年, 2: 月, 3: 日
   status: ProgressStatus;

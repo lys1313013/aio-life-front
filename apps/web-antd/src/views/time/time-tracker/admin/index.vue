@@ -66,7 +66,7 @@ const visibleCategories = computed(() =>
   ),
 );
 const columns = [
-  { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 80 },
   { title: '图标', dataIndex: 'icon', key: 'icon', width: 80, align: 'center' },
   {
     title: '名称',
@@ -129,7 +129,7 @@ const formState = ref<TimeTrackerCategoryEntity>({
   description: '',
   isTrackTime: 0,
   isEnabled: 1,
-  sort: 0,
+  sortOrder: 0,
   timeType: TimeType.REQUIRED,
 });
 
@@ -149,7 +149,7 @@ const parentValue = computed({
   get: () => formState.value.parentId ?? '0',
   set: (value: string) => {
     formState.value.parentId = value;
-    formState.value.sort = undefined;
+    formState.value.sortOrder = undefined;
   },
 });
 
@@ -170,7 +170,7 @@ const handleAddCategory = (parentId = '0') => {
       -10,
       ...publicCategories.value
         .filter((item) => (item.parentId ?? '0') === parentId)
-        .map((item) => item.sort ?? -10),
+        .map((item) => item.sortOrder ?? -10),
     ) + 10;
   formState.value = {
     parentId,
@@ -180,7 +180,7 @@ const handleAddCategory = (parentId = '0') => {
     description: '',
     isTrackTime: 0,
     isEnabled: 1,
-    sort: nextSort,
+    sortOrder: nextSort,
   };
   editModalVisible.value = true;
 };
@@ -555,8 +555,8 @@ const handleSubmitCategory = async () => {
           />
         </Form.Item>
 
-        <Form.Item label="排序" name="sort">
-          <InputNumber v-model:value="formState.sort" :min="0" class="w-full" />
+        <Form.Item label="排序" name="sortOrder">
+          <InputNumber v-model:value="formState.sortOrder" :min="0" class="w-full" />
         </Form.Item>
 
         <Form.Item label="时间类型" name="timeType">

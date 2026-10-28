@@ -51,9 +51,9 @@ export interface SysMenuAdminItem {
   path: string;
   redirect?: string;
   roles?: string;
-  sort?: number;
-  status?: number;
-  mobileStatus?: number;
+  sortOrder?: number;
+  webIsEnabled?: number;
+  mobileIsEnabled?: number;
 }
 
 export interface SysMenuSaveReq {
@@ -65,9 +65,9 @@ export interface SysMenuSaveReq {
   path: string;
   redirect?: string;
   roles?: string;
-  sort?: number;
-  status?: number;
-  mobileStatus?: number;
+  sortOrder?: number;
+  webIsEnabled?: number;
+  mobileIsEnabled?: number;
 }
 
 export async function getMenuAdminTreeApi() {
@@ -95,27 +95,27 @@ export async function updateMenuApi(
   );
 }
 
-export async function updateMenuStatusApi(id: string, status: number) {
+export async function updateMenuStatusApi(id: string, isEnabled: number) {
   return requestClient.put<SysMenuAdminItem>(
     `/menu/admin/${id}/status`,
     pickPayload('MenuStatusUpdateReq', {
-      status,
+      isEnabled,
     }),
   );
 }
 
-export async function updateMenuMobileStatusApi(id: string, status: number) {
+export async function updateMenuMobileStatusApi(id: string, isEnabled: number) {
   return requestClient.put<SysMenuAdminItem>(
     `/menu/admin/${id}/mobile-status`,
-    pickPayload('MenuStatusUpdateReq', { status }),
+    pickPayload('MenuStatusUpdateReq', { isEnabled }),
   );
 }
 
-export async function updateMenuSortApi(id: string, sort: number) {
+export async function updateMenuSortApi(id: string, sortOrder: number) {
   return requestClient.put<SysMenuAdminItem>(
     `/menu/admin/${id}/sort`,
     pickPayload('MenuSortUpdateReq', {
-      sort,
+      sortOrder,
     }),
   );
 }

@@ -114,7 +114,7 @@ async function toggle(job: ScheduledJobVO) {
     replaceJob(
       await updateScheduledJob(job.id, {
         cron: job.cron,
-        enabled: !job.enabled,
+        isEnabled: job.isEnabled === 1 ? 0 : 1,
         revision: job.revision,
       }),
     );
@@ -149,7 +149,7 @@ async function save() {
     replaceJob(
       await updateScheduledJob(editing.value.id, {
         cron: effectiveCron.value,
-        enabled: editing.value.enabled,
+        isEnabled: editing.value.isEnabled,
         revision: editing.value.revision,
       }),
     );
@@ -292,7 +292,7 @@ onBeforeUnmount(() => {
           <h3 class="min-w-0 break-words font-medium">{{ job.name }}</h3>
           <Switch
             :aria-label="`${job.name}自动调度`"
-            :checked="job.enabled"
+            :checked="job.isEnabled === 1"
             :loading="busy[job.id]"
             @change="toggle(job)"
           />
@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
             <dt class="text-muted-foreground">下次执行</dt>
             <dd>
               {{
-                job.nextExecutionTime ?? (job.enabled ? '调度已关闭' : '已暂停')
+                job.nextExecutionTime ?? (job.isEnabled ? '调度已关闭' : '已暂停')
               }}
             </dd>
           </div>

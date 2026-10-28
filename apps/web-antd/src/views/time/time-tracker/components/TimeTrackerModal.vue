@@ -64,7 +64,7 @@ const loadCategories = async () => {
           isOverridden: isOverride,
           isHidden: cat.isEnabled === 0,
           originalId: cat.templateId?.toString() || cat.id,
-          sort: cat.sort,
+          sortOrder: cat.sortOrder,
         };
       }) as any;
     }

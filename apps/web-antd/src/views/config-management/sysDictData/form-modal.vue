@@ -82,7 +82,7 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'dictSort',
+      fieldName: 'sortOrder',
       label: '排序',
     },
     {

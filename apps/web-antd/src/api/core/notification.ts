@@ -7,7 +7,7 @@ export interface FeishuChannelConfig {
   appId?: string;
   bound: boolean;
   configured: boolean;
-  enabled: boolean;
+  isEnabled: number;
   openIdMasked?: string;
   receiverOpenId?: string;
   receiverName?: string;
@@ -16,7 +16,7 @@ export interface FeishuChannelConfig {
 export interface FeishuChannelSaveParams {
   appId?: string;
   appSecret?: string;
-  enabled: boolean;
+  isEnabled: number;
   openId?: string;
 }
 
@@ -32,7 +32,7 @@ export interface FeishuRecipientList {
 
 export interface ChannelState {
   channel: string;
-  enabled: boolean;
+  isEnabled: number;
 }
 
 export interface WechatSubscriptionConfig {
@@ -97,7 +97,7 @@ export async function updateNotificationPreferencesApi(
     '/notification/preferences',
     pickPayload('NotificationPreferenceUpdateReq', {
       items: items.flatMap(({ bizType, channels }) =>
-        channels.map(({ channel, enabled }) => ({ bizType, channel, enabled })),
+        channels.map(({ channel, isEnabled }) => ({ bizType, channel, isEnabled })),
       ),
     }),
   );

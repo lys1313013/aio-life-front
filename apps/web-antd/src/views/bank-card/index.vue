@@ -235,7 +235,7 @@ async function submitTag() {
         {
           name: tagName.value.trim(),
           color: tagColor.value,
-          status: old?.status || '0',
+          isEnabled: old?.isEnabled ?? 1,
         },
         editingTag.value,
       ),
@@ -253,7 +253,7 @@ async function toggleTag(tag: CardTag) {
         {
           name: tag.name,
           color: tag.color,
-          status: tag.status === '0' ? '1' : '0',
+          isEnabled: tag.isEnabled === 1 ? 0 : 1,
         },
         tag.id,
       ),
@@ -585,10 +585,10 @@ onBeforeUnmount(() => {
         <div class="tag-management-actions">
           <Switch
             size="small"
-            :checked="tag.status === '0'"
+            :checked="tag.isEnabled === 1"
             :loading="tagBusy === tag.id"
             :disabled="!!tagBusy && tagBusy !== tag.id"
-            :aria-label="tag.status === '0' ? '停用标签' : '启用标签'"
+            :aria-label="tag.isEnabled === 1 ? '停用标签' : '启用标签'"
             @change="toggleTag(tag)"
           />
           <Button

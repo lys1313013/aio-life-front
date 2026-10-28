@@ -9,7 +9,7 @@ export interface ScheduledJobVO {
   name: string;
   cron: string;
   zoneId: string;
-  enabled: boolean;
+  isEnabled: number;
   revision: number;
   schedulerEnabled: boolean;
   nextExecutionTime: null | string;

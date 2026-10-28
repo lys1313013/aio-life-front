@@ -42,12 +42,9 @@ import { getDictTypeEnum } from '#/api/core/userDictType';
 import { fetchAllPages } from '#/api/pagination';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
+import { CATEGORY_COLOR_PRESETS } from '#/constants/dict-category';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
-import {
-  CATEGORY_COLOR_PRESETS,
-  extractIconSet,
-  getCategoryIcon,
-} from '#/views/my-hub/exercise/category-config/config';
+import { extractIconSet, getCategoryIcon } from '#/utils/dict-icon';
 
 // 枚举数据
 const dictTypeOptions = ref<{ label: string; value: string }[]>([]);
@@ -89,8 +86,8 @@ const formState = ref<any>({
   dictLabel: '',
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
-  dictSort: 0,
-  status: '0',
+  sortOrder: 0,
+  isEnabled: 1,
   isReadonly: 'N',
 });
 
@@ -118,14 +115,14 @@ const formOptions: VbenFormProps = {
       label: '字典名称',
     },
     {
-      fieldName: 'status',
+      fieldName: 'isEnabled',
       component: 'Select',
       label: '状态',
       componentProps: {
         placeholder: '请选择状态',
         options: [
-          { label: '启用', value: '0' },
-          { label: '禁用', value: '1' },
+          { label: '启用', value: 1 },
+          { label: '禁用', value: 0 },
         ],
         allowClear: true,
       },
@@ -170,9 +167,9 @@ const gridOptions: VxeGridProps<any> = {
       align: 'center',
       slots: { default: 'iconColorSlot' },
     },
-    { field: 'dictSort', title: '排序', width: 80, align: 'center' },
+    { field: 'sortOrder', title: '排序', width: 80, align: 'center' },
     {
-      field: 'status',
+      field: 'isEnabled',
       title: '状态',
       width: 80,
       align: 'center',
@@ -212,7 +209,7 @@ const gridOptions: VxeGridProps<any> = {
           condition: {
             dictType: activeTab.value || undefined,
             dictLabel: formValues.dictLabel || undefined,
-            status: formValues.status || undefined,
+            isEnabled: formValues.isEnabled ?? undefined,
           },
         });
         return {
@@ -252,10 +249,10 @@ const queryAllDictData = async (dictType: string) => {
   );
 };
 
-const queryNextDictSort = async (dictType: string) => {
+const queryNextSortOrder = async (dictType: string) => {
   const dictData = await queryAllDictData(dictType);
   const maxSort = dictData.reduce(
-    (max: number, item: any) => Math.max(max, Number(item.dictSort) || 0),
+    (max: number, item: any) => Math.max(max, Number(item.sortOrder) || 0),
     0,
   );
 
@@ -289,12 +286,12 @@ async function handleRowDragEnd({ _index, dragPos, dragRow, newRow }: any) {
       targetId: String(newRow.id),
     });
     const sortMap = new Map(
-      sortItems.map((item) => [String(item.id), item.dictSort]),
+      sortItems.map((item) => [String(item.id), item.sortOrder]),
     );
     for (const row of tableData) {
       const nextSort = sortMap.get(String(row.id));
       if (nextSort !== undefined) {
-        row.dictSort = nextSort;
+        row.sortOrder = nextSort;
       }
     }
   } catch (error) {
@@ -306,11 +303,11 @@ async function handleRowDragEnd({ _index, dragPos, dragRow, newRow }: any) {
   }
 }
 
-const refreshNextDictSort = async (dictType: string) => {
+const refreshNextSortOrder = async (dictType: string) => {
   const requestToken = ++sortRequestToken;
 
   if (!dictType) {
-    formState.value.dictSort = 1;
+    formState.value.sortOrder = 1;
     sortLoading.value = false;
     return;
   }
@@ -318,13 +315,13 @@ const refreshNextDictSort = async (dictType: string) => {
   sortLoading.value = true;
 
   try {
-    const nextSort = await queryNextDictSort(dictType);
+    const nextSort = await queryNextSortOrder(dictType);
     if (
       requestToken === sortRequestToken &&
       !editingRecord.value &&
       formState.value.dictType === dictType
     ) {
-      formState.value.dictSort = nextSort;
+      formState.value.sortOrder = nextSort;
     }
   } catch (error) {
     console.error('Failed to calculate next dict sort', error);
@@ -343,11 +340,11 @@ const handleAdd = () => {
     dictLabel: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
-    dictSort: 1,
-    status: '0',
+    sortOrder: 1,
+    isEnabled: 1,
   };
   showEditModal.value = true;
-  void refreshNextDictSort(formState.value.dictType);
+  void refreshNextSortOrder(formState.value.dictType);
 };
 
 const handleEdit = (row: any) => {
@@ -365,7 +362,7 @@ const handleEdit = (row: any) => {
 
 const handleDictTypeChange = (dictType: unknown) => {
   if (typeof dictType === 'string' && !editingRecord.value) {
-    void refreshNextDictSort(dictType);
+    void refreshNextSortOrder(dictType);
   }
 };
 
@@ -462,8 +459,8 @@ const handleSave = async () => {
 
           <!-- 状态 插槽 -->
           <template #statusSlot="{ row }">
-            <Tag :color="row.status === '0' ? 'green' : 'red'">
-              {{ row.status === '0' ? '启用' : '禁用' }}
+            <Tag :color="row.isEnabled === 1 ? 'green' : 'red'">
+              {{ row.isEnabled === 1 ? '启用' : '禁用' }}
             </Tag>
           </template>
 
@@ -600,9 +597,9 @@ const handleSave = async () => {
           </div>
         </Form.Item>
 
-        <Form.Item label="排序" name="dictSort">
+        <Form.Item label="排序" name="sortOrder">
           <Input
-            v-model:value="formState.dictSort"
+            v-model:value="formState.sortOrder"
             :disabled="sortLoading"
             type="number"
           />
@@ -638,11 +635,11 @@ const handleSave = async () => {
         </Form.Item>
 
         <div class="grid grid-cols-2 gap-4">
-          <Form.Item label="状态" name="status">
+          <Form.Item label="状态" name="isEnabled">
             <Switch
-              v-model:checked="formState.status"
-              checked-value="0"
-              un-checked-value="1"
+              v-model:checked="formState.isEnabled"
+              :checked-value="1"
+              :un-checked-value="0"
               checked-children="启用"
               un-checked-children="停用"
             />

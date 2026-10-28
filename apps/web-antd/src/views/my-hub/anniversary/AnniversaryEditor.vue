@@ -33,14 +33,14 @@ const formState = ref<{
   icon: string;
   id?: string;
   isPinned: 0 | 1;
-  note: string;
+  remark: string;
   targetDate: Dayjs | undefined;
   title: string;
 }>({
   isPinned: 0,
   title: '',
   targetDate: undefined,
-  note: '',
+  remark: '',
   color: 'from-pink-400 to-rose-500',
   icon: '🎉',
 });
@@ -104,7 +104,7 @@ const openModal = (item?: AnniversaryRecord, defaultPinned = false) => {
       isPinned: item.isPinned === 1 ? 1 : 0,
       title: item.title,
       targetDate: dayjs(item.targetDate),
-      note: item.note || '',
+      remark: item.remark || '',
       color: item.color || bgOptions[0]?.value || 'from-pink-400 to-rose-500',
       icon: item.icon || '🎉',
     };
@@ -114,7 +114,7 @@ const openModal = (item?: AnniversaryRecord, defaultPinned = false) => {
       isPinned: defaultPinned ? 1 : 0,
       title: '',
       targetDate: dayjs(),
-      note: '',
+      remark: '',
       color: bgOptions[0]?.value || 'from-pink-400 to-rose-500',
       icon: '🎉',
     };
@@ -141,7 +141,7 @@ const handleOk = async () => {
       title: formState.value.title,
       targetDate: dateStr,
       type,
-      note: formState.value.note,
+      remark: formState.value.remark,
       color: formState.value.color,
       icon: formState.value.icon,
     };
@@ -261,9 +261,9 @@ defineExpose({ open: openModal });
             </div>
           </div>
 
-          <FormItem name="note">
+          <FormItem name="remark">
             <Input.TextArea
-              v-model:value="formState.note"
+              v-model:value="formState.remark"
               placeholder="写下这一刻的心情..."
               :rows="2"
               class="rounded-xl border-none bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"

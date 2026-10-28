@@ -35,8 +35,8 @@ interface RowType {
   dictType: string;
   dictValue: string;
   dictLabel: string;
-  dictSort: number;
-  status: string;
+  sortOrder: number;
+  isEnabled: number;
   remark: string;
   updateTime: string;
 }
@@ -149,8 +149,8 @@ const gridOptions: VxeGridProps<RowType> = {
     { field: 'dictType', title: '字典标识', sortable: true },
     { field: 'dictValue', title: '实际值', sortable: true },
     { field: 'dictLabel', title: '展示值', sortable: true },
-    { field: 'dictSort', title: '排序', sortable: true },
-    { field: 'status', title: '状态', sortable: true },
+    { field: 'sortOrder', title: '排序', sortable: true },
+    { field: 'isEnabled', title: '状态', sortable: true },
     { field: 'remark', title: '备注', sortable: true },
     { field: 'updateTime', title: '修改时间', sortable: true },
 
@@ -241,7 +241,7 @@ function openAddFormModal() {
   formModalApi
     .setData({
       // 表单值
-      values: { status: '0' },
+      values: { isEnabled: 1 },
     })
     .open();
 }
@@ -416,20 +416,20 @@ function handleDelete(item: RowType) {
                 <span
                   class="text-[11px] font-medium text-zinc-400 dark:text-zinc-500"
                 >
-                  排序 #{{ item.dictSort }}
+                  排序 #{{ item.sortOrder }}
                 </span>
                 <div class="h-2.5 w-[1px] bg-zinc-200 dark:bg-zinc-700"></div>
                 <div class="flex items-center gap-1.5">
                   <div
                     class="h-1.5 w-1.5 rounded-full"
                     :class="
-                      item.status === '0' ? 'bg-emerald-500' : 'bg-rose-500'
+                      item.isEnabled === 1 ? 'bg-emerald-500' : 'bg-rose-500'
                     "
                   ></div>
                   <span
                     class="text-[11px] font-medium text-zinc-600 dark:text-zinc-400"
                   >
-                    {{ item.status === '0' ? '正常' : '停用' }}
+                    {{ item.isEnabled === 1 ? '正常' : '停用' }}
                   </span>
                 </div>
               </div>

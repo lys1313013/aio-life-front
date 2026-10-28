@@ -63,7 +63,7 @@ const existing = {
   title: '过去的倒数日',
   targetDate: '2025-01-02',
   type: 'countdown' as const,
-  note: '保持备注',
+  remark: '保持备注',
   icon: '🎂',
   color: 'from-cyan-400 to-blue-500',
   isPinned: 1 as const,

@@ -144,7 +144,7 @@ interface FormState {
   billingCycle: string;
   monthlyAmount?: number;
   autoRenew: boolean;
-  note?: string;
+  remark?: string;
 }
 
 const emptyForm = (): FormState => ({
@@ -159,7 +159,7 @@ const emptyForm = (): FormState => ({
   billingCycle: 'month',
   monthlyAmount: undefined,
   autoRenew: false,
-  note: '',
+  remark: '',
 });
 
 const formState = ref<FormState>(emptyForm());
@@ -197,7 +197,7 @@ watch(
         billingCycle: item.billingCycle || 'month',
         monthlyAmount: item.monthlyAmount ?? item.price,
         autoRenew: item.autoRenew === 1,
-        note: item.note || '',
+        remark: item.remark || '',
       };
     } else {
       formState.value = emptyForm();
@@ -234,7 +234,7 @@ const handleSave = async () => {
       billingCycle: formState.value.billingCycle,
       monthlyAmount: formState.value.monthlyAmount,
       autoRenew: formState.value.autoRenew ? 1 : 0,
-      note: formState.value.note || undefined,
+      remark: formState.value.remark || undefined,
     };
 
     const saved = formState.value.id
@@ -490,9 +490,9 @@ const recalculateMonthlyAmount = () => {
         </div>
       </AFormItem>
 
-      <AFormItem label="备注" name="note">
+      <AFormItem label="备注" name="remark">
         <ATextarea
-          v-model:value="formState.note"
+          v-model:value="formState.remark"
           :rows="2"
           placeholder="备注..."
           allow-clear

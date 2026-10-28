@@ -20,7 +20,7 @@ export interface MembershipReq {
   billingCycle?: string;
   monthlyAmount?: number;
   autoRenew?: number;
-  note?: string;
+  remark?: string;
 }
 
 /**
@@ -40,7 +40,7 @@ export interface MembershipVO {
   billingCycle?: string;
   monthlyAmount?: number;
   autoRenew?: number;
-  note?: string;
+  remark?: string;
   providerName?: string;
   providerIconKey?: null | string;
   /** active-生效中 expiring-即将到期 expired-已过期 */

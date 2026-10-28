@@ -75,7 +75,7 @@ const treeData = computed(() => {
       title: node.meta?.title || node.name,
       iconName: node.meta?.icon,
       iconColor: node.iconColor,
-      inactive: node.status !== 1 && node.mobileStatus !== 1,
+      inactive: node.webIsEnabled !== 1 && node.mobileIsEnabled !== 1,
       children: node.children?.length ? build(node.children) : undefined,
     }));
   return build(list.value);
@@ -94,7 +94,7 @@ const isBusy = (id: string) =>
   sortingIds.value.includes(id);
 
 const sortMenus = (nodes: SysMenuAdminItem[]) => {
-  nodes.sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  nodes.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 };
 const removeMenu = (
   id: string,
@@ -142,9 +142,9 @@ const form = ref<SysMenuSaveReq>({
   name: '',
   path: '',
   parentId: '0',
-  status: 1,
-  mobileStatus: 1,
-  sort: 0,
+  webIsEnabled: 1,
+  mobileIsEnabled: 1,
+  sortOrder: 0,
   roles: '',
   component: '',
   redirect: '',
@@ -194,18 +194,18 @@ const columns: any[] = [
     width: 88,
     ellipsis: true,
   },
-  { title: '排序', dataIndex: 'sort', key: 'sort', width: 64, align: 'center' },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 64, align: 'center' },
   {
     title: 'Web 启用',
-    dataIndex: 'status',
-    key: 'status',
+    dataIndex: 'webIsEnabled',
+    key: 'webIsEnabled',
     width: 96,
     align: 'center',
   },
   {
     title: '移动端启用',
-    dataIndex: 'mobileStatus',
-    key: 'mobileStatus',
+    dataIndex: 'mobileIsEnabled',
+    key: 'mobileIsEnabled',
     width: 100,
     align: 'center',
   },
@@ -314,9 +314,9 @@ const openCreate = (parentId = '0') => {
     name: '',
     path: '',
     parentId,
-    status: 1,
-    mobileStatus: 1,
-    sort: 0,
+    webIsEnabled: 1,
+    mobileIsEnabled: 1,
+    sortOrder: 0,
     roles: '',
     component: '',
     iconColor: '',
@@ -337,9 +337,9 @@ const openEdit = (row: any) => {
     name: r.name,
     path: r.path,
     parentId: r.parentId ? String(r.parentId) : '0',
-    status: r.status ?? 1,
-    mobileStatus: r.mobileStatus ?? r.status ?? 1,
-    sort: r.sort ?? 0,
+    webIsEnabled: r.webIsEnabled ?? 1,
+    mobileIsEnabled: r.mobileIsEnabled ?? r.webIsEnabled ?? 1,
+    sortOrder: r.sortOrder ?? 0,
     roles: r.roles ?? '',
     component: r.component ?? '',
     iconColor: r.iconColor ?? '',
@@ -397,8 +397,8 @@ const save = async () => {
       meta: parsedMeta,
     };
     if (isProtectedMenu(payload)) {
-      payload.status = 1;
-      payload.mobileStatus = 1;
+      payload.webIsEnabled = 1;
+      payload.mobileIsEnabled = 1;
     }
     if (!payload.name || !payload.path) {
       message.error('name/path 不能为空');
@@ -433,7 +433,7 @@ const save = async () => {
 
 const toggleStatus = async (
   row: Record<string, any>,
-  status: number,
+  webIsEnabled: number,
   mobile = false,
 ) => {
   const id = String(row.id);
@@ -443,9 +443,9 @@ const toggleStatus = async (
   try {
     const saved = await (
       mobile ? updateMenuMobileStatusApi : updateMenuStatusApi
-    )(id, status);
+    )(id, webIsEnabled);
     applyMenu(saved);
-    message.success(status === 1 ? '已启用' : '已禁用');
+    message.success(webIsEnabled === 1 ? '已启用' : '已禁用');
     if (!mobile) await refreshAccessibleMenus();
   } catch {
     // 全局拦截器已提示
@@ -498,21 +498,21 @@ const handleDrop: TreeProps['onDrop'] = async ({
   const position = dropPosition - Number(node.pos?.split('-').at(-1));
   ordered.splice(targetIndex + (position > 0 ? 1 : 0), 0, source);
   if (ordered.every((item, index) => item.id === siblings[index]?.id)) return;
-  const firstSort = Math.min(...siblings.map((item) => item.sort ?? 0));
+  const firstSort = Math.min(...siblings.map((item) => item.sortOrder ?? 0));
   const changes = ordered
-    .map((item, index) => ({ item, sort: firstSort + index }))
-    .filter(({ item, sort }) => item.sort !== sort);
+    .map((item, index) => ({ item, sortOrder: firstSort + index }))
+    .filter(({ item, sortOrder }) => item.sortOrder !== sortOrder);
   sortingIds.value = siblings.map((item) => item.id);
   try {
     // Wait for every request before recovering from a partially failed reorder.
     const results = await Promise.allSettled(
-      changes.map(({ item, sort }) => updateMenuSortApi(item.id, sort)),
+      changes.map(({ item, sortOrder }) => updateMenuSortApi(item.id, sortOrder)),
     );
     if (results.some((result) => result.status === 'rejected')) {
       await load();
     } else {
-      changes.forEach(({ item, sort }) => {
-        item.sort = sort;
+      changes.forEach(({ item, sortOrder }) => {
+        item.sortOrder = sortOrder;
       });
       siblings.splice(0, siblings.length, ...ordered);
     }
@@ -724,26 +724,26 @@ onMounted(() => {
                   </div>
                 </div>
               </template>
-              <template v-else-if="column.key === 'status'">
+              <template v-else-if="column.key === 'webIsEnabled'">
                 <Switch
                   :aria-label="`${record.meta?.title ?? record.name} Web 启用`"
-                  :checked="record.status === 1"
+                  :checked="record.webIsEnabled === 1"
                   :loading="statusChanging[record.id] === true"
                   :disabled="isProtectedMenu(record) || isBusy(record.id)"
                   @change="toggleStatus(record, $event ? 1 : 0)"
                 />
               </template>
-              <template v-else-if="column.key === 'mobileStatus'">
+              <template v-else-if="column.key === 'mobileIsEnabled'">
                 <Switch
                   :aria-label="`${record.meta?.title ?? record.name} 移动端启用`"
-                  :checked="record.mobileStatus === 1"
+                  :checked="record.mobileIsEnabled === 1"
                   :loading="mobileStatusChanging[record.id] === true"
                   :disabled="isProtectedMenu(record) || isBusy(record.id)"
                   @change="toggleStatus(record, $event ? 1 : 0, true)"
                 />
               </template>
-              <template v-else-if="column.key === 'sort'">
-                <span class="tabular-nums">{{ record.sort }}</span>
+              <template v-else-if="column.key === 'sortOrder'">
+                <span class="tabular-nums">{{ record.sortOrder }}</span>
               </template>
               <template v-else-if="column.key === 'action'">
                 <div class="flex items-center justify-center gap-1">
@@ -885,9 +885,9 @@ onMounted(() => {
             </Form.Item>
           </div>
           <div class="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
-            <Form.Item label="排序 sort">
+            <Form.Item label="排序 sortOrder">
               <InputNumber
-                v-model:value="form.sort"
+                v-model:value="form.sortOrder"
                 class="w-full"
                 :min="-9999"
                 :max="9999"
@@ -896,7 +896,7 @@ onMounted(() => {
             <Form.Item label="Web 启用">
               <Switch
                 aria-label="Web 启用"
-                v-model:checked="form.status"
+                v-model:checked="form.webIsEnabled"
                 :checked-value="1"
                 :un-checked-value="0"
                 :disabled="isProtectedEditing"
@@ -907,7 +907,7 @@ onMounted(() => {
             <Form.Item label="移动端启用">
               <Switch
                 aria-label="移动端启用"
-                v-model:checked="form.mobileStatus"
+                v-model:checked="form.mobileIsEnabled"
                 :checked-value="1"
                 :un-checked-value="0"
                 :disabled="isProtectedEditing"
