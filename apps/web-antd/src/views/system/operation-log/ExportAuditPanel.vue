@@ -76,16 +76,14 @@ function close() {
 onBeforeUnmount(close);
 </script>
 <template>
-  <div class="flex justify-end px-4 pt-3">
-    <Button
-      @click="
-        open = true;
-        load();
-      "
-    >
-      数据导出审计
-    </Button>
-  </div>
+  <Button
+    @click="
+      open = true;
+      load();
+    "
+  >
+    数据导出审计
+  </Button>
   <AppModal
     v-model:open="open"
     title="数据导出审计"

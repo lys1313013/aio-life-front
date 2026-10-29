@@ -326,6 +326,7 @@ onBeforeUnmount(() => {
         >
           <template #icon><DownloadOutlined /></template>
         </Button>
+        <slot name="actions"></slot>
       </div>
     </form>
     <div

@@ -6,6 +6,9 @@ defineOptions({ name: 'OperationLog' });
 </script>
 
 <template>
-  <ExportAuditPanel />
-  <ActivityLogPage type="operation" />
+  <ActivityLogPage type="operation">
+    <template #actions>
+      <ExportAuditPanel />
+    </template>
+  </ActivityLogPage>
 </template>
