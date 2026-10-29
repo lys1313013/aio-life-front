@@ -34,6 +34,7 @@ import { callMcpToolApi, getMcpToolsApi } from '#/api/core/mcp';
 import { AppModal as Modal } from '#/components/app-modal';
 import ContentLoading from '#/components/ContentLoading.vue';
 
+import { initialToolArguments } from './arguments';
 import { toolGroups, toolPresentation } from './presentation';
 
 const tools = ref<McpToolInfo[]>([]);
@@ -144,17 +145,9 @@ const getProperties = (tool: McpToolInfo) =>
   }));
 const openCallModal = (tool: McpToolInfo) => {
   modalTool.value = tool;
-  const values: Record<string, any> = {};
-  for (const [key, value] of Object.entries(
+  modalFormValues.value = initialToolArguments(
     tool.inputSchema?.properties || {},
-  )) {
-    values[key] = value.enum?.length
-      ? value.enum[0]
-      : value.type === 'boolean'
-        ? false
-        : '';
-  }
-  modalFormValues.value = values;
+  );
   modalResult.value = '';
   modalIsError.value = false;
   modalVisible.value = true;
