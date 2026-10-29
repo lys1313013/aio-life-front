@@ -10,6 +10,7 @@ import { Button, Card, FloatButton, Popconfirm, Spin } from 'ant-design-vue';
 import { getByDictType } from '#/api/core/common';
 import { deleteData, getDevice, query } from '#/api/core/device';
 import { getByDictType as getUserDictType } from '#/api/core/userDictType';
+import { fetchAllPages } from '#/api/pagination';
 import { AppModal as Modal } from '#/components/app-modal';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import { fetchAuthImageUrl } from '#/utils/file';
@@ -36,16 +37,11 @@ export default {
   },
   data() {
     return {
-      totalAmt: 0,
-      totalCount: 0,
-      totalDailyCost: 0,
-      statusCount: { using: 0, damaged: 0, given: 0, idle: 0 },
       visible: false,
       typeOptions: [], // 设备类型选项
       statusOptions: [], // 设备状态选项
       selectedDevice: null,
-      electronics: [],
-      tabList: [], // 页签列表
+      allDevices: [],
       tabKey: '', // 当前选中的页签
       previewVisible: false, // 图片预览弹窗
       previewImage: '', // 预览图片地址
@@ -55,6 +51,44 @@ export default {
     };
   },
   computed: {
+    // 分类始终基于完整列表，避免切换分类后其他页签消失。
+    tabList() {
+      const usedTypes = new Set(this.allDevices.map((item) => item.type));
+      return [
+        { key: '', tab: '全部' },
+        ...this.typeOptions
+          .filter((item) => usedTypes.has(item.value))
+          .map((item) => ({ key: item.value, tab: item.label })),
+      ];
+    },
+    electronics() {
+      return this.allDevices.filter(
+        (item) => !this.tabKey || item.type === this.tabKey,
+      );
+    },
+    totalAmt() {
+      return this.electronics
+        .reduce((sum, item) => sum + item.purchasePrice, 0)
+        .toFixed(2);
+    },
+    totalCount() {
+      return this.electronics.length;
+    },
+    totalDailyCost() {
+      return this.electronics
+        .reduce((sum, item) => sum + Number.parseFloat(item.dailyCost), 0)
+        .toFixed(2);
+    },
+    statusCount() {
+      const counts = { using: 0, damaged: 0, given: 0, idle: 0 };
+      this.electronics.forEach((item) => {
+        const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[
+          item.status
+        ];
+        if (key) counts[key]++;
+      });
+      return counts;
+    },
     deviceTypeVisuals() {
       return Object.fromEntries(
         this.typeOptions.map((type) => [
@@ -108,39 +142,20 @@ export default {
     async query({ showLoading = true } = {}) {
       if (showLoading) this.listLoading = true;
       try {
-        const res = await query({
-          page: 1,
-          pageSize: 50,
-          condition: {
-            type: this.tabKey,
-          },
-        });
-        this.electronics = res.items;
-        this.totalDailyCost = 0;
-        this.electronics.forEach((item) => {
-          item.usaDay = this.getUsageDays(item.purchaseDate, item.endDate);
-          item.dailyCost = this.calculateAvgCost(
+        const items = await fetchAllPages((params) => query(params));
+        this.allDevices = items.map((item) => ({
+          ...item,
+          usaDay: this.getUsageDays(item.purchaseDate, item.endDate),
+          dailyCost: this.calculateAvgCost(
             item.purchasePrice,
             item.purchaseDate,
             item.endDate,
-          );
-          this.totalDailyCost += Number.parseFloat(item.dailyCost);
-        });
-        this.totalDailyCost = this.totalDailyCost.toFixed(2);
-
-        this.totalAmt = res.items
-          .reduce((sum, item) => sum + item.purchasePrice, 0)
-          .toFixed(2);
-        this.totalCount = res.items.length;
-        this.statusCount = { using: 0, damaged: 0, given: 0, idle: 0 };
-        res.items.forEach((i) => {
-          const key = { 1: 'using', 2: 'damaged', 3: 'given', 4: 'idle' }[
-            i.status
-          ];
-          if (key) this.statusCount[key]++;
-        });
+          ),
+        }));
+        if (!this.tabList.some((tab) => tab.key === this.tabKey))
+          this.tabKey = '';
         // 主动触发认证图片 URL 的加载
-        res.items.forEach((item) => {
+        items.forEach((item) => {
           if (item.fileId && !(item.fileId in this.authImageUrls)) {
             this.authImageUrls[item.fileId] = null;
             fetchAuthImageUrl(item.fileId)
@@ -205,12 +220,9 @@ export default {
       );
     },
     // 切换页签
-    async onTabChange(value, type) {
+    onTabChange(value) {
       if (this.listLoading) return;
-      if (type === 'tabKey') {
-        this.tabKey = value;
-      }
-      await this.query();
+      this.tabKey = value;
     },
     async getDeviceTypeOptions() {
       // 获取设备类型字典
@@ -222,18 +234,6 @@ export default {
           value: String(item.id),
         }));
       }
-
-      // 赋值给页签
-      this.tabList = [
-        {
-          key: '',
-          tab: '全部',
-        },
-        ...this.typeOptions.map((item) => ({
-          key: item.value,
-          tab: item.label,
-        })),
-      ];
     },
     async getDeviceStatusOptions() {
       // 获取设备状态字典
@@ -276,7 +276,7 @@ export default {
     style="width: 100%"
     :tab-list="tabList"
     :active-tab-key="tabKey"
-    @tab-change="(key) => onTabChange(key, 'tabKey')"
+    @tab-change="onTabChange"
   >
     <AModal
       :open="deepLinkLoading || deepLinkError"
@@ -354,9 +354,6 @@ export default {
           @click="showEditModal(item)"
         >
           <div class="card-image">
-            <div class="status-badge" :class="getStatusClass(item.status)">
-              {{ getStatusText(item.status) }}
-            </div>
             <!-- 上传图片优先；无图或加载失败时使用分类图标。 -->
             <div
               v-if="
@@ -408,7 +405,12 @@ export default {
             <p class="price">价格: {{ item.purchasePrice }}</p>
             <p class="purchase-date">购买时间: {{ item.purchaseDate }}</p>
             <p class="usage-days">已使用: {{ item.usaDay }} 天</p>
-            <p class="avg-cost">日均费用: {{ item.dailyCost }} 元/天</p>
+            <div class="card-footer">
+              <p class="avg-cost">日均: {{ item.dailyCost }} 元/天</p>
+              <span class="status-badge" :class="getStatusClass(item.status)">
+                {{ getStatusText(item.status) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -464,26 +466,27 @@ export default {
 }
 
 .electronics-card {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: hidden;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  transition: transform 0.3s ease;
+  transition: box-shadow 0.3s ease;
 
   /* 添加这个属性防止内容溢出 */
 }
 
 .electronics-card:hover {
   box-shadow: 0 10px 20px rgb(0 0 0 / 10%);
-  transform: translateY(-5px);
 }
 
 .card-image {
   position: relative;
   width: 100%;
-  padding-top: 100%;
+  padding-top: 75%;
 
-  /* 1:1 宽高比 */
+  /* 4:3 图片区域，完整展示图片并减少卡片高度。 */
   overflow: hidden;
 }
 
@@ -554,7 +557,19 @@ export default {
 
 .card-content {
   position: relative;
-  padding: 15px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
 }
 
 .delete-btn {
@@ -582,7 +597,7 @@ export default {
 
 .card-content h3 {
   margin: 0 0 5px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .spec {
@@ -629,37 +644,43 @@ export default {
 /* 添加新的样式 */
 .avg-cost {
   margin: 5px 0;
-  font-size: 14px;
-  font-weight: bold;
-  color: #666;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
 }
 
 .status-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
+  flex-shrink: 0;
   padding: 2px 8px;
+  margin-left: auto;
   font-size: 12px;
-  color: white;
+  white-space: nowrap;
   border-radius: 10px;
 }
 
-.status-using {
-  background-color: #7fbd60;
+/* 与 Mobile devices.uvue 的状态色一致，卡片与统计共用。 */
+.status-using,
+.status-tag.using {
+  color: #389367;
+  background-color: rgb(56 147 103 / 14%);
 }
 
-.status-damaged {
-  background-color: #f5222d;
+.status-idle,
+.status-tag.idle {
+  color: #aa801a;
+  background-color: rgb(170 128 26 / 14%);
 }
 
-.status-processed {
-  background-color: #b7eb8f;
+.status-damaged,
+.status-tag.damaged {
+  color: #bd5050;
+  background-color: rgb(189 80 80 / 14%);
 }
 
-.status-idle {
-  color: #666;
-  background-color: #d9d9d9;
+.status-processed,
+.status-tag.given {
+  color: #687385;
+  background-color: rgb(104 115 133 / 14%);
 }
 
 .stats-row {
@@ -714,54 +735,6 @@ export default {
   font-size: 12px;
   border-radius: 10px;
   white-space: nowrap;
-}
-
-.status-tag.using {
-  color: #389e0d;
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-}
-
-.dark .status-tag.using {
-  color: #95de64;
-  background: rgb(56 158 13 / 12%);
-  border-color: rgb(56 158 13 / 30%);
-}
-
-.status-tag.idle {
-  color: #8c8c8c;
-  background: #fafafa;
-  border: 1px solid #d9d9d9;
-}
-
-.dark .status-tag.idle {
-  color: #bfbfbf;
-  background: rgb(140 140 140 / 10%);
-  border-color: rgb(140 140 140 / 25%);
-}
-
-.status-tag.damaged {
-  color: #cf1322;
-  background: #fff2f0;
-  border: 1px solid #ffa39e;
-}
-
-.dark .status-tag.damaged {
-  color: #ff7875;
-  background: rgb(207 19 34 / 12%);
-  border-color: rgb(207 19 34 / 30%);
-}
-
-.status-tag.given {
-  color: #d46b08;
-  background: #fffbe6;
-  border: 1px solid #ffe58f;
-}
-
-.dark .status-tag.given {
-  color: #ffc53d;
-  background: rgb(212 107 8 / 12%);
-  border-color: rgb(212 107 8 / 30%);
 }
 
 .image-preview-box {
@@ -905,8 +878,6 @@ export default {
   }
 
   .status-badge {
-    top: 5px;
-    right: 5px;
     padding: 1px 6px;
     font-size: 10px;
   }
