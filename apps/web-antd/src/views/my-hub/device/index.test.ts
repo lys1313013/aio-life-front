@@ -38,11 +38,23 @@ const device = (id: string, type = '81') => ({
   purchasePrice: 100,
   purchaseDate: '2026-10-01',
 });
+// 页面使用 JavaScript Options API，在测试边界声明实际访问的实例成员。
+interface DevicePageVm {
+  electronics: ReturnType<typeof device>[];
+  handleDelete: (item: ReturnType<typeof device>) => Promise<void>;
+  listLoading: boolean;
+  onTabChange: (key: string) => void;
+  query: () => Promise<void>;
+  tabKey: string;
+  tabList: { key: string; tab: string }[];
+  totalAmt: string;
+  totalCount: number;
+}
 async function render() {
   const wrapper = shallowMount(DevicePage);
   wrappers.push(wrapper);
   await flushPromises();
-  return wrapper.vm;
+  return wrapper.vm as unknown as DevicePageVm;
 }
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => wrappers.splice(0).forEach((wrapper) => wrapper.unmount()));
