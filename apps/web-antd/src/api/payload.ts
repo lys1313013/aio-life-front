@@ -729,8 +729,8 @@ export interface QuickNavSaveReq_Item {
 }
 
 export interface ReadRecordCreateReq {
-  title?: null | string;
-  type?: null | number;
+  title: string;
+  type: number;
   author?: null | string;
   url?: null | string;
   fileId?: null | string;
@@ -968,6 +968,18 @@ export interface TimeRecordExerciseReq {
 }
 
 export interface TimeRecordSaveReq {
+  categoryId?: null | string;
+  date?: null | string;
+  startTime: number;
+  endTime: number;
+  title?: null | string;
+  description?: null | string;
+  relateType?: null | number;
+  relateId?: null | string;
+  exercises?: Array<TimeRecordExerciseReq> | null;
+}
+
+export interface TimeRecordUpdateReq {
   categoryId?: null | string;
   date?: null | string;
   startTime?: null | number;
@@ -1321,6 +1333,7 @@ export interface ApiRequests {
   TimeRecordDeleteByDateReq: TimeRecordDeleteByDateReq;
   TimeRecordExerciseReq: TimeRecordExerciseReq;
   TimeRecordSaveReq: TimeRecordSaveReq;
+  TimeRecordUpdateReq: TimeRecordUpdateReq;
   TimeTrackerCategoryAdminCreateReq: TimeTrackerCategoryAdminCreateReq;
   TimeTrackerCategoryAdminUpdateReq: TimeTrackerCategoryAdminUpdateReq;
   TimeTrackerCategoryCreateReq: TimeTrackerCategoryCreateReq;
@@ -2221,6 +2234,17 @@ const fields: Record<string, Record<string, null | string>> = {
     relateId: null,
     exercises: 'TimeRecordExerciseReq',
   },
+  TimeRecordUpdateReq: {
+    categoryId: null,
+    date: null,
+    startTime: null,
+    endTime: null,
+    title: null,
+    description: null,
+    relateType: null,
+    relateId: null,
+    exercises: 'TimeRecordExerciseReq',
+  },
   TimeTrackerCategoryAdminCreateReq: {
     parentId: null,
     name: null,
@@ -2617,12 +2641,10 @@ const queryFields: Record<string, string[]> = {
   '/memo/{id}': [],
   '/milestones': [],
   '/movie/page': [
-    'activeOnly',
     'director',
     'inProgressFirst',
     'page',
     'pageSize',
-    'status',
     'statuses',
     'title',
     'type',
@@ -2639,11 +2661,9 @@ const queryFields: Record<string, string[]> = {
   '/performance': ['page', 'pageSize'],
   '/public/images/{id:[a-fA-F0-9]{32}}.{extension:png|jpg|webp|gif|bmp}': [],
   '/read-record/page': [
-    'activeOnly',
     'inProgressFirst',
     'page',
     'pageSize',
-    'status',
     'statuses',
     'title',
     'type',
@@ -3231,7 +3251,7 @@ const requestModels: Array<{
   {
     method: 'PUT',
     path: '/timeRecord/{id}',
-    model: 'TimeRecordSaveReq',
+    model: 'TimeRecordUpdateReq',
     list: false,
   },
   {

@@ -144,7 +144,7 @@ const configurations = [
       const results = await Promise.all(
         (['in_progress', 'not_started'] as const).map((status) =>
           ReadRecordApi.pageList({
-            status,
+            statuses: [status],
             page,
             pageSize: BUSINESS_CARD_PAGE_SIZE,
           }),
@@ -200,7 +200,7 @@ const configurations = [
     title: '观影',
     async fetchPage(page: number): Promise<BusinessCardPage> {
       const result = await MovieApi.pageList({
-        activeOnly: true,
+        statuses: ['not_started', 'in_progress'],
         inProgressFirst: true,
         page,
         pageSize: BUSINESS_CARD_PAGE_SIZE,

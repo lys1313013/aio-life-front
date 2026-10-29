@@ -15,9 +15,7 @@ export namespace ReadRecordApi {
   export interface ReadRecordQuery {
     title?: string;
     type?: number;
-    status?: ProgressStatus;
     statuses?: ProgressStatus[];
-    activeOnly?: boolean;
     inProgressFirst?: boolean;
     page?: number;
     pageSize?: number;
@@ -69,7 +67,7 @@ export namespace ReadRecordApi {
    * 新增
    */
   export function save(data: ApiRequests['ReadRecordCreateReq']) {
-    return requestClient.post(
+    return requestClient.post<string>(
       '/read-record',
       pickPayload('ReadRecordCreateReq', data),
     );

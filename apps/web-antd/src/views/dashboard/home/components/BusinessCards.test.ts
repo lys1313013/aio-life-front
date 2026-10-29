@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('#/store/menu-visuals', () => {
   const values: Record<
     string,
-    { menuId: string; icon: string; iconColor?: string }
+    { icon: string; iconColor?: string; menuId: string }
   > = {
     'section.goal': { menuId: '5', icon: 'mdi:target' },
     'section.membership': { menuId: '4', icon: 'ant-design:gift-outlined' },
@@ -212,11 +212,15 @@ describe('首页复用阅读观影编辑器闭环', () => {
       await flushPromises();
       if (label === '阅读') {
         for (const status of ['in_progress', 'not_started']) {
-          expect(page).toHaveBeenCalledWith({ status, page: 1, pageSize: 20 });
+          expect(page).toHaveBeenCalledWith({
+            statuses: [status],
+            page: 1,
+            pageSize: 20,
+          });
         }
       } else {
         expect(page).toHaveBeenCalledWith({
-          activeOnly: true,
+          statuses: ['not_started', 'in_progress'],
           inProgressFirst: true,
           page: 1,
           pageSize: 20,

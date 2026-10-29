@@ -15,9 +15,7 @@ export namespace MovieApi {
   export interface MovieQuery {
     title?: string;
     type?: number;
-    status?: ProgressStatus;
     statuses?: ProgressStatus[];
-    activeOnly?: boolean;
     inProgressFirst?: boolean;
     page?: number;
     pageSize?: number;

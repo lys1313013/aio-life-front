@@ -129,7 +129,7 @@ describe('最小请求契约', () => {
       const query = {
         page: 2,
         pageSize: 20,
-        activeOnly: true,
+        statuses: ['not_started', 'in_progress'],
         inProgressFirst: true,
       };
       expect(pickQuery(path, { ...query, userId: 'other' })).toEqual(query);
@@ -250,10 +250,10 @@ describe('最小请求契约', () => {
       pickQuery('/movie/page', {
         page: 0,
         pageSize: 20,
-        activeOnly: false,
+        inProgressFirst: false,
         userId: '11',
       }),
-    ).toEqual({ page: 0, pageSize: 20, activeOnly: false });
+    ).toEqual({ page: 0, pageSize: 20, inProgressFirst: false });
   });
 
   it('删除关系和动态 MCP 参数有各自的契约', () => {

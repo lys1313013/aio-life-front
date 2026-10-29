@@ -96,7 +96,9 @@ const loadData = async (loadMore = false) => {
 
   try {
     const query = {
-      activeOnly: !showAll.value,
+      statuses: showAll.value
+        ? undefined
+        : (['not_started', 'in_progress'] as const).slice(),
       page: targetPage,
       pageSize: PAGE_SIZE,
       title: searchKeyword.value.trim() || undefined,
