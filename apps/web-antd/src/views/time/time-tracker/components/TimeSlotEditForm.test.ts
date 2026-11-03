@@ -89,7 +89,7 @@ describe('时迹编辑器的闭区间输入', () => {
     wrapper.unmount();
   });
 
-  it('选择立即写入表单并按闭区间显示时长，保存时提交当前起止分钟', async () => {
+  it('选择器应用时间后按闭区间显示时长，保存时提交当前起止分钟', async () => {
     const wrapper = mountForm(540, 540);
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
     const [start, end] = wrapper.findAllComponents(TimeWheelPicker);

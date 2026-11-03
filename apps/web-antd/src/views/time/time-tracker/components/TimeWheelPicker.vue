@@ -25,8 +25,11 @@ const emit = defineEmits<{
   'update:value': [value: Dayjs];
 }>();
 const open = ref(false);
+// 滚轮和手输只更新草稿，确认后才写入父表单。
 const selected = ref(0);
-const inputText = ref('');
+const inputText = computed(() =>
+  open.value ? draftTime().format('HH:mm') : props.value?.format('HH:mm') || '',
+);
 const hourColumn = ref<HTMLElement>();
 const minuteColumn = ref<HTMLElement>();
 const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -58,11 +61,15 @@ function alignColumns() {
     minuteColumn.value.scrollTop = selected.value * rowHeight;
 }
 function updateSelection(value: number) {
-  const next = clampTimeSelection(value, props.min, props.max);
-  selected.value = next;
-  const time = (props.value || dayjs()).startOf('day').add(next, 'minute');
-  inputText.value = time.format('HH:mm');
-  emit('update:value', time);
+  selected.value = clampTimeSelection(value, props.min, props.max);
+}
+function draftTime() {
+  return (props.value || dayjs()).startOf('day').add(selected.value, 'minute');
+}
+function confirmSelection() {
+  if (isDisabled(selected.value)) return;
+  emit('update:value', draftTime());
+  open.value = false;
 }
 function select(value: number) {
   clearTimeout(scrollTimer);
@@ -79,7 +86,7 @@ function onScroll(field: 'hour' | 'minute', event: Event) {
   const expected =
     (field === 'hour' ? Math.floor(selected.value / 60) : selected.value) *
     rowHeight;
-  // 另一列的联动定位和父表单回写不参与当前列的吸附计时。
+  // 另一列的联动定位不参与当前列的吸附计时。
   if (Math.abs(column.scrollTop - expected) < 1) return;
   clearTimeout(scrollTimer);
   const index = Math.round(column.scrollTop / rowHeight);
@@ -109,14 +116,21 @@ function onKey(field: 'hour' | 'minute', event: KeyboardEvent) {
 function selectAndClose(value: number) {
   if (isDisabled(value)) return;
   select(value);
-  open.value = false;
+  confirmSelection();
 }
-function changeInput(event: Event) {
+async function changeInput(event: Event) {
   const input = event.target as HTMLInputElement;
   const match = /^(\d{1,2}):(\d{2})$/.exec(input.value);
   if (match && Number(match[1]) < 24 && Number(match[2]) < 60) {
     const value = Number(match[1]) * 60 + Number(match[2]);
-    if (!isDisabled(value)) selectAndClose(value);
+    if (!isDisabled(value)) {
+      // 键盘聚焦后手输也要显示确认入口。
+      if (!open.value) {
+        open.value = true;
+        await nextTick();
+      }
+      select(value);
+    }
   }
   input.value = inputText.value;
 }
@@ -124,17 +138,21 @@ function useNow() {
   updateClock();
   selectAndClose(nowMinute.value);
 }
+function cancelOnEscape(event: KeyboardEvent) {
+  if (!open.value) return;
+  event.stopPropagation();
+  open.value = false;
+}
 watch(
   () => props.value,
   (value) => {
-    inputText.value = value?.format('HH:mm') || '';
     if (!open.value) return;
     const next = clampTimeSelection(
       value ? value.hour() * 60 + value.minute() : props.min,
       props.min,
       props.max,
     );
-    // 选择即写入父表单；相同值的回写不能打断正在进行的滚动。
+    // 外部值变化时重置草稿，相同值不打断正在进行的滚动。
     if (next === selected.value) return;
     clearTimeout(scrollTimer);
     selected.value = next;
@@ -199,7 +217,7 @@ onBeforeUnmount(() => {
         role="dialog"
         :aria-label="`选择${label}`"
         data-enter-submit="ignore"
-        @keydown.esc="open = false"
+        @keydown.esc.stop="open = false"
       >
         <div class="time-wheel-columns">
           <div
@@ -248,14 +266,23 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
-        <div v-if="showNow" class="time-wheel-toolbar">
+        <div class="time-wheel-toolbar">
+          <button type="button" @click="open = false">取消</button>
           <button
+            v-if="showNow"
             type="button"
             :aria-label="`${label}设为此刻`"
             :disabled="isDisabled(nowMinute)"
             @click="useNow"
           >
             此刻
+          </button>
+          <button
+            type="button"
+            :disabled="isDisabled(selected)"
+            @click="confirmSelection"
+          >
+            确认
           </button>
         </div>
       </div>
@@ -269,8 +296,10 @@ onBeforeUnmount(() => {
       aria-haspopup="dialog"
       :aria-expanded="open"
       inputmode="numeric"
+      data-enter-submit="ignore"
       @change="changeInput"
-      @keydown.esc="open = false"
+      @keydown.enter.prevent
+      @keydown.esc="cancelOnEscape"
     />
   </Popover>
 </template>
@@ -283,13 +312,17 @@ onBeforeUnmount(() => {
 
 .time-wheel-toolbar {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .time-wheel-toolbar button {
   min-width: 44px;
   height: 44px;
   color: hsl(var(--primary));
+}
+
+.time-wheel-toolbar button:first-child {
+  color: hsl(var(--muted-foreground));
 }
 
 .time-wheel-columns {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Dayjs } from 'dayjs';
+
 import type {
   FinanceCalendar,
   FinanceCalendarBucket,
@@ -14,6 +16,7 @@ import { useRouter } from 'vue-router';
 import { VbenIcon } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
+import { DatePicker } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { getFinanceCalendar } from '#/api/core/finance-calendar';
@@ -144,30 +147,10 @@ const maxAmount = computed(() =>
     ...displayed.value.buckets.map((bucket) => Math.abs(bucketAmount(bucket))),
   ),
 );
-const dateOptions = computed(() => {
-  const mode = displayed.value.granularity;
-  const current = dayjs(financeToday());
-  const anchor = dayjs(displayed.value.date || current);
-  // 原生选择器可快速跳转，前后箭头可继续查看更早年份。
-  const firstYear = Math.min(current.year() - 10, anchor.year());
-  const options: { label: string; value: string }[] = [];
-  for (let year = current.year(); year >= firstYear; year--) {
-    if (mode === 'month')
-      options.push({ label: `${year}年`, value: `${year}` });
-    else
-      for (
-        let month = year === current.year() ? current.month() + 1 : 12;
-        month >= 1;
-        month--
-      ) {
-        options.push({
-          label: `${year}年${month}月`,
-          value: `${year}-${String(month).padStart(2, '0')}`,
-        });
-      }
-  }
-  return options;
-});
+function disabledDate(date: Dayjs) {
+  const unit = displayed.value.granularity === 'month' ? 'year' : 'month';
+  return date.year() < 1000 || date.isAfter(dayjs(financeToday()), unit);
+}
 const canNext = computed(() => {
   const params = query();
   return (
@@ -229,10 +212,9 @@ function moveDate(step: number) {
     .add(step, granularity.value === 'month' ? 'year' : 'month')
     .format('YYYY-MM-DD');
 }
-function changeDate(event: Event) {
-  cursor.value = dayjs((event.target as HTMLSelectElement).value).format(
-    'YYYY-MM-DD',
-  );
+function changeDate(value: unknown) {
+  if (typeof value === 'string')
+    cursor.value = dayjs(value).format('YYYY-MM-DD');
 }
 function rangeLabel(bucket: FinanceCalendarBucket) {
   if (!bucket.startDate || !bucket.endDate) return bucket.label;
@@ -344,22 +326,27 @@ function navigate() {
           >
             <VbenIcon icon="mdi:chevron-left" class="size-4" />
           </button>
-          <select
-            :value="displayed.date"
-            class="finance-calendar-date-select"
+          <DatePicker
+            :key="displayed.granularity === 'month' ? 'year' : 'month'"
+            :value="displayed.date ?? undefined"
+            :picker="displayed.granularity === 'month' ? 'year' : 'month'"
+            :value-format="
+              displayed.granularity === 'month' ? 'YYYY' : 'YYYY-MM'
+            "
+            :format="displayed.granularity === 'month' ? 'YYYY年' : 'YYYY年M月'"
+            :disabled-date="disabledDate"
+            :allow-clear="false"
+            :bordered="false"
+            :input-read-only="true"
+            :suffix-icon="null"
+            :show-today="false"
+            size="small"
+            class="finance-calendar-date-picker"
             :aria-label="
               displayed.granularity === 'month' ? '选择年份' : '选择月份'
             "
             @change="changeDate"
-          >
-            <option
-              v-for="option in dateOptions"
-              :key="option.value"
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
-          </select>
+          />
           <button
             type="button"
             class="finance-calendar-arrow"
@@ -552,20 +539,21 @@ function navigate() {
   opacity: 0.3;
 }
 
-.finance-calendar-date-select {
+.finance-calendar-date-picker {
   width: 92px;
+  height: 24px;
   padding: 2px 0;
-  font-size: 12px;
-  text-align: center;
-  appearance: none;
-  cursor: pointer;
-  background: transparent;
-  border: 0;
+  border-radius: 6px;
 }
 
-.finance-calendar-date-select option {
-  color: hsl(var(--foreground));
-  background: hsl(var(--card));
+.finance-calendar-date-picker:hover {
+  background: hsl(var(--accent));
+}
+
+.finance-calendar-date-picker :deep(input) {
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
 }
 
 .finance-calendar-tabs {

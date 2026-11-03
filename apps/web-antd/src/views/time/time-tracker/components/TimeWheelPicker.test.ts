@@ -48,9 +48,9 @@ function selectedHour(wrapper: Awaited<ReturnType<typeof openPicker>>) {
   return wrapper.get('[aria-label="小时"] [aria-selected="true"]').text();
 }
 function selectedTime(wrapper: Awaited<ReturnType<typeof openPicker>>) {
-  return (wrapper.emitted('update:value')!.at(-1)![0] as dayjs.Dayjs).format(
-    'HH:mm',
-  );
+  return wrapper
+    .get('[aria-label="分钟"] [aria-selected="true"]')
+    .attributes('aria-label');
 }
 afterEach(() => vi.useRealTimers());
 
@@ -112,37 +112,40 @@ describe('时迹时间滚轮', () => {
     expect(selectedTime(wrapper)).toBe('12:00');
     wrapper.unmount();
   });
-  it('滚动立即写入表单，未等待吸附就点外部或 Escape 也保留时间', async () => {
+  it('滚动只改草稿，未等待吸附就点击外部或 Escape 不修改原值', async () => {
     vi.useFakeTimers();
     const wrapper = await openPicker('09:59');
     const column = wrapper.get('[aria-label="分钟"]');
     (column.element as HTMLElement).scrollTop = 600 * 32;
     await column.trigger('scroll');
     expect(selectedTime(wrapper)).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    expect(wrapper.props('value')?.format('HH:mm')).toBe('09:59');
     expect(wrapper.get('input').element.value).toBe('10:00');
     expect(wrapper.get('input').attributes('aria-expanded')).toBe('true');
     wrapper.getComponent({ name: 'APopover' }).vm.$emit('update:open', false);
     await nextTick();
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
-    expect(wrapper.get('input').element.value).toBe('10:00');
+    expect(wrapper.get('input').element.value).toBe('09:59');
     await vi.advanceTimersByTimeAsync(120);
     await wrapper.get('input').trigger('click');
-    expect(selectedHour(wrapper)).toBe('10');
+    expect(selectedHour(wrapper)).toBe('09');
     await wrapper
       .get('[aria-label="分钟"]')
       .trigger('keydown', { key: 'ArrowUp' });
-    expect(selectedTime(wrapper)).toBe('09:59');
+    expect(selectedTime(wrapper)).toBe('09:58');
     await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' });
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
     expect(wrapper.get('input').element.value).toBe('09:59');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
     wrapper.unmount();
   });
-  it('点选小时分钟立即更新，保留弹层并只显示此刻快捷操作', async () => {
+  it('点选只改草稿，取消丢弃草稿，重新打开后确认才应用', async () => {
     vi.useFakeTimers();
     const wrapper = await openPicker();
     expect(
       wrapper.findAll('.time-wheel-toolbar button').map((b) => b.text()),
-    ).toEqual(['此刻']);
+    ).toEqual(['取消', '此刻', '确认']);
     await wrapper
       .get('[aria-label="小时"]')
       .findAll('button')[11]!
@@ -152,17 +155,33 @@ describe('时迹时间滚轮', () => {
     expect(selectedTime(wrapper)).toBe('11:02');
     expect(wrapper.get('input').attributes('aria-expanded')).toBe('true');
     expect(wrapper.get('input').element.value).toBe('11:02');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    await wrapper.get('.time-wheel-toolbar button').trigger('click');
+    expect(wrapper.get('input').element.value).toBe('10:00');
+    await wrapper.get('input').trigger('click');
+    expect(selectedTime(wrapper)).toBe('10:00');
+    await wrapper.get('[aria-label="11:02"]').trigger('click');
+    await wrapper.get('.time-wheel-toolbar button:last-child').trigger('click');
+    expect(wrapper.emitted('update:value')).toHaveLength(1);
+    expect(wrapper.props('value')?.format('YYYY-MM-DD HH:mm')).toBe(
+      '2026-10-04 11:02',
+    );
+    expect(wrapper.get('input').attributes('aria-expanded')).toBe('false');
+    await wrapper.get('input').trigger('click');
     await wrapper.setProps({ showNow: false });
-    expect(wrapper.find('.time-wheel-toolbar').exists()).toBe(false);
+    expect(
+      wrapper.findAll('.time-wheel-toolbar button').map((b) => b.text()),
+    ).toEqual(['取消', '确认']);
     wrapper.unmount();
   });
-  it('父表单即时回写不抢滚动位置，外部更改仍能同步选择器', async () => {
+  it('草稿不抢滚动位置，外部更改仍能同步选择器', async () => {
     vi.useFakeTimers();
     const wrapper = await openPicker('09:59');
     const column = wrapper.get('[aria-label="分钟"]');
     (column.element as HTMLElement).scrollTop = 600.3 * 32;
     await column.trigger('scroll');
     expect(selectedTime(wrapper)).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
     expect((column.element as HTMLElement).scrollTop).toBe(600.3 * 32);
     expect(selectedHour(wrapper)).toBe('10');
     await vi.advanceTimersByTimeAsync(120);
@@ -183,9 +202,45 @@ describe('时迹时间滚轮', () => {
     await wrapper.get('input').setValue('11:20');
     expect(wrapper.emitted('update:value')).toBeUndefined();
     await wrapper.get('input').setValue('10:30');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    expect(selectedTime(wrapper)).toBe('10:30');
+    await wrapper.get('.time-wheel-toolbar button:last-child').trigger('click');
     expect(
       (wrapper.emitted('update:value')![0]![0] as dayjs.Dayjs).format('HH:mm'),
     ).toBe('10:30');
+    wrapper.unmount();
+  });
+  it('滚动未吸附时确认立即应用最新草稿，关闭后的计时不再修改', async () => {
+    vi.useFakeTimers();
+    const wrapper = await openPicker('09:59');
+    const column = wrapper.get('[aria-label="分钟"]');
+    (column.element as HTMLElement).scrollTop = 600.3 * 32;
+    await column.trigger('scroll');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    await wrapper.get('.time-wheel-toolbar button:last-child').trigger('click');
+    expect(wrapper.props('value')?.format('HH:mm')).toBe('10:00');
+    expect(wrapper.get('input').attributes('aria-expanded')).toBe('false');
+    await vi.advanceTimersByTimeAsync(120);
+    expect(wrapper.emitted('update:value')).toHaveLength(1);
+    wrapper.unmount();
+  });
+  it('手输后取消不应用，范围改变只约束草稿，无可选时间时关闭', async () => {
+    vi.useFakeTimers();
+    const wrapper = await openPicker('10:00');
+    await wrapper.get('input').setValue('11:02');
+    await wrapper.get('.time-wheel-toolbar button').trigger('click');
+    expect(wrapper.get('input').element.value).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    await wrapper.get('input').trigger('click');
+    await wrapper.get('[aria-label="11:02"]').trigger('click');
+    await wrapper.setProps({ max: 659 });
+    expect(selectedTime(wrapper)).toBe('10:59');
+    expect(wrapper.props('value')?.format('HH:mm')).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    await wrapper.setProps({ min: 660 });
+    expect(wrapper.get('input').attributes('disabled')).toBeDefined();
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(false);
+    expect(wrapper.get('input').element.value).toBe('10:00');
     wrapper.unmount();
   });
   it('此刻立即更新并收起，保留日期和闭区间分钟', async () => {
@@ -193,9 +248,31 @@ describe('时迹时间滚轮', () => {
     vi.setSystemTime(new Date('2026-10-05T10:24:30'));
     const wrapper = await openPicker('10:00', 600, 679);
     await wrapper.get('[aria-label="结束时间设为此刻"]').trigger('click');
-    expect(selectedTime(wrapper)).toBe('10:24');
+    expect(wrapper.get('input').element.value).toBe('10:24');
     expect(wrapper.props('value')?.format('YYYY-MM-DD')).toBe('2026-10-04');
     expect(wrapper.get('input').attributes('aria-expanded')).toBe('false');
+    wrapper.unmount();
+  });
+  it('键盘聚焦后手输也先打开草稿，取消不改变已应用时间', async () => {
+    vi.useFakeTimers();
+    const wrapper = await openPicker();
+    await wrapper.get('.time-wheel-toolbar button').trigger('click');
+    await wrapper.get('input').setValue('10:30');
+    expect(wrapper.get('input').attributes('aria-expanded')).toBe('true');
+    expect(selectedTime(wrapper)).toBe('10:30');
+    expect(wrapper.props('value')?.format('HH:mm')).toBe('10:00');
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    expect(wrapper.get('input').attributes('data-enter-submit')).toBe('ignore');
+    const enter = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    wrapper.get('input').element.dispatchEvent(enter);
+    expect(enter.defaultPrevented).toBe(true);
+    expect(wrapper.emitted('update:value')).toBeUndefined();
+    await wrapper.get('input').trigger('keydown', { key: 'Escape' });
+    expect(wrapper.get('input').element.value).toBe('10:00');
     wrapper.unmount();
   });
 });
