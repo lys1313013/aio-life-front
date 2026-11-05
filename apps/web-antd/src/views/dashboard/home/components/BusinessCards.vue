@@ -12,6 +12,8 @@ import { useAccessStore, useUserStore } from '@vben/stores';
 
 import {
   getGoalList,
+  goalDisplayStatus,
+  goalProgressPercent,
   setGoalPinned,
   updateGoalPinnedOrder,
 } from '#/api/core/goal';
@@ -75,18 +77,7 @@ const editingRecord = ref<unknown>();
 const editorOpen = ref(false);
 const pendingPinnedEdit = ref(false);
 
-function goalProgress(goal: GoalEntity) {
-  if (goal.targetValue != null && goal.targetValue > 0) {
-    return Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round(((goal.currentValue ?? 0) / goal.targetValue) * 100),
-      ),
-    );
-  }
-  return goal.status === 'completed' ? 100 : 0;
-}
+const goalProgress = goalProgressPercent;
 
 const goalStatus: Record<string, string> = {
   not_started: '未开始',
@@ -107,7 +98,10 @@ const configurations = [
         items: rows.map((row) => ({
           id: row.id!,
           title: row.title,
-          subtitle: goalStatus[row.status] || row.status,
+          subtitle:
+            row.progressError ||
+            goalStatus[goalDisplayStatus(row)] ||
+            row.status,
           progressPercent: goalProgress(row),
           dueDate: row.endDate?.slice(0, 10),
           record: row,

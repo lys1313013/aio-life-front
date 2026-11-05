@@ -10,6 +10,11 @@ vi.mock('ant-design-vue', () => {
     template: '<div><slot /></div>',
   };
   return {
+    Button: {
+      name: 'TestButton',
+      emits: ['click'],
+      template: '<button @click="$emit(\'click\')"><slot /></button>',
+    },
     DatePicker: field,
     FormItem: field,
     Input: { ...field, TextArea: field },
@@ -52,11 +57,15 @@ const api = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
+  preview: vi.fn(),
+  refresh: vi.fn(async (rows) => rows),
 }));
 vi.mock('#/api/core/goal', () => ({
   createGoal: api.create,
   updateGoal: api.update,
   deleteGoals: api.delete,
+  previewGoalProgress: api.preview,
+  refreshGoalRows: api.refresh,
 }));
 const existing = {
   id: '9007199254740993123',
@@ -100,7 +109,15 @@ describe('目标复用编辑器', () => {
     api.update.mockResolvedValue(existing);
     await wrapper.get('[data-save]').trigger('click');
     await flushPromises();
-    expect(api.update).toHaveBeenCalledWith(existing);
+    expect(api.update).toHaveBeenCalledWith({
+      ...existing,
+      progressMode: 'manual',
+      progressQuery: '',
+      progressVariables: '{}',
+      progressVariableBindings: '{}',
+      progressValuePath: '',
+      targetOperator: 'gte',
+    });
     expect(api.create).not.toHaveBeenCalled();
     expect(wrapper.emitted('saved')).toEqual([[existing]]);
   });
@@ -116,5 +133,39 @@ describe('目标复用编辑器', () => {
     expect(wrapper.getComponent({ name: 'TestModal' }).props('open')).toBe(
       false,
     );
+  });
+  it('自定义查询预览与保存保留变量和路径，不提交手动当前值', async () => {
+    const wrapper = mount(GoalEditor);
+    wrapper.vm.open({
+      ...existing,
+      progressMode: 'graphql',
+      progressQuery: 'query { progress }',
+      progressVariables: '{"category":"9007199254740993"}',
+      progressVariableBindings: '{}',
+      progressValuePath: 'progress.count',
+      targetOperator: 'gt',
+    });
+    await flushPromises();
+    api.preview.mockResolvedValue({
+      currentValue: 25,
+      achieved: false,
+      progressPercent: 25,
+      variables: {},
+    });
+    await wrapper.getComponent({ name: 'TestButton' }).trigger('click');
+    await flushPromises();
+    expect(api.preview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        progressQuery: 'query { progress }',
+        progressValuePath: 'progress.count',
+        targetOperator: 'gt',
+      }),
+    );
+    expect(wrapper.get('[role="status"]').text()).toContain('当前值 25');
+    api.update.mockResolvedValue(existing);
+    await wrapper.get('[data-save]').trigger('click');
+    await flushPromises();
+    expect(api.update.mock.calls[0]?.[0].currentValue).toBeUndefined();
+    expect(api.update.mock.calls[0]?.[0].progressMode).toBe('graphql');
   });
 });

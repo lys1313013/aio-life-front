@@ -325,14 +325,20 @@ export interface FeishuChannelSaveReq {
 }
 
 export interface GoalCreateReq {
+  progressMode?: null | string;
+  progressQuery?: null | string;
+  progressVariables?: null | string;
+  progressVariableBindings?: null | string;
+  progressValuePath?: null | string;
+  targetOperator?: null | string;
   isPinned?: null | number;
   type?: null | number;
   title?: null | string;
   description?: null | string;
   content?: null | string;
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
-  targetValue?: null | number;
-  currentValue?: null | number;
+  targetValue?: null | number | string;
+  currentValue?: null | number | string;
   year?: null | number;
   month?: null | number;
   day?: null | number;
@@ -342,7 +348,41 @@ export interface GoalCreateReq {
   tags?: null | string;
 }
 
+export interface GoalProgressPreviewReq {
+  progressMode?: null | string;
+  progressQuery?: null | string;
+  progressVariables?: null | string;
+  progressVariableBindings?: null | string;
+  progressValuePath?: null | string;
+  targetOperator?: null | string;
+  isPinned?: null | number;
+  type?: null | number;
+  title?: null | string;
+  description?: null | string;
+  content?: null | string;
+  status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
+  targetValue?: null | number | string;
+  currentValue?: null | number | string;
+  year?: null | number;
+  month?: null | number;
+  day?: null | number;
+  parentId?: null | string;
+  startDate?: null | string;
+  endDate?: null | string;
+  tags?: null | string;
+}
+
+export interface GoalProgressRefreshReq {
+  ids: Array<string>;
+}
+
 export interface GoalUpdateReq {
+  progressMode?: null | string;
+  progressQuery?: null | string;
+  progressVariables?: null | string;
+  progressVariableBindings?: null | string;
+  progressValuePath?: null | string;
+  targetOperator?: null | string;
   isPinned?: null | number;
   id: string;
   type?: null | number;
@@ -350,8 +390,8 @@ export interface GoalUpdateReq {
   description?: null | string;
   content?: null | string;
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
-  targetValue?: null | number;
-  currentValue?: null | number;
+  targetValue?: null | number | string;
+  currentValue?: null | number | string;
   year?: null | number;
   month?: null | number;
   day?: null | number;
@@ -1257,6 +1297,8 @@ export interface ApiRequests {
   FeedbackStatusUpdateReq: FeedbackStatusUpdateReq;
   FeishuChannelSaveReq: FeishuChannelSaveReq;
   GoalCreateReq: GoalCreateReq;
+  GoalProgressPreviewReq: GoalProgressPreviewReq;
+  GoalProgressRefreshReq: GoalProgressRefreshReq;
   GoalUpdateReq: GoalUpdateReq;
   HomeCardOrderReq: HomeCardOrderReq;
   HomeCardToggleReq: HomeCardToggleReq;
@@ -1657,6 +1699,12 @@ const fields: Record<string, Record<string, null | string>> = {
     openId: null,
   },
   GoalCreateReq: {
+    progressMode: null,
+    progressQuery: null,
+    progressVariables: null,
+    progressVariableBindings: null,
+    progressValuePath: null,
+    targetOperator: null,
     isPinned: null,
     type: null,
     title: null,
@@ -1673,7 +1721,39 @@ const fields: Record<string, Record<string, null | string>> = {
     endDate: null,
     tags: null,
   },
+  GoalProgressPreviewReq: {
+    progressMode: null,
+    progressQuery: null,
+    progressVariables: null,
+    progressVariableBindings: null,
+    progressValuePath: null,
+    targetOperator: null,
+    isPinned: null,
+    type: null,
+    title: null,
+    description: null,
+    content: null,
+    status: null,
+    targetValue: null,
+    currentValue: null,
+    year: null,
+    month: null,
+    day: null,
+    parentId: null,
+    startDate: null,
+    endDate: null,
+    tags: null,
+  },
+  GoalProgressRefreshReq: {
+    ids: null,
+  },
   GoalUpdateReq: {
+    progressMode: null,
+    progressQuery: null,
+    progressVariables: null,
+    progressVariableBindings: null,
+    progressValuePath: null,
+    targetOperator: null,
     isPinned: null,
     id: null,
     type: null,
@@ -3027,6 +3107,18 @@ const requestModels: Array<{
   },
   { method: 'POST', path: '/goals', model: 'GoalCreateReq', list: false },
   { method: 'PUT', path: '/goals', model: 'GoalUpdateReq', list: false },
+  {
+    method: 'POST',
+    path: '/goals/progress/preview',
+    model: 'GoalProgressPreviewReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/goals/progress/refresh',
+    model: 'GoalProgressRefreshReq',
+    list: false,
+  },
   {
     method: 'POST',
     path: '/goals/batchDelete',

@@ -1,0 +1,44 @@
+[
+  {
+    "title": "俯卧撑一次性40个",
+    "type": 6,
+    "status": "in_progress",
+    "startDate": "2026-01-01 00:00:00",
+    "endDate": "2026-12-31 23:59:59",
+    "progressMode": "graphql",
+    "progressQuery": "query Progress($start:String!,$end:String!,$type:String!){progress:exerciseRecordStats(where:{exerciseDate:{_gte:$start,_lt:$end},exerciseTypeId:{_eq:$type}}){exerciseCount{max}}}",
+    "progressVariables": "{\"type\": \"9007199254740993\"}",
+    "progressVariableBindings": "{\"start\": \"goal.startDate\", \"end\": \"goal.endDateExclusive\"}",
+    "progressValuePath": "progress.exerciseCount.max",
+    "targetOperator": "gte",
+    "targetValue": 40
+  },
+  {
+    "title": "零点在睡觉超过80天",
+    "type": 6,
+    "status": "in_progress",
+    "startDate": "2026-01-01 00:00:00",
+    "endDate": "2026-12-31 23:59:59",
+    "progressMode": "graphql",
+    "progressQuery": "query Progress($start:String!,$end:String!,$category:String!){progress:timeRecordStats(where:{date:{_gte:$start,_lt:$end},startTime:{_eq:0},endTime:{_gte:1},category:{id:{_eq:$category}}}){date{countDistinct}}}",
+    "progressVariables": "{\"category\": \"1\"}",
+    "progressVariableBindings": "{\"start\": \"goal.startDate\", \"end\": \"goal.endDateExclusive\"}",
+    "progressValuePath": "progress.date.countDistinct",
+    "targetOperator": "gt",
+    "targetValue": 80
+  },
+  {
+    "title": "最高单月工资收入达到15000元",
+    "type": 6,
+    "status": "in_progress",
+    "startDate": "2026-01-01 00:00:00",
+    "endDate": "2026-12-31 23:59:59",
+    "progressMode": "graphql",
+    "progressQuery": "query Progress($start:String!,$end:String!,$type:String!){progress:incomeMonthStats(where:{month:{_gte:$start,_lt:$end},incomeTypeId:{_eq:$type}}){monthlyAmount{max}}}",
+    "progressVariables": "{\"type\": \"9007199254740995\"}",
+    "progressVariableBindings": "{\"start\": \"goal.startMonth\", \"end\": \"goal.endMonthExclusive\"}",
+    "progressValuePath": "progress.monthlyAmount.max",
+    "targetOperator": "gte",
+    "targetValue": 15000
+  }
+]

@@ -137,7 +137,8 @@ vi.mock('#/utils/file', () => ({ fetchAuthImageUrl: vi.fn() }));
 vi.mock('./BusinessCardCover.vue', () => ({
   default: { template: '<span />' },
 }));
-vi.mock('#/api/core/goal', () => ({
+vi.mock('#/api/core/goal', async () => ({
+  ...(await import('#/api/core/goal-progress')),
   getGoalList: mocks.goals,
   setGoalPinned: vi.fn(),
   updateGoalPinnedOrder: vi.fn(),

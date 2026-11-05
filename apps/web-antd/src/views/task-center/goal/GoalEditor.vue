@@ -7,6 +7,7 @@ import type { ProgressStatus } from '#/api/core/progress-status';
 import { ref, watch } from 'vue';
 
 import {
+  Button as AButton,
   DatePicker as ADatePicker,
   Form as AForm,
   FormItem as AFormItem,
@@ -20,7 +21,13 @@ import {
 import dayjs, { Dayjs } from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 
-import { createGoal, deleteGoals, updateGoal } from '#/api/core/goal';
+import {
+  createGoal,
+  deleteGoals,
+  updateGoal,
+  previewGoalProgress,
+  refreshGoalRows,
+} from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
 
@@ -38,6 +45,12 @@ interface FormState {
   progress: number;
   targetValue?: number;
   currentValue?: number;
+  progressMode: 'manual' | 'graphql';
+  progressQuery: string;
+  progressVariables: string;
+  progressVariableBindings: string;
+  progressValuePath: string;
+  targetOperator: 'gte' | 'gt';
   startDate?: Dayjs;
   endDate?: Dayjs;
   description: string;
@@ -49,6 +62,54 @@ const modalVisible = ref(false);
 const formRef = ref();
 const modalTitle = ref('添加');
 const submitLoading = ref(false);
+const previewLoading = ref(false);
+const previewText = ref('');
+const queryError = ref('');
+function queryPayload() {
+  const form = formState.value;
+  if (form.progressMode === 'graphql') {
+    for (const text of [
+      form.progressVariables,
+      form.progressVariableBindings,
+    ]) {
+      const value = JSON.parse(text || '{}');
+      if (!value || typeof value !== 'object' || Array.isArray(value))
+        throw new Error('变量必须为 JSON 对象');
+    }
+    if (!form.progressQuery.trim() || !form.progressValuePath.trim())
+      throw new Error('请填写查询和结果路径');
+  }
+  return {
+    progressMode: form.progressMode,
+    progressQuery: form.progressQuery,
+    progressVariables: form.progressVariables,
+    progressVariableBindings: form.progressVariableBindings,
+    progressValuePath: form.progressValuePath,
+    targetOperator: form.targetOperator,
+  };
+}
+async function previewQuery() {
+  if (previewLoading.value) return;
+  previewLoading.value = true;
+  previewText.value = '';
+  queryError.value = '';
+  try {
+    const stamp = JSON.stringify(formState.value);
+    const result = await previewGoalProgress({
+      ...queryPayload(),
+      targetValue: formState.value.targetValue,
+      startDate: formState.value.startDate?.format('YYYY-MM-DD HH:mm:ss'),
+      endDate: formState.value.endDate?.format('YYYY-MM-DD HH:mm:ss'),
+    });
+    if (!modalVisible.value || JSON.stringify(formState.value) !== stamp)
+      return;
+    previewText.value = `当前值 ${result.currentValue} · ${result.progressPercent}% · ${result.achieved ? '已达标' : '未达标'}\n${JSON.stringify(result.variables)}`;
+  } catch (error) {
+    queryError.value = error instanceof Error ? error.message : '预览失败';
+  } finally {
+    previewLoading.value = false;
+  }
+}
 
 const formState = ref<FormState>({
   isPinned: 0,
@@ -58,11 +119,26 @@ const formState = ref<FormState>({
   progress: 0,
   targetValue: undefined,
   currentValue: undefined,
+  progressMode: 'manual',
+  progressQuery: '',
+  progressVariables: '{}',
+  progressVariableBindings: '{}',
+  progressValuePath: '',
+  targetOperator: 'gte',
   startDate: undefined,
   endDate: undefined,
   description: '',
   tags: '',
 });
+
+watch(
+  formState,
+  () => {
+    previewText.value = '';
+    queryError.value = '';
+  },
+  { deep: true },
+);
 
 const rules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
@@ -169,6 +245,12 @@ const handleAdd = (defaultPinned = false) => {
     progress: 0,
     targetValue: undefined,
     currentValue: undefined,
+    progressMode: 'manual',
+    progressQuery: '',
+    progressVariables: '{}',
+    progressVariableBindings: '{}',
+    progressValuePath: '',
+    targetOperator: 'gte',
     startDate: undefined,
     endDate: undefined,
     description: '',
@@ -201,6 +283,12 @@ const handleEdit = (item: GoalEntity) => {
     progress: item.progress || 0,
     targetValue: item.targetValue,
     currentValue: item.currentValue,
+    progressMode: item.progressMode ?? 'manual',
+    progressQuery: item.progressQuery ?? '',
+    progressVariables: item.progressVariables ?? '{}',
+    progressVariableBindings: item.progressVariableBindings ?? '{}',
+    progressValuePath: item.progressValuePath ?? '',
+    targetOperator: item.targetOperator ?? 'gte',
     startDate: item.startDate ? dayjs(item.startDate) : undefined,
     endDate: item.endDate ? dayjs(item.endDate) : undefined,
     description: item.description || '',
@@ -220,7 +308,7 @@ const deleteGoal = async (id: string) => {
   }
 };
 const handleSave = async () => {
-  if (submitLoading.value) return;
+  if (submitLoading.value || previewLoading.value) return;
   try {
     await formRef.value.validate();
     submitLoading.value = true;
@@ -239,7 +327,11 @@ const handleSave = async () => {
       status: formState.value.status,
       progress: formState.value.progress,
       targetValue: formState.value.targetValue,
-      currentValue: formState.value.currentValue,
+      currentValue:
+        formState.value.progressMode === 'manual'
+          ? formState.value.currentValue
+          : undefined,
+      ...queryPayload(),
       startDate: formState.value.startDate?.format('YYYY-MM-DD HH:mm:ss'),
       endDate: formState.value.endDate?.format('YYYY-MM-DD HH:mm:ss'),
       description: formState.value.description,
@@ -249,11 +341,13 @@ const handleSave = async () => {
     const saved = formState.value.id
       ? await updateGoal({ ...payload, id: formState.value.id })
       : await createGoal(payload);
-    emit('saved', saved);
+    const [refreshed] = await refreshGoalRows([saved]);
+    emit('saved', refreshed!);
 
     modalVisible.value = false;
   } catch (error) {
-    console.error('Validate Failed:', error);
+    queryError.value =
+      error instanceof Error ? error.message : '请检查目标配置';
   } finally {
     submitLoading.value = false;
   }
@@ -270,6 +364,7 @@ defineExpose({
   <Modal
     v-model:open="modalVisible"
     :confirm-loading="submitLoading"
+    :closable="!previewLoading"
     @ok="handleSave"
     width="600px"
   >
@@ -336,8 +431,19 @@ defineExpose({
         </AFormItem>
       </div>
 
-      <div class="flex gap-4">
-        <AFormItem label="当前值" name="currentValue" class="flex-1">
+      <AFormItem label="进度来源">
+        <ASelect v-model:value="formState.progressMode" aria-label="进度来源">
+          <ASelectOption value="manual">手动填写</ASelectOption>
+          <ASelectOption value="graphql">GraphQL 查询</ASelectOption>
+        </ASelect>
+      </AFormItem>
+      <div class="flex flex-wrap gap-4">
+        <AFormItem
+          v-if="formState.progressMode === 'manual'"
+          label="当前值"
+          name="currentValue"
+          class="flex-1"
+        >
           <AInputNumber
             v-model:value="formState.currentValue"
             :min="0"
@@ -355,6 +461,61 @@ defineExpose({
         </AFormItem>
       </div>
 
+      <AFormItem label="达标条件">
+        <ASelect v-model:value="formState.targetOperator" aria-label="达标条件">
+          <ASelectOption value="gte">达到目标值（≥）</ASelectOption>
+          <ASelectOption value="gt">超过目标值（＞）</ASelectOption>
+        </ASelect>
+      </AFormItem>
+      <template v-if="formState.progressMode === 'graphql'">
+        <AFormItem label="GraphQL 查询"
+          ><AInput.TextArea
+            v-model:value="formState.progressQuery"
+            aria-label="GraphQL 查询"
+            :rows="7"
+            placeholder="query { ... }"
+        /></AFormItem>
+        <AFormItem label="固定变量 JSON"
+          ><AInput.TextArea
+            v-model:value="formState.progressVariables"
+            aria-label="固定变量 JSON"
+            :rows="3"
+        /></AFormItem>
+        <AFormItem
+          label="日期绑定 JSON"
+          help='例如 {"start":"goal.startDate","end":"goal.endDateExclusive"}；整月使用 goal.startMonth / goal.endMonthExclusive'
+        >
+          <AInput.TextArea
+            v-model:value="formState.progressVariableBindings"
+            aria-label="日期绑定 JSON"
+            :rows="3"
+          />
+        </AFormItem>
+        <AFormItem
+          label="结果路径"
+          help="相对于 data，例如 progress.exerciseCount.max；已存在字段的 null 按空集合计为 0"
+        >
+          <AInput
+            v-model:value="formState.progressValuePath"
+            aria-label="结果路径"
+          />
+        </AFormItem>
+        <AButton
+          :loading="previewLoading"
+          :disabled="submitLoading"
+          @click="previewQuery"
+          >执行预览</AButton
+        >
+        <pre
+          v-if="previewText"
+          role="status"
+          class="mt-2 whitespace-pre-wrap break-all text-sm text-muted-foreground"
+          >{{ previewText }}</pre
+        >
+      </template>
+      <p v-if="queryError" role="alert" class="text-destructive">
+        {{ queryError }}
+      </p>
       <div class="flex gap-4">
         <AFormItem label="开始" name="startDate" class="flex-1">
           <ADatePicker

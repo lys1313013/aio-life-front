@@ -18,7 +18,13 @@ import {
 import dayjs from 'dayjs';
 
 import { appDialog } from '#/adapter/modal-dialog';
-import { deleteGoals, getGoalList, setGoalPinned } from '#/api/core/goal';
+import {
+  deleteGoals,
+  getGoalList,
+  setGoalPinned,
+  goalDisplayStatus,
+  goalProgressPercent,
+} from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import ContentLoading from '#/components/ContentLoading.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
@@ -32,6 +38,8 @@ const pinLoading = ref(new Set<string>());
 // Data
 const goals = ref<GoalEntity[]>([]);
 const loading = ref(false);
+const hasLoaded = ref(false);
+let generation = 0;
 
 // Filters
 const filters = ref<GoalQueryParams>({
@@ -63,17 +71,21 @@ const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
 
 // Load Data
 const loadData = async () => {
+  const current = ++generation;
   try {
     loading.value = true;
     const res = await getGoalList({
       ...filters.value,
     });
-    goals.value = res;
+    if (current === generation) {
+      goals.value = res;
+      hasLoaded.value = true;
+    }
   } catch (error) {
     console.error('Failed to load goals:', error);
     // 全局拦截器已提示
   } finally {
-    loading.value = false;
+    if (current === generation) loading.value = false;
   }
 };
 
@@ -98,10 +110,12 @@ const clearFilters = () => {
 const handleAdd = () => editorRef.value?.open();
 const handleEdit = (item: GoalEntity) => editorRef.value?.open(item);
 const handleSaved = (record: GoalEntity) => {
+  generation++;
+  loading.value = false;
   const index = goals.value.findIndex((item) => item.id === record.id);
   const { keyword, status, type } = filters.value;
   const matches =
-    (!status || record.status === status) &&
+    (!status || goalDisplayStatus(record) === status) &&
     (!type || record.type === type) &&
     (!keyword ||
       [record.title, record.description, record.tags].some((value) =>
@@ -118,6 +132,8 @@ const handleSaved = (record: GoalEntity) => {
   }
 };
 const handleDeleted = (id: string) => {
+  generation++;
+  loading.value = false;
   goals.value = goals.value.filter((item) => item.id !== id);
 };
 const handleDelete = (id: string) => {
@@ -145,15 +161,7 @@ const handlePin = async (item: GoalEntity) => {
   }
 };
 
-const calculateProgress = (item: GoalEntity) => {
-  if (item.targetValue && item.targetValue > 0) {
-    return Math.min(
-      100,
-      Math.round(((item.currentValue || 0) / item.targetValue) * 100),
-    );
-  }
-  return item.status === PROGRESS_STATUS.COMPLETED ? 100 : 0;
-};
+const calculateProgress = goalProgressPercent;
 
 // Helper methods for UI
 const parseTags = (tagsStr?: string): string[] => {
@@ -240,13 +248,18 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
       </ASelect>
 
       <div class="flex items-center gap-2">
-        <AButton type="primary" @click="handleSearch">搜索</AButton>
+        <AButton type="primary" :loading="loading" @click="handleSearch"
+          >搜索</AButton
+        >
         <AButton type="text" @click="clearFilters">重置</AButton>
       </div>
     </div>
 
     <!-- Card Grid -->
-    <ContentLoading v-if="loading" min-height="calc(100vh - 200px)" />
+    <ContentLoading
+      v-if="loading && !hasLoaded"
+      min-height="calc(100vh - 200px)"
+    />
     <template v-else>
       <div
         v-if="goals.length === 0 && !loading"
@@ -285,14 +298,21 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
                 />
                 <div
                   class="h-2 w-2 rounded-full"
-                  :class="getStatusBadgeColor(item.status)"
+                  :class="getStatusBadgeColor(goalDisplayStatus(item))"
                 ></div>
                 <span class="text-xs text-muted-foreground">{{
-                  statusMap[item.status]?.label
+                  statusMap[goalDisplayStatus(item)]?.label
                 }}</span>
               </div>
             </div>
 
+            <p
+              v-if="item.progressError"
+              role="alert"
+              class="mb-2 text-xs text-destructive"
+            >
+              {{ item.progressError }}
+            </p>
             <h3
               class="mb-2 line-clamp-2 text-lg font-bold text-card-foreground"
               :title="item.title"
@@ -345,7 +365,8 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
               <span
                 class="font-medium"
                 :class="{
-                  'text-success': item.status === PROGRESS_STATUS.COMPLETED,
+                  'text-success':
+                    goalDisplayStatus(item) === PROGRESS_STATUS.COMPLETED,
                 }"
               >
                 {{ calculateProgress(item) }}%
@@ -356,7 +377,7 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
               :show-info="false"
               size="small"
               :status="
-                item.status === PROGRESS_STATUS.COMPLETED
+                goalDisplayStatus(item) === PROGRESS_STATUS.COMPLETED
                   ? 'success'
                   : item.status === PROGRESS_STATUS.ON_HOLD
                     ? 'normal'
