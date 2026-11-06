@@ -55,6 +55,7 @@ import QuickNavSection from './components/QuickNavSection.vue';
 import SummaryHomeCard from './components/SummaryHomeCard.vue';
 import WatchedTaskEditModal from './components/WatchedTaskEditModal.vue';
 import WereadRecentCard from './components/WereadRecentCard.vue';
+import WereadStatsCard from './components/WereadStatsCard.vue';
 
 interface OverviewItem {
   cardKey: string;
@@ -1076,6 +1077,11 @@ function navTo(nav: { url?: string }) {
 
         <WereadRecentCard
           v-if="section.cardKey === 'section.weread'"
+          @visibility="sectionVisibility[section.cardKey] = $event"
+        />
+
+        <WereadStatsCard
+          v-if="section.cardKey === 'section.weread-stats'"
           @visibility="sectionVisibility[section.cardKey] = $event"
         />
 

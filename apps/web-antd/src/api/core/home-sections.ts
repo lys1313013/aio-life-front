@@ -52,11 +52,36 @@ export interface HomeSections {
   video: SectionData & { items: ContinuingVideo[] };
   device: SectionData & { items: CurrentDevice[] };
 }
+
+export type WereadStatsGranularity = 'month' | 'week' | 'year';
+export interface WereadStatsBucket {
+  key: string;
+  label: string;
+  seconds: number;
+}
+export interface WereadStatsSection extends SectionData {
+  buckets: WereadStatsBucket[];
+  connected: boolean;
+  dailyAverageSeconds: number;
+  elapsedDays: number;
+  granularity: WereadStatsGranularity;
+  periodEnd: string;
+  periodStart: string;
+  previousPeriodEnd: string;
+  previousPeriodStart: string;
+  previousTotalSeconds: number;
+  totalSeconds: number;
+}
 export type HomeSectionKind = keyof HomeSections;
 export function isFinancialSection(
   kind: HomeSectionKind,
 ): kind is FinancialSectionKind {
   return kind === 'finance' || kind === 'income' || kind === 'expense';
+}
+export function getWereadStats(granularity: WereadStatsGranularity) {
+  return requestClient.get<WereadStatsSection>('/home/sections/weread-stats', {
+    params: { granularity },
+  });
 }
 export function getHomeSection<K extends HomeSectionKind>(
   kind: K,

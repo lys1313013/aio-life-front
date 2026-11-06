@@ -2697,6 +2697,7 @@ const queryFields: Record<string, string[]> = {
   '/home/sections/memo': [],
   '/home/sections/video': [],
   '/home/sections/device': [],
+  '/home/sections/weread-stats': ['granularity'],
   '/honorCategories': [],
   '/honorRecords': [],
   '/honorRecords/{id}': [],

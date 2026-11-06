@@ -90,6 +90,9 @@ vi.mock('./components/QuickNavSection.vue', () => ({
 vi.mock('./components/WereadRecentCard.vue', () => ({
   default: { template: '<div />' },
 }));
+vi.mock('./components/WereadStatsCard.vue', () => ({
+  default: { template: '<div />' },
+}));
 vi.mock('./components/WatchedTaskEditModal.vue', () => ({
   default: { template: '<div />' },
 }));
