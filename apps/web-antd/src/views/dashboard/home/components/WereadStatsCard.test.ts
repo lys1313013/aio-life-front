@@ -56,14 +56,6 @@ vi.mock('@vben/plugins/echarts', () => ({
   EchartsUI: { template: '<div class="chart" />' },
   useEcharts: () => ({ renderEcharts: vi.fn() }),
 }));
-vi.mock('ant-design-vue', () => ({
-  Segmented: {
-    emits: ['change'],
-    props: ['disabled', 'options', 'value'],
-    template:
-      '<div><button v-for="o in options" :key="o.value" :disabled="disabled" @click="$emit(\'change\', o.value)">{{ o.label }}</button></div>',
-  },
-}));
 vi.mock('#/components/BusinessIcon.vue', () => ({
   default: { template: '<i />' },
 }));
@@ -121,9 +113,12 @@ it('按周加载汇总并显示日均和同期变化', async () => {
   await flushPromises();
 
   expect(mocks.stats).toHaveBeenCalledWith('week');
-  expect(wrapper.text()).toContain('本周 1 小时 5 分');
+  expect(wrapper.find('[aria-label="本周 1 小时 5 分"]').exists()).toBe(true);
   expect(wrapper.text()).toContain('日均 13 分钟');
   expect(wrapper.text()).toContain('+30%');
+  expect(wrapper.find('[title]').attributes('title')).toBe(
+    '较上周同期（2026-10-26 至 2026-10-30），上期 50 分钟，本期 1 小时 5 分',
+  );
   expect(wrapper.find('.chart').exists()).toBe(true);
 });
 
@@ -162,7 +157,7 @@ it('无阅读时保留零值柱图与空态文案', async () => {
   const wrapper = mount(WereadStatsCard);
   await flushPromises();
 
-  expect(wrapper.text()).toContain('0 分钟');
+  expect(wrapper.find('[aria-label="本周 0 分钟"]').exists()).toBe(true);
   expect(wrapper.text()).toContain('本周还没有阅读记录');
 });
 
@@ -179,7 +174,7 @@ it('首次失败显示卡内重试并可恢复', async () => {
   await flushPromises();
 
   expect(mocks.stats).toHaveBeenCalledTimes(2);
-  expect(wrapper.text()).toContain('本周 1 小时 5 分');
+  expect(wrapper.find('[aria-label="本周 1 小时 5 分"]').exists()).toBe(true);
 });
 
 it('锁未解锁时不请求并显示解锁入口', async () => {

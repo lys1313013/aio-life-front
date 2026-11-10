@@ -22,8 +22,6 @@ import { useRouter } from 'vue-router';
 import { EchartsUI, useEcharts } from '@vben/plugins/echarts';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
-import { Segmented } from 'ant-design-vue';
-
 import { getWereadStats } from '#/api/core/home-sections';
 import BusinessIcon from '#/components/BusinessIcon.vue';
 import RefreshableCardHeader from '#/components/RefreshableCardHeader.vue';
@@ -153,6 +151,9 @@ const emptyText = computed(
       year: '本年还没有阅读记录',
     })[granularity.value] ?? '还没有阅读记录',
 );
+const totalParts = computed(() =>
+  data.value ? durationParts(data.value.totalSeconds) : [],
+);
 const totalText = computed(() =>
   data.value ? formatDuration(data.value.totalSeconds) : '—',
 );
@@ -166,9 +167,9 @@ const change = computed<null | {
 }>(() => {
   const current = data.value;
   if (!current) return null;
-  const title = `较${previousLabel.value}同期`;
   const previous = current.previousTotalSeconds;
   const total = current.totalSeconds;
+  const title = `较${previousLabel.value}同期（${current.previousPeriodStart} 至 ${current.previousPeriodEnd}），上期 ${formatDuration(previous)}，本期 ${formatDuration(total)}`;
   if (previous <= 0) {
     return total <= 0
       ? { direction: 0, text: '—', title }
@@ -203,14 +204,21 @@ function cssHsl(name: string) {
   return parts.length === 3 ? `hsl(${parts.join(', ')})` : '';
 }
 
-function formatDuration(seconds: number) {
-  if (!seconds || seconds <= 0) return '0 分钟';
-  if (seconds < 60) return '不足 1 分钟';
+function durationParts(seconds: number) {
+  if (!seconds || seconds <= 0) return [{ value: '0', unit: '分钟' }];
+  if (seconds < 60) return [{ value: '不足 1', unit: '分钟' }];
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes} 分钟`;
-  const hours = Math.floor(minutes / 60);
+  if (minutes < 60) return [{ value: String(minutes), unit: '分钟' }];
+  const parts = [{ value: String(Math.floor(minutes / 60)), unit: '小时' }];
   const rest = minutes % 60;
-  return rest > 0 ? `${hours} 小时 ${rest} 分` : `${hours} 小时`;
+  if (rest > 0) parts.push({ value: String(rest), unit: '分' });
+  return parts;
+}
+
+function formatDuration(seconds: number) {
+  return durationParts(seconds)
+    .map(({ value, unit }) => `${value} ${unit}`)
+    .join(' ');
 }
 
 function bucketTitle(bucket: WereadStatsBucket, mode: WereadStatsGranularity) {
@@ -411,15 +419,28 @@ onBeforeUnmount(() => {
       >
         <BusinessIcon card-key="section.weread-stats" class="size-4" />阅读统计
       </button>
-      <div class="pointer-events-auto relative z-10">
-        <Segmented
+      <div
+        class="pointer-events-auto relative z-10 flex shrink-0 gap-0.5 rounded-lg bg-muted p-[3px]"
+        role="group"
+        aria-label="阅读统计粒度"
+      >
+        <button
+          v-for="option in granularityOptions"
+          :key="option.value"
+          type="button"
+          class="min-h-[26px] min-w-[30px] cursor-pointer rounded-md px-2 py-0.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
+          :class="
+            granularity === option.value
+              ? 'bg-card text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          "
           :disabled="loading || locked"
-          :options="[...granularityOptions]"
-          :value="granularity"
-          aria-label="阅读统计粒度"
-          size="small"
-          @change="changeGranularity"
-        />
+          :aria-label="`按${option.label}统计`"
+          :aria-pressed="granularity === option.value"
+          @click.stop="changeGranularity(option.value)"
+        >
+          {{ option.label }}
+        </button>
       </div>
     </RefreshableCardHeader>
 
@@ -438,7 +459,7 @@ onBeforeUnmount(() => {
       role="status"
       aria-label="正在加载阅读统计"
     >
-      <div class="h-5 w-32 animate-pulse rounded bg-muted-foreground/20"></div>
+      <div class="h-6 w-36 animate-pulse rounded bg-muted-foreground/20"></div>
       <div class="h-3 w-24 animate-pulse rounded bg-muted-foreground/20"></div>
       <div class="mt-auto flex h-[100px] items-end gap-1.5" aria-hidden="true">
         <span
@@ -469,15 +490,33 @@ onBeforeUnmount(() => {
       class="flex min-h-0 flex-1 flex-col px-2.5 pb-2 sm:px-3"
     >
       <div class="flex items-baseline justify-between gap-2">
-        <span
-          class="min-w-0 truncate text-lg font-semibold tabular-nums lg:text-xl"
+        <div
+          class="flex min-w-0 flex-wrap items-baseline gap-x-1.5 gap-y-0.5"
+          role="group"
+          :aria-label="`${periodLabel} ${totalText}`"
         >
-          {{ periodLabel }} {{ totalText }}
-        </span>
+          <span class="text-xs text-muted-foreground" aria-hidden="true">{{
+            periodLabel
+          }}</span>
+          <span
+            v-for="part in totalParts"
+            :key="part.unit"
+            class="inline-flex items-baseline gap-1 whitespace-nowrap"
+            aria-hidden="true"
+          >
+            <span class="text-base font-medium tabular-nums leading-6">{{
+              part.value
+            }}</span>
+            <span class="text-xs font-normal text-muted-foreground">{{
+              part.unit
+            }}</span>
+          </span>
+        </div>
         <span
           v-if="change"
           class="flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground"
           :title="change.title"
+          :aria-label="`${change.title}，${change.text}`"
         >
           <span v-if="change.direction > 0" aria-hidden="true">↑</span>
           <span v-else-if="change.direction < 0" aria-hidden="true">↓</span>

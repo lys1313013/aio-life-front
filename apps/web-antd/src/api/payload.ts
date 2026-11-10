@@ -21,8 +21,12 @@ export interface AnniversaryRecordUpdateReq {
 }
 
 export interface ApiKeyGenerateReq {
-  remark?: null | string;
+  remark: string;
   expireDays?: null | number;
+}
+
+export interface ApiKeyUpdateReq {
+  remark: string;
 }
 
 export interface BVideoCreateReq {
@@ -1266,6 +1270,7 @@ export interface ApiRequests {
   AnniversaryRecordCreateReq: AnniversaryRecordCreateReq;
   AnniversaryRecordUpdateReq: AnniversaryRecordUpdateReq;
   ApiKeyGenerateReq: ApiKeyGenerateReq;
+  ApiKeyUpdateReq: ApiKeyUpdateReq;
   BVideoCreateReq: BVideoCreateReq;
   BVideoProgressReq: BVideoProgressReq;
   BVideoUpdateReq: BVideoUpdateReq;
@@ -1428,6 +1433,9 @@ const fields: Record<string, Record<string, null | string>> = {
   ApiKeyGenerateReq: {
     remark: null,
     expireDays: null,
+  },
+  ApiKeyUpdateReq: {
+    remark: null,
   },
   BVideoCreateReq: {
     title: null,
@@ -3477,6 +3485,12 @@ const requestModels: Array<{
     method: 'POST',
     path: '/api-key/generate',
     model: 'ApiKeyGenerateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/api-key/{id}',
+    model: 'ApiKeyUpdateReq',
     list: false,
   },
   {
