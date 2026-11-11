@@ -9,6 +9,7 @@ import type { UserDictDataEntity } from '#/api/core/userDictType';
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
+import { CloseOutlined } from '@ant-design/icons-vue';
 import { Button, Pagination, Spin } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -177,15 +178,33 @@ onBeforeUnmount(() => {
     :open="true"
     :title="title"
     :width="640"
-    :footer="null"
+    :footer="false"
+    :body-style="{ padding: '20px', overflow: 'hidden' }"
     @cancel="emit('close')"
   >
     <div class="finance-details" :aria-label="title">
-      <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-        <span class="text-sm text-muted-foreground">{{ period }}</span>
-        <span class="text-sm tabular-nums" aria-label="范围合计">{{
-          money(amount)
-        }}</span>
+      <header class="mb-4 flex items-center justify-between gap-3">
+        <h2 class="m-0 text-base font-semibold">{{ title }}</h2>
+        <button
+          type="button"
+          class="finance-details-close flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          aria-label="关闭"
+          @click="emit('close')"
+        >
+          <CloseOutlined aria-hidden="true" />
+        </button>
+      </header>
+      <div class="finance-details-summary">
+        <span class="min-w-0 text-xs text-muted-foreground">{{ period }}</span>
+        <div class="flex shrink-0 items-baseline gap-2">
+          <span class="text-xs text-muted-foreground">{{ label }}合计</span>
+          <span
+            class="text-2xl font-semibold tabular-nums"
+            aria-label="范围合计"
+          >
+            {{ money(amount) }}
+          </span>
+        </div>
       </div>
       <div
         v-if="kind === 'finance'"
@@ -213,19 +232,25 @@ onBeforeUnmount(() => {
           {{ item.label }}
         </button>
       </div>
-      <Spin :spinning="loading">
+      <Spin :spinning="loading" class="finance-details-loading">
         <div ref="listRef" class="finance-details-list" :aria-busy="loading">
           <div
             v-if="!loaded && loading"
-            class="space-y-3"
+            class="finance-details-skeleton"
             aria-label="加载中"
             role="status"
           >
             <div
-              v-for="n in 3"
+              v-for="n in 7"
               :key="n"
-              class="h-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
-            ></div>
+              class="finance-detail-placeholder animate-pulse motion-reduce:animate-none"
+            >
+              <div class="flex items-center justify-between gap-6">
+                <span class="h-4 w-2/5 rounded bg-muted"></span>
+                <span class="h-4 w-16 rounded bg-muted"></span>
+              </div>
+              <div class="mt-3 h-3 w-3/5 rounded bg-muted"></div>
+            </div>
           </div>
           <div
             v-else-if="loaded && rows.length === 0"
@@ -241,14 +266,14 @@ onBeforeUnmount(() => {
           >
             <button
               type="button"
-              class="finance-detail-edit w-full rounded text-left hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              class="finance-detail-edit w-full rounded-lg text-left hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               :aria-label="`编辑${label}：${description(row)}`"
               :disabled="loading"
               @click="edit(row)"
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0 flex-1">
-                  <div class="break-words text-sm">
+                  <div class="break-words text-sm font-[450]">
                     {{ description(row) }}
                   </div>
                   <div
@@ -259,12 +284,14 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
                 <span
-                  class="shrink-0 text-sm tabular-nums"
+                  class="shrink-0 text-sm font-[450] tabular-nums"
                   aria-label="记账金额"
                   >{{ row.amt == null ? '—' : money(row.amt) }}</span
                 >
               </div>
-              <div class="mt-1 text-xs text-muted-foreground">
+              <div
+                class="mt-1.5 break-words text-xs leading-5 text-muted-foreground"
+              >
                 {{ metadata(row) }}
               </div>
               <div
@@ -275,44 +302,11 @@ onBeforeUnmount(() => {
               </div>
               <div
                 v-if="row.tax != null"
-                class="mt-1 text-xs text-muted-foreground"
+                class="mt-1.5 break-words text-xs leading-5 text-muted-foreground"
               >
                 税额：{{ money(row.tax) }}
               </div>
             </button>
-            <details
-              v-if="
-                row.transactionId ||
-                row.merchantOrderNo ||
-                row.transactionStatus ||
-                (row.transactionAmt != null && row.transactionAmt !== row.amt)
-              "
-              class="mt-2 text-xs text-muted-foreground"
-            >
-              <summary class="cursor-pointer">交易信息</summary>
-              <dl class="mt-2 space-y-1 break-all">
-                <div
-                  v-if="
-                    row.transactionAmt != null && row.transactionAmt !== row.amt
-                  "
-                >
-                  <dt class="inline">交易金额：</dt>
-                  <dd class="inline">{{ money(row.transactionAmt) }}</dd>
-                </div>
-                <div v-if="row.transactionStatus">
-                  <dt class="inline">状态：</dt>
-                  <dd class="inline">{{ row.transactionStatus }}</dd>
-                </div>
-                <div v-if="row.transactionId">
-                  <dt class="inline">交易号：</dt>
-                  <dd class="inline">{{ row.transactionId }}</dd>
-                </div>
-                <div v-if="row.merchantOrderNo">
-                  <dt class="inline">商家订单号：</dt>
-                  <dd class="inline">{{ row.merchantOrderNo }}</dd>
-                </div>
-              </dl>
-            </details>
           </article>
           <div v-if="failed" class="py-4 text-center" role="alert">
             <Button @click="load(targetPage)">加载失败，重试</Button>
@@ -321,7 +315,7 @@ onBeforeUnmount(() => {
       </Spin>
       <div
         v-if="loaded"
-        class="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
+        class="finance-details-pagination flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"
       >
         <span v-if="total !== null">共 {{ total }} 笔</span>
         <span v-else>本页 {{ rows.length }} 笔</span>
@@ -343,18 +337,96 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.finance-details {
+  display: flex;
+  max-height: calc(100dvh - 80px);
+  flex-direction: column;
+  color: hsl(var(--card-foreground));
+}
+
+.finance-details > header,
+.finance-details-summary,
+.finance-details-pagination {
+  flex-shrink: 0;
+}
+
+.finance-details-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-bottom: 16px;
+}
+
+.finance-details-loading,
+.finance-details-loading :deep(.ant-spin-container) {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
 .finance-details-list {
-  min-height: 96px;
+  min-height: min(120px, 30dvh);
   max-height: min(52dvh, 420px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
-.finance-detail-row {
-  padding: 12px 0;
+.finance-details-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.finance-details-list::-webkit-scrollbar-track {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.finance-details-list::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  background-clip: padding-box;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.finance-details-list:hover::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.45);
+}
+
+.finance-details-list::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .finance-details-list {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+    scrollbar-width: thin;
+  }
+
+  .finance-details-list:hover {
+    scrollbar-color: hsl(var(--muted-foreground) / 0.45) transparent;
+  }
+}
+
+.finance-detail-edit,
+.finance-detail-placeholder {
+  padding: 12px 8px;
 }
 
 .finance-detail-row + .finance-detail-row {
-  border-top: 1px solid hsl(var(--border) / 0.5);
+  border-top: 1px solid hsl(var(--border) / 0.4);
+}
+
+.finance-details-pagination {
+  padding-top: 16px;
+}
+
+@media (max-width: 479px) {
+  .finance-details-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
 }
 </style>

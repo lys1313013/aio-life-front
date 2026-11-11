@@ -139,9 +139,11 @@ describe('目标复用编辑器', () => {
     wrapper.vm.open({
       ...existing,
       progressMode: 'graphql',
-      progressQuery: 'query { progress }',
+      progressQuery:
+        'query P($start:String!,$end:String!,$category:String!){progress:timeRecordStats(where:{date:{_gte:$start,_lt:$end},category:{id:{_eq:$category}}}){count}}',
       progressVariables: '{"category":"9007199254740993"}',
-      progressVariableBindings: '{}',
+      progressVariableBindings:
+        '{"start":"goal.startDate","end":"goal.endDateExclusive"}',
       progressValuePath: 'progress.count',
       targetOperator: 'gt',
     });
@@ -156,12 +158,16 @@ describe('目标复用编辑器', () => {
     await flushPromises();
     expect(api.preview).toHaveBeenCalledWith(
       expect.objectContaining({
-        progressQuery: 'query { progress }',
+        progressVariables: '{"category":"9007199254740993"}',
+        progressVariableBindings:
+          '{"start":"goal.startDate","end":"goal.endDateExclusive"}',
         progressValuePath: 'progress.count',
         targetOperator: 'gt',
       }),
     );
     expect(wrapper.get('[role="status"]').text()).toContain('当前值 25');
+    expect(wrapper.text()).not.toContain('固定变量 JSON');
+    expect(wrapper.text()).not.toContain('日期绑定 JSON');
     api.update.mockResolvedValue(existing);
     await wrapper.get('[data-save]').trigger('click');
     await flushPromises();

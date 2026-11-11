@@ -5,6 +5,7 @@
 | 主题 | 文档 |
 | --- | --- |
 | 图片鉴权 | [私有图片加载与缓存](image-auth-401-fix.md) |
+| 数据查询 | [查询工作台与数据模型](data-query.md) |
 | 密码库 | [需求、实际加密格式与限制](password-manager/requirement.md) |
 | 首页时迹 | [共同设计入口](superpowers/specs/2026-06-16-today-time-tracker-design.md) |
 | 编辑弹窗 | [AppModal](../apps/web-antd/src/components/app-modal/README.md) |

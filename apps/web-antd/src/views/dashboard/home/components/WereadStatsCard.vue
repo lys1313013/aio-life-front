@@ -119,6 +119,7 @@ const request = useActiveRequest<WereadStatsSection>({
       data.value = null;
     }
   },
+  onSettled: scheduleRefresh,
 });
 const { loading, loaded, failed } = request;
 
@@ -133,14 +134,18 @@ const visible = computed(
 );
 watch(visible, (value) => emit('visibility', value), { immediate: true });
 
+// 切换与重试期间保留旧数据，汇总文案与图表沿用同一份数据粒度。
+const displayGranularity = computed(
+  () => data.value?.granularity ?? granularity.value,
+);
 const periodLabel = computed(
   () =>
-    ({ month: '本月', week: '本周', year: '本年' })[granularity.value] ??
+    ({ month: '本月', week: '本周', year: '本年' })[displayGranularity.value] ??
     '本周',
 );
 const previousLabel = computed(
   () =>
-    ({ month: '上月', week: '上周', year: '上年' })[granularity.value] ??
+    ({ month: '上月', week: '上周', year: '上年' })[displayGranularity.value] ??
     '上周',
 );
 const emptyText = computed(
@@ -149,7 +154,7 @@ const emptyText = computed(
       month: '本月还没有阅读记录',
       week: '本周还没有阅读记录',
       year: '本年还没有阅读记录',
-    })[granularity.value] ?? '还没有阅读记录',
+    })[displayGranularity.value] ?? '还没有阅读记录',
 );
 const totalParts = computed(() =>
   data.value ? durationParts(data.value.totalSeconds) : [],
@@ -183,26 +188,12 @@ const change = computed<null | {
     title,
   };
 });
-const chartColor = computed(
-  () =>
-    visuals.visual('section.weread-stats').iconColor ||
-    cssHsl('--primary') ||
-    'hsl(212, 100%, 45%)',
-);
 const skeletonBars = computed(() =>
   granularity.value === 'week' ? 7 : granularity.value === 'month' ? 31 : 12,
 );
 
 const chartRef = ref<EchartsUIType>();
 const { renderEcharts } = useEcharts(chartRef);
-
-function cssHsl(name: string) {
-  const raw = getComputedStyle(document.documentElement)
-    .getPropertyValue(name)
-    .trim();
-  const parts = raw.split(/\s+/);
-  return parts.length === 3 ? `hsl(${parts.join(', ')})` : '';
-}
 
 function durationParts(seconds: number) {
   if (!seconds || seconds <= 0) return [{ value: '0', unit: '分钟' }];
@@ -234,7 +225,7 @@ async function draw() {
   const current = data.value;
   if (!current) return;
   const minutes = current.buckets.map((bucket) =>
-    Math.max(0, Math.round(bucket.seconds / 60)),
+    Math.max(0, bucket.seconds / 60),
   );
   const maxMinutes = Math.max(1, ...minutes);
   const mode = current.granularity;
@@ -264,21 +255,27 @@ async function draw() {
       },
       axisLine: { lineStyle: { color: 'rgba(128, 128, 128, 0.25)' } },
       axisTick: { show: false },
-      data: current.buckets.map((bucket) => bucket.label),
+      data: current.buckets.map((bucket) =>
+        mode === 'week'
+          ? bucket.label.replace(/^周/, '')
+          : mode === 'year'
+            ? bucket.label.replace(/月$/, '')
+            : bucket.label,
+      ),
       type: 'category',
     },
     yAxis: { max: maxMinutes, show: false, type: 'value' },
     series: [
       {
-        barMaxWidth: 24,
+        barMaxWidth: mode === 'week' ? 36 : 24,
+        barWidth: mode === 'week' ? '72%' : undefined,
         barMinHeight: 2,
         data: current.buckets.map((bucket, index) => ({
           itemStyle: {
             borderRadius: [3, 3, 0, 0],
-            color:
-              bucket.seconds > 0 ? chartColor.value : 'rgba(128,128,128,0.35)',
+            color: '#34a6ff',
           },
-          value: minutes[index],
+          value: bucket.seconds > 0 ? minutes[index] : null,
         })),
         type: 'bar',
       },
@@ -303,23 +300,27 @@ function stale() {
     refreshInterval() > 0 && Date.now() - lastSuccess.value >= refreshInterval()
   );
 }
-function resume() {
+function canRefresh() {
+  return (
+    active &&
+    document.visibilityState !== 'hidden' &&
+    available.value &&
+    !locked.value
+  );
+}
+function scheduleRefresh() {
   clearTimer();
-  if (
-    !active ||
-    document.visibilityState === 'hidden' ||
-    !available.value ||
-    locked.value
-  )
-    return;
-  if (stale() || failed.value) void request.load();
-  if (refreshInterval() <= 0) return;
+  if (!canRefresh() || refreshInterval() <= 0) return;
   timer = setInterval(
     () => {
       if (stale()) void request.load();
     },
     Math.min(refreshInterval(), 30_000),
   );
+}
+function resume() {
+  if (canRefresh() && (stale() || failed.value)) void request.load();
+  scheduleRefresh();
 }
 function visibilityChanged() {
   if (document.visibilityState === 'hidden') {
@@ -348,6 +349,7 @@ watch(
   [identity, available, locked],
   () => {
     request.invalidate();
+    clearTimer();
     resettingForIdentity = true;
     granularity.value = readGranularity();
     resettingForIdentity = false;
@@ -360,7 +362,7 @@ watch(
   },
   { flush: 'sync', immediate: true },
 );
-watch([data, chartColor], () => void draw());
+watch(data, () => void draw());
 
 onMounted(() => {
   void visuals.load();
@@ -512,19 +514,22 @@ onBeforeUnmount(() => {
             }}</span>
           </span>
         </div>
+      </div>
+      <div
+        class="mt-0.5 flex flex-wrap items-baseline gap-x-4 gap-y-0.5 text-xs text-muted-foreground"
+      >
+        <span>日均 {{ averageText }}</span>
         <span
           v-if="change"
-          class="flex shrink-0 items-center gap-0.5 text-xs text-muted-foreground"
+          class="inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap"
           :title="change.title"
           :aria-label="`${change.title}，${change.text}`"
         >
+          <span class="mr-1">比{{ previousLabel }}</span>
           <span v-if="change.direction > 0" aria-hidden="true">↑</span>
           <span v-else-if="change.direction < 0" aria-hidden="true">↓</span>
           {{ change.text }}
         </span>
-      </div>
-      <div class="mt-0.5 text-xs text-muted-foreground">
-        日均 {{ averageText }}
       </div>
       <div class="relative mt-1 min-h-0 flex-1">
         <EchartsUI ref="chartRef" height="100%" width="100%" />

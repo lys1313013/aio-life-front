@@ -13,6 +13,28 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         meta: {
+          icon: 'mdi:database-search-outline',
+          title: '查询工作台',
+          fullPathKey: false,
+          keepAlive: false,
+        },
+        name: 'QueryWorkbench',
+        path: '/query/workbench',
+        component: () => import('#/views/data-query/workbench/index.vue'),
+      },
+      {
+        meta: {
+          icon: 'lucide:library',
+          title: '数据模型',
+          fullPathKey: false,
+          keepAlive: false,
+        },
+        name: 'QueryModels',
+        path: '/query/models',
+        component: () => import('#/views/data-query/models/index.vue'),
+      },
+      {
+        meta: {
           icon: 'carbon:cube',
           title: '连接器（MCP）',
         },

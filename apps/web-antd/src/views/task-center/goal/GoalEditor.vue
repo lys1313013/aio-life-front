@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { Rule } from 'ant-design-vue/es/form';
 
+import type { VariableValue } from './query-variables';
+
 import type { GoalEntity } from '#/api/core/goal';
 import type { ProgressStatus } from '#/api/core/progress-status';
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 import {
   Button as AButton,
@@ -24,12 +26,20 @@ import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import {
   createGoal,
   deleteGoals,
-  updateGoal,
   previewGoalProgress,
   refreshGoalRows,
+  updateGoal,
 } from '#/api/core/goal';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { AppModalDelete, AppModal as Modal } from '#/components/app-modal';
+
+import {
+  queryVariables,
+  readVariableValues,
+  variableKind,
+  variableSources,
+  writeVariableValues,
+} from './query-variables';
 
 const emit = defineEmits<{
   deleted: [id: string];
@@ -45,12 +55,12 @@ interface FormState {
   progress: number;
   targetValue?: number;
   currentValue?: number;
-  progressMode: 'manual' | 'graphql';
+  progressMode: 'graphql' | 'manual';
   progressQuery: string;
   progressVariables: string;
   progressVariableBindings: string;
   progressValuePath: string;
-  targetOperator: 'gte' | 'gt';
+  targetOperator: 'gt' | 'gte';
   startDate?: Dayjs;
   endDate?: Dayjs;
   description: string;
@@ -65,25 +75,41 @@ const submitLoading = ref(false);
 const previewLoading = ref(false);
 const previewText = ref('');
 const queryError = ref('');
+const variableValues = ref<Record<string, VariableValue>>({});
+const variableDefinition = computed(() => {
+  try {
+    return { fields: queryVariables(formState.value.progressQuery), error: '' };
+  } catch (error) {
+    return { fields: [], error: (error as Error).message };
+  }
+});
+function resetVariables() {
+  try {
+    variableValues.value = readVariableValues(
+      formState.value.progressQuery,
+      formState.value.progressVariables,
+      formState.value.progressVariableBindings,
+    );
+  } catch (error) {
+    variableValues.value = {};
+    queryError.value = (error as Error).message;
+  }
+}
 function queryPayload() {
   const form = formState.value;
-  if (form.progressMode === 'graphql') {
-    for (const text of [
-      form.progressVariables,
-      form.progressVariableBindings,
-    ]) {
-      const value = JSON.parse(text || '{}');
-      if (!value || typeof value !== 'object' || Array.isArray(value))
-        throw new Error('变量必须为 JSON 对象');
-    }
-    if (!form.progressQuery.trim() || !form.progressValuePath.trim())
-      throw new Error('请填写查询和结果路径');
-  }
+  if (
+    form.progressMode === 'graphql' &&
+    (!form.progressQuery.trim() || !form.progressValuePath.trim())
+  )
+    throw new Error('请填写查询和结果路径');
   return {
     progressMode: form.progressMode,
     progressQuery: form.progressQuery,
     progressVariables: form.progressVariables,
     progressVariableBindings: form.progressVariableBindings,
+    ...(form.progressMode === 'graphql'
+      ? writeVariableValues(form.progressQuery, variableValues.value)
+      : {}),
     progressValuePath: form.progressValuePath,
     targetOperator: form.targetOperator,
   };
@@ -94,16 +120,19 @@ async function previewQuery() {
   previewText.value = '';
   queryError.value = '';
   try {
-    const stamp = JSON.stringify(formState.value);
+    const stamp = JSON.stringify([formState.value, variableValues.value]);
     const result = await previewGoalProgress({
       ...queryPayload(),
       targetValue: formState.value.targetValue,
       startDate: formState.value.startDate?.format('YYYY-MM-DD HH:mm:ss'),
       endDate: formState.value.endDate?.format('YYYY-MM-DD HH:mm:ss'),
     });
-    if (!modalVisible.value || JSON.stringify(formState.value) !== stamp)
+    if (
+      !modalVisible.value ||
+      JSON.stringify([formState.value, variableValues.value]) !== stamp
+    )
       return;
-    previewText.value = `当前值 ${result.currentValue} · ${result.progressPercent}% · ${result.achieved ? '已达标' : '未达标'}\n${JSON.stringify(result.variables)}`;
+    previewText.value = `当前值 ${result.currentValue} · ${result.progressPercent}% · ${result.achieved ? '已达标' : '未达标'}`;
   } catch (error) {
     queryError.value = error instanceof Error ? error.message : '预览失败';
   } finally {
@@ -129,6 +158,23 @@ const formState = ref<FormState>({
   endDate: undefined,
   description: '',
   tags: '',
+});
+
+watch(
+  variableValues,
+  () => {
+    previewText.value = '';
+    queryError.value = '';
+  },
+  { deep: true },
+);
+watch(variableDefinition, ({ fields }) => {
+  for (const variable of fields) {
+    variableValues.value[variable.name] ??= {
+      source: 'fixed',
+      value: '',
+    };
+  }
 });
 
 watch(
@@ -256,6 +302,7 @@ const handleAdd = (defaultPinned = false) => {
     description: '',
     tags: '',
   };
+  resetVariables();
   modalVisible.value = true;
 };
 
@@ -294,6 +341,7 @@ const handleEdit = (item: GoalEntity) => {
     description: item.description || '',
     tags: tagsStr,
   };
+  resetVariables();
   modalVisible.value = true;
 };
 
@@ -468,28 +516,60 @@ defineExpose({
         </ASelect>
       </AFormItem>
       <template v-if="formState.progressMode === 'graphql'">
-        <AFormItem label="GraphQL 查询"
-          ><AInput.TextArea
+        <AFormItem label="GraphQL 查询">
+          <AInput.TextArea
             v-model:value="formState.progressQuery"
             aria-label="GraphQL 查询"
             :rows="7"
             placeholder="query { ... }"
-        /></AFormItem>
-        <AFormItem label="固定变量 JSON"
-          ><AInput.TextArea
-            v-model:value="formState.progressVariables"
-            aria-label="固定变量 JSON"
-            :rows="3"
-        /></AFormItem>
-        <AFormItem
-          label="日期绑定 JSON"
-          help='例如 {"start":"goal.startDate","end":"goal.endDateExclusive"}；整月使用 goal.startMonth / goal.endMonthExclusive'
-        >
-          <AInput.TextArea
-            v-model:value="formState.progressVariableBindings"
-            aria-label="日期绑定 JSON"
-            :rows="3"
           />
+        </AFormItem>
+        <p
+          v-if="variableDefinition.error"
+          role="alert"
+          class="text-destructive"
+        >
+          {{ variableDefinition.error }}
+        </p>
+        <AFormItem
+          v-for="variable in variableDefinition.fields"
+          :key="variable.name"
+          :label="variable.name"
+          :required="variable.required"
+        >
+          <div class="flex flex-col gap-2" v-if="variableValues[variable.name]">
+            <ASelect
+              v-if="variable.type.replaceAll('!', '') === 'String'"
+              v-model:value="variableValues[variable.name]!.source"
+              :aria-label="`${variable.name}来源`"
+              :options="variableSources"
+            />
+            <template v-if="variableValues[variable.name]!.source === 'fixed'">
+              <ASelect
+                v-if="variableKind(variable) === 'boolean'"
+                v-model:value="variableValues[variable.name]!.value"
+                :aria-label="variable.name"
+                :options="[
+                  { label: '是', value: 'true' },
+                  { label: '否', value: 'false' },
+                ]"
+              />
+              <AInput.TextArea
+                v-else-if="variableKind(variable) === 'json'"
+                v-model:value="variableValues[variable.name]!.value"
+                :aria-label="variable.name"
+                :rows="3"
+                placeholder="填写对象或列表"
+              />
+              <AInput
+                v-else
+                v-model:value="variableValues[variable.name]!.value"
+                :aria-label="variable.name"
+                :type="variableKind(variable) === 'number' ? 'number' : 'text'"
+                :placeholder="`请输入${variable.name}`"
+              />
+            </template>
+          </div>
         </AFormItem>
         <AFormItem
           label="结果路径"
@@ -504,8 +584,9 @@ defineExpose({
           :loading="previewLoading"
           :disabled="submitLoading"
           @click="previewQuery"
-          >执行预览</AButton
         >
+          执行预览
+        </AButton>
         <pre
           v-if="previewText"
           role="status"

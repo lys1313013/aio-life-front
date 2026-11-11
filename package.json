@@ -89,6 +89,7 @@
     "@vben/vsh": "workspace:*",
     "@vitejs/plugin-vue": "catalog:",
     "@vitejs/plugin-vue-jsx": "catalog:",
+    "@vue/server-renderer": "catalog:",
     "@vue/test-utils": "catalog:",
     "autoprefixer": "catalog:",
     "caniuse-lite": "^1.0.30001803",

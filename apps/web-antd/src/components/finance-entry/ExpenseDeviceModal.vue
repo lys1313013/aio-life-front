@@ -194,6 +194,7 @@ onMounted(initialize);
 
 <template>
   <AppModal
+    aria-label="关联设备"
     :open="true"
     :width="520"
     :busy="saving"

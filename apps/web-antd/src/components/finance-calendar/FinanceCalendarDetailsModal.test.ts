@@ -104,7 +104,7 @@ it.each(['expense', 'income'] as const)(
     expect(wrapper.text()).toContain('已修改');
   },
 );
-it('展开交易信息不会打开编辑器；修改后末页变空回到上一页', async () => {
+it('修改后末页变空回到上一页', async () => {
   mocks.query.mockResolvedValue({
     items: [{ ...row, transactionId: 'order' }],
     total: 21,
@@ -113,8 +113,6 @@ it('展开交易信息不会打开编辑器；修改后末页变空回到上一�
     props: { bucket, kind: 'expense' },
   });
   await flushPromises();
-  await wrapper.get('summary').trigger('click');
-  expect(mocks.apis[0].open).not.toHaveBeenCalled();
   await wrapper.get('[data-next]').trigger('click');
   await flushPromises();
   mocks.query

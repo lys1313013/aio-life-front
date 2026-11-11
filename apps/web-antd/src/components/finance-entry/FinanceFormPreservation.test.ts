@@ -16,6 +16,9 @@ const mocks = vi.hoisted(() => ({
   incomeDelete: vi.fn(),
   error: vi.fn(),
 }));
+vi.mock('#/components/finance-entry/ExpenseDeviceModal.vue', () => ({
+  default: { template: '<div />' },
+}));
 vi.mock('#/adapter/form', () => ({
   useAppForm: () => [
     { template: '<div />' },
@@ -63,6 +66,7 @@ vi.mock('#/components/app-modal', () => ({
   },
 }));
 vi.mock('ant-design-vue', () => ({
+  Button: { template: '<button><slot /><slot name="icon" /></button>' },
   message: { error: mocks.error },
   Radio: { Group: { template: '<div />' }, Button: { template: '<div />' } },
 }));

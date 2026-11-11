@@ -130,6 +130,11 @@ export default defineConfig(async () => {
       },
       server: {
         proxy: {
+          '/query-api': {
+            target: 'http://127.0.0.1:45680',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/query-api/, ''),
+          },
           '/shanbay-api': {
             target: 'https://www.shanbay.com',
             changeOrigin: true,

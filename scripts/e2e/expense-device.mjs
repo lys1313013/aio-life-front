@@ -52,9 +52,24 @@ try {
  await page.locator('input[type="password"]').fill('fixture-password');
  await page.locator('button').filter({ hasText: /^登录$/ }).click();
  await page.waitForURL('**/finance/expense');
+ await expect(page.getByRole('button', { name: '关联设备', exact: true })).toHaveCount(0);
+ await page.getByRole('button', { name: '编辑支出', exact: true }).first().click();
+ const editor = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: '关联设备', exact: true }) });
+ await expect(editor).toBeVisible();
+ const preferencesModule = `/@fs${new URL('../../packages/@core/preferences/src/index.ts', import.meta.url).pathname}`;
+ for (const width of [390, 768, 1440]) for (const theme of ['light', 'dark']) {
+  await page.setViewportSize({ width, height: 1000 });
+  await page.evaluate(async ({ url, theme }) => { const { updatePreferences } = await import(url); updatePreferences({ theme: { mode: theme } }); }, { url: preferencesModule, theme });
+  await page.waitForTimeout(150);
+  await expect(editor.getByRole('button', { name: '关联设备', exact: true })).toBeVisible();
+  await page.screenshot({ path: `${output}/editor-${width}-${theme}.png` });
+  const bounds = await editor.boundingBox(); assert(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
+ }
+ const remark = editor.getByRole('textbox').last();
+ await remark.fill('尚未保存的备注');
  const open = async () => {
-  await page.getByRole('button', { name: '关联设备', exact: true }).first().click();
-  const dialog = page.getByRole('dialog');
+  await editor.getByRole('button', { name: '关联设备', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '关联设备', exact: true });
   await expect(dialog.getByText('已有设备', { exact: true })).toBeVisible(); return dialog;
  };
  let dialog = await open();
@@ -65,6 +80,8 @@ try {
  await page.getByTitle('模拟设备35 · 256GB · 深空灰 · 2026-10-01', { exact: true }).click();
  await dialog.getByRole('button', { name: /^保\s*存$/ }).click(); await expect(dialog).toHaveCount(0);
  assert.equal(writes.at(-1).body.deviceId, '134');
+ await expect(remark).toHaveValue('尚未保存的备注');
+ await expect(editor.getByText('模拟设备35', { exact: true })).toBeVisible();
  dialog = await open();
  await dialog.getByRole('button', { name: '解除设备关联', exact: true }).click();
  await page.getByRole('button', { name: /确\s*定/ }).last().click(); await expect(dialog).toHaveCount(0);
@@ -75,7 +92,6 @@ try {
  await dialog.getByRole('button', { name: /^保\s*存$/ }).click();
  await expect(page.getByText('模拟保存失败', { exact: true })).toBeVisible();
  await expect(dialog.getByRole('textbox', {name: '设备名称', exact: true})).toHaveValue('用户确认的设备'); fail = false;
- const preferencesModule = `/@fs${new URL('../../packages/@core/preferences/src/index.ts', import.meta.url).pathname}`;
  for (const width of [390, 768, 1440]) for (const theme of ['light', 'dark']) {
   await page.setViewportSize({ width, height: 1000 });
   await page.evaluate(async ({ url, theme }) => { const { updatePreferences } = await import(url); updatePreferences({ theme: { mode: theme } }); }, { url: preferencesModule, theme });
@@ -85,6 +101,13 @@ try {
  await dialog.getByRole('button', { name: /^保\s*存$/ }).click(); await expect(dialog).toHaveCount(0);
  assert.equal(writes.at(-1).body.purchasePrice, 42.5); assert.equal(writes.at(-1).body.purchaseDate, '2026-10-22');
  assert.equal(writes.at(-1).body.purchasePlace, '模拟商家'); assert.equal(writes.at(-1).body.name, '用户确认的设备');
- assert(!Object.hasOwn(writes.at(-1).body, 'expense_purpose')); assert.deepEqual(errors, []);
- console.log('Web passed: paginated binding, unbind, prefill, failed save recovery, 6 viewport/theme screenshots.');
+ assert(!Object.hasOwn(writes.at(-1).body, 'expense_purpose'));
+ await expect(remark).toHaveValue('尚未保存的备注');
+ await expect(editor.getByText('用户确认的设备', { exact: true })).toBeVisible();
+ await editor.getByRole('button', { name: /^取\s*消$/ }).click();
+ await expect(editor).toHaveCount(0);
+ await expect(page.getByRole('button', { name: '关联设备', exact: true })).toHaveCount(0);
+ await expect(page.getByText('用户确认的设备', { exact: true })).toBeVisible();
+ assert.deepEqual(errors, []);
+ console.log('Web passed: edit-only device action, preserved unsaved expense fields, local row update, paginated binding, unbind, prefill, failed save recovery, 12 viewport/theme screenshots.');
 } finally { await browser.close(); }

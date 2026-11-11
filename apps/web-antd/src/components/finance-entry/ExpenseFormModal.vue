@@ -1,7 +1,10 @@
 <script lang="ts" setup>
+import type { ExpenseDeviceChange } from '#/api/core/expense-device';
+
 import { nextTick, onMounted, ref, toRaw } from 'vue';
 
-import { message, Radio } from 'ant-design-vue';
+import { LinkOutlined } from '@ant-design/icons-vue';
+import { Button, message, Radio } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
 import { useAppForm } from '#/adapter/form';
@@ -9,6 +12,8 @@ import { useVbenModal } from '#/adapter/modal';
 import { deleteData, insertData, updateData } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModalDelete } from '#/components/app-modal';
+
+import ExpenseDeviceModal from './ExpenseDeviceModal.vue';
 
 defineOptions({
   name: 'FormModalDemo',
@@ -21,6 +26,7 @@ const emit = defineEmits([
   'saved',
   'kindChange',
   'deleted',
+  'deviceUpdated',
 ]);
 
 // 连续录入模式开关
@@ -33,12 +39,20 @@ const tableReload = () => {
   emit('tableReload');
 };
 
+const deviceOpen = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
 const originalValues = ref<Record<string, any>>({});
+function updateDevice(change: ExpenseDeviceChange) {
+  Object.assign(originalValues.value, {
+    deviceId: change.deviceId,
+    deviceName: change.deviceName,
+  });
+  emit('deviceUpdated', change);
+}
 async function remove() {
   const id = originalValues.value.id;
-  if (!id || saving.value || deleting.value) return;
+  if (!id || saving.value || deleting.value || deviceOpen.value) return;
   deleting.value = true;
   try {
     const result = await deleteData({ id });
@@ -193,10 +207,10 @@ const resetForm = () => {
 
 const [Modal, modalApi] = useVbenModal({
   onCancel() {
-    if (!deleting.value) modalApi.close();
+    if (!deleting.value && !deviceOpen.value) modalApi.close();
   },
   onConfirm: async () => {
-    if (saving.value || deleting.value) return;
+    if (saving.value || deleting.value || deviceOpen.value) return;
     saving.value = true;
     modalApi.lock();
     try {
@@ -276,6 +290,7 @@ const [Modal, modalApi] = useVbenModal({
     } else {
       // 弹窗关闭时重置连续录入模式
       continuousMode.value = false;
+      deviceOpen.value = false;
     }
   },
   title: '',
@@ -283,9 +298,10 @@ const [Modal, modalApi] = useVbenModal({
 </script>
 <template>
   <Modal
-    :confirm-disabled="deleting"
-    :close-on-click-modal="!deleting"
-    :close-on-press-escape="!deleting"
+    :confirm-disabled="deleting || deviceOpen"
+    :close-on-click-modal="!deleting && !deviceOpen"
+    :close-on-press-escape="!deleting && !deviceOpen"
+    :submit-on-enter="!deviceOpen"
   >
     <Radio.Group
       v-if="showKindSwitch"
@@ -299,6 +315,21 @@ const [Modal, modalApi] = useVbenModal({
       <Radio.Button value="income">收入</Radio.Button>
     </Radio.Group>
     <Form />
+    <div v-if="originalValues.id" class="mb-4 flex items-center gap-2">
+      <span class="text-sm">关联设备</span>
+      <span v-if="originalValues.deviceName" class="min-w-0 truncate">
+        {{ originalValues.deviceName }}
+      </span>
+      <Button
+        type="link"
+        size="small"
+        aria-label="关联设备"
+        :disabled="saving || deleting || deviceOpen"
+        @click="deviceOpen = true"
+      >
+        <template #icon><LinkOutlined /></template>
+      </Button>
+    </div>
 
     <template #prepend-footer>
       <AppModalDelete
@@ -306,7 +337,7 @@ const [Modal, modalApi] = useVbenModal({
         class="mr-auto"
         title="确认删除？"
         :action="remove"
-        :disabled="saving"
+        :disabled="saving || deviceOpen"
         :loading="deleting"
       />
       <!-- 连续录入模式开关 -->
@@ -327,5 +358,11 @@ const [Modal, modalApi] = useVbenModal({
         </div>
       </div>
     </template>
+    <ExpenseDeviceModal
+      v-if="deviceOpen && originalValues.id"
+      :expense-id="originalValues.id"
+      @close="deviceOpen = false"
+      @updated="updateDevice"
+    />
   </Modal>
 </template>

@@ -11,7 +11,6 @@ import {
   ColumnWidthOutlined,
   DeleteOutlined,
   EditOutlined,
-  LinkOutlined,
 } from '@ant-design/icons-vue';
 import { Button, Popconfirm } from 'ant-design-vue';
 
@@ -23,7 +22,6 @@ import FormModalDemo from '#/components/finance-entry/ExpenseFormModal.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import TransactionDashboard from '../components/TransactionDashboard.vue';
-import DeviceModal from './device-modal.vue';
 
 interface RowType {
   id: string;
@@ -44,7 +42,6 @@ interface RowType {
   updateTime: string;
 }
 
-const deviceExpenseId = ref('');
 let deviceRevision = 0;
 const deviceChanges = new Map<
   string,
@@ -279,7 +276,7 @@ const gridOptions: VxeGridProps<RowType> = {
       slots: { default: 'action' },
       fixed: 'right',
       title: '操作',
-      width: 150,
+      width: 100,
     },
   ],
   showFooter: true, // 显示底部合计行
@@ -433,15 +430,10 @@ const handleYearChange = (_year: 'all' | number) => {
 
 <template>
   <div class="vp-raw w-full">
-    <DeviceModal
-      v-if="deviceExpenseId"
-      :expense-id="deviceExpenseId"
-      @close="deviceExpenseId = ''"
-      @updated="updateDevice"
-    />
     <FormModal
       @table-reload="tableReload"
       @update-success="handleUpdateSuccess"
+      @device-updated="updateDevice"
     />
 
     <!-- 支出看板 -->
@@ -464,25 +456,15 @@ const handleYearChange = (_year: 'all' | number) => {
         </Button>
       </template>
       <template #device="{ row }">
-        <Button
-          v-if="row.deviceName"
-          type="link"
-          class="max-w-full truncate"
-          @click="deviceExpenseId = row.id"
-        >
-          {{ row.deviceName }}
-        </Button>
+        <span>{{ row.deviceName }}</span>
       </template>
       <template #action="{ row }">
         <Button
           type="link"
           size="small"
-          aria-label="关联设备"
-          @click="deviceExpenseId = row.id"
+          aria-label="编辑支出"
+          @click="openFormModal(row)"
         >
-          <template #icon><LinkOutlined /></template>
-        </Button>
-        <Button type="link" size="small" @click="openFormModal(row)">
           <template #icon><EditOutlined /></template>
         </Button>
         <Popconfirm
