@@ -15,6 +15,7 @@ import { createIconifyIcon } from '@vben/icons';
 
 import {
   AppstoreOutlined,
+  CloseOutlined,
   DeleteOutlined,
   PlusOutlined,
   RightOutlined,
@@ -152,6 +153,43 @@ const exerciseTypeOptions = ref<ExerciseTypeOption[]>([]);
 const exerciseTypesLoading = ref(false);
 const exerciseTypeModalVisible = ref(false);
 const currentEditingExerciseIndex = ref(-1);
+const exerciseEditorVisible = ref(false);
+const addingExerciseType = ref(false);
+const selectedExerciseTypeId = ref('');
+const exerciseTypeDraft = ref('');
+const exerciseCountDraft = ref<number>();
+const exerciseEditError = ref('');
+const exerciseGroups = computed(() => {
+  const groups: { indices: number[]; total: number; typeId: string }[] = [];
+  formState.value.exercises.forEach((exercise, index) => {
+    let group = groups.find((item) => item.typeId === exercise.exerciseTypeId);
+    if (!group) {
+      group = { typeId: exercise.exerciseTypeId, indices: [], total: 0 };
+      groups.push(group);
+    }
+    group.indices.push(index);
+    group.total += exercise.exerciseCount ?? 0;
+  });
+  return groups;
+});
+const activeExerciseGroup = computed(
+  () =>
+    exerciseGroups.value.find(
+      (group) => group.typeId === selectedExerciseTypeId.value,
+    ) || exerciseGroups.value[0],
+);
+const editingExerciseNumber = computed(
+  () =>
+    formState.value.exercises.filter(
+      (exercise, index) =>
+        exercise.exerciseTypeId === exerciseTypeDraft.value &&
+        (currentEditingExerciseIndex.value < 0 ||
+          index < currentEditingExerciseIndex.value),
+    ).length + 1,
+);
+watch([exerciseTypeDraft, exerciseCountDraft], () => {
+  exerciseEditError.value = '';
+});
 const relateTypeList = ref<Array<{ label: string; value: number }>>([]);
 
 // 为阅读、观影标题自动添加《》
@@ -308,17 +346,9 @@ const initializeForm = (slot: TimeSlot) => {
     exercises = JSON.parse(JSON.stringify(slot.exercises));
   }
 
-  // Ensure at least one empty row if category is exercise
-  const isExercise =
-    slot.categoryId === 'exercise' ||
-    categoryPath(slot.categoryId, props.categories)
-      .split(' / ')
-      .includes('运动');
-
-  if (isExercise && exercises.length === 0) {
-    exercises.push({ exerciseTypeId: '', exerciseCount: undefined });
-  }
-
+  selectedExerciseTypeId.value = '';
+  exerciseEditorVisible.value = false;
+  exerciseTypeModalVisible.value = false;
   formState.value = {
     id: slot.id,
     startMinute: minutesToTimePickerValue(slot.startMinute),
@@ -377,19 +407,9 @@ watch(
           JSON.stringify(newSlot.exercises) !==
           JSON.stringify(oldSlot.exercises)
         ) {
-          if (newSlot.exercises && newSlot.exercises.length > 0) {
-            formState.value.exercises = JSON.parse(
-              JSON.stringify(newSlot.exercises),
-            );
-          } else if (
-            isExerciseCategory.value &&
-            formState.value.exercises.length === 0
-          ) {
-            // 如果是运动分类且没有明细，添加一行空明细
-            formState.value.exercises = [
-              { exerciseTypeId: '', exerciseCount: undefined },
-            ];
-          }
+          formState.value.exercises = (newSlot.exercises || []).map(
+            (exercise) => ({ ...exercise }),
+          );
         }
       }
     }
@@ -406,13 +426,6 @@ const handleTitleBlur = () => {
 };
 
 const handleCategoryChange = () => {
-  // 不再自动填充标题，展示逻辑会处理 fallback
-  if (isExerciseCategory.value && formState.value.exercises.length === 0) {
-    formState.value.exercises = [
-      { exerciseTypeId: '', exerciseCount: undefined },
-    ];
-  }
-
   // 切换分类时如果不需要关联了，清除掉
   if (currentRelateType.value) {
     formState.value.relateType = currentRelateType.value;
@@ -462,30 +475,72 @@ const handleSave = async () => {
 };
 
 const addExercise = () => {
-  const lastExercise =
-    formState.value.exercises[formState.value.exercises.length - 1];
-  formState.value.exercises.push({
-    exerciseTypeId: lastExercise?.exerciseTypeId || '',
-    exerciseCount: lastExercise?.exerciseCount,
-  });
-};
-
-// 打开运动类型选择弹窗
-const openExerciseTypeModal = (index: number) => {
-  currentEditingExerciseIndex.value = index;
+  if (props.busy) return;
+  addingExerciseType.value = true;
   exerciseTypeModalVisible.value = true;
 };
 
-// 选择运动类型
-const handleExerciseTypeSelect = (option: ExerciseTypeOption) => {
-  const index = currentEditingExerciseIndex.value;
+const openExerciseEditor = (index: number, typeId = '') => {
+  if (props.busy) return;
   const exercise = index >= 0 ? formState.value.exercises[index] : undefined;
-  if (exercise) {
-    exercise.exerciseTypeId = option.value;
-    handleExerciseTypeChange(option.value, index);
+  let previous: ExerciseDetail | undefined;
+  for (const item of formState.value.exercises) {
+    if (item.exerciseTypeId === typeId) previous = item;
   }
+  currentEditingExerciseIndex.value = index;
+  exerciseTypeDraft.value = exercise?.exerciseTypeId || typeId;
+  exerciseCountDraft.value = exercise?.exerciseCount ?? previous?.exerciseCount;
+  exerciseEditError.value = '';
+  exerciseEditorVisible.value = true;
+};
+
+const openExerciseTypeModal = () => {
+  if (props.busy) return;
+  addingExerciseType.value = false;
+  exerciseTypeModalVisible.value = true;
+};
+
+const handleExerciseTypeSelect = (option: ExerciseTypeOption) => {
+  if (props.busy) return;
   exerciseTypeModalVisible.value = false;
-  currentEditingExerciseIndex.value = -1;
+  if (addingExerciseType.value) {
+    openExerciseEditor(-1, option.value);
+  } else {
+    exerciseTypeDraft.value = option.value;
+  }
+};
+
+const saveExerciseSet = () => {
+  if (props.busy) return;
+  const count = exerciseCountDraft.value;
+  if (
+    !exerciseTypeDraft.value ||
+    count == null ||
+    !Number.isSafeInteger(count) ||
+    count < 0
+  ) {
+    exerciseEditError.value = '请选择运动类型并填写有效次数';
+    return;
+  }
+  const index = currentEditingExerciseIndex.value;
+  const item = {
+    exerciseTypeId: exerciseTypeDraft.value,
+    exerciseCount: count,
+  };
+  if (index >= 0) {
+    formState.value.exercises[index] = {
+      ...formState.value.exercises[index],
+      ...item,
+    };
+  } else {
+    formState.value.exercises.push(item);
+  }
+  handleExerciseTypeChange(
+    item.exerciseTypeId,
+    index < 0 ? formState.value.exercises.length - 1 : index,
+  );
+  selectedExerciseTypeId.value = item.exerciseTypeId;
+  exerciseEditorVisible.value = false;
 };
 
 // 根据 exerciseTypeId 获取运动类型选项
@@ -494,6 +549,9 @@ const getExerciseTypeOption = (
 ): ExerciseTypeOption | undefined => {
   return exerciseTypeOptions.value.find((opt) => opt.value === typeId);
 };
+
+const exerciseName = (typeId: string) =>
+  getExerciseTypeOption(typeId)?.label || '已选运动';
 
 // 渲染运动类型图标
 const renderExerciseTypeIcon = (option: ExerciseTypeOption | undefined) => {
@@ -524,7 +582,14 @@ const handleExerciseTypeChange = (value: any, index: number) => {
 };
 
 const removeExercise = (index: number) => {
+  if (props.busy) return;
   formState.value.exercises.splice(index, 1);
+};
+
+const removeEditingExercise = () => {
+  if (props.busy) return;
+  removeExercise(currentEditingExerciseIndex.value);
+  exerciseEditorVisible.value = false;
 };
 
 // 处理删除
@@ -658,103 +723,99 @@ onUnmounted(() => {
         />
       </Form.Item>
 
-      <!-- 运动相关字段 -->
-      <template v-if="isExerciseCategory">
-        <div style="margin-bottom: 16px">
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              margin-bottom: 8px;
-            "
+      <section
+        v-if="isExerciseCategory"
+        class="exercise-section"
+        aria-label="运动明细"
+      >
+        <div class="exercise-heading">
+          <span>运动明细</span>
+          <Button
+            type="text"
+            class="exercise-action"
+            aria-label="添加运动"
+            :disabled="busy"
+            @click="addExercise"
           >
-            <span>运动明细</span>
-            <Button
-              type="text"
-              class="exercise-action"
-              aria-label="添加运动"
-              @click="addExercise"
-            >
-              <template #icon><PlusOutlined /></template>
-            </Button>
-          </div>
-
-          <div
-            v-for="(exercise, index) in formState.exercises"
-            :key="index"
-            style="
-              display: flex;
-              gap: 8px;
-              align-items: center;
-              margin-bottom: 8px;
-            "
-          >
-            <div class="exercise-type-control">
-              <button
-                type="button"
-                class="exercise-type-trigger"
-                :aria-label="`运动项目 ${index + 1}`"
-                :disabled="busy"
-                @click="openExerciseTypeModal(index)"
-              >
-                <template
-                  v-if="
-                    exercise.exerciseTypeId &&
-                    getExerciseTypeOption(exercise.exerciseTypeId)
-                  "
-                >
-                  <div class="exercise-icon-wrapper">
-                    <component
-                      v-if="
-                        renderExerciseTypeIcon(
-                          getExerciseTypeOption(exercise.exerciseTypeId),
-                        )
-                      "
-                      :is="
-                        renderExerciseTypeIcon(
-                          getExerciseTypeOption(exercise.exerciseTypeId),
-                        )!
-                      "
-                      class="exercise-type-icon"
-                      :style="{
-                        color: getExerciseTypeOption(exercise.exerciseTypeId)
-                          ?.color,
-                      }"
-                    />
-                  </div>
-                  <span class="exercise-type-name">{{
-                    getExerciseTypeOption(exercise.exerciseTypeId)?.label
-                  }}</span>
-                </template>
-                <template v-else>
-                  <span class="placeholder-text">运动类型</span>
-                </template>
-                <RightOutlined class="trigger-arrow" />
-              </button>
-            </div>
-            <div class="exercise-count">
-              <InputNumber
-                v-model:value="exercise.exerciseCount"
-                placeholder="数量"
-                aria-label="运动数量"
-                style="width: 100%"
-                :min="0"
-                :precision="0"
-              />
-            </div>
-            <Button
-              type="text"
-              danger
-              class="exercise-action"
-              :aria-label="`移除运动 ${index + 1}`"
-              @click="removeExercise(index)"
-            >
-              <template #icon><DeleteOutlined /></template>
-            </Button>
-          </div>
+            <template #icon><PlusOutlined /></template>
+          </Button>
         </div>
-      </template>
+        <div
+          v-if="exerciseGroups.length > 0"
+          class="exercise-tabs"
+          role="group"
+          aria-label="运动分组"
+        >
+          <button
+            v-for="group in exerciseGroups"
+            :key="group.typeId"
+            type="button"
+            class="exercise-tab"
+            :class="{ active: activeExerciseGroup?.typeId === group.typeId }"
+            :aria-label="`${exerciseName(group.typeId)}，${group.indices.length}组，共${group.total}次`"
+            :aria-pressed="activeExerciseGroup?.typeId === group.typeId"
+            :disabled="busy"
+            @click="selectedExerciseTypeId = group.typeId"
+          >
+            <span class="exercise-tab-heading">
+              <component
+                v-if="
+                  renderExerciseTypeIcon(getExerciseTypeOption(group.typeId))
+                "
+                :is="
+                  renderExerciseTypeIcon(getExerciseTypeOption(group.typeId))!
+                "
+                class="exercise-type-icon"
+                :style="{ color: getExerciseTypeOption(group.typeId)?.color }"
+              />
+              <span class="exercise-tab-name">{{
+                exerciseName(group.typeId)
+              }}</span>
+            </span>
+            <span class="exercise-tab-summary"
+              >{{ group.indices.length }}组 · {{ group.total }}次</span
+            >
+          </button>
+        </div>
+        <div v-if="activeExerciseGroup" class="exercise-set-grid">
+          <div
+            v-for="(exerciseIndex, groupIndex) in activeExerciseGroup.indices"
+            :key="exerciseIndex"
+            class="exercise-set-tile"
+          >
+            <button
+              type="button"
+              class="exercise-set-edit"
+              :disabled="busy"
+              :aria-label="`${exerciseName(activeExerciseGroup.typeId)}第${groupIndex + 1}组，${formState.exercises[exerciseIndex]?.exerciseCount == null ? '未填写' : `${formState.exercises[exerciseIndex]?.exerciseCount}次`}，编辑`"
+              @click="openExerciseEditor(exerciseIndex)"
+            >
+              <span class="exercise-set-order">第{{ groupIndex + 1 }}组</span>
+              <span class="exercise-set-value">{{
+                formState.exercises[exerciseIndex]?.exerciseCount ?? '未填写'
+              }}</span>
+            </button>
+            <button
+              type="button"
+              class="exercise-set-remove"
+              :disabled="busy"
+              :aria-label="`删除${exerciseName(activeExerciseGroup.typeId)}第${groupIndex + 1}组`"
+              @click="removeExercise(exerciseIndex)"
+            >
+              <CloseOutlined />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="exercise-set-tile exercise-set-add"
+            :disabled="busy"
+            :aria-label="`为${exerciseName(activeExerciseGroup.typeId)}加一组`"
+            @click="openExerciseEditor(-1, activeExerciseGroup.typeId)"
+          >
+            <PlusOutlined />
+          </button>
+        </div>
+      </section>
 
       <Form.Item name="title">
         <Input
@@ -839,6 +900,69 @@ onUnmounted(() => {
     </Modal>
 
     <Modal
+      v-model:open="exerciseEditorVisible"
+      aria-label="编辑运动组"
+      width="min(95vw, 360px)"
+      :busy="busy"
+      :destroy-on-close="true"
+      @ok="saveExerciseSet"
+    >
+      <div class="exercise-edit-panel">
+        <span class="exercise-edit-order">第{{ editingExerciseNumber }}组</span>
+        <button
+          type="button"
+          class="exercise-type-trigger"
+          aria-label="修改运动类型"
+          :disabled="busy"
+          @click="openExerciseTypeModal"
+        >
+          <component
+            v-if="
+              renderExerciseTypeIcon(getExerciseTypeOption(exerciseTypeDraft))
+            "
+            :is="
+              renderExerciseTypeIcon(getExerciseTypeOption(exerciseTypeDraft))!
+            "
+            class="exercise-type-icon"
+            :style="{ color: getExerciseTypeOption(exerciseTypeDraft)?.color }"
+          />
+          <span class="exercise-type-name">{{
+            exerciseName(exerciseTypeDraft)
+          }}</span>
+          <RightOutlined class="trigger-arrow" />
+        </button>
+        <InputNumber
+          v-model:value="exerciseCountDraft"
+          class="exercise-edit-count"
+          placeholder="次数"
+          aria-label="运动次数"
+          :min="0"
+          :precision="0"
+          :disabled="busy"
+          :status="exerciseEditError ? 'error' : undefined"
+        />
+        <span
+          v-if="exerciseEditError"
+          role="alert"
+          class="exercise-edit-error"
+          >{{ exerciseEditError }}</span
+        >
+      </div>
+      <template #footer-leading>
+        <Button
+          v-if="currentEditingExerciseIndex >= 0"
+          type="text"
+          danger
+          aria-label="删除本组"
+          :disabled="busy"
+          @click="removeEditingExercise"
+        >
+          <template #icon><DeleteOutlined /></template>
+        </Button>
+      </template>
+    </Modal>
+
+    <Modal
       v-model:open="exerciseTypeModalVisible"
       aria-label="选择运动"
       :closable="false"
@@ -855,16 +979,13 @@ onUnmounted(() => {
             :key="option.value"
             class="category-grid-item"
             :class="{
-              active:
-                currentEditingExerciseIndex >= 0 &&
-                formState.exercises[currentEditingExerciseIndex]
-                  ?.exerciseTypeId === option.value,
+              active: !addingExerciseType && exerciseTypeDraft === option.value,
             }"
             :aria-label="option.label"
             :aria-pressed="
-              formState.exercises[currentEditingExerciseIndex]
-                ?.exerciseTypeId === option.value
+              !addingExerciseType && exerciseTypeDraft === option.value
             "
+            :disabled="busy"
             @click="handleExerciseTypeSelect(option)"
           >
             <div class="category-icon-wrapper">
@@ -930,7 +1051,7 @@ onUnmounted(() => {
 .category-inline-trigger:focus-visible,
 .exercise-type-trigger:focus-visible,
 .category-grid-item:focus-visible {
-  outline: 2px solid v-bind('token.colorPrimary');
+  outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
 }
 
@@ -955,7 +1076,7 @@ onUnmounted(() => {
 
 .placeholder-text,
 .trigger-arrow {
-  color: v-bind('token.colorTextSecondary');
+  color: hsl(var(--muted-foreground));
 }
 
 .trigger-arrow {
@@ -1066,55 +1187,196 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
-.exercise-type-control {
-  flex: 1;
-  min-width: 0;
+.exercise-section {
+  margin-bottom: 16px;
 }
 
-.exercise-count {
-  width: 72px;
-  flex-shrink: 0;
-}
-
-.exercise-count :deep(.ant-input-number-input) {
-  height: 42px;
-  text-align: center;
+.exercise-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .exercise-action {
   min-width: 44px;
   height: 44px;
+  color: v-bind('token.colorPrimary');
+}
+
+.exercise-tabs {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  overflow-x: auto;
+}
+
+.exercise-tab {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 56px;
+  padding: 4px 4px 8px;
+  color: v-bind('token.colorTextSecondary');
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.exercise-tab.active {
+  color: v-bind('token.colorPrimary');
+}
+
+.exercise-tab-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.exercise-tab-name {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.exercise-tab-summary {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.exercise-set-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.exercise-set-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 76px;
+  padding: 0;
+  background: v-bind('token.colorFillQuaternary');
+  border: 1px solid v-bind('token.colorBorderSecondary');
+  border-radius: 10px;
+}
+
+.exercise-set-edit {
+  display: flex;
+  width: 100%;
+  min-height: 76px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.exercise-set-order {
+  align-self: flex-start;
+  padding-right: 24px;
+  color: v-bind('token.colorTextSecondary');
+  font-size: 12px;
+}
+
+.exercise-set-value {
+  color: v-bind('token.colorText');
+  font-size: 24px;
+  line-height: 32px;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.exercise-set-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 8px;
+  color: v-bind('token.colorTextTertiary');
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.exercise-set-remove:hover {
+  color: v-bind('token.colorError');
+}
+
+.exercise-set-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v-bind('token.colorPrimary');
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.exercise-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.exercise-edit-order {
+  color: hsl(var(--muted-foreground));
 }
 
 .exercise-type-trigger {
   display: flex;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   align-items: center;
   gap: 8px;
-  padding: 4px 12px;
+  padding: 8px 12px;
   text-align: left;
   background: transparent;
-  border: 0;
+  border: 1px solid hsl(var(--border));
   border-radius: 10px;
   cursor: pointer;
 }
 
-.exercise-icon-wrapper {
-  display: flex;
+.exercise-type-icon {
   flex-shrink: 0;
-  align-items: center;
+  font-size: 18px;
 }
 
-.exercise-type-icon {
-  font-size: 18px;
+.exercise-edit-count {
+  width: 100%;
+}
+
+.exercise-edit-count :deep(.ant-input-number-input) {
+  height: 44px;
+  font-size: 20px;
+  text-align: center;
+}
+
+.exercise-edit-error {
+  color: hsl(var(--destructive));
+}
+
+.exercise-tab:focus-visible,
+.exercise-set-edit:focus-visible,
+.exercise-set-remove:focus-visible,
+.exercise-set-add:focus-visible {
+  outline: 2px solid v-bind('token.colorPrimary');
+  outline-offset: -2px;
 }
 
 .exercise-type-name {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  color: v-bind('token.colorText');
+  color: hsl(var(--foreground));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
