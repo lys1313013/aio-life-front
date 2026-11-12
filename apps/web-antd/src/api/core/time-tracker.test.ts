@@ -13,7 +13,7 @@ describe('时迹完整日列表契约', () => {
   it('超过旧分页上限也完整接收，保留字符串 ID', async () => {
     const rows = Array.from({ length: 151 }, (_, i) => ({
       id: String(9_223_372_036_854_775_807n - BigInt(i)),
-      startTime: i,
+      startMinute: i,
     }));
     vi.mocked(getQuery).mockResolvedValue(rows);
     expect(await query({ condition: { date: '2026-10-04' } })).toEqual(rows);

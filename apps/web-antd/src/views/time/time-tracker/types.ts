@@ -15,8 +15,8 @@ export const TIME_TYPE_CONFIG = {
 // 时间段类型定义
 export interface TimeSlot {
   id: string;
-  startTime: number; // 开始分钟（0-1439，包含）
-  endTime: number; // 结束分钟（0-1439，包含）；时长 = endTime - startTime + 1
+  startMinute: number; // 开始分钟（0-1439，包含）
+  endMinute: number; // 结束分钟（0-1439，包含）；时长 = endMinute - startMinute + 1
   categoryId: string; // 分类ID
   title?: string; // 标题
   description?: string; // 描述
@@ -90,8 +90,8 @@ export interface TimeTrackerConfig {
 // 编辑表单数据
 export interface TimeSlotFormData {
   id?: string;
-  startTime: number;
-  endTime: number;
+  startMinute: number;
+  endMinute: number;
   categoryId: string;
   title?: string;
   description?: string;
@@ -106,7 +106,7 @@ export interface DragOperation {
   slotId?: string;
   startX?: number;
   startY: number;
-  startTime: number;
+  startMinute: number;
   currentTime: number;
   direction?: 'bottom' | 'top';
   originalStart?: number;

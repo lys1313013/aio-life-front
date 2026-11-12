@@ -59,21 +59,21 @@ const chartData = computed(() => {
     statistics.value.timeSlots.forEach((slot) => {
       // 检查分类过滤
 
-      const startHour = Math.floor(slot.startTime / 60);
-      const endHour = Math.floor(slot.endTime / 60);
+      const startHour = Math.floor(slot.startMinute / 60);
+      const endHour = Math.floor(slot.endMinute / 60);
 
       // 精确分割：如果跨越小时，分配给对应的小时
       for (let h = startHour; h <= endHour; h++) {
         const hourStart = h * 60;
         const hourEnd = (h + 1) * 60 - 1;
 
-        const overlapStart = Math.max(hourStart, slot.startTime);
-        const overlapEnd = Math.min(hourEnd, slot.endTime);
+        const overlapStart = Math.max(hourStart, slot.startMinute);
+        const overlapEnd = Math.min(hourEnd, slot.endMinute);
 
         if (overlapEnd >= overlapStart) {
           const duration = getSlotDuration({
-            startTime: overlapStart,
-            endTime: overlapEnd,
+            startMinute: overlapStart,
+            endMinute: overlapEnd,
           });
           const arr = seriesData[slot.categoryId];
           if (arr && arr[h] !== undefined) {

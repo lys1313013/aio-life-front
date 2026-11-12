@@ -194,7 +194,7 @@ const sortedCardTimeSlots = computed(() => {
     if (a.date !== b.date) {
       return a.date < b.date ? -1 : 1;
     }
-    return a.startTime - b.startTime;
+    return a.startMinute - b.startMinute;
   });
 });
 
@@ -686,7 +686,7 @@ const isSlotFuture = (slot: TimeSlot) => {
   const today = dayjs().format('YYYY-MM-DD');
   return (
     slot.date > today ||
-    (slot.date === today && slot.startTime > currentTime.value)
+    (slot.date === today && slot.startMinute > currentTime.value)
   );
 };
 
@@ -768,7 +768,7 @@ const getSlotStyle = (slot: TimeSlot) => {
   const today = dayjs().format('YYYY-MM-DD');
   const isFuture =
     slot.date > today ||
-    (slot.date === today && slot.startTime > currentTime.value);
+    (slot.date === today && slot.startMinute > currentTime.value);
 
   const style: any = {
     top: `${top}px`,
@@ -805,19 +805,19 @@ const getSlotStyle = (slot: TimeSlot) => {
 const getDragPreviewStyle = () => {
   if (!dragOperation.value || !timelineRef.value) return {};
 
-  const startTime = Math.min(
-    dragOperation.value.startTime,
+  const startMinute = Math.min(
+    dragOperation.value.startMinute,
     dragOperation.value.currentTime,
   );
-  const endTime = Math.max(
-    dragOperation.value.startTime,
+  const endMinute = Math.max(
+    dragOperation.value.startMinute,
     dragOperation.value.currentTime,
   );
-  const duration = getSlotDuration({ startTime, endTime });
+  const duration = getSlotDuration({ startMinute, endMinute });
 
   if (duration < 5) return {}; // 允许显示较短的时间段预览，但至少保留5分钟高度以可见
 
-  const top = (startTime / 1440) * timelineRef.value.offsetHeight;
+  const top = (startMinute / 1440) * timelineRef.value.offsetHeight;
   const height = (duration / 1440) * timelineRef.value.offsetHeight;
   const category = config.value.categories.find(
     (cat) => cat.id === config.value.defaultCategoryId,
@@ -847,7 +847,7 @@ const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
   if (!timelineRef.value) return;
   const rect = timelineRef.value.getBoundingClientRect();
   const y = getClientY(event) - rect.top;
-  const startTime = Math.max(
+  const startMinute = Math.max(
     0,
     Math.min(
       1439,
@@ -857,8 +857,8 @@ const handleTrackPointerDown = (event: MouseEvent | TouchEvent) => {
   dragOperation.value = {
     type: 'create',
     startY: y,
-    startTime,
-    currentTime: startTime,
+    startMinute,
+    currentTime: startMinute,
   };
 
   // 添加全局事件监听，支持拖出容器
@@ -884,7 +884,7 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
 
   // 处理创建时的碰撞检测
   if (dragOperation.value.type === 'create') {
-    const start = dragOperation.value.startTime;
+    const start = dragOperation.value.startMinute;
     let current = dragOperation.value.currentTime;
     const currentDate = getCurrentSelectedDate();
 
@@ -895,27 +895,27 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
       // 向下拖拽
       // 找到开始时间在当前拖拽起始点之后最近的一个时间段
       const firstSlotAfter = daySlots
-        .filter((s) => s.startTime >= start)
-        .sort((a, b) => a.startTime - b.startTime)[0];
+        .filter((s) => s.startMinute >= start)
+        .sort((a, b) => a.startMinute - b.startMinute)[0];
 
       if (
         firstSlotAfter && // 限制当前时间不能超过该时间段的开始时间
-        current >= firstSlotAfter.startTime
+        current >= firstSlotAfter.startMinute
       ) {
-        current = firstSlotAfter.startTime - 1;
+        current = firstSlotAfter.startMinute - 1;
       }
     } else if (current < start) {
       // 向上拖拽
       // 找到结束时间在当前拖拽起始点之前最近的一个时间段
       const firstSlotBefore = daySlots
-        .filter((s) => s.endTime <= start)
-        .sort((a, b) => b.endTime - a.endTime)[0];
+        .filter((s) => s.endMinute <= start)
+        .sort((a, b) => b.endMinute - a.endMinute)[0];
 
       if (
         firstSlotBefore && // 限制当前时间不能小于该时间段的结束时间
-        current <= firstSlotBefore.endTime
+        current <= firstSlotBefore.endMinute
       ) {
-        current = firstSlotBefore.endTime + 1;
+        current = firstSlotBefore.endMinute + 1;
       }
     }
     dragOperation.value.currentTime = current;
@@ -942,21 +942,21 @@ const handleTrackPointerMove = (event: MouseEvent | TouchEvent) => {
         ? moveSlot(
             timeSlots.value,
             slot,
-            dragOperation.value.startTime + deltaTime,
+            dragOperation.value.startMinute + deltaTime,
           )
         : resizeSlot(
             timeSlots.value,
             slot,
             dragOperation.value.direction || 'bottom',
-            dragOperation.value.startTime + deltaTime,
+            dragOperation.value.startMinute + deltaTime,
             config.value.minSlotDuration,
           );
 
-    slot.startTime = nextSlot.startTime;
-    slot.endTime = nextSlot.endTime;
+    slot.startMinute = nextSlot.startMinute;
+    slot.endMinute = nextSlot.endMinute;
     dragOperation.value.changed =
-      dragOperation.value.originalStart !== slot.startTime ||
-      dragOperation.value.originalEnd !== slot.endTime;
+      dragOperation.value.originalStart !== slot.startMinute ||
+      dragOperation.value.originalEnd !== slot.endMinute;
   }
 };
 
@@ -977,18 +977,18 @@ const handleTrackPointerUp = async () => {
 
   if (dragOperation.value.type === 'create') {
     // 创建新时间段
-    const startTime = Math.min(
-      dragOperation.value.startTime,
+    const startMinute = Math.min(
+      dragOperation.value.startMinute,
       dragOperation.value.currentTime,
     );
-    const endTime = Math.max(
-      dragOperation.value.startTime,
+    const endMinute = Math.max(
+      dragOperation.value.startMinute,
       dragOperation.value.currentTime,
     );
-    const duration = getSlotDuration({ startTime, endTime });
+    const duration = getSlotDuration({ startMinute, endMinute });
 
     if (
-      isValidSlot({ startTime, endTime }) &&
+      isValidSlot({ startMinute, endMinute }) &&
       duration >= config.value.minSlotDuration
     ) {
       const slotDate = selectedDate.value.format('YYYY-MM-DD');
@@ -997,7 +997,7 @@ const handleTrackPointerUp = async () => {
       let recommendedCategoryId = config.value.defaultCategoryId;
 
       try {
-        const middleTime = Math.floor((startTime + endTime) / 2);
+        const middleTime = Math.floor((startMinute + endMinute) / 2);
         const result = await recommendType({
           date: slotDate,
           time: middleTime,
@@ -1014,8 +1014,8 @@ const handleTrackPointerUp = async () => {
 
       const newSlot: TimeSlot = {
         id: '',
-        startTime,
-        endTime,
+        startMinute,
+        endMinute,
         categoryId: recommendedCategoryId,
         title: '',
         date: slotDate,
@@ -1095,11 +1095,11 @@ const handleSlotPointerDown = (
       type: 'resize',
       slotId: slot.id,
       startY: y,
-      startTime: direction === 'top' ? slot.startTime : slot.endTime,
-      currentTime: direction === 'top' ? slot.startTime : slot.endTime,
+      startMinute: direction === 'top' ? slot.startMinute : slot.endMinute,
+      currentTime: direction === 'top' ? slot.startMinute : slot.endMinute,
       direction,
-      originalStart: slot.startTime,
-      originalEnd: slot.endTime,
+      originalStart: slot.startMinute,
+      originalEnd: slot.endMinute,
       changed: false,
     };
   } else {
@@ -1107,10 +1107,10 @@ const handleSlotPointerDown = (
       type: 'move',
       slotId: slot.id,
       startY: y,
-      startTime: slot.startTime,
-      currentTime: slot.startTime,
-      originalStart: slot.startTime,
-      originalEnd: slot.endTime,
+      startMinute: slot.startMinute,
+      currentTime: slot.startMinute,
+      originalStart: slot.startMinute,
+      originalEnd: slot.endMinute,
       changed: false,
     };
   }

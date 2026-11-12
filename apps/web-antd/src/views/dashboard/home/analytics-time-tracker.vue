@@ -107,7 +107,7 @@ const request = useActiveRequest({
 
     // 当前日期全部明细按开始时间倒序展示，由列表独立滚动。
     const sortedRecords = [...records].sort(
-      (a, b) => b.startTime - a.startTime,
+      (a, b) => b.startMinute - a.startMinute,
     );
     recentRecords.value = sortedRecords.map((record) => {
       const category = categories.find((c) => c.id === record.categoryId);
@@ -127,21 +127,21 @@ const request = useActiveRequest({
         id: record.id || Math.random().toString(),
         categoryName: categoryPath(record.categoryId, categories),
         categoryColor: category?.color || '#ccc',
-        timeRangeStr: `${formatTime(record.startTime)} ${durationStr}`,
+        timeRangeStr: `${formatTime(record.startMinute)} ${durationStr}`,
         originalRecord: record as TimeSlot,
       };
     });
 
     // 闭区间末分钟结束后的边界，用于计算距离上次记录已过去多久；0 表示无记录
     const lastEndTime =
-      sortedRecords.length > 0 ? sortedRecords[0]!.endTime + 1 : 0;
+      sortedRecords.length > 0 ? sortedRecords[0]!.endMinute + 1 : 0;
     emit('update:last-end', lastEndTime);
 
     // 处理时间轴区块 (改为竖向，自上而下 00:00 - 24:00)
     const totalMinutes = 24 * 60; // 一天总分钟数
     timelineBlocks.value = records.map((record) => {
       const category = categories.find((c) => c.id === record.categoryId);
-      const startPercent = (record.startTime / totalMinutes) * 100;
+      const startPercent = (record.startMinute / totalMinutes) * 100;
       const heightPercent = (getSlotDuration(record) / totalMinutes) * 100;
       return {
         id: record.id || Math.random().toString(),

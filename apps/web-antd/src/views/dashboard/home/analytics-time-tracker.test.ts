@@ -31,8 +31,8 @@ beforeEach(() => {
     {
       id: '9223372036854775807',
       categoryId: 'category',
-      startTime: 60,
-      endTime: 90,
+      startMinute: 60,
+      endMinute: 90,
     },
   ]);
 });
@@ -66,10 +66,10 @@ it('保存后查询使旧响应失效，明细和边界一起使用最新结果'
   });
   await flushPromises();
   mocks.records.mockResolvedValueOnce([
-    { id: 'new', categoryId: 'category', startTime: 100, endTime: 120 },
+    { id: 'new', categoryId: 'category', startMinute: 100, endMinute: 120 },
   ]);
   await wrapper.vm.loadData(true);
-  finish([{ id: 'old', categoryId: 'category', startTime: 60, endTime: 90 }]);
+  finish([{ id: 'old', categoryId: 'category', startMinute: 60, endMinute: 90 }]);
   await flushPromises();
   expect(wrapper.emitted('update:last-end')?.at(-1)).toEqual([121]);
   expect(mocks.render).toHaveBeenCalledTimes(1);

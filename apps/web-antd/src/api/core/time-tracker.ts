@@ -17,11 +17,14 @@ export interface ExerciseDetail {
 export interface TimeRecordEntity {
   categoryId: string;
   date: string;
-  startTime: number;
-  endTime: number;
+  /** 当天 0:00 起的分钟数，0–1439，闭区间包含该分钟 */
+  startMinute: number;
+  /** 当天 0:00 起的分钟数，0–1439，闭区间包含该分钟 */
+  endMinute: number;
   title: string;
   description: string;
-  duration: number;
+  /** 时长（分钟），闭区间 endMinute - startMinute + 1 */
+  durationMinutes: number;
   isManual: number;
   id: string;
   exercises?: ExerciseDetail[]; // Allow sending exercises to backend

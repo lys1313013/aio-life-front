@@ -118,8 +118,8 @@ const getDisplayIcon = (category: MergedCategory | TimeSlotCategory) => {
 // 本地表单状态接口，时间字段使用 Dayjs
 interface LocalFormState {
   id?: string;
-  startTime?: dayjs.Dayjs;
-  endTime?: dayjs.Dayjs;
+  startMinute?: dayjs.Dayjs;
+  endMinute?: dayjs.Dayjs;
   categoryId: string;
   title?: string;
   description?: string;
@@ -131,8 +131,8 @@ interface LocalFormState {
 const formRef = ref<FormInstance>();
 const formState = ref<LocalFormState>({
   id: '',
-  startTime: undefined,
-  endTime: undefined,
+  startMinute: undefined,
+  endMinute: undefined,
   categoryId: '',
   title: '',
   description: '',
@@ -238,15 +238,15 @@ onMounted(() => {
 
 // 计算时长
 const duration = computed(() => {
-  const { startTime, endTime } = formState.value;
-  if (!startTime || !endTime) return 0;
+  const { startMinute, endMinute } = formState.value;
+  if (!startMinute || !endMinute) return 0;
 
-  const startMinutes = timeToMinutes(startTime.format('HH:mm'));
-  const endMinutes = timeToMinutes(endTime.format('HH:mm'));
+  const startMinutes = timeToMinutes(startMinute.format('HH:mm'));
+  const endMinutes = timeToMinutes(endMinute.format('HH:mm'));
 
   return Math.max(
     0,
-    getSlotDuration({ startTime: startMinutes, endTime: endMinutes }),
+    getSlotDuration({ startMinute: startMinutes, endMinute: endMinutes }),
   );
 });
 
@@ -260,23 +260,27 @@ const displayDuration = computed(() => {
 const rules: any = {
   title: [{ max: 50, message: '标题不能超过50个字符', trigger: 'blur' }],
   categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  startTime: [{ required: true, message: '请选择开始时间', trigger: 'change' }],
-  endTime: [
+  startMinute: [
+    { required: true, message: '请选择开始时间', trigger: 'change' },
+  ],
+  endMinute: [
     { required: true, message: '请选择结束时间', trigger: 'change' },
     {
       validator: () => {
-        if (!formState.value.startTime || !formState.value.endTime) {
+        if (!formState.value.startMinute || !formState.value.endMinute) {
           return Promise.resolve();
         }
 
         const startMinutes = timeToMinutes(
-          formState.value.startTime.format('HH:mm'),
+          formState.value.startMinute.format('HH:mm'),
         );
         const endMinutes = timeToMinutes(
-          formState.value.endTime.format('HH:mm'),
+          formState.value.endMinute.format('HH:mm'),
         );
 
-        if (!isValidSlot({ startTime: startMinutes, endTime: endMinutes })) {
+        if (
+          !isValidSlot({ startMinute: startMinutes, endMinute: endMinutes })
+        ) {
           return Promise.reject(new Error('结束时间必须大于等于开始时间'));
         }
 
@@ -317,8 +321,8 @@ const initializeForm = (slot: TimeSlot) => {
 
   formState.value = {
     id: slot.id,
-    startTime: minutesToTimePickerValue(slot.startTime),
-    endTime: minutesToTimePickerValue(slot.endTime),
+    startMinute: minutesToTimePickerValue(slot.startMinute),
+    endMinute: minutesToTimePickerValue(slot.endMinute),
     categoryId: slot.categoryId,
     title: slot.title,
     description: slot.description || '',
@@ -347,17 +351,19 @@ watch(
         // 同步更新时间字段
         if (
           newSlot.date !== oldSlot.date ||
-          newSlot.startTime !== oldSlot.startTime
+          newSlot.startMinute !== oldSlot.startMinute
         ) {
-          formState.value.startTime = minutesToTimePickerValue(
-            newSlot.startTime,
+          formState.value.startMinute = minutesToTimePickerValue(
+            newSlot.startMinute,
           );
         }
         if (
           newSlot.date !== oldSlot.date ||
-          newSlot.endTime !== oldSlot.endTime
+          newSlot.endMinute !== oldSlot.endMinute
         ) {
-          formState.value.endTime = minutesToTimePickerValue(newSlot.endTime);
+          formState.value.endMinute = minutesToTimePickerValue(
+            newSlot.endMinute,
+          );
         }
         // 同步更新关联记录
         if (newSlot.relateId !== oldSlot.relateId) {
@@ -430,15 +436,15 @@ const handleSave = async () => {
   try {
     await formRef.value?.validate();
 
-    if (!formState.value.startTime || !formState.value.endTime) {
+    if (!formState.value.startMinute || !formState.value.endMinute) {
       message.error('请选择开始和结束时间');
       return;
     }
 
     const saveData: TimeSlotFormData = {
       id: formState.value.id,
-      startTime: timeToMinutes(formState.value.startTime.format('HH:mm')),
-      endTime: timeToMinutes(formState.value.endTime.format('HH:mm')),
+      startMinute: timeToMinutes(formState.value.startMinute.format('HH:mm')),
+      endMinute: timeToMinutes(formState.value.endMinute.format('HH:mm')),
       categoryId: formState.value.categoryId,
       title: formState.value.title,
       description: formState.value.description,
@@ -532,20 +538,24 @@ const selectionBounds = computed(() => {
   const record = {
     id: formState.value.id,
     date: props.slot.date,
-    startTime: formState.value.startTime
-      ? timeToMinutes(formState.value.startTime.format('HH:mm'))
+    startMinute: formState.value.startMinute
+      ? timeToMinutes(formState.value.startMinute.format('HH:mm'))
       : 0,
-    endTime: formState.value.endTime
-      ? timeToMinutes(formState.value.endTime.format('HH:mm'))
+    endMinute: formState.value.endMinute
+      ? timeToMinutes(formState.value.endMinute.format('HH:mm'))
       : 1439,
   };
   return {
-    startTime: timeSelectionBounds(
+    startMinute: timeSelectionBounds(
       record,
       props.existingSlots || [],
-      'startTime',
+      'startMinute',
     ),
-    endTime: timeSelectionBounds(record, props.existingSlots || [], 'endTime'),
+    endMinute: timeSelectionBounds(
+      record,
+      props.existingSlots || [],
+      'endMinute',
+    ),
   };
 });
 
@@ -593,15 +603,15 @@ onUnmounted(() => {
       </Form.Item>
 
       <div class="compact-time-range">
-        <Form.Item name="startTime" class="compact-time-field">
+        <Form.Item name="startMinute" class="compact-time-field">
           <label :for="startInputId" class="compact-time-label">开始</label>
           <TimeWheelPicker
             :id="startInputId"
-            v-model:value="formState.startTime"
+            v-model:value="formState.startMinute"
             label="开始时间"
             class="time-value-picker"
-            :min="selectionBounds.startTime.min"
-            :max="selectionBounds.startTime.max"
+            :min="selectionBounds.startMinute.min"
+            :max="selectionBounds.startMinute.max"
             :show-now="false"
             :input-read-only="isMobile"
             :disabled="busy"
@@ -613,15 +623,15 @@ onUnmounted(() => {
           }}</span>
           <span class="compact-time-arrow" aria-hidden="true"></span>
         </div>
-        <Form.Item name="endTime" class="compact-time-field">
+        <Form.Item name="endMinute" class="compact-time-field">
           <label :for="endInputId" class="compact-time-label">结束</label>
           <TimeWheelPicker
             :id="endInputId"
-            v-model:value="formState.endTime"
+            v-model:value="formState.endMinute"
             label="结束时间"
             class="time-value-picker"
-            :min="selectionBounds.endTime.min"
-            :max="selectionBounds.endTime.max"
+            :min="selectionBounds.endMinute.min"
+            :max="selectionBounds.endMinute.max"
             :show-now="true"
             :input-read-only="isMobile"
             :disabled="busy"

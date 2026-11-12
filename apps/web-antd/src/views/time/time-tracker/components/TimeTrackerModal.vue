@@ -131,8 +131,8 @@ const open = async (
         : contextExistingSlots || [];
       editingSlot.value = {
         id: '',
-        startTime: result.recommend.startTime,
-        endTime: result.recommend.endTime,
+        startMinute: result.recommend.startMinute,
+        endMinute: result.recommend.endMinute,
         categoryId: result.recommend.categoryId,
         title: '',
         description: '',
@@ -215,8 +215,8 @@ const handleDateChange = async (value: unknown) => {
     editingSlot.value = {
       ...editingSlot.value,
       date: targetDate,
-      startTime: result.recommend.startTime,
-      endTime: result.recommend.endTime,
+      startMinute: result.recommend.startMinute,
+      endMinute: result.recommend.endMinute,
     };
   } catch (error) {
     console.error('切换录入日期失败:', error);
@@ -237,8 +237,8 @@ const handleSave = async (formData: TimeSlotFormData) => {
 
   const newSlot: TimeSlot = {
     id: isEditMode.value ? editingSlot.value!.id : '',
-    startTime: formData.startTime,
-    endTime: formData.endTime,
+    startMinute: formData.startMinute,
+    endMinute: formData.endMinute,
     categoryId: formData.categoryId,
     title: formData.title,
     description: formData.description || '',

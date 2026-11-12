@@ -2,16 +2,17 @@
 interface TimeRange {
   id?: string;
   date?: string;
-  startTime: number;
-  endTime: number;
+  startMinute: number;
+  endMinute: number;
 }
 
 export function timeSelectionBounds(
   record: TimeRange,
   existing: TimeRange[],
-  field: 'endTime' | 'startTime',
+  field: 'endMinute' | 'startMinute',
 ) {
-  const anchor = field === 'startTime' ? record.endTime : record.startTime;
+  const anchor =
+    field === 'startMinute' ? record.endMinute : record.startMinute;
   let max = 1439;
   let min = 0;
   for (const item of existing) {
@@ -20,12 +21,12 @@ export function timeSelectionBounds(
       (item.date && item.date !== record.date)
     )
       continue;
-    if (item.startTime <= anchor && item.endTime >= anchor)
+    if (item.startMinute <= anchor && item.endMinute >= anchor)
       return { min: 1, max: 0 };
-    if (item.endTime < anchor) min = Math.max(min, item.endTime + 1);
-    if (item.startTime > anchor) max = Math.min(max, item.startTime - 1);
+    if (item.endMinute < anchor) min = Math.max(min, item.endMinute + 1);
+    if (item.startMinute > anchor) max = Math.min(max, item.startMinute - 1);
   }
-  return field === 'startTime'
+  return field === 'startMinute'
     ? { min, max: Math.min(max, anchor) }
     : { min: Math.max(min, anchor), max };
 }

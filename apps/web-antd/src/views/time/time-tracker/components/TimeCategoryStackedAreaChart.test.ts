@@ -21,7 +21,7 @@ vi.mock('../config', () => ({
   getCategoryName: () => '学习',
 }));
 
-function getHourlyDurations(startTime: number, endTime: number): number[] {
+function getHourlyDurations(startMinute: number, endMinute: number): number[] {
   const wrapper = mount(TimeCategoryStackedAreaChart, {
     props: {
       categories: [{ id: 'learning', name: '学习', color: '#1890ff' }],
@@ -32,8 +32,8 @@ function getHourlyDurations(startTime: number, endTime: number): number[] {
           id: 'record',
           categoryId: 'learning',
           date: '2026-09-12',
-          startTime,
-          endTime,
+          startMinute,
+          endMinute,
         },
       ],
     },
@@ -88,15 +88,15 @@ describe('两级分类图表统计', () => {
           id: '1',
           categoryId: 'work',
           date: '2026-09-12',
-          startTime: 600,
-          endTime: 629,
+          startMinute: 600,
+          endMinute: 629,
         },
         {
           id: '2',
           categoryId: 'code',
           date: '2026-09-12',
-          startTime: 630,
-          endTime: 659,
+          startMinute: 630,
+          endMinute: 659,
         },
       ],
     };

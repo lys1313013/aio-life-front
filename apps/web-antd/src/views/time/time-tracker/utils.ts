@@ -1,17 +1,17 @@
 import type { TimeSlot } from './types';
 
-type SlotInterval = Pick<TimeSlot, 'endTime' | 'startTime'>;
+type SlotInterval = Pick<TimeSlot, 'endMinute' | 'startMinute'>;
 
-// 与后端保持一致：分钟闭区间 [startTime, endTime]，范围 0–1439。
+// 与后端保持一致：分钟闭区间 [startMinute, endMinute]，范围 0–1439。
 export function getSlotDuration(slot: SlotInterval): number {
-  return slot.endTime - slot.startTime + 1;
+  return slot.endMinute - slot.startMinute + 1;
 }
 
-export function endTimeFromDuration(
-  startTime: number,
+export function endMinuteFromDuration(
+  startMinute: number,
   duration: number,
 ): number {
-  return startTime + duration - 1;
+  return startMinute + duration - 1;
 }
 
 // 将分钟转换为时间字符串（HH:MM）
@@ -41,7 +41,8 @@ export function hasOverlapExcluding(
   return slots.some((slot) => {
     if (slot.id === excludeId || slot.date !== newSlot.date) return false;
     return (
-      newSlot.startTime <= slot.endTime && newSlot.endTime >= slot.startTime
+      newSlot.startMinute <= slot.endMinute &&
+      newSlot.endMinute >= slot.startMinute
     );
   });
 }
@@ -63,7 +64,7 @@ export function getBelowSlotStartTime(
 
   // 找到所有在当前时间段下方的时段（开始时间大于当前时间段的结束时间）
   const belowSlots = otherSlots.filter(
-    (slot) => slot.startTime >= currentSlot.endTime,
+    (slot) => slot.startMinute >= currentSlot.endMinute,
   );
 
   if (belowSlots.length === 0) {
@@ -72,10 +73,10 @@ export function getBelowSlotStartTime(
 
   // 找到最接近的下方时间段（开始时间最小的下方时间段）
   const closestBelowSlot = belowSlots.reduce((closest, slot) => {
-    return slot.startTime < closest.startTime ? slot : closest;
+    return slot.startMinute < closest.startMinute ? slot : closest;
   });
 
-  return closestBelowSlot.startTime;
+  return closestBelowSlot.startMinute;
 }
 
 // 检测指定时间段上方的第一个时间段
@@ -92,7 +93,7 @@ export function getAboveSlotEndTime(
       slot.date === currentSlot.date,
   );
   const aboveSlots = otherSlots.filter(
-    (slot) => slot.endTime <= currentSlot.startTime,
+    (slot) => slot.endMinute <= currentSlot.startMinute,
   );
 
   if (aboveSlots.length === 0) {
@@ -101,20 +102,20 @@ export function getAboveSlotEndTime(
 
   // 找到最接近的上方时间段（结束时间最大的上方时间段）
   const closestAboveSlot = aboveSlots.reduce((closest, slot) => {
-    return slot.endTime > closest.endTime ? slot : closest;
+    return slot.endMinute > closest.endMinute ? slot : closest;
   });
 
-  return closestAboveSlot.endTime;
+  return closestAboveSlot.endMinute;
 }
 
 // 验证时间段是否有效
 export function isValidSlot(slot: SlotInterval): boolean {
   return (
-    Number.isInteger(slot.startTime) &&
-    Number.isInteger(slot.endTime) &&
-    slot.startTime >= 0 &&
-    slot.endTime <= 1439 &&
-    slot.startTime <= slot.endTime
+    Number.isInteger(slot.startMinute) &&
+    Number.isInteger(slot.endMinute) &&
+    slot.startMinute >= 0 &&
+    slot.endMinute <= 1439 &&
+    slot.startMinute <= slot.endMinute
   );
 }
 
@@ -122,7 +123,7 @@ export function isValidSlot(slot: SlotInterval): boolean {
 export function moveSlot(
   slots: TimeSlot[],
   slot: TimeSlot,
-  startTime: number,
+  startMinute: number,
 ): TimeSlot {
   const duration = getSlotDuration(slot);
   const minStart = (getAboveSlotEndTime(slots, slot) ?? -1) + 1;
@@ -130,11 +131,11 @@ export function moveSlot(
   const maxStart = maxEnd - duration + 1;
   if (minStart > maxStart) return slot;
 
-  const nextStart = Math.max(minStart, Math.min(maxStart, startTime));
+  const nextStart = Math.max(minStart, Math.min(maxStart, startMinute));
   const moved = {
     ...slot,
-    startTime: nextStart,
-    endTime: endTimeFromDuration(nextStart, duration),
+    startMinute: nextStart,
+    endMinute: endMinuteFromDuration(nextStart, duration),
   };
   return isValidSlot(moved) && !hasOverlap(slots, moved) ? moved : slot;
 }
@@ -150,14 +151,14 @@ export function resizeSlot(
   const resized = { ...slot };
   if (direction === 'top') {
     const minStart = (getAboveSlotEndTime(slots, slot) ?? -1) + 1;
-    const maxStart = slot.endTime - minDuration + 1;
+    const maxStart = slot.endMinute - minDuration + 1;
     if (minStart > maxStart) return slot;
-    resized.startTime = Math.max(minStart, Math.min(maxStart, time));
+    resized.startMinute = Math.max(minStart, Math.min(maxStart, time));
   } else {
-    const minEnd = endTimeFromDuration(slot.startTime, minDuration);
+    const minEnd = endMinuteFromDuration(slot.startMinute, minDuration);
     const maxEnd = (getBelowSlotStartTime(slots, slot) ?? 1440) - 1;
     if (minEnd > maxEnd) return slot;
-    resized.endTime = Math.max(minEnd, Math.min(maxEnd, time));
+    resized.endMinute = Math.max(minEnd, Math.min(maxEnd, time));
   }
   return isValidSlot(resized) && !hasOverlap(slots, resized) ? resized : slot;
 }
@@ -165,7 +166,7 @@ export function resizeSlot(
 // 获取时间段在时间轴上的位置和高度
 export function getSlotPosition(slot: TimeSlot, containerHeight: number) {
   const totalMinutes = 1440; // 24小时
-  const top = (slot.startTime / totalMinutes) * containerHeight;
+  const top = (slot.startMinute / totalMinutes) * containerHeight;
   const height = (getSlotDuration(slot) / totalMinutes) * containerHeight;
   return { top, height };
 }
@@ -186,7 +187,7 @@ export function snapToGrid(time: number, gridSize: number = 15): number {
 
 // 格式化时间段显示
 export function formatSlotTime(slot: TimeSlot): string {
-  return `${minutesToTime(slot.startTime)} - ${minutesToTime(slot.endTime)}`;
+  return `${minutesToTime(slot.startMinute)} - ${minutesToTime(slot.endMinute)}`;
 }
 
 // 格式化时长显示

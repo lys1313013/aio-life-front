@@ -19,8 +19,8 @@ vi.mock('@vben/icons', () => ({ createIconifyIcon: () => 'span' }));
 dayjs.extend(customParseFormat);
 
 function mountForm(
-  startTime: number,
-  endTime: number,
+  startMinute: number,
+  endMinute: number,
   existingSlots: TimeSlot[] = [],
 ) {
   return shallowMount(TimeSlotEditForm, {
@@ -29,8 +29,8 @@ function mountForm(
         id: 'current',
         date: '2026-09-12',
         categoryId: 'read',
-        startTime,
-        endTime,
+        startMinute,
+        endMinute,
       },
       categories: [{ id: 'read', name: '读书', color: '#1890ff' }],
       existingSlots,
@@ -69,15 +69,15 @@ describe('时迹编辑器的闭区间输入', () => {
         id: 'previous',
         date: '2026-09-12',
         categoryId: 'read',
-        startTime: 540,
-        endTime: 599,
+        startMinute: 540,
+        endMinute: 599,
       },
       {
         id: 'next',
         date: '2026-09-12',
         categoryId: 'read',
-        startTime: 680,
-        endTime: 700,
+        startMinute: 680,
+        endMinute: 700,
       },
     ]);
     const [start, end] = wrapper.findAllComponents(TimeWheelPicker);
@@ -112,8 +112,8 @@ describe('时迹编辑器的闭区间输入', () => {
         expect.objectContaining({
           id: 'current',
           categoryId: 'read',
-          startTime: 570,
-          endTime: 599,
+          startMinute: 570,
+          endMinute: 599,
         }),
       ],
     ]);
@@ -138,7 +138,7 @@ describe('时迹编辑器的闭区间输入', () => {
     const wrapper = mountForm(1439, 1439);
     expect(getEndTimeValue(wrapper)).toBe('23:59');
     expect(wrapper.get('[aria-label="记录时长"]').text()).toBe('1分');
-    const rules = wrapper.findComponent(Form).props('rules')?.endTime;
+    const rules = wrapper.findComponent(Form).props('rules')?.endMinute;
     const rule = Array.isArray(rules)
       ? rules.find((item) => item.validator)
       : rules;
@@ -151,7 +151,7 @@ describe('时迹编辑器的闭区间输入', () => {
 
   it('结束早于开始时阻止保存', async () => {
     const wrapper = mountForm(600, 599);
-    const rules = wrapper.findComponent(Form).props('rules')?.endTime;
+    const rules = wrapper.findComponent(Form).props('rules')?.endMinute;
     const rule = Array.isArray(rules)
       ? rules.find((item) => item.validator)
       : rules;
@@ -184,8 +184,8 @@ describe('二级运动分类', () => {
         id: 'current',
         date: '2026-09-12',
         categoryId: 'running',
-        startTime: 540,
-        endTime: 569,
+        startMinute: 540,
+        endMinute: 569,
       },
       categories: [
         { id: 'sports', name: '运动', color: '#52c41a', parentId: '0' },

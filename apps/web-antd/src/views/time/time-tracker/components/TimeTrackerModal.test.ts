@@ -55,13 +55,13 @@ vi.mock('./TimeSlotEditForm.vue', () => ({
   },
 }));
 
-function recommendation(startTime: number, endTime: number) {
+function recommendation(startMinute: number, endMinute: number) {
   return {
     id: '',
     date: '2026-09-12',
     categoryId: 'read',
-    startTime,
-    endTime,
+    startMinute,
+    endMinute,
   };
 }
 
@@ -81,7 +81,7 @@ describe('新增时迹前检查当天剩余时间', () => {
   it('满日仅提示，等待检查结果时也不创建编辑弹窗', async () => {
     const result = {
       recommend: null,
-      records: [{ startTime: 0, endTime: 1439 }],
+      records: [{ startMinute: 0, endMinute: 1439 }],
     };
     let resolve!: (value: typeof result) => void;
     mocks.recommendNext.mockReturnValue(
@@ -123,7 +123,7 @@ describe('新增时迹前检查当天剩余时间', () => {
     expect(mocks.recommendNext).toHaveBeenCalledWith({ date: '2026-09-12' });
     expect(wrapper.find('[data-test="modal"]').exists()).toBe(true);
     expect(wrapper.findComponent(TimeSlotEditForm).props('slot')).toMatchObject(
-      { startTime: minute, endTime: minute },
+      { startMinute: minute, endMinute: minute },
     );
     expect(mocks.info).not.toHaveBeenCalled();
     wrapper.unmount();
@@ -167,7 +167,7 @@ describe('新增时迹前检查当天剩余时间', () => {
     await wrapper.vm.open(undefined, '2026-09-12', []);
     await wrapper.vm.$nextTick();
     expect(wrapper.findComponent(TimeSlotEditForm).props('slot')).toMatchObject(
-      { startTime: 540, endTime: 569 },
+      { startMinute: 540, endMinute: 569 },
     );
     expect(mocks.query).not.toHaveBeenCalled();
     wrapper.unmount();
@@ -269,9 +269,9 @@ describe('录入日期选择', () => {
     vi.restoreAllMocks();
   });
 
-  const dayResult = (date: string, endTime?: number) => ({
+  const dayResult = (date: string, endMinute?: number) => ({
     recommend: { ...recommendation(600, 629), date },
-    records: endTime === undefined ? [] : [{ startTime: 0, endTime }],
+    records: endMinute === undefined ? [] : [{ startMinute: 0, endMinute }],
   });
 
   it('首页新增只查询今天并使用今天的日期', async () => {
@@ -306,7 +306,7 @@ describe('录入日期选择', () => {
       .mockResolvedValueOnce(dayResult('2026-09-22'))
       .mockResolvedValueOnce({
         recommend: { ...recommendation(120, 149), date: '2026-09-20' },
-        records: [{ startTime: 0, endTime: 119 }],
+        records: [{ startMinute: 0, endMinute: 119 }],
       });
     mocks.save.mockResolvedValue('saved-id');
     const wrapper = mount(TimeTrackerModal);
@@ -316,8 +316,8 @@ describe('录入日期选择', () => {
     const editor = wrapper.findComponent(TimeSlotEditForm);
     expect(editor.props('slot')).toMatchObject({
       date: '2026-09-20',
-      startTime: 120,
-      endTime: 149,
+      startMinute: 120,
+      endMinute: 149,
     });
     editor.vm.$emit('save', { ...recommendation(60, 89), title: '冲突' });
     await flushPromises();
