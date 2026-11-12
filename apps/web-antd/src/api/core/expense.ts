@@ -16,10 +16,13 @@ export async function query(data: any) {
  * 新增
  */
 export async function insertData(data: ApiRequests['ExpenseCreateReq']) {
-  return afterHomeSectionWrite(
+  const operation = afterHomeSectionWrite(
     'expense',
     requestClient.post('/expense', pickPayload('ExpenseCreateReq', data)),
   );
+  return data.newDevice
+    ? afterHomeSectionWrite('device', operation)
+    : operation;
 }
 
 /**
@@ -33,13 +36,16 @@ export async function updateData(data: ApiRequests['ExpenseUpdateReq']) {
 }
 
 export async function saveBatch(dataList: ApiRequests['ExpenseCreateReq'][]) {
-  return afterHomeSectionWrite(
+  const operation = afterHomeSectionWrite(
     'expense',
     requestClient.post(
       '/expense/saveBatch',
       pickPayloadList('ExpenseCreateReq', dataList),
     ),
   );
+  return dataList.some((data) => data.newDevice)
+    ? afterHomeSectionWrite('device', operation)
+    : operation;
 }
 
 /**

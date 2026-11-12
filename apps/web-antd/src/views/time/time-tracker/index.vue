@@ -52,7 +52,6 @@ import TimeCategoryBarChart from './components/TimeCategoryBarChart.vue';
 import TimeCategoryPieChart from './components/TimeCategoryPieChart.vue';
 import TimeCategoryStackedAreaChart from './components/TimeCategoryStackedAreaChart.vue';
 import TimeTrackerModal from './components/TimeTrackerModal.vue';
-import TimeTypePieChart from './components/TimeTypePieChart.vue';
 import { defaultConfig } from './config';
 import { createDaySwipe, daySwipeStyle } from './day-swipe';
 import {
@@ -148,7 +147,6 @@ const loadCategories = async () => {
           icon: item.icon,
           description: item.description,
           isTrackTime: item.isTrackTime === 1,
-          timeType: item.timeType as 1 | 2 | 3 | undefined,
           categoryType: isPublic ? 'public' : isOverride ? 'public' : 'private',
           isOverridden: isOverride,
           isHidden: item.isEnabled === 0,
@@ -1792,14 +1790,6 @@ const getDaySlots = (date: string): TimeSlot[] => {
               :categories="config.categories"
               :selected-date="selectedDate"
               :stat-mode="statMode"
-              :selected-filter-category-ids="selectedFilterCategoryIds"
-            />
-            <!-- 时间类型分布饼图 -->
-            <TimeTypePieChart
-              v-if="selectedFilterCategoryIds.length === 0"
-              :time-slots="timeSlots"
-              :categories="config.categories"
-              :selected-date="selectedDate"
               :selected-filter-category-ids="selectedFilterCategoryIds"
             />
           </div>

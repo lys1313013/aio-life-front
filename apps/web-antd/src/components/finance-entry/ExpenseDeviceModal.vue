@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type {
   ExpenseDeviceChange,
+  ExpenseDeviceSelection,
   LinkedDevice,
 } from '#/api/core/expense-device';
 import type { DeviceCreateReq } from '#/api/payload';
@@ -32,9 +33,14 @@ import {
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModal } from '#/components/app-modal';
 
-const props = defineProps<{ expenseId: string }>();
+const props = defineProps<{
+  expenseDraft?: Record<string, any>;
+  expenseId?: string;
+  selection?: ExpenseDeviceSelection | null;
+}>();
 const emit = defineEmits<{
   close: [];
+  staged: [selection: ExpenseDeviceSelection | null];
   updated: [change: ExpenseDeviceChange];
 }>();
 const mode = ref('existing');
@@ -44,6 +50,7 @@ type DeviceDraft = {
 };
 const draft = ref<DeviceDraft>({});
 const selectedId = ref<string>();
+const selectedDevice = ref<LinkedDevice | null>(null);
 const failed = ref(false);
 const loading = ref(false);
 const ready = ref(false);
@@ -68,6 +75,11 @@ const options = computed(() => {
   const rows = [...choices.value];
   if (current.value && !rows.some((row) => row.id === current.value?.id))
     rows.unshift(current.value);
+  if (
+    selectedDevice.value &&
+    !rows.some((row) => row.id === selectedDevice.value?.id)
+  )
+    rows.unshift(selectedDevice.value);
   return rows.map((row) => ({
     value: row.id,
     label: [row.name, row.spec, row.purchaseDate].filter(Boolean).join(' · '),
@@ -122,12 +134,16 @@ async function initialize() {
   ready.value = false;
   try {
     const [context, dictionary] = await Promise.all([
-      getExpenseDevice(props.expenseId),
+      props.expenseId
+        ? getExpenseDevice(props.expenseId)
+        : Promise.resolve(draftContext()),
       getByDictType('device_type'),
     ]);
     if (!alive) return;
     current.value = context.device;
     selectedId.value = context.device?.id;
+    selectedDevice.value = context.device;
+    mode.value = props.selection?.newDevice ? 'new' : 'existing';
     draft.value = Object.fromEntries(
       Object.entries(context.defaults).map(([key, value]) => [
         key,
@@ -146,9 +162,39 @@ async function initialize() {
     if (alive) loading.value = false;
   }
 }
+function draftContext() {
+  const expense = props.expenseDraft ?? {};
+  const text = (value: unknown) => {
+    const trimmed = String(value ?? '').trim();
+    return trimmed && trimmed !== '/' ? trimmed.slice(0, 255) : undefined;
+  };
+  return {
+    device: props.selection?.deviceId
+      ? { id: props.selection.deviceId, name: props.selection.deviceName }
+      : null,
+    defaults: props.selection?.newDevice ?? {
+      name: text(expense.expDesc) ?? text(expense.remark),
+      purchasePrice:
+        expense.amt === '' || expense.amt == null
+          ? undefined
+          : Number(expense.amt),
+      purchaseDate: expense.expTime?.slice(0, 10),
+      purchasePlace: text(expense.counterparty),
+      remark: text(expense.remark),
+      status: '1',
+    },
+  };
+}
+function selectDevice(id: unknown) {
+  if (typeof id !== 'string') return;
+  selectedDevice.value =
+    choices.value.find((item) => item.id === id) ??
+    [current.value, selectedDevice.value].find((item) => item?.id === id) ??
+    null;
+}
 function publish(device: LinkedDevice | null) {
   emit('updated', {
-    expenseId: props.expenseId,
+    expenseId: props.expenseId!,
     deviceId: device?.id ?? null,
     deviceName: device?.name ?? null,
   });
@@ -163,6 +209,32 @@ async function save() {
   }
   if (mode.value === 'new' && !draft.value.name?.trim()) {
     formError.value = '请填写设备名称';
+    return;
+  }
+  if (!props.expenseId) {
+    const device = selectedDevice.value;
+    if (
+      mode.value === 'existing' &&
+      (!device || device.id !== selectedId.value)
+    ) {
+      formError.value = '请重新选择设备';
+      return;
+    }
+    emit(
+      'staged',
+      mode.value === 'new'
+        ? {
+            deviceId: null,
+            newDevice: { ...draft.value, name: draft.value.name!.trim() },
+            deviceName: draft.value.name!.trim(),
+          }
+        : {
+            deviceId: selectedId.value!,
+            newDevice: null,
+            deviceName: device!.name,
+          },
+    );
+    emit('close');
     return;
   }
   saving.value = true;
@@ -180,6 +252,11 @@ async function save() {
 }
 async function unbind() {
   if (saving.value) return;
+  if (!props.expenseId) {
+    emit('staged', null);
+    emit('close');
+    return;
+  }
   saving.value = true;
   try {
     if ((await unbindExpenseDevice(props.expenseId)) && alive) publish(null);
@@ -210,7 +287,9 @@ onMounted(initialize);
           <FormItem label="关联设备">
             <RadioGroup v-model:value="mode">
               <RadioButton value="existing">已有设备</RadioButton>
-              <RadioButton v-if="!current" value="new">新建设备</RadioButton>
+              <RadioButton v-if="!expenseId || !current" value="new">
+                新建设备
+              </RadioButton>
             </RadioGroup>
           </FormItem>
           <template v-if="mode === 'existing'">
@@ -224,6 +303,7 @@ onMounted(initialize);
                 :loading="choicesBusy"
                 placeholder="搜索设备名称"
                 @search="search"
+                @select="selectDevice"
                 @popup-scroll="scroll"
               />
               <Button v-if="choicesError" type="link" @click="loadChoices()">

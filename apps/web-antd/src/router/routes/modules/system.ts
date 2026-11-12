@@ -13,6 +13,12 @@ const routes: RouteRecordRaw[] = [
     path: '/system',
     children: [
       {
+        name: 'TimeTrackerCategoryAdmin',
+        path: '/time/category-admin',
+        component: () => import('#/views/time/time-tracker/admin/index.vue'),
+        meta: { title: '时迹分类', icon: 'mdi:shield-account-outline', authority: ['admin'] },
+      },
+      {
         meta: {
           icon: 'mdi:calendar-clock',
           title: '定时任务',

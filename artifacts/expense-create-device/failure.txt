@@ -1,0 +1,125 @@
+Error: expect(locator).toBeVisible() failed
+
+Locator: locator('[role=dialog]:visible').last().getByRole('combobox', { name: '选择设备' })
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "to.be.visible" with timeout 5000ms
+  - waiting for locator('[role=dialog]:visible').last().getByRole('combobox', { name: '选择设备' })
+
+    at Proxy.<anonymous> (/Users/hurry/Documents/GitHub/lys1313013/aio-life/aio-life-front/node_modules/.pnpm/playwright@1.57.0/node_modules/playwright/lib/matchers/expect.js:224:24)
+    at file:///Users/hurry/Documents/GitHub/lys1313013/aio-life/aio-life-front/artifacts/expense-create-device/check.mjs:35:62
+用户
+首页
+支出
+总支出
+0.00
+2026年总支出
+0.00
+月均支出
+0.00
+选择年份：
+2026
+支出走势
+支出类型分布
+月份支出分布
+支出类型
+请选择支出类型
+支付方式
+请选择支付方式
+日期区间
+交易对方
+交易描述
+备注
+重 置
+查 询
+收起
+新 增
+删 除
+	
+序号
+	
+交易金额
+	
+记账金额
+	
+支出类型
+	
+支付方式
+	
+关联设备
+	
+备注
+	
+时间
+	
+交易描述
+	
+交易对方
+	
+交易号
+	
+交易状态
+	
+商家订单号
+	
+　
+	
+　
+	
+　
+	
+0.00
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+操作
+　
+暂无数据
+1
+*
+交易金额
+*
+记账金额
+*
+支出类型
+测试类别
+*
+支付方式
+测试类别
+*
+支出日期
+备注
+关联设备
+连续录入:
+取 消
+保 存
+关联设备
+关联设备
+已有设备
+新建设备
+设备
+搜索设备名称
+取 消
+保 存
+[]

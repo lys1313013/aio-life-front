@@ -4,9 +4,9 @@ import { flushPromises, shallowMount } from '@vue/test-utils';
 
 import {
   Input,
+  Checkbox,
   message,
   Popconfirm,
-  Switch,
   Table,
   Tree,
 } from 'ant-design-vue';
@@ -21,8 +21,7 @@ const api = vi.hoisted(() => ({
   getMenuRoleOptionsApi: vi.fn(async () => []),
   createMenuApi: vi.fn(),
   updateMenuApi: vi.fn(),
-  updateMenuStatusApi: vi.fn(),
-  updateMenuMobileStatusApi: vi.fn(),
+  updateMenuVisibleClientsApi: vi.fn(),
   updateMenuSortApi: vi.fn(),
   deleteMenuApi: vi.fn(),
 }));
@@ -54,8 +53,7 @@ function menu(id: string, parent = '0', sortOrder = 0): SysMenuAdminItem {
     name: id,
     path: `/${id}`,
     sortOrder,
-    webIsEnabled: 1,
-    mobileIsEnabled: 1,
+    visibleClients: 3,
   };
 }
 function fixture(): SysMenuAdminItem[] {
@@ -89,8 +87,7 @@ async function mountPage() {
           props: ['dataSource', 'expandedRowKeys'],
           template: `<div>
             <div v-for="record in dataSource" :key="record.id">
-              <slot name="bodyCell" :column="{ key: 'webIsEnabled' }" :record="record" />
-              <slot name="bodyCell" :column="{ key: 'mobileIsEnabled' }" :record="record" />
+              <slot name="bodyCell" :column="{ key: 'visibleClients' }" :record="record" />
               <slot name="bodyCell" :column="{ key: 'action' }" :record="record" />
             </div>
           </div>`,
@@ -203,56 +200,44 @@ describe('菜单树与明细联动', () => {
     expect(api.updateMenuSortApi).not.toHaveBeenCalled();
   });
 
-  it('启停父节点使用接口返回值局部更新，不丢失子菜单', async () => {
+  it('单字段切换展示端并局部更新，不丢失子菜单', async () => {
     const wrapper = await mountPage();
     await select(wrapper, parentId);
-    api.updateMenuStatusApi.mockResolvedValue({ ...menu(parentId), webIsEnabled: 0 });
-    wrapper.findComponent(Switch).vm.$emit('change', false);
+    api.updateMenuVisibleClientsApi.mockResolvedValue({ ...menu(parentId), visibleClients: 2 });
+    wrapper.findComponent(Checkbox.Group).vm.$emit('change', [2]);
     await flushPromises();
+    expect(api.updateMenuVisibleClientsApi).toHaveBeenCalledWith(parentId, 2);
     const parent = wrapper.findComponent(Table).props('dataSource')?.[0];
-    expect(parent?.webIsEnabled).toBe(0);
+    expect(parent?.visibleClients).toBe(2);
     expect(parent?.children).toHaveLength(2);
     expect(parent?.children?.[0]?.children?.[0]?.id).toBe('grandchild');
     expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(1);
-    expect(wrapper.findComponent(Tree).props('selectedKeys')).toEqual([
-      parentId,
-    ]);
   });
 
-  it('移动端开关只调用独立接口，等待时仅该开关加载并保留 Web 和子菜单', async () => {
+  it('保存展示端时禁用当前选项组，保留原选择直到请求成功', async () => {
     const wrapper = await mountPage();
     await select(wrapper, parentId);
     let resolve!: (value: SysMenuAdminItem) => void;
-    api.updateMenuMobileStatusApi.mockReturnValue(
-      new Promise((yes) => {
-        resolve = yes;
-      }),
-    );
-    const switches = wrapper.findAllComponents(Switch);
-    switches[1]!.vm.$emit('change', false);
+    api.updateMenuVisibleClientsApi.mockReturnValue(new Promise(yes => { resolve = yes; }));
+    const choices = wrapper.findComponent(Checkbox.Group);
+    choices.vm.$emit('change', [1]);
     await flushPromises();
-    expect(api.updateMenuMobileStatusApi).toHaveBeenCalledWith(parentId, 0);
-    expect(api.updateMenuStatusApi).not.toHaveBeenCalled();
-    expect(switches[1]!.props('loading')).toBe(true);
-    expect(switches[0]!.props('loading')).toBe(false);
-    resolve({ ...menu(parentId), mobileIsEnabled: 0 });
+    expect(choices.props('disabled')).toBe(true);
+    expect(choices.props('value')).toEqual([1, 2]);
+    resolve({ ...menu(parentId), visibleClients: 1 });
     await flushPromises();
-    const parent = wrapper.findComponent(Table).props('dataSource')?.[0];
-    expect(parent.webIsEnabled).toBe(1);
-    expect(parent.mobileIsEnabled).toBe(0);
-    expect(parent.children).toHaveLength(2);
-    expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(1);
+    expect(choices.props('value')).toEqual([1]);
+    expect(choices.props('disabled')).toBe(false);
+    expect(wrapper.findComponent(Table).props('dataSource')?.[0]?.children).toHaveLength(2);
   });
 
-  it('移动端切换失败后重新读取权威状态', async () => {
+  it('切换失败后重新读取权威位掩码', async () => {
     const wrapper = await mountPage();
     await select(wrapper, parentId);
-    api.updateMenuMobileStatusApi.mockRejectedValue(new Error('failed'));
-    wrapper.findAllComponents(Switch)[1]!.vm.$emit('change', false);
+    api.updateMenuVisibleClientsApi.mockRejectedValue(new Error('failed'));
+    wrapper.findComponent(Checkbox.Group).vm.$emit('change', []);
     await flushPromises();
-    expect(
-      wrapper.findComponent(Table).props('dataSource')?.[0]?.mobileIsEnabled,
-    ).toBe(1);
+    expect(wrapper.findComponent(Table).props('dataSource')?.[0]?.visibleClients).toBe(3);
     expect(api.getMenuAdminTreeApi).toHaveBeenCalledTimes(2);
   });
 
@@ -341,5 +326,30 @@ describe('菜单图标颜色', () => {
       'colored',
       expect.objectContaining({ iconColor: '', meta: row.meta }),
     );
+  });
+});
+
+
+describe('菜单展示端', () => {
+  it('回显展示端并保存位掩码，清空选项不会停用路由', async () => {
+    const row = { ...menu('visible'), visibleClients: 1 };
+    api.getMenuAdminTreeApi.mockResolvedValueOnce([row]);
+    api.updateMenuApi.mockImplementation(async (id, payload) => ({ ...row, ...payload, id }));
+    const wrapper = await mountPage();
+    await select(wrapper, 'visible');
+    await wrapper.get('[aria-label="编辑菜单"]').trigger('click');
+    const choices = wrapper.findAllComponents(Checkbox.Group).find(item => item.attributes('aria-label') === '展示端')!;
+    expect(choices.props('value')).toEqual([1]);
+    choices.vm.$emit('update:value', [1, 2]);
+    await wrapper.vm.$nextTick();
+    wrapper.findComponent(AppModal).vm.$emit('ok');
+    await flushPromises();
+    expect(api.updateMenuApi).toHaveBeenLastCalledWith('visible', expect.objectContaining({ visibleClients: 3 }));
+    await wrapper.get('[aria-label="编辑菜单"]').trigger('click');
+    wrapper.findAllComponents(Checkbox.Group).find(item => item.attributes('aria-label') === '展示端')!.vm.$emit('update:value', []);
+    await wrapper.vm.$nextTick();
+    wrapper.findComponent(AppModal).vm.$emit('ok');
+    await flushPromises();
+    expect(api.updateMenuApi).toHaveBeenLastCalledWith('visible', expect.objectContaining({ visibleClients: 0 }));
   });
 });

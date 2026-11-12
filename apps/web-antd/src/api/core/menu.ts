@@ -52,8 +52,7 @@ export interface SysMenuAdminItem {
   redirect?: string;
   roles?: string;
   sortOrder?: number;
-  webIsEnabled?: number;
-  mobileIsEnabled?: number;
+  visibleClients?: number;
 }
 
 export interface SysMenuSaveReq {
@@ -66,8 +65,7 @@ export interface SysMenuSaveReq {
   redirect?: string;
   roles?: string;
   sortOrder?: number;
-  webIsEnabled?: number;
-  mobileIsEnabled?: number;
+  visibleClients?: number;
 }
 
 export async function getMenuAdminTreeApi() {
@@ -95,19 +93,10 @@ export async function updateMenuApi(
   );
 }
 
-export async function updateMenuStatusApi(id: string, isEnabled: number) {
+export async function updateMenuVisibleClientsApi(id: string, visibleClients: number) {
   return requestClient.put<SysMenuAdminItem>(
-    `/menu/admin/${id}/status`,
-    pickPayload('MenuStatusUpdateReq', {
-      isEnabled,
-    }),
-  );
-}
-
-export async function updateMenuMobileStatusApi(id: string, isEnabled: number) {
-  return requestClient.put<SysMenuAdminItem>(
-    `/menu/admin/${id}/mobile-status`,
-    pickPayload('MenuStatusUpdateReq', { isEnabled }),
+    `/menu/admin/${id}/visible-clients`,
+    pickPayload('MenuVisibilityUpdateReq', { visibleClients }),
   );
 }
 

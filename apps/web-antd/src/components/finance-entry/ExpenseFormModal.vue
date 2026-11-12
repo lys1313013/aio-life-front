@@ -1,9 +1,12 @@
 <script lang="ts" setup>
-import type { ExpenseDeviceChange } from '#/api/core/expense-device';
+import type {
+  ExpenseDeviceChange,
+  ExpenseDeviceSelection,
+} from '#/api/core/expense-device';
 
-import { nextTick, onMounted, ref, toRaw } from 'vue';
+import { h, nextTick, onMounted, ref, toRaw } from 'vue';
 
-import { LinkOutlined } from '@ant-design/icons-vue';
+import { CloseOutlined, LinkOutlined } from '@ant-design/icons-vue';
 import { Button, message, Radio } from 'ant-design-vue';
 import dayjs from 'dayjs';
 
@@ -12,6 +15,7 @@ import { useVbenModal } from '#/adapter/modal';
 import { deleteData, insertData, updateData } from '#/api/core/expense';
 import { getByDictType } from '#/api/core/userDictType';
 import { AppModalDelete } from '#/components/app-modal';
+import { getCategoryIcon } from '#/utils/dict-icon';
 
 import ExpenseDeviceModal from './ExpenseDeviceModal.vue';
 
@@ -43,6 +47,15 @@ const deviceOpen = ref(false);
 const saving = ref(false);
 const deleting = ref(false);
 const originalValues = ref<Record<string, any>>({});
+const deviceSelection = ref<ExpenseDeviceSelection | null>(null);
+const deviceExpenseDraft = ref<Record<string, any>>({});
+async function openDevice() {
+  deviceExpenseDraft.value = {
+    ...originalValues.value,
+    ...(await formApi.getValues()),
+  };
+  deviceOpen.value = true;
+}
 function updateDevice(change: ExpenseDeviceChange) {
   Object.assign(originalValues.value, {
     deviceId: change.deviceId,
@@ -75,11 +88,30 @@ const payTypeOptions = ref<Array<any>>([]);
 async function loadDictOptions() {
   try {
     const res = await getByDictType('exp_type');
-    dictOptions.value = res.dictDetailList.map((item) => ({
-      ...item,
-      label: item.dictLabel || item.label,
-      value: item.dictValue || item.value,
-    }));
+    dictOptions.value = res.dictDetailList.map((item) => {
+      const label = item.dictLabel || item.label;
+      const Icon = getCategoryIcon(item.icon);
+      return {
+        ...item,
+        label: h(
+          'span',
+          { class: 'inline-flex max-w-full items-center gap-2 align-middle' },
+          [
+            Icon
+              ? h(Icon, {
+                  class: 'size-4 shrink-0',
+                  style: { color: item.color || undefined },
+                  'aria-hidden': true,
+                })
+              : null,
+            h('span', { class: 'truncate' }, label),
+          ],
+        ),
+        searchLabel: label,
+        title: label,
+        value: item.dictValue || item.value,
+      };
+    });
 
     const res2 = await getByDictType('pay_type');
     payTypeOptions.value = res2.dictDetailList.map((item) => ({
@@ -97,6 +129,7 @@ onMounted(() => {
 });
 
 const [Form, formApi] = useAppForm({
+  columns: 2,
   schema: [
     {
       component: 'Input',
@@ -150,7 +183,7 @@ const [Form, formApi] = useAppForm({
         placeholder: '请选择',
         options: dictOptions,
         showSearch: true, // 支持输入查询
-        optionFilterProp: 'label', // 按标签过滤
+        optionFilterProp: 'searchLabel',
         style: { width: '100%' },
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
@@ -179,6 +212,7 @@ const [Form, formApi] = useAppForm({
         format: 'YYYY-MM-DD HH:mm:ss',
         valueFormat: 'YYYY-MM-DD HH:mm:ss',
         showTime: { format: 'HH:mm:ss' },
+        style: { width: '100%' },
       },
       fieldName: 'expTime',
       label: '支出日期',
@@ -203,6 +237,7 @@ const resetForm = () => {
     transactionAmt: '',
   });
   prevTransactionAmt.value = '';
+  deviceSelection.value = null;
 };
 
 const [Modal, modalApi] = useVbenModal({
@@ -235,7 +270,11 @@ const [Modal, modalApi] = useVbenModal({
           id: processedData.id,
         });
       } else {
-        await insertData(processedData);
+        await insertData({
+          ...processedData,
+          deviceId: deviceSelection.value?.deviceId,
+          newDevice: deviceSelection.value?.newDevice,
+        });
       }
 
       emit('saved');
@@ -266,6 +305,7 @@ const [Modal, modalApi] = useVbenModal({
         formApi.resetForm();
         const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
         originalValues.value = { ...values };
+        deviceSelection.value = null;
         // 处理日期字段显示
         const processedValues = { ...values };
         if (processedValues.expTime) {
@@ -315,19 +355,36 @@ const [Modal, modalApi] = useVbenModal({
       <Radio.Button value="income">收入</Radio.Button>
     </Radio.Group>
     <Form />
-    <div v-if="originalValues.id" class="mb-4 flex items-center gap-2">
+    <div class="mb-4 mt-5 flex items-center gap-2">
       <span class="text-sm">关联设备</span>
-      <span v-if="originalValues.deviceName" class="min-w-0 truncate">
-        {{ originalValues.deviceName }}
+      <span
+        v-if="originalValues.deviceName || deviceSelection"
+        class="min-w-0 truncate"
+      >
+        {{
+          originalValues.id
+            ? originalValues.deviceName
+            : deviceSelection?.deviceName
+        }}
       </span>
       <Button
         type="link"
         size="small"
         aria-label="关联设备"
         :disabled="saving || deleting || deviceOpen"
-        @click="deviceOpen = true"
+        @click="openDevice"
       >
         <template #icon><LinkOutlined /></template>
+      </Button>
+      <Button
+        v-if="!originalValues.id && deviceSelection"
+        type="text"
+        size="small"
+        aria-label="取消设备关联"
+        :disabled="saving || deleting || deviceOpen"
+        @click="deviceSelection = null"
+      >
+        <template #icon><CloseOutlined /></template>
       </Button>
     </div>
 
@@ -359,10 +416,13 @@ const [Modal, modalApi] = useVbenModal({
       </div>
     </template>
     <ExpenseDeviceModal
-      v-if="deviceOpen && originalValues.id"
+      v-if="deviceOpen"
       :expense-id="originalValues.id"
+      :expense-draft="deviceExpenseDraft"
+      :selection="deviceSelection"
       @close="deviceOpen = false"
       @updated="updateDevice"
+      @staged="deviceSelection = $event"
     />
   </Modal>
 </template>

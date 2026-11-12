@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   data: {} as any,
   values: {} as any,
   expenseUpdate: vi.fn(),
+  expenseInsert: vi.fn(),
   incomeUpdate: vi.fn(),
   close: vi.fn(),
   expenseDelete: vi.fn(),
@@ -17,7 +18,11 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 vi.mock('#/components/finance-entry/ExpenseDeviceModal.vue', () => ({
-  default: { template: '<div />' },
+  default: {
+    name: 'ExpenseDeviceModal',
+    props: ['expenseId', 'expenseDraft', 'selection'],
+    template: '<div />',
+  },
 }));
 vi.mock('#/adapter/form', () => ({
   useAppForm: () => [
@@ -27,6 +32,7 @@ vi.mock('#/adapter/form', () => ({
       resetForm: vi.fn(),
       validate: async () => ({ valid: true }),
       submitForm: async () => mocks.values,
+      getValues: async () => mocks.values,
     },
   ],
 }));
@@ -47,7 +53,7 @@ vi.mock('#/adapter/modal', () => ({
 vi.mock('#/api/core/expense', () => ({
   updateData: mocks.expenseUpdate,
   deleteData: mocks.expenseDelete,
-  insertData: vi.fn(),
+  insertData: mocks.expenseInsert,
 }));
 vi.mock('#/api/core/income', () => ({
   update: mocks.incomeUpdate,
@@ -101,6 +107,54 @@ it.each(['income', 'expense'] as const)(
       remark: '已修改',
     });
     expect(mocks.close).toHaveBeenCalledOnce();
+  },
+);
+
+it.each([
+  { deviceId: '9223372036854775806', newDevice: null, deviceName: '已有耳机' },
+  {
+    deviceId: null,
+    newDevice: { name: '新耳机', purchasePrice: 100 },
+    deviceName: '新耳机',
+  },
+])(
+  '新增支出暂存设备，保存失败可重试且连续录入清空关联 $deviceName',
+  async (selection) => {
+    mocks.data = { values: {} };
+    mocks.values = { amt: '100', transactionAmt: '100', remark: '买耳机' };
+    const wrapper = mount(ExpenseForm);
+    mocks.options.onOpenChange(true);
+    await flushPromises();
+    await wrapper.get('[aria-label="关联设备"]').trigger('click');
+    await flushPromises();
+    const picker = wrapper.getComponent({ name: 'ExpenseDeviceModal' });
+    expect(picker.props('expenseId')).toBeUndefined();
+    expect(picker.props('expenseDraft')).toMatchObject(mocks.values);
+    picker.vm.$emit('staged', selection);
+    picker.vm.$emit('close');
+    await flushPromises();
+    expect(mocks.expenseInsert).not.toHaveBeenCalled();
+    mocks.expenseInsert
+      .mockRejectedValueOnce(new Error('模拟保存失败'))
+      .mockResolvedValue(true);
+    await expect(mocks.options.onConfirm()).rejects.toThrow('模拟保存失败');
+    expect(mocks.close).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain(selection.deviceName);
+    await wrapper.get('.cursor-pointer').trigger('click');
+    await mocks.options.onConfirm();
+    await flushPromises();
+    expect(mocks.expenseInsert).toHaveBeenLastCalledWith({
+      ...mocks.values,
+      deviceId: selection.deviceId,
+      newDevice: selection.newDevice,
+    });
+    expect(wrapper.text()).not.toContain(selection.deviceName);
+    await mocks.options.onConfirm();
+    expect(mocks.expenseInsert).toHaveBeenLastCalledWith({
+      ...mocks.values,
+      deviceId: undefined,
+      newDevice: undefined,
+    });
   },
 );
 

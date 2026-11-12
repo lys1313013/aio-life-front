@@ -253,6 +253,8 @@ export interface ExerciseRecordUpdateReq {
 }
 
 export interface ExpenseCreateReq {
+  deviceId?: null | string;
+  newDevice?: DeviceCreateReq | null;
   transactionAmt?: null | number | string;
   amt?: null | number | string;
   expTypeId?: null | string;
@@ -581,16 +583,15 @@ export interface MenuSaveReq {
   meta?: null | Record<string, unknown>;
   roles?: null | string;
   sortOrder?: null | number;
-  webIsEnabled?: null | number;
-  mobileIsEnabled?: null | number;
+  visibleClients?: null | number;
 }
 
 export interface MenuSortUpdateReq {
   sortOrder: number;
 }
 
-export interface MenuStatusUpdateReq {
-  isEnabled: number;
+export interface MenuVisibilityUpdateReq {
+  visibleClients: number;
 }
 
 export interface MessageCreateReq {
@@ -1044,7 +1045,6 @@ export interface TimeTrackerCategoryAdminCreateReq {
   isTrackTime?: null | number;
   sortOrder?: null | number;
   isEnabled?: null | number;
-  timeType?: null | number;
 }
 
 export interface TimeTrackerCategoryAdminUpdateReq {
@@ -1056,7 +1056,6 @@ export interface TimeTrackerCategoryAdminUpdateReq {
   isTrackTime?: null | number;
   sortOrder?: null | number;
   isEnabled?: null | number;
-  timeType?: null | number;
 }
 
 export interface TimeTrackerCategoryCreateReq {
@@ -1068,7 +1067,6 @@ export interface TimeTrackerCategoryCreateReq {
   isTrackTime?: null | number;
   sortOrder?: null | number;
   isEnabled?: null | number;
-  timeType?: null | number;
   templateId?: null | string;
 }
 
@@ -1088,7 +1086,6 @@ export interface TimeTrackerCategoryUpdateReq {
   isTrackTime?: null | number;
   sortOrder?: null | number;
   isEnabled?: null | number;
-  timeType?: null | number;
   templateId?: null | string;
 }
 
@@ -1325,7 +1322,7 @@ export interface ApiRequests {
   MemoUpdateReq: MemoUpdateReq;
   MenuSaveReq: MenuSaveReq;
   MenuSortUpdateReq: MenuSortUpdateReq;
-  MenuStatusUpdateReq: MenuStatusUpdateReq;
+  MenuVisibilityUpdateReq: MenuVisibilityUpdateReq;
   MessageCreateReq: MessageCreateReq;
   MilestoneCreateReq: MilestoneCreateReq;
   MilestoneUpdateReq: MilestoneUpdateReq;
@@ -1641,6 +1638,8 @@ const fields: Record<string, Record<string, null | string>> = {
     description: null,
   },
   ExpenseCreateReq: {
+    deviceId: null,
+    newDevice: 'DeviceCreateReq',
     transactionAmt: null,
     amt: null,
     expTypeId: null,
@@ -1937,14 +1936,13 @@ const fields: Record<string, Record<string, null | string>> = {
     meta: null,
     roles: null,
     sortOrder: null,
-    webIsEnabled: null,
-    mobileIsEnabled: null,
+    visibleClients: null,
   },
   MenuSortUpdateReq: {
     sortOrder: null,
   },
-  MenuStatusUpdateReq: {
-    isEnabled: null,
+  MenuVisibilityUpdateReq: {
+    visibleClients: null,
   },
   MessageCreateReq: {
     receiverId: null,
@@ -2342,7 +2340,6 @@ const fields: Record<string, Record<string, null | string>> = {
     isTrackTime: null,
     sortOrder: null,
     isEnabled: null,
-    timeType: null,
   },
   TimeTrackerCategoryAdminUpdateReq: {
     parentId: null,
@@ -2353,7 +2350,6 @@ const fields: Record<string, Record<string, null | string>> = {
     isTrackTime: null,
     sortOrder: null,
     isEnabled: null,
-    timeType: null,
   },
   TimeTrackerCategoryCreateReq: {
     parentId: null,
@@ -2364,7 +2360,6 @@ const fields: Record<string, Record<string, null | string>> = {
     isTrackTime: null,
     sortOrder: null,
     isEnabled: null,
-    timeType: null,
     templateId: null,
   },
   TimeTrackerCategorySortReq: {
@@ -2382,7 +2377,6 @@ const fields: Record<string, Record<string, null | string>> = {
     isTrackTime: null,
     sortOrder: null,
     isEnabled: null,
-    timeType: null,
     templateId: null,
   },
   ToolCallRequest: {
@@ -3674,14 +3668,8 @@ const requestModels: Array<{
   },
   {
     method: 'PUT',
-    path: '/menu/admin/{id}/status',
-    model: 'MenuStatusUpdateReq',
-    list: false,
-  },
-  {
-    method: 'PUT',
-    path: '/menu/admin/{id}/mobile-status',
-    model: 'MenuStatusUpdateReq',
+    path: '/menu/admin/{id}/visible-clients',
+    model: 'MenuVisibilityUpdateReq',
     list: false,
   },
   {

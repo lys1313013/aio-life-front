@@ -19,6 +19,11 @@ export interface ExpenseDeviceChange {
   deviceId: null | string;
   deviceName: null | string;
 }
+export interface ExpenseDeviceSelection {
+  deviceId: null | string;
+  newDevice: DeviceCreateReq | null;
+  deviceName: string;
+}
 export function getExpenseDevice(id: string) {
   return requestClient.get<ExpenseDeviceContext>(`/expense/${id}/device`);
 }

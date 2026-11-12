@@ -32,26 +32,6 @@ const routes: RouteRecordRaw[] = [
         path: '/time/dashboard',
         component: () => import('#/views/time/dashboard/index.vue'),
       },
-      {
-        meta: {
-          icon: 'mdi:tag-multiple-outline',
-          title: '我的分类',
-        },
-        name: 'CategoryConfig',
-        path: '/time/my-categories',
-        component: () =>
-          import('#/views/time/time-tracker/category-config/index.vue'),
-      },
-      {
-        meta: {
-          icon: 'mdi:shield-account-outline',
-          title: '分类管理（管理员）',
-          authority: ['admin'],
-        },
-        name: 'TimeTrackerCategoryAdmin',
-        path: '/time/category-admin',
-        component: () => import('#/views/time/time-tracker/admin/index.vue'),
-      },
     ],
   },
 ];

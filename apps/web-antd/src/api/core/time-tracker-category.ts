@@ -19,7 +19,6 @@ export interface TimeTrackerCategoryEntity {
   sortOrder?: number;
   isEnabled?: number;
   isHidden?: boolean;
-  timeType?: 1 | 2 | 3; // 时间类型: 1-必须, 2-积极, 3-休闲
   // 客户端计算字段（不发送到后端）
   _categoryType?: 'override' | 'private' | 'public';
   _originalName?: string;

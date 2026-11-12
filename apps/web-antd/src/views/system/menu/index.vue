@@ -10,6 +10,7 @@ import { useUserStore } from '@vben/stores';
 
 import {
   Button,
+  Checkbox,
   Empty,
   Form,
   Input,
@@ -19,7 +20,6 @@ import {
   Popover,
   Select,
   Spin,
-  Switch,
   Table,
   Tree,
   TreeSelect,
@@ -31,9 +31,8 @@ import {
   getMenuAdminTreeApi,
   getMenuRoleOptionsApi,
   updateMenuApi,
-  updateMenuMobileStatusApi,
   updateMenuSortApi,
-  updateMenuStatusApi,
+  updateMenuVisibleClientsApi,
 } from '#/api/core/menu';
 import { AppModal as Modal } from '#/components/app-modal';
 import { router } from '#/router';
@@ -75,7 +74,7 @@ const treeData = computed(() => {
       title: node.meta?.title || node.name,
       iconName: node.meta?.icon,
       iconColor: node.iconColor,
-      inactive: node.webIsEnabled !== 1 && node.mobileIsEnabled !== 1,
+      inactive: node.visibleClients === 0,
       children: node.children?.length ? build(node.children) : undefined,
     }));
   return build(list.value);
@@ -88,8 +87,7 @@ const handleSelect: TreeProps['onSelect'] = (_keys, { node }) => {
   selectMenu(String(node.key));
 };
 const isBusy = (id: string) =>
-  statusChanging.value[id] === true ||
-  mobileStatusChanging.value[id] === true ||
+  visibilityChanging.value[id] === true ||
   deletingIds.value.includes(id) ||
   sortingIds.value.includes(id);
 
@@ -133,8 +131,7 @@ const pruneExpandedKeys = () => {
 const editVisible = ref(false);
 const saving = ref(false);
 const editingId = ref<null | string>(null);
-const statusChanging = ref<Record<string, boolean>>({});
-const mobileStatusChanging = ref<Record<string, boolean>>({});
+const visibilityChanging = ref<Record<string, boolean>>({});
 const userStore = useUserStore();
 const authStore = useAuthStore();
 
@@ -142,13 +139,18 @@ const form = ref<SysMenuSaveReq>({
   name: '',
   path: '',
   parentId: '0',
-  webIsEnabled: 1,
-  mobileIsEnabled: 1,
+  visibleClients: 3,
   sortOrder: 0,
   roles: '',
   component: '',
   redirect: '',
   meta: {},
+});
+
+const clientOptions = [{ label: 'Web', value: 1 }, { label: '手机端', value: 2 }];
+const selectedClients = computed<number[]>({
+  get: () => clientOptions.filter(option => ((form.value.visibleClients ?? 3) & option.value) !== 0).map(option => option.value),
+  set: values => { form.value.visibleClients = values.reduce((mask, bit) => mask | bit, 0); },
 });
 
 const metaTitle = ref('');
@@ -194,21 +196,8 @@ const columns: any[] = [
     width: 88,
     ellipsis: true,
   },
+  { title: '展示端', key: 'visibleClients', width: 180 },
   { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 64, align: 'center' },
-  {
-    title: 'Web 启用',
-    dataIndex: 'webIsEnabled',
-    key: 'webIsEnabled',
-    width: 96,
-    align: 'center',
-  },
-  {
-    title: '移动端启用',
-    dataIndex: 'mobileIsEnabled',
-    key: 'mobileIsEnabled',
-    width: 100,
-    align: 'center',
-  },
   { title: '操作', key: 'action', width: 88, align: 'center' },
 ];
 
@@ -314,8 +303,7 @@ const openCreate = (parentId = '0') => {
     name: '',
     path: '',
     parentId,
-    webIsEnabled: 1,
-    mobileIsEnabled: 1,
+    visibleClients: 3,
     sortOrder: 0,
     roles: '',
     component: '',
@@ -337,8 +325,7 @@ const openEdit = (row: any) => {
     name: r.name,
     path: r.path,
     parentId: r.parentId ? String(r.parentId) : '0',
-    webIsEnabled: r.webIsEnabled ?? 1,
-    mobileIsEnabled: r.mobileIsEnabled ?? r.webIsEnabled ?? 1,
+    visibleClients: r.visibleClients,
     sortOrder: r.sortOrder ?? 0,
     roles: r.roles ?? '',
     component: r.component ?? '',
@@ -397,8 +384,7 @@ const save = async () => {
       meta: parsedMeta,
     };
     if (isProtectedMenu(payload)) {
-      payload.webIsEnabled = 1;
-      payload.mobileIsEnabled = 1;
+      payload.visibleClients = 3;
     }
     if (!payload.name || !payload.path) {
       message.error('name/path 不能为空');
@@ -431,27 +417,18 @@ const save = async () => {
   }
 };
 
-const toggleStatus = async (
-  row: Record<string, any>,
-  webIsEnabled: number,
-  mobile = false,
-) => {
-  const id = String(row.id);
-  if (isBusy(id)) return;
-  const changing = mobile ? mobileStatusChanging : statusChanging;
-  changing.value = { ...changing.value, [id]: true };
+const updateVisibleClients = async (row: Record<string, any>, bits: (string | number | boolean)[]) => {
+  const id: string = row.id;
+  if (isBusy(id) || isProtectedMenu(row)) return;
+  const mask = bits.reduce<number>((value, bit) => value | Number(bit), 0);
+  visibilityChanging.value = { ...visibilityChanging.value, [id]: true };
   try {
-    const saved = await (
-      mobile ? updateMenuMobileStatusApi : updateMenuStatusApi
-    )(id, webIsEnabled);
-    applyMenu(saved);
-    message.success(webIsEnabled === 1 ? '已启用' : '已禁用');
-    if (!mobile) await refreshAccessibleMenus();
+    applyMenu(await updateMenuVisibleClientsApi(id, mask));
+    await refreshAccessibleMenus();
   } catch {
-    // 全局拦截器已提示
     await load();
   } finally {
-    changing.value = { ...changing.value, [id]: false };
+    visibilityChanging.value = { ...visibilityChanging.value, [id]: false };
   }
 };
 
@@ -724,23 +701,16 @@ onMounted(() => {
                   </div>
                 </div>
               </template>
-              <template v-else-if="column.key === 'webIsEnabled'">
-                <Switch
-                  :aria-label="`${record.meta?.title ?? record.name} Web 启用`"
-                  :checked="record.webIsEnabled === 1"
-                  :loading="statusChanging[record.id] === true"
-                  :disabled="isProtectedMenu(record) || isBusy(record.id)"
-                  @change="toggleStatus(record, $event ? 1 : 0)"
-                />
-              </template>
-              <template v-else-if="column.key === 'mobileIsEnabled'">
-                <Switch
-                  :aria-label="`${record.meta?.title ?? record.name} 移动端启用`"
-                  :checked="record.mobileIsEnabled === 1"
-                  :loading="mobileStatusChanging[record.id] === true"
-                  :disabled="isProtectedMenu(record) || isBusy(record.id)"
-                  @change="toggleStatus(record, $event ? 1 : 0, true)"
-                />
+              <template v-else-if="column.key === 'visibleClients'">
+                <Spin :spinning="visibilityChanging[record.id] === true" size="small">
+                  <Checkbox.Group
+                    :aria-label="`${record.meta?.title ?? record.name} 展示端`"
+                    :value="clientOptions.filter(option => ((record.visibleClients ?? 3) & option.value) !== 0).map(option => option.value)"
+                    :options="clientOptions"
+                    :disabled="isProtectedMenu(record) || isBusy(record.id)"
+                    @change="updateVisibleClients(record, $event)"
+                  />
+                </Spin>
               </template>
               <template v-else-if="column.key === 'sortOrder'">
                 <span class="tabular-nums">{{ record.sortOrder }}</span>
@@ -893,27 +863,8 @@ onMounted(() => {
                 :max="9999"
               />
             </Form.Item>
-            <Form.Item label="Web 启用">
-              <Switch
-                aria-label="Web 启用"
-                v-model:checked="form.webIsEnabled"
-                :checked-value="1"
-                :un-checked-value="0"
-                :disabled="isProtectedEditing"
-                checked-children="启用"
-                un-checked-children="禁用"
-              />
-            </Form.Item>
-            <Form.Item label="移动端启用">
-              <Switch
-                aria-label="移动端启用"
-                v-model:checked="form.mobileIsEnabled"
-                :checked-value="1"
-                :un-checked-value="0"
-                :disabled="isProtectedEditing"
-                checked-children="启用"
-                un-checked-children="禁用"
-              />
+            <Form.Item label="展示端">
+              <Checkbox.Group v-model:value="selectedClients" :options="clientOptions" :disabled="saving || isProtectedEditing" aria-label="展示端" />
             </Form.Item>
           </div>
         </div>

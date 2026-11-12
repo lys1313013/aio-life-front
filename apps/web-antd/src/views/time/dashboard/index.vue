@@ -105,7 +105,6 @@ const loadCategories = async () => {
           color: cat.color,
           description: cat.description || '',
           isTrackTime: !!cat.isTrackTime,
-          timeType: cat.timeType as 1 | 2 | 3 | undefined,
           categoryType: isPublic ? 'public' : isOverride ? 'public' : 'private',
           isOverridden: isOverride,
         };

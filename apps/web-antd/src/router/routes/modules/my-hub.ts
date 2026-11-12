@@ -40,16 +40,6 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
-          icon: 'mdi:format-list-bulleted-type',
-          title: '运动分类配置',
-        },
-        name: 'exerciseCategoryConfig',
-        path: '/my-hub/exercise/category-config',
-        component: () =>
-          import('#/views/my-hub/exercise/category-config/index.vue'),
-      },
-      {
-        meta: {
           icon: 'mdi:video-vintage',
           title: '视频观看',
         },

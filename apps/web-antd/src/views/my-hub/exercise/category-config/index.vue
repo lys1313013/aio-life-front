@@ -35,6 +35,8 @@ import { CATEGORY_COLOR_PRESETS } from '#/constants/dict-category';
 import { getDictIconPresets } from '#/constants/dict-icon-presets';
 import { extractIconSet, getCategoryIcon } from '#/utils/dict-icon';
 
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
+
 // 状态
 const loading = ref(false);
 const categories = ref<any[]>([]);
@@ -278,7 +280,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <Page>
+  <Page :content-class="embedded ? 'p-0' : undefined">
     <div class="space-y-4">
       <Card :bordered="false" :body-style="{ padding: '0 16px' }">
         <Tabs v-model:active-key="activeTab" @change="handleTabChange">

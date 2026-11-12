@@ -6,6 +6,7 @@ import { Profile } from '@vben/common-ui';
 import { useUserStore } from '@vben/stores';
 
 import ProfileBase from './base-setting.vue';
+import CategoryManagementSetting from './category-management-setting.vue';
 import CbtiSetting from './cbti-setting.vue';
 import DataExportSetting from './data-export/index.vue';
 import HomeCardSetting from './home-card-setting.vue';
@@ -23,6 +24,7 @@ const userStore = useUserStore();
 const tabs = ref([
   { label: '隐私与账号', value: 'privacy' },
   { label: '数据导出', value: 'data-export' },
+  { label: '分类管理', value: 'categories' },
   {
     label: '基本设置',
     value: 'basic',
@@ -90,6 +92,7 @@ watch(
         @export-data="tabsValue = 'data-export'"
       />
       <DataExportSetting v-if="tabsValue === 'data-export'" />
+      <CategoryManagementSetting v-if="tabsValue === 'categories'" />
       <ProfileBase v-if="tabsValue === 'basic'" />
       <UserBindSetting v-if="tabsValue === 'bind'" />
       <ProfilePasswordSetting v-if="tabsValue === 'password'" />

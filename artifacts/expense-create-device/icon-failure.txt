@@ -1,0 +1,134 @@
+locator.click: Timeout 12000ms exceeded.
+Call log:
+[2m  - waiting for locator('.ant-select-dropdown:visible .ant-select-item-option')[22m
+[2m    - locator resolved to <div value="2" title="交通出行" dictvalue="2" color="#34A6FF" dictlabel="交通出行" icon="mdi:train" searchlabel="交通出行" aria-selected="true" class="ant-select-item ant-select-item-option ant-select-item-option-active ant-select-item-option-selected">…</div>[22m
+[2m  - attempting click action[22m
+[2m    2 × waiting for element to be visible, enabled and stable[22m
+[2m      - element is not stable[22m
+[2m    - retrying click action[22m
+[2m    - waiting 20ms[22m
+[2m    - waiting for element to be visible, enabled and stable[22m
+[2m    - element is not stable[22m
+[2m  2 × retrying click action[22m
+[2m      - waiting 100ms[22m
+[2m      - waiting for element to be visible, enabled and stable[22m
+[2m      - element is not visible[22m
+[2m  22 × retrying click action[22m
+[2m       - waiting 500ms[22m
+[2m       - waiting for element to be visible, enabled and stable[22m
+[2m       - element is not visible[22m
+[2m  - retrying click action[22m
+[2m    - waiting 500ms[22m
+
+    at /Users/hurry/Documents/GitHub/lys1313013/aio-life/aio-life-front/artifacts/expense-create-device/icons.mjs:56:77
+生活
+支出
+搜索
+⌘ K
+用户
+首页
+支出
+总支出
+0.00
+2026年总支出
+0.00
+月均支出
+0.00
+选择年份：
+2026
+支出走势
+支出类型分布
+月份支出分布
+支出类型
+请选择支出类型
+支付方式
+请选择支付方式
+日期区间
+交易对方
+交易描述
+备注
+重 置
+查 询
+收起
+新 增
+删 除
+	
+序号
+	
+交易金额
+	
+记账金额
+	
+支出类型
+	
+支付方式
+	
+关联设备
+	
+备注
+	
+时间
+	
+交易描述
+	
+交易对方
+	
+交易号
+	
+交易状态
+	
+商家订单号
+	
+　
+	
+　
+	
+　
+	
+0.00
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+　
+	
+操作
+　
+暂无数据
+共 0 条记录
+1
+*
+交易金额
+*
+记账金额
+*
+支出类型
+交通出行
+*
+支付方式
+请选择
+*
+支出日期
+备注
+关联设备
+连续录入:
+取 消
+保 存
+1
+支付宝
+[]

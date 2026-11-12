@@ -30,7 +30,6 @@ import {
   Input,
   message,
   Popconfirm,
-  Radio,
   Select,
   Switch,
   Table,
@@ -56,7 +55,8 @@ import {
   getCategoryIcon,
   PRESET_ICONS,
 } from '../config';
-import { TIME_TYPE_CONFIG, TimeType } from '../types';
+
+withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false });
 
 const router = useRouter();
 
@@ -97,7 +97,6 @@ const columns = [
     width: 160,
     align: 'left',
   },
-  { title: '时间类型', key: 'timeType', width: 100, align: 'center' },
   {
     title: '卡片统计',
     dataIndex: 'isTrackTime',
@@ -131,7 +130,6 @@ const formState = ref<TimeTrackerCategoryEntity>({
   isTrackTime: 0,
   isEnabled: 1,
   sortOrder: 0,
-  timeType: TimeType.REQUIRED,
 });
 
 const parentOptions = computed(() => {
@@ -193,7 +191,6 @@ const fetchCategories = async () => {
         icon: item.icon,
         description: item.description,
         isTrackTime: item.isTrackTime === 1,
-        timeType: item.timeType as 1 | 2 | 3 | undefined,
         categoryType: isPublic ? 'public' : isOverride ? 'public' : 'private',
         isOverridden: isOverride,
         isHidden: false,
@@ -242,7 +239,6 @@ const handleAddCategory = (parentId = '0') => {
     description: '',
     isTrackTime: 0,
     isEnabled: 1,
-    timeType: TimeType.REQUIRED,
   };
   showEditModal.value = true;
 };
@@ -266,7 +262,6 @@ const handleEdit = (record: any) => {
     isTrackTime: record.isTrackTime ? 1 : 0,
     isEnabled: record.isHidden ? 0 : 1,
     sortOrder: record.sortOrder,
-    timeType: record.timeType ?? TimeType.REQUIRED,
   };
   isOverrideMode.value = false;
   selectedIconSet.value = extractIconSet(record.icon);
@@ -286,7 +281,6 @@ const handleOverride = (record: any) => {
     isTrackTime: record.isTrackTime ? 1 : 0,
     isEnabled: record.isHidden ? 0 : 1,
     sortOrder: record.sortOrder,
-    timeType: record.timeType ?? TimeType.REQUIRED,
   };
   isOverrideMode.value = true;
   selectedIconSet.value = extractIconSet(record.icon);
@@ -470,20 +464,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <Page header-sticky>
-    <template #title>
+  <Page header-sticky :content-class="embedded ? 'p-0' : undefined">
+    <template v-if="!embedded" #title>
       <div class="flex items-center gap-2">
         <Button type="link" @click="router.back()">
           <template #icon><ArrowLeftOutlined /></template>
         </Button>
-        <span class="text-lg font-bold">我的分类</span>
+        <span class="text-lg font-bold">时迹分类</span>
       </div>
     </template>
 
     <div class="space-y-4">
       <!-- 分类列表区域 -->
       <Card
-        title="我的分类"
+        :title="embedded ? undefined : '时迹分类'"
         :bordered="false"
         class="category-section"
         :head-style="{ padding: '0 12px' }"
@@ -557,20 +551,6 @@ onMounted(() => {
               >
                 {{ isRootCategory(record) ? '' : '↳ ' }}{{ record.name }}
               </div>
-            </template>
-            <template v-else-if="column.key === 'timeType'">
-              <Tag
-                :color="
-                  TIME_TYPE_CONFIG[record.timeType as 1 | 2 | 3]?.color ||
-                  '#8c8c8c'
-                "
-                class="text-xs"
-              >
-                {{
-                  TIME_TYPE_CONFIG[record.timeType as 1 | 2 | 3]?.label ||
-                  '未设置'
-                }}
-              </Tag>
             </template>
             <template v-else-if="column.key === 'isTrackTime'">
               <Switch
@@ -799,17 +779,6 @@ onMounted(() => {
           />
         </Form.Item>
 
-        <Form.Item label="时间类型" name="timeType">
-          <Radio.Group v-model:value="formState.timeType">
-            <Radio.Button
-              v-for="(config, type) in TIME_TYPE_CONFIG"
-              :key="type"
-              :value="Number(type)"
-            >
-              {{ config.label }}
-            </Radio.Button>
-          </Radio.Group>
-        </Form.Item>
       </Form>
     </Modal>
 
