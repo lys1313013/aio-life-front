@@ -46,23 +46,34 @@ SM4 密钥（128bit）
 
 ```sql
 CREATE TABLE password_vault (
-    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id         BIGINT NOT NULL COMMENT '所属用户ID',
-    title           VARCHAR(100) NOT NULL COMMENT '标题，如 GitHub',
-    website         VARCHAR(255) COMMENT '网站/应用名',
-    category        VARCHAR(50) DEFAULT '其他' COMMENT '分类：工作/生活/金融/社交/其他',
-    username        TEXT COMMENT '账号（明文）',
-    password        TEXT COMMENT '密码（SM4加密存储）',
-    salt            VARCHAR(64) NOT NULL COMMENT 'PBKDF2盐值，每条记录唯一',
-    remark          TEXT COMMENT '备注（明文）',
-    favorite        BOOLEAN DEFAULT FALSE COMMENT '是否收藏',
+    id              BIGINT PRIMARY KEY,
+    user_id         BIGINT NOT NULL,
+    title           VARCHAR(100) NOT NULL,
+    website         VARCHAR(255),
+    category        VARCHAR(50) DEFAULT '其他',
+    username        TEXT,
+    password        TEXT,
+    salt            VARCHAR(64) NOT NULL,
+    remark          TEXT,
+    favorite        BOOLEAN DEFAULT FALSE,
     create_user     BIGINT NOT NULL,
-    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    create_time     TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    update_time     TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     update_user     BIGINT,
-    is_deleted      BOOLEAN DEFAULT FALSE COMMENT '逻辑删除',
-    INDEX idx_user_id (user_id)
-) COMMENT '密码库表';
+    is_deleted      SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX idx_password_vault_user_id ON password_vault (user_id);
+COMMENT ON TABLE password_vault IS '密码库表';
+COMMENT ON COLUMN password_vault.user_id IS '所属用户ID';
+COMMENT ON COLUMN password_vault.title IS '标题，如 GitHub';
+COMMENT ON COLUMN password_vault.website IS '网站/应用名';
+COMMENT ON COLUMN password_vault.category IS '分类：工作/生活/金融/社交/其他';
+COMMENT ON COLUMN password_vault.username IS '账号（明文）';
+COMMENT ON COLUMN password_vault.password IS '密码（SM4加密存储）';
+COMMENT ON COLUMN password_vault.salt IS 'PBKDF2盐值，每条记录唯一';
+COMMENT ON COLUMN password_vault.remark IS '备注（明文）';
+COMMENT ON COLUMN password_vault.favorite IS '是否收藏';
+COMMENT ON COLUMN password_vault.is_deleted IS '逻辑删除标记：0=未删除，1=已删除';
 ```
 
 ### 加密说明

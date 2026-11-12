@@ -4,10 +4,15 @@ description: 设计表结构时
 ---
 
 创建表时，永远要有以下字段：
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',
-  `create_user` bigint(20) NOT NULL COMMENT '创建人',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_user` bigint(20) NOT NULL COMMENT '更新人',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `is_deleted` int(11) NOT NULL DEFAULT '0' COMMENT '是否删除'
+
+```
+  id bigint NOT NULL,
+  user_id bigint NOT NULL,
+  create_user bigint NOT NULL,
+  create_time timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  update_user bigint NOT NULL,
+  update_time timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  is_deleted smallint NOT NULL DEFAULT 0
+```
+
+主键由应用雪花算法生成，不使用自增；审计时间由应用显式维护，不使用 ON UPDATE；中文注释使用 `COMMENT ON TABLE/COLUMN`。

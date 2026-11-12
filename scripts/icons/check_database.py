@@ -41,7 +41,7 @@ def covered_icons():
 def quote_identifier(name):
     if not re.fullmatch(r"[a-zA-Z0-9_]+", name):
         raise ValueError("Unsupported SQL identifier")
-    return f"`{name}`"
+    return f'"{name}"'
 
 
 def main():
@@ -49,45 +49,43 @@ def main():
     parser.add_argument("--env-file", type=Path, default=ROOT.parent / ".env")
     args = parser.parse_args()
     try:
-        import pymysql
+        import psycopg
+        from psycopg.rows import dict_row
     except ImportError:
-        print("缺少 PyMySQL：请先运行 python3 -m pip install PyMySQL", file=sys.stderr)
+        print("缺少 psycopg：请先运行 python3 -m pip install 'psycopg[binary]'", file=sys.stderr)
         return 2
     env = read_env(args.env_file)
     if not env.get("AIO_LIFE_DB_URL") or not env.get("AIO_LIFE_DB_PASSWORD"):
         print("需要配置 AIO_LIFE_DB_URL 和 AIO_LIFE_DB_PASSWORD；环境变量优先于 --env-file。", file=sys.stderr)
         return 2
-    address = urlsplit(f"mysql://{env['AIO_LIFE_DB_URL']}")
+    address = urlsplit(f"postgresql://{env['AIO_LIFE_DB_URL']}")
     local = covered_icons()
     references = defaultdict(list)
     ignored = set()
-    connection = pymysql.connect(
+    with psycopg.connect(
         host=address.hostname,
-        port=address.port or 3306,
+        port=address.port or 5432,
         user=env.get("AIO_LIFE_DB_USERNAME", "aio_life"),
         password=env["AIO_LIFE_DB_PASSWORD"],
-        database=env.get("AIO_LIFE_DB_NAME", "aio_life"),
-        charset="utf8mb4",
+        dbname=env.get("AIO_LIFE_DB_NAME", "aio_life"),
+        sslmode=env.get("AIO_LIFE_DB_SSLMODE", "prefer"),
         connect_timeout=10,
-        read_timeout=20,
-        cursorclass=pymysql.cursors.DictCursor,
-    )
-    try:
+        row_factory=dict_row,
+    ) as connection:
+        connection.read_only = True
         with connection.cursor() as cursor:
-            cursor.execute("SET SESSION TRANSACTION READ ONLY")
-            cursor.execute("START TRANSACTION WITH CONSISTENT SNAPSHOT")
-            cursor.execute("SELECT TABLE_NAME,COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()")
+            cursor.execute("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = current_schema()")
             tables = defaultdict(set)
             for row in cursor.fetchall():
-                tables[row["TABLE_NAME"]].add(row["COLUMN_NAME"])
+                tables[row["table_name"]].add(row["column_name"])
             for table, columns in sorted(tables.items()):
                 for column in sorted(columns):
                     if "icon" not in column.lower() and (table, column) != ("sys_menu", "meta"):
                         continue
                     expression = quote_identifier(column)
                     if (table, column) == ("sys_menu", "meta"):
-                        expression = "JSON_UNQUOTE(JSON_EXTRACT(`meta`, '$.icon'))"
-                    active = "`is_deleted` = 0 AND " if "is_deleted" in columns else ""
+                        expression = f"{quote_identifier(column)}->>'icon'"
+                    active = f'{quote_identifier("is_deleted")} = 0 AND ' if "is_deleted" in columns else ""
                     cursor.execute(
                         f"SELECT {expression} AS icon, COUNT(*) AS n FROM {quote_identifier(table)} "
                         f"WHERE {active}{expression} IS NOT NULL AND TRIM({expression}) <> '' GROUP BY {expression}"
@@ -98,9 +96,6 @@ def main():
                             ignored.add(icon)
                             continue
                         references[icon].append({"field": f"{table}.{column}", "count": row["n"]})
-    finally:
-        connection.rollback()
-        connection.close()
     missing = {name: references[name] for name in sorted(references.keys() - local)}
     print(json.dumps({
         "scope": "全库未删除记录的 icon 字段和 sys_menu.meta.icon",

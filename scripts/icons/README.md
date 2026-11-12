@@ -18,13 +18,13 @@
 
 ```bash
 # Python 3.9+，首次使用安装依赖（可在虚拟环境中运行）
-python3 -m pip install PyMySQL
+python3 -m pip install 'psycopg[binary]'
 pnpm icons:check-db
 # 自定义配置文件；现有环境变量仍优先
 pnpm icons:check-db --env-file /path/to/.env
 ```
 
-默认读取前端仓库上一级 `.env`，使用 `AIO_LIFE_DB_URL`（host:port）、`AIO_LIFE_DB_PASSWORD`，可选 `AIO_LIFE_DB_USERNAME`（默认 aio_life）、`AIO_LIFE_DB_NAME`（默认 aio_life）。脚本不输出密码或连接地址。
+默认读取前端仓库上一级 `.env`，使用 `AIO_LIFE_DB_URL`（host:port）、`AIO_LIFE_DB_PASSWORD`，可选 `AIO_LIFE_DB_USERNAME`（默认 aio_life）、`AIO_LIFE_DB_NAME`（默认 aio_life）、`AIO_LIFE_DB_SSLMODE`（默认 prefer）。脚本不输出密码或连接地址。
 
 检查使用数据库只读事务，覆盖所有名称含 `icon` 的字段，以及 `sys_menu.meta.icon`，排除逻辑删除记录；按实际生成资源核对名称，识别本地 SVG，跳过 Emoji、衣柜内部标识等非 Iconify 值。不扫描任意业务文本中的潜在图标，也不修改数据库或配置。
 
