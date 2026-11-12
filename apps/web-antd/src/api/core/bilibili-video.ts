@@ -17,8 +17,8 @@ export interface BilibiliVideo {
   coverFileId?: string;
   coverState?: 'FAILED' | 'NONE' | 'PENDING' | 'READY';
   cover?: string; // 视频封面
-  duration?: number; // 视频时长
-  watchedDuration?: number; // 已学习时长
+  durationSeconds?: number; // 视频时长（秒）
+  watchedDurationSeconds?: number; // 已学习时长（秒）
   episodes?: number; // 集数
   currentEpisode?: number; // 当前观看集数
   progress?: number; // 观看进度（百分比）
@@ -274,7 +274,7 @@ export async function parseBilibiliUrl(url: string) {
       );
 
       // 计算已观看视频时长（秒）
-      const totalDurationSeconds = videoInfo.duration || 0;
+      const totalDurationSeconds = videoInfo.durationSeconds || 0;
       const watchedDurationSeconds = calculateWatchedDuration(
         currentEpisode,
         videoInfo.episodes || 1,
@@ -293,7 +293,7 @@ export async function parseBilibiliUrl(url: string) {
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
           progress,
-          watchedDuration: watchedDurationSeconds,
+          watchedDurationSeconds,
           watchedDurationFormatted,
         },
         message: '解析成功',
@@ -313,7 +313,7 @@ export async function parseBilibiliUrl(url: string) {
       );
 
       // 计算已观看视频时长（秒）
-      const totalDurationSeconds = corsResult.data.duration || 0;
+      const totalDurationSeconds = corsResult.data.durationSeconds || 0;
       const watchedDurationSeconds = calculateWatchedDuration(
         currentEpisode,
         corsResult.data.episodes || 1,
@@ -332,7 +332,7 @@ export async function parseBilibiliUrl(url: string) {
           url: cleanedUrl, // 使用清理后的URL
           currentEpisode,
           progress,
-          watchedDuration: watchedDurationSeconds,
+          watchedDurationSeconds,
           watchedDurationFormatted,
         },
         message: '解析成功',
@@ -448,7 +448,7 @@ function formatVideoInfo(data: any) {
   return {
     title: data.title || '',
     cover: data.pic || '',
-    duration: data.duration || 0,
+    durationSeconds: data.duration || 0,
     episodes: data.videos || 1,
     // 添加更多API返回的信息
     bvid: data.bvid || '',

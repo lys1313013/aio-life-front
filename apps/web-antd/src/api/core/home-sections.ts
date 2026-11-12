@@ -13,8 +13,8 @@ export interface ContinuingVideo {
   title: null | string;
   currentEpisode: number;
   episodes: number;
-  watchedDuration: number;
-  duration: number;
+  watchedDurationSeconds: number;
+  durationSeconds: number;
   progressPercent: number;
   resumeUrl: null | string;
   lastWatched: null | string;

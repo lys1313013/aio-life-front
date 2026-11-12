@@ -82,14 +82,14 @@ export default {
         url: '',
         bvid: '',
         cover: '',
-        duration: 0,
+        durationSeconds: 0,
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
         status: PROGRESS_STATUS.IN_PROGRESS,
         notes: '',
         ownerName: '',
-        watchedDuration: 0,
+        watchedDurationSeconds: 0,
       },
       tabList: [
         { key: PROGRESS_STATUS.NOT_STARTED, tab: '未开始' },
@@ -245,7 +245,9 @@ export default {
         ...video,
         bvid: video.bvid || '',
         ownerName: video.owner?.name || video.ownerName || '',
-        watchedDurationFormatted: this.formatDuration(video.watchedDuration),
+        watchedDurationFormatted: this.formatDuration(
+          video.watchedDurationSeconds,
+        ),
       };
       this.visible = true;
     },
@@ -281,14 +283,14 @@ export default {
         url: '',
         bvid: '',
         cover: '',
-        duration: 0,
+        durationSeconds: 0,
         episodes: 1,
         currentEpisode: 1,
         progress: 0,
         status: PROGRESS_STATUS.IN_PROGRESS,
         notes: '',
         ownerName: '',
-        watchedDuration: 0,
+        watchedDurationSeconds: 0,
         watchedDurationFormatted: '00:00:00',
       };
     },
@@ -308,12 +310,12 @@ export default {
             bvid: res.data.bvid || '',
             title: res.data.title || '',
             cover: res.data.cover || '',
-            duration: res.data.duration || 0,
+            durationSeconds: res.data.durationSeconds || 0,
             episodes: res.data.episodes || 1,
             currentEpisode: res.data.currentEpisode || 1,
             progress: res.data.progress || 0,
             ownerName: res.data.owner?.name || '',
-            watchedDuration: res.data.watchedDuration || 0,
+            watchedDurationSeconds: res.data.watchedDurationSeconds || 0,
             watchedDurationFormatted:
               res.data.watchedDurationFormatted || '00:00:00',
             pages: res.data.pages || [],
@@ -360,9 +362,11 @@ export default {
 
     updateProgressFromEpisode() {
       this.calculateWatchedDuration();
-      if (this.newVideo.duration > 0) {
+      if (this.newVideo.durationSeconds > 0) {
         const progress =
-          (this.newVideo.watchedDuration / this.newVideo.duration) * 100;
+          (this.newVideo.watchedDurationSeconds /
+            this.newVideo.durationSeconds) *
+          100;
         this.newVideo.progress = Math.min(
           100,
           Math.max(0, Math.round(progress)),
@@ -379,9 +383,9 @@ export default {
       if (
         this.newVideo.currentEpisode &&
         this.newVideo.episodes &&
-        this.newVideo.duration
+        this.newVideo.durationSeconds
       ) {
-        const totalSeconds = this.newVideo.duration;
+        const totalSeconds = this.newVideo.durationSeconds;
         let watchedSeconds = 0;
         if (this.newVideo.pages && this.newVideo.pages.length > 0) {
           for (
@@ -402,7 +406,7 @@ export default {
         }
         this.newVideo.watchedDurationFormatted =
           this.formatDuration(watchedSeconds);
-        this.newVideo.watchedDuration = Math.round(watchedSeconds);
+        this.newVideo.watchedDurationSeconds = Math.round(watchedSeconds);
       }
     },
 
@@ -435,8 +439,9 @@ export default {
 
     getActualProgress(video) {
       if (video.status === PROGRESS_STATUS.COMPLETED) return 100;
-      if (video.duration > 0) {
-        const progress = (video.watchedDuration / video.duration) * 100;
+      if (video.durationSeconds > 0) {
+        const progress =
+          (video.watchedDurationSeconds / video.durationSeconds) * 100;
         return Math.min(100, Math.max(0, Math.round(progress)));
       }
       return video.progress || 0;
@@ -587,7 +592,7 @@ export default {
                   <div
                     class="absolute bottom-1 right-1 z-20 text-[10px] font-medium tabular-nums text-white sm:text-[11px]"
                   >
-                    {{ formatDuration(video.duration) || '未知' }}
+                    {{ formatDuration(video.durationSeconds) || '未知' }}
                   </div>
 
                   <!-- 状态角标 -->
@@ -659,8 +664,8 @@ export default {
                       class="mb-1 flex items-center justify-between text-[9px] tabular-nums text-muted-foreground sm:mb-1 sm:text-[10px]"
                     >
                       <span
-                        >{{ formatDuration(video.watchedDuration) }} /
-                        {{ formatDuration(video.duration) }}</span
+                        >{{ formatDuration(video.watchedDurationSeconds) }} /
+                        {{ formatDuration(video.durationSeconds) }}</span
                       >
                       <span class="font-normal"
                         >{{ getActualProgress(video) }}%</span
@@ -777,7 +782,7 @@ export default {
         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AFormItem label="总时长">
             <AInput
-              :value="formatDuration(newVideo.duration)"
+              :value="formatDuration(newVideo.durationSeconds)"
               readonly
               class="w-full bg-muted/50"
             />
