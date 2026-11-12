@@ -68,17 +68,17 @@ export async function getFinanceCalendarDetails(
   page: number,
   pageSize = 20,
 ) {
-  const condition =
-    bucket.startDate && bucket.endDate
-      ? {
-          startTime:
-            kind === 'income'
-              ? bucket.startDate
-              : `${bucket.startDate} 00:00:00`,
-          endTimeBefore:
-            kind === 'income' ? bucket.endDate : `${bucket.endDate} 00:00:00`,
-        }
-      : { undated: true };
+  if (!bucket.startDate || !bucket.endDate) {
+    throw new Error('财务日历范围缺少日期');
+  }
+  const condition = {
+    startTime:
+      kind === 'income'
+        ? bucket.startDate
+        : `${bucket.startDate} 00:00:00`,
+    endTimeBefore:
+      kind === 'income' ? bucket.endDate : `${bucket.endDate} 00:00:00`,
+  };
   return await getQuery<{
     items: FinanceCalendarDetail[];
     total: null | number;

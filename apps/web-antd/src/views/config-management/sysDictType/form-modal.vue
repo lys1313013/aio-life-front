@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { ApiRequests } from '#/api/payload';
+
 import { toRaw } from 'vue';
 
 import { useAppForm } from '#/adapter/form';
@@ -67,11 +69,14 @@ const [Modal, modalApi] = useVbenModal({
     try {
       const { valid } = await formApi.validate();
       if (!valid) return;
-      const newVar = toRaw(await formApi.submitForm());
+      const newVar: Record<string, any> = toRaw(await formApi.submitForm());
       if (newVar.dictId) {
-        await update(newVar.dictId, newVar);
+        await update(
+          newVar.dictId,
+          newVar as ApiRequests['SysDictTypeUpdateReq'],
+        );
       } else {
-        await add(newVar);
+        await add(newVar as ApiRequests['SysDictTypeCreateReq']);
       }
       modalApi.close();
       tableReload();

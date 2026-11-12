@@ -35,28 +35,6 @@ it('日周月年使用完整半开区间和规范分页参数，保留结束边�
     });
   }
 });
-it.each(['income', 'expense'] as const)(
-  '%s 未填日期格子仅查询未填日期记录',
-  async (kind) => {
-    await getFinanceCalendarDetails(
-      kind,
-      {
-        key: 'undated',
-        label: '未填日期',
-        startDate: null,
-        endDate: null,
-        amount: 0,
-        future: false,
-      },
-      1,
-    );
-    expect(mocks.get).toHaveBeenCalledWith(`/${kind}/query`, {
-      params: { page: 1, pageSize: 20, undated: true },
-      paramsSerializer: 'repeat',
-    });
-  },
-);
-
 it('收入使用纯日期半开区间和收入接口', async () => {
   await getFinanceCalendarDetails(
     'income',

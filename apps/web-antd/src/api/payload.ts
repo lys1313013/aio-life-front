@@ -33,8 +33,8 @@ export interface BVideoCreateReq {
   title?: null | string;
   url?: null | string;
   cover?: null | string;
-  duration?: null | number;
-  watchedDuration?: null | number;
+  durationSeconds?: null | number;
+  watchedDurationSeconds?: null | number;
   episodes?: null | number;
   currentEpisode?: null | number;
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
@@ -50,8 +50,8 @@ export interface BVideoProgressReq {
   title?: null | string;
   url?: null | string;
   cover?: null | string;
-  duration?: null | number;
-  watchedDuration?: null | number;
+  durationSeconds?: null | number;
+  watchedDurationSeconds?: null | number;
   episodes?: null | number;
   currentEpisode?: null | number;
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
@@ -67,8 +67,8 @@ export interface BVideoUpdateReq {
   title?: null | string;
   url?: null | string;
   cover?: null | string;
-  duration?: null | number;
-  watchedDuration?: null | number;
+  durationSeconds?: null | number;
+  watchedDurationSeconds?: null | number;
   episodes?: null | number;
   currentEpisode?: null | number;
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
@@ -693,7 +693,7 @@ export interface PerformanceCreateReq {
   venue?: null | string;
   ticketPrice?: null | number | string;
   seatInfo?: null | string;
-  duration?: null | number;
+  durationMinutes?: null | number;
   rating?: null | number;
   review?: null | string;
   purchasePlatform?: null | string;
@@ -711,7 +711,7 @@ export interface PerformanceUpdateReq {
   venue?: null | string;
   ticketPrice?: null | number | string;
   seatInfo?: null | string;
-  duration?: null | number;
+  durationMinutes?: null | number;
   rating?: null | number;
   review?: null | string;
   purchasePlatform?: null | string;
@@ -870,10 +870,10 @@ export interface SetSecondaryPasswordReq {
 }
 
 export interface SysDictDataCreateReq {
-  dictId?: null | string;
+  dictId: string;
   sortOrder?: null | number;
   dictLabel?: null | string;
-  dictValue?: null | string;
+  dictValue: string;
   cssClass?: null | string;
   listClass?: null | string;
   isDefault?: null | string;
@@ -895,7 +895,7 @@ export interface SysDictDataUpdateReq {
 
 export interface SysDictTypeCreateReq {
   dictName?: null | string;
-  dictType?: null | string;
+  dictType: string;
   isEnabled?: null | number;
   remark?: null | string;
 }
@@ -1014,8 +1014,8 @@ export interface TimeRecordExerciseReq {
 export interface TimeRecordSaveReq {
   categoryId?: null | string;
   date?: null | string;
-  startTime: number;
-  endTime: number;
+  startMinute: number;
+  endMinute: number;
   title?: null | string;
   description?: null | string;
   relateType?: null | number;
@@ -1026,8 +1026,8 @@ export interface TimeRecordSaveReq {
 export interface TimeRecordUpdateReq {
   categoryId?: null | string;
   date?: null | string;
-  startTime?: null | number;
-  endTime?: null | number;
+  startMinute?: null | number;
+  endMinute?: null | number;
   title?: null | string;
   description?: null | string;
   relateType?: null | number;
@@ -1441,8 +1441,8 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     url: null,
     cover: null,
-    duration: null,
-    watchedDuration: null,
+    durationSeconds: null,
+    watchedDurationSeconds: null,
     episodes: null,
     currentEpisode: null,
     status: null,
@@ -1457,8 +1457,8 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     url: null,
     cover: null,
-    duration: null,
-    watchedDuration: null,
+    durationSeconds: null,
+    watchedDurationSeconds: null,
     episodes: null,
     currentEpisode: null,
     status: null,
@@ -1473,8 +1473,8 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     url: null,
     cover: null,
-    duration: null,
-    watchedDuration: null,
+    durationSeconds: null,
+    watchedDurationSeconds: null,
     episodes: null,
     currentEpisode: null,
     status: null,
@@ -2037,7 +2037,7 @@ const fields: Record<string, Record<string, null | string>> = {
     venue: null,
     ticketPrice: null,
     seatInfo: null,
-    duration: null,
+    durationMinutes: null,
     rating: null,
     review: null,
     purchasePlatform: null,
@@ -2054,7 +2054,7 @@ const fields: Record<string, Record<string, null | string>> = {
     venue: null,
     ticketPrice: null,
     seatInfo: null,
-    duration: null,
+    durationMinutes: null,
     rating: null,
     review: null,
     purchasePlatform: null,
@@ -2314,8 +2314,8 @@ const fields: Record<string, Record<string, null | string>> = {
   TimeRecordSaveReq: {
     categoryId: null,
     date: null,
-    startTime: null,
-    endTime: null,
+    startMinute: null,
+    endMinute: null,
     title: null,
     description: null,
     relateType: null,
@@ -2325,8 +2325,8 @@ const fields: Record<string, Record<string, null | string>> = {
   TimeRecordUpdateReq: {
     categoryId: null,
     date: null,
-    startTime: null,
-    endTime: null,
+    startMinute: null,
+    endMinute: null,
     title: null,
     description: null,
     relateType: null,
@@ -2687,7 +2687,6 @@ const queryFields: Record<string, string[]> = {
     'payTypeId',
     'remark',
     'startTime',
-    'undated',
     'year',
   ],
   '/expense/statisticsByYear': [],
@@ -2716,7 +2715,6 @@ const queryFields: Record<string, string[]> = {
     'page',
     'pageSize',
     'startTime',
-    'undated',
     'year',
   ],
   '/income/statisticsByYear': [],

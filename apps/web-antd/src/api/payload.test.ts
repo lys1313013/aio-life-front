@@ -169,7 +169,7 @@ describe('最小请求契约', () => {
     expect(
       pickPayload('TimeRecordSaveReq', {
         date: '2026-10-01',
-        duration: 60,
+        durationMinutes: 60,
         exercises: [
           {
             id: '3',
