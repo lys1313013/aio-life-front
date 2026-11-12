@@ -9,17 +9,6 @@ await mkdir(output, { recursive: true });
 const preferencesModule = `/@fs${new URL('../../packages/@core/preferences/src/index.ts', import.meta.url).pathname}`;
 const records = [
   [
-    'typesafe.recommendation',
-    'Typesafe 智能推荐',
-    {
-      enabled: true,
-      model: 'jev-latest',
-      apiKeyConfigured: true,
-      requestTimeoutMs: 1500,
-      dataCacheTtlMs: 18000000,
-    },
-  ],
-  [
     'mbti.api',
     'MBTI 接口',
     { apiKeyConfigured: true, baseUrl: 'https://api.devil.ai' },
@@ -127,28 +116,18 @@ try {
       .filter({
         has: page.locator('.ant-card-head-title', { hasText: title }),
       });
-  const typesafe = card('Typesafe 智能推荐');
   const mbti = card('MBTI 接口');
   const map = card('生活足迹地图');
-  await expect(typesafe.getByLabel('模型', { exact: true })).toHaveValue(
-    'jev-latest',
-  );
-  await typesafe.getByLabel('模型', { exact: true }).fill('new-model');
-  await typesafe
+  await mbti
     .getByLabel('API Key', { exact: true })
     .fill('synthetic-secret');
-  await typesafe.getByLabel('数据缓存时长（毫秒）', { exact: true }).fill('0');
-  const oldHeight = (await typesafe.boundingBox()).height;
-  await typesafe.getByRole('button', { name: /^保\s*存$/ }).click();
-  await expect(typesafe.locator('.ant-btn-loading')).toBeVisible();
-  assert.equal((await typesafe.boundingBox()).height, oldHeight);
-  await expect(typesafe.getByLabel('API Key', { exact: true })).toBeDisabled();
-  await expect(typesafe.locator('.ant-btn-loading')).toHaveCount(0);
-  await expect(typesafe.getByLabel('API Key', { exact: true })).toHaveValue('');
-  await expect(typesafe.getByLabel('模型', { exact: true })).toHaveValue(
-    'new-model',
-  );
-  assert.equal(writes.at(-1).input.dataCacheTtlMs, 0);
+  const oldHeight = (await mbti.boundingBox()).height;
+  await mbti.getByRole('button', { name: /^保\s*存$/ }).click();
+  await expect(mbti.locator('.ant-btn-loading')).toBeVisible();
+  assert.equal((await mbti.boundingBox()).height, oldHeight);
+  await expect(mbti.getByLabel('API Key', { exact: true })).toBeDisabled();
+  await expect(mbti.locator('.ant-btn-loading')).toHaveCount(0);
+  await expect(mbti.getByLabel('API Key', { exact: true })).toHaveValue('');
   assert.equal(writes.at(-1).input.apiKey, 'synthetic-secret');
   await map.getByLabel('地图请求超时（毫秒）', { exact: true }).fill('8000');
   await map.getByRole('button', { name: /^保\s*存$/ }).click();
@@ -196,20 +175,18 @@ try {
         ),
         true,
       );
-      await typesafe.scrollIntoViewIfNeeded();
-      const height = (await typesafe.boundingBox()).height;
-      await typesafe.getByRole('button', { name: /^保\s*存$/ }).click();
-      await expect(typesafe.locator('.ant-btn-loading')).toBeVisible();
-      assert.equal((await typesafe.boundingBox()).height, height);
-      await expect(typesafe.locator('.ant-btn-loading')).toHaveCount(0);
-      assert.equal((await typesafe.boundingBox()).height, height);
+      await mbti.scrollIntoViewIfNeeded();
+      const height = (await mbti.boundingBox()).height;
+      await mbti.getByRole('button', { name: /^保\s*存$/ }).click();
+      await expect(mbti.locator('.ant-btn-loading')).toBeVisible();
+      assert.equal((await mbti.boundingBox()).height, height);
+      await expect(mbti.locator('.ant-btn-loading')).toHaveCount(0);
+      assert.equal((await mbti.boundingBox()).height, height);
       await expect(page.locator('.ant-message-notice')).toHaveCount(0, {
         timeout: 5000,
       });
-      await typesafe.evaluate((node) =>
-        node.scrollIntoView({ block: 'center' }),
-      );
-      await typesafe.screenshot({ path: `${output}/${width}-${theme}.png` });
+      await mbti.evaluate((node) => node.scrollIntoView({ block: 'center' }));
+      await mbti.screenshot({ path: `${output}/${width}-${theme}.png` });
     }
   for (const [name, target] of [
     ['mbti', mbti],

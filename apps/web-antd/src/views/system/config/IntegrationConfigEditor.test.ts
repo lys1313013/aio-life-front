@@ -6,15 +6,12 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import Editor from './IntegrationConfigEditor.vue';
 
-const config = (
-  key = 'typesafe.recommendation',
-  configured = true,
-): SystemConfigVO => ({
+const config = (key = 'mbti.api', configured = true): SystemConfigVO => ({
   configKey: key,
   configType: 'JSON',
   configValue: JSON.stringify({
     apiKeyConfigured: configured,
-    requestTimeoutMs: 2300,
+    baseUrl: 'https://api.devil.ai',
   }),
   description: '',
   updateTime: '',
@@ -23,7 +20,7 @@ const wrappers: ReturnType<typeof mount>[] = [];
 afterEach(() => {
   for (const wrapper of wrappers.splice(0)) wrapper.unmount();
 });
-function editor(key = 'typesafe.recommendation') {
+function editor(key = 'mbti.api') {
   const wrapper = mount(Editor, {
     props: { config: config(key), saving: false },
   });
@@ -36,24 +33,6 @@ async function submit(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('第三方接口系统配置', () => {
-  it('typesafe 回填实际参数，提交时不包含密文和 MBTI 字段', async () => {
-    const wrapper = editor();
-    const key = wrapper.get('input[aria-label="API Key"]');
-    expect(key.element).toHaveProperty('value', '');
-    expect(key.attributes('placeholder')).toBe('已配置，留空保留');
-    await wrapper.get('input[aria-label="模型"]').setValue('new-model');
-    await wrapper.get('input[aria-label="数据缓存时长（毫秒）"]').setValue('0');
-    await submit(wrapper);
-    expect(JSON.parse(wrapper.emitted('save')![0]![0] as string)).toEqual({
-      apiKey: '',
-      clearApiKey: false,
-      enabled: true,
-      model: 'new-model',
-      requestTimeoutMs: 2300,
-      dataCacheTtlMs: 0,
-    });
-  });
-
   it('保存过程中禁用并阻止重复提交，失败保留输入，成功后清空密钥', async () => {
     const wrapper = editor('mbti.api');
     const key = wrapper.get('input[aria-label="API Key"]');

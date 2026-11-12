@@ -31,7 +31,6 @@ const managedKeys = new Set([
   'footprints.baidu',
   'footprints.tencent',
   'mbti.api',
-  'typesafe.recommendation',
   'wechat.mini',
 ]);
 const loading = ref(false);
@@ -188,9 +187,7 @@ async function saveManagedConfig(key: string, value: string) {
             @save="(value) => saveManagedConfig('footprints.tencent', value)"
           />
           <IntegrationConfigEditor
-            v-else-if="
-              ['typesafe.recommendation', 'mbti.api'].includes(cfg.configKey)
-            "
+            v-else-if="cfg.configKey === 'mbti.api'"
             :config="cfg"
             :saving="savingKey === cfg.configKey"
             @save="(value) => saveManagedConfig(cfg.configKey, value)"
