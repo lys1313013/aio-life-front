@@ -6,16 +6,16 @@ import { message } from 'ant-design-vue';
 import { useAppForm } from '#/adapter/form';
 import { getByDictType } from '#/api/core/common';
 import {
-  createPerformance,
-  deletePerformance,
-  updatePerformance,
-  uploadPerformanceAttachment,
-} from '#/api/core/performance';
+  createEventRecord,
+  deleteEventRecord,
+  updateEventRecord,
+  uploadEventRecordAttachment,
+} from '#/api/core/event-record';
 import { AppModalDelete, AppModalFooter } from '#/components/app-modal';
 import ImageUpload from '#/components/ImageUpload.vue';
 
 defineOptions({
-  name: 'FormDrawerDemo',
+  name: 'EventRecordForm',
 });
 
 const props = defineProps<{
@@ -43,7 +43,7 @@ const dictOptions = ref<Array<{ label: string; value: string }>>([]);
 async function loadDictOptions() {
   dictLoading.value = true;
   try {
-    const res = await getByDictType('performance_type');
+    const res = await getByDictType('event_type');
     dictOptions.value = res.dictDetailList;
   } catch (error) {
     console.error('加载字典选项失败:', error);
@@ -59,7 +59,7 @@ const [Form, formApi] = useAppForm({
     {
       component: 'Input',
       componentProps: { placeholder: '活动名称' },
-      fieldName: 'performanceName',
+      fieldName: 'title',
       formItemClass: 'app-form-full',
       label: '活动名称',
       rules: 'required',
@@ -74,13 +74,13 @@ const [Form, formApi] = useAppForm({
         optionFilterProp: 'label',
         style: { width: '100%' },
       }),
-      fieldName: 'performanceType',
+      fieldName: 'eventType',
       label: '活动类型',
     },
     {
       component: 'Input',
-      componentProps: { placeholder: '参与人' },
-      fieldName: 'performer',
+      componentProps: { placeholder: '演出者、主讲人或嘉宾' },
+      fieldName: 'participants',
       label: '参与人',
     },
     {
@@ -91,7 +91,7 @@ const [Form, formApi] = useAppForm({
         valueFormat: 'YYYY-MM-DD',
         style: { width: '100%' },
       },
-      fieldName: 'performanceDate',
+      fieldName: 'eventDate',
       label: '活动日期',
     },
     {
@@ -102,7 +102,7 @@ const [Form, formApi] = useAppForm({
         inputmode: 'decimal',
       },
       fieldName: 'ticketPrice',
-      label: '票价',
+      label: '票价或报名费',
     },
     {
       component: 'Input',
@@ -160,9 +160,9 @@ const handleSubmit = async () => {
       fileIds: fileId.value ? [fileId.value] : [],
     };
     if (props.values?.id) {
-      await updatePerformance({ ...payload, id: props.values.id });
+      await updateEventRecord({ ...payload, id: props.values.id });
     } else {
-      await createPerformance(payload);
+      await createEventRecord(payload);
     }
     tableReload();
     saving.value = false;
@@ -183,7 +183,7 @@ const handleDelete = async () => {
   if (!props.values?.id || busy.value) return;
   deleting.value = true;
   try {
-    await deletePerformance(props.values.id);
+    await deleteEventRecord(props.values.id);
     message.success('删除成功');
     deleting.value = false;
     tableReload();
@@ -196,14 +196,14 @@ const handleDelete = async () => {
 };
 </script>
 <template>
-  <div class="performance-editor">
+  <div class="event-record-editor">
     <div :aria-busy="busy">
       <Form />
-      <div class="performance-cover">
-        <div class="performance-cover-label">封面图片</div>
+      <div class="event-record-cover">
+        <div class="event-record-cover-label">封面图片</div>
         <ImageUpload
           v-model:file-id="fileId"
-          :upload-fn="uploadPerformanceAttachment"
+          :upload-fn="uploadEventRecordAttachment"
           hint=""
         />
       </div>
@@ -228,37 +228,37 @@ const handleDelete = async () => {
 </template>
 
 <style scoped>
-.performance-cover {
+.event-record-cover {
   display: flex;
   align-items: center;
   gap: 20px;
   margin-top: 22px;
 }
 
-.performance-cover-label {
+.event-record-cover-label {
   color: hsl(var(--muted-foreground));
   font-size: 12px;
   font-weight: 500;
 }
 
-.performance-cover :deep(.ant-upload-list) {
+.event-record-cover :deep(.ant-upload-list) {
   line-height: 0;
 }
 
-.performance-cover :deep(.ant-upload-select),
-.performance-cover :deep(.ant-upload-list-item-container) {
+.event-record-cover :deep(.ant-upload-select),
+.event-record-cover :deep(.ant-upload-list-item-container) {
   width: 96px !important;
   height: 144px !important;
   margin: 0 !important;
   border-radius: 10px !important;
 }
 
-.performance-cover :deep(.ant-upload-list-item) {
+.event-record-cover :deep(.ant-upload-list-item) {
   padding: 4px;
   border-radius: 10px;
 }
 
-.performance-cover :deep(.ant-upload-list-item-thumbnail img) {
+.event-record-cover :deep(.ant-upload-list-item-thumbnail img) {
   object-fit: cover;
   border-radius: 6px;
 }

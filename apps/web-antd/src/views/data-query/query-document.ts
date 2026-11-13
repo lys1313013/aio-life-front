@@ -8,7 +8,7 @@ import { Kind, parse, print } from 'graphql';
 export function defaultFields(model: QueryDataset) {
   const fields = new Set([
     model.rangeFields[0]!,
-    ...['title', 'performanceName'].filter((key) => model.fields[key]),
+    ...['title'].filter((key) => model.fields[key]),
   ]);
   const aggregate = Object.entries(model.fields).find(
     ([, field]) => field.aggregateFunctions.length > 0,

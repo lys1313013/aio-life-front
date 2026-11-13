@@ -70,9 +70,9 @@ const routes: RouteRecordRaw[] = [
           icon: 'mdi:chart-line-variant',
           title: '活动',
         },
-        name: 'performance',
-        path: '/my-hub/performance',
-        component: () => import('#/views/my-hub/performance/index.vue'),
+        name: 'eventRecord',
+        path: '/my-hub/event-record',
+        component: () => import('#/views/my-hub/event-record/index.vue'),
       },
       {
         meta: {

@@ -1248,20 +1248,20 @@
     }
   }
 }, {
-  "name" : "performance",
-  "domain" : "performance",
+  "name" : "event_record",
+  "domain" : "event",
   "title" : "演出",
-  "typeName" : "Performance",
-  "root" : "performances",
-  "statsRoot" : "performanceStats",
+  "typeName" : "EventRecord",
+  "root" : "eventRecords",
+  "statsRoot" : "eventRecordStats",
   "relations" : { },
   "description" : "当前用户完整演出记录，含座位、订单号与评价；ticketPrice 为元，durationMinutes 为分钟",
-  "releaseId" : "performance-v3",
-  "graphqlSdl" : "type Query {\n  performances(where: PerformanceBoolExp!, limit: Int = 100, offset: Int = 0, orderBy: [PerformanceOrderBy!]): [Performance!]!\n  performanceStats(where: PerformanceBoolExp!): PerformanceStats!\n}\ntype Performance {\n  id: String!\n  performanceName: String\n  performer: String\n  performanceType: String\n  performanceDate: String\n  city: String\n  venue: String\n  ticketPrice: String\n  durationMinutes: Int\n  rating: Int\n  seatInfo: String\n  review: String\n  purchasePlatform: String\n  orderNumber: String\n  createUser: String\n  createdAt: String\n  updateUser: String\n  updatedAt: String\n  userId: String\n  isDeleted: Int\n}\ntype PerformanceStats { count: String! ticketPrice: NumericStats durationMinutes: NumericStats }\ntype NumericStats { sum: String max: String min: String }\ntype DistinctStats { countDistinct: String! }\ninput PerformanceBoolExp {\n  id: IdComparison\n  performanceName: IdComparison\n  performer: IdComparison\n  performanceType: IdComparison\n  performanceDate: DateComparison\n  city: IdComparison\n  venue: IdComparison\n  ticketPrice: DecimalComparison\n  durationMinutes: IntComparison\n  rating: IntComparison\n  seatInfo: IdComparison\n  review: IdComparison\n  purchasePlatform: IdComparison\n  orderNumber: IdComparison\n  createUser: IdComparison\n  createdAt: DateComparison\n  updateUser: IdComparison\n  updatedAt: DateComparison\n  userId: IdComparison\n  isDeleted: IntComparison\n}\ninput PerformanceOrderBy {\n  id: OrderDirection\n  performanceName: OrderDirection\n  performer: OrderDirection\n  performanceType: OrderDirection\n  performanceDate: OrderDirection\n  city: OrderDirection\n  venue: OrderDirection\n  ticketPrice: OrderDirection\n  durationMinutes: OrderDirection\n  rating: OrderDirection\n  seatInfo: OrderDirection\n  purchasePlatform: OrderDirection\n  orderNumber: OrderDirection\n  createUser: OrderDirection\n  createdAt: OrderDirection\n  updateUser: OrderDirection\n  updatedAt: OrderDirection\n  userId: OrderDirection\n  isDeleted: OrderDirection\n}\ninput DateComparison { _gte: String! _lt: String! }\ninput IdComparison { _eq: String! }\ninput IntComparison { _eq: Int _gte: Int _lte: Int }\ninput DecimalComparison { _eq: String _gte: String _lte: String }\nenum OrderDirection { Asc Desc }\nscalar JSON\n",
+  "releaseId" : "event-record-v3",
+  "graphqlSdl" : "type Query {\n  eventRecords(where: EventRecordBoolExp!, limit: Int = 100, offset: Int = 0, orderBy: [EventRecordOrderBy!]): [EventRecord!]!\n  eventRecordStats(where: EventRecordBoolExp!): EventRecordStats!\n}\ntype EventRecord {\n  id: String!\n  title: String\n  participants: String\n  eventType: String\n  eventDate: String\n  city: String\n  venue: String\n  ticketPrice: String\n  durationMinutes: Int\n  rating: Int\n  seatInfo: String\n  review: String\n  purchasePlatform: String\n  orderNumber: String\n  createUser: String\n  createdAt: String\n  updateUser: String\n  updatedAt: String\n  userId: String\n  isDeleted: Int\n}\ntype EventRecordStats { count: String! ticketPrice: NumericStats durationMinutes: NumericStats }\ntype NumericStats { sum: String max: String min: String }\ntype DistinctStats { countDistinct: String! }\ninput EventRecordBoolExp {\n  id: IdComparison\n  title: IdComparison\n  participants: IdComparison\n  eventType: IdComparison\n  eventDate: DateComparison\n  city: IdComparison\n  venue: IdComparison\n  ticketPrice: DecimalComparison\n  durationMinutes: IntComparison\n  rating: IntComparison\n  seatInfo: IdComparison\n  review: IdComparison\n  purchasePlatform: IdComparison\n  orderNumber: IdComparison\n  createUser: IdComparison\n  createdAt: DateComparison\n  updateUser: IdComparison\n  updatedAt: DateComparison\n  userId: IdComparison\n  isDeleted: IntComparison\n}\ninput EventRecordOrderBy {\n  id: OrderDirection\n  title: OrderDirection\n  participants: OrderDirection\n  eventType: OrderDirection\n  eventDate: OrderDirection\n  city: OrderDirection\n  venue: OrderDirection\n  ticketPrice: OrderDirection\n  durationMinutes: OrderDirection\n  rating: OrderDirection\n  seatInfo: OrderDirection\n  purchasePlatform: OrderDirection\n  orderNumber: OrderDirection\n  createUser: OrderDirection\n  createdAt: OrderDirection\n  updateUser: OrderDirection\n  updatedAt: OrderDirection\n  userId: OrderDirection\n  isDeleted: OrderDirection\n}\ninput DateComparison { _gte: String! _lt: String! }\ninput IdComparison { _eq: String! }\ninput IntComparison { _eq: Int _gte: Int _lte: Int }\ninput DecimalComparison { _eq: String _gte: String _lte: String }\nenum OrderDirection { Asc Desc }\nscalar JSON\n",
   "maxDateRangeDays" : 366,
   "maxRows" : 1000,
-  "rangeFields" : [ "performanceDate" ],
-  "queryExample" : "query Recent($start:String!,$end:String!){performances(where:{performanceDate:{_gte:$start,_lt:$end}},limit:100){id}}",
+  "rangeFields" : [ "eventDate" ],
+  "queryExample" : "query Recent($start:String!,$end:String!){eventRecords(where:{eventDate:{_gte:$start,_lt:$end}},limit:100){id}}",
   "limits" : {
     "maxOffset" : 10000,
     "defaultLimit" : 100,
@@ -1273,7 +1273,7 @@
   },
   "unsupported" : [ "fragment", "directive", "introspection", "mutation", "subscription", "OR", "groupBy", "fuzzySearch" ],
   "rangeSemantics" : "rangeFields 中至少一个字段必须有 _gte（含）/_lt（不含）；日期 YYYY-MM-DD，本地时间不带时区，最长 366 天",
-  "defaultOrder" : "performanceDate Desc, id Asc",
+  "defaultOrder" : "eventDate Desc, id Asc",
   "fields" : {
     "id" : {
       "label" : "标识",
@@ -1287,8 +1287,8 @@
       "filterOperators" : [ "_eq" ],
       "description" : "字符串标识符，保留精度，不转换为数字"
     },
-    "performanceName" : {
-      "label" : "演出名称",
+    "title" : {
+      "label" : "活动名称",
       "type" : "String",
       "kind" : "TEXT",
       "graphqlType" : "String",
@@ -1298,7 +1298,7 @@
       "distinctFunctions" : [ ],
       "filterOperators" : [ "_eq" ]
     },
-    "performer" : {
+    "participants" : {
       "label" : "表演者",
       "type" : "String",
       "kind" : "TEXT",
@@ -1309,8 +1309,8 @@
       "distinctFunctions" : [ ],
       "filterOperators" : [ "_eq" ]
     },
-    "performanceType" : {
-      "label" : "演出类型",
+    "eventType" : {
+      "label" : "活动类型",
       "type" : "String",
       "kind" : "TEXT",
       "graphqlType" : "String",
@@ -1320,7 +1320,7 @@
       "distinctFunctions" : [ ],
       "filterOperators" : [ "_eq" ]
     },
-    "performanceDate" : {
+    "eventDate" : {
       "label" : "演出时间",
       "type" : "String",
       "kind" : "DATETIME",
@@ -1354,7 +1354,7 @@
       "filterOperators" : [ "_eq" ]
     },
     "ticketPrice" : {
-      "label" : "票价",
+      "label" : "票价或报名费",
       "type" : "String",
       "kind" : "DECIMAL",
       "graphqlType" : "String",
@@ -1411,7 +1411,7 @@
       "filterOperators" : [ "_eq" ]
     },
     "purchasePlatform" : {
-      "label" : "购票平台",
+      "label" : "购票或报名平台",
       "type" : "String",
       "kind" : "TEXT",
       "graphqlType" : "String",

@@ -10,7 +10,7 @@ import {
 import { Empty } from 'ant-design-vue';
 
 import { getByDictType } from '#/api/core/common';
-import { queryPerformances } from '#/api/core/performance';
+import { queryEventRecords } from '#/api/core/event-record';
 import { AppModal as Modal } from '#/components/app-modal';
 import AuthImage from '#/components/AuthImage.vue';
 import ContentLoading from '#/components/ContentLoading.vue';
@@ -20,10 +20,10 @@ import FormDrawerDemo from './form-drawer-demo.vue';
 
 interface RowType {
   id: string;
-  performanceName: string;
-  performer: string;
-  performanceType: string;
-  performanceDate: string;
+  title: string;
+  participants: string;
+  eventType: string;
+  eventDate: string;
   venue: string;
   city: string;
   ticketPrice: string;
@@ -40,14 +40,14 @@ const dictOptions = ref<Array<{ label: string; value: string }>>([]);
 
 const loadDictOptions = async () => {
   try {
-    const res = await getByDictType('performance_type');
+    const res = await getByDictType('event_type');
     dictOptions.value = res.dictDetailList;
   } catch (error) {
     console.error('加载字典选项失败:', error);
   }
 };
 
-const getPerformanceTypeLabel = (value: string) => {
+const getEventTypeLabel = (value: string) => {
   const option = dictOptions.value.find((item) => item.value === value);
   return option ? option.label : value;
 };
@@ -55,7 +55,7 @@ const getPerformanceTypeLabel = (value: string) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const res = await queryPerformances({
+    const res = await queryEventRecords({
       page: 1,
       pageSize: 100,
     });
@@ -108,7 +108,7 @@ const tableReload = () => {
             v-for="item in dataSource"
             :key="item.id"
             type="button"
-            :aria-label="`编辑活动：${item.performanceName}`"
+            :aria-label="`编辑活动：${item.title}`"
             class="group min-w-0 self-start rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             @click="openFormDrawer(item)"
           >
@@ -118,7 +118,7 @@ const tableReload = () => {
               <AuthImage
                 v-if="item.files && item.files.length > 0"
                 :file-id="item.files[0]?.id"
-                :alt="item.performanceName"
+                :alt="item.title"
                 class="h-full w-full object-contain"
               />
               <div
@@ -132,30 +132,27 @@ const tableReload = () => {
             <div class="pt-2.5">
               <h3
                 class="line-clamp-2 text-sm font-semibold leading-5 text-foreground"
-                :title="item.performanceName"
+                :title="item.title"
               >
-                {{ item.performanceName }}
+                {{ item.title }}
               </h3>
               <div
                 class="mt-1.5 flex flex-col gap-1 text-xs leading-5 text-muted-foreground"
               >
                 <div class="flex min-w-0 items-center gap-1.5">
-                  <template v-if="item.performer">
+                  <template v-if="item.participants">
                     <UserOutlined class="shrink-0 text-[10px]" />
-                    <span class="truncate">{{ item.performer }}</span>
+                    <span class="truncate">{{ item.participants }}</span>
                   </template>
                   <span
-                    v-if="item.performanceType"
+                    v-if="item.eventType"
                     class="ml-auto shrink-0 text-[11px]"
-                    >{{ getPerformanceTypeLabel(item.performanceType) }}</span
+                    >{{ getEventTypeLabel(item.eventType) }}</span
                   >
                 </div>
-                <div
-                  v-if="item.performanceDate"
-                  class="flex items-center gap-1.5"
-                >
+                <div v-if="item.eventDate" class="flex items-center gap-1.5">
                   <CalendarOutlined class="shrink-0 text-[10px]" />
-                  <span>{{ item.performanceDate }}</span>
+                  <span>{{ item.eventDate }}</span>
                 </div>
                 <div
                   v-if="item.city || item.venue"

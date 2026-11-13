@@ -46,7 +46,7 @@ export const FILE_BIZ_TYPE = {
   FEEDBACK_COMMENT: 'feedback_comment',
   HONOR_RECORD: 'honor_record',
   MOVIE: 'movie',
-  PERFORMANCE: 'performance',
+  EVENT_RECORD: 'event_record',
   READ_RECORD: 'read',
   WARDROBE_ITEM: 'wardrobe_item',
 } as const;
