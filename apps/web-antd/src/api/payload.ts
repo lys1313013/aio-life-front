@@ -187,7 +187,7 @@ export interface CloseAccountReq {
 }
 
 export interface CommonReq {
-  idList?: Array<string> | null;
+  idList: Array<string>;
 }
 
 export interface DeviceCreateReq {
@@ -236,6 +236,41 @@ export interface DoubanMovieImportReq {
   doubanUserId?: null | string;
   duplicatePolicy?: null | string;
   records?: Array<DoubanMovieImportItemReq> | null;
+}
+
+export interface EventRecordCreateReq {
+  title?: null | string;
+  participants?: null | string;
+  eventType?: null | string;
+  eventDate?: null | string;
+  city?: null | string;
+  venue?: null | string;
+  ticketPrice?: null | number | string;
+  seatInfo?: null | string;
+  durationMinutes?: null | number;
+  rating?: null | number;
+  review?: null | string;
+  purchasePlatform?: null | string;
+  orderNumber?: null | string;
+  fileIds?: Array<string> | null;
+}
+
+export interface EventRecordUpdateReq {
+  id: string;
+  title?: null | string;
+  participants?: null | string;
+  eventType?: null | string;
+  eventDate?: null | string;
+  city?: null | string;
+  venue?: null | string;
+  ticketPrice?: null | number | string;
+  seatInfo?: null | string;
+  durationMinutes?: null | number;
+  rating?: null | number;
+  review?: null | string;
+  purchasePlatform?: null | string;
+  orderNumber?: null | string;
+  fileIds?: Array<string> | null;
 }
 
 export interface ExerciseRecordCreateReq {
@@ -683,41 +718,6 @@ export interface PasswordVaultUpdateReq {
   salt?: null | string;
   remark?: null | string;
   favorite?: boolean | null;
-}
-
-export interface PerformanceCreateReq {
-  performanceName?: null | string;
-  performer?: null | string;
-  performanceType?: null | string;
-  performanceDate?: null | string;
-  city?: null | string;
-  venue?: null | string;
-  ticketPrice?: null | number | string;
-  seatInfo?: null | string;
-  durationMinutes?: null | number;
-  rating?: null | number;
-  review?: null | string;
-  purchasePlatform?: null | string;
-  orderNumber?: null | string;
-  fileIds?: Array<string> | null;
-}
-
-export interface PerformanceUpdateReq {
-  id: string;
-  performanceName?: null | string;
-  performer?: null | string;
-  performanceType?: null | string;
-  performanceDate?: null | string;
-  city?: null | string;
-  venue?: null | string;
-  ticketPrice?: null | number | string;
-  seatInfo?: null | string;
-  durationMinutes?: null | number;
-  rating?: null | number;
-  review?: null | string;
-  purchasePlatform?: null | string;
-  orderNumber?: null | string;
-  fileIds?: Array<string> | null;
 }
 
 export interface PersonReq {
@@ -1286,6 +1286,8 @@ export interface ApiRequests {
   DeviceUpdateReq: DeviceUpdateReq;
   DoubanMovieImportItemReq: DoubanMovieImportItemReq;
   DoubanMovieImportReq: DoubanMovieImportReq;
+  EventRecordCreateReq: EventRecordCreateReq;
+  EventRecordUpdateReq: EventRecordUpdateReq;
   ExerciseRecordCreateReq: ExerciseRecordCreateReq;
   ExerciseRecordUpdateReq: ExerciseRecordUpdateReq;
   ExpenseCreateReq: ExpenseCreateReq;
@@ -1332,8 +1334,6 @@ export interface ApiRequests {
   NotificationPreferenceUpdateReq_Item: NotificationPreferenceUpdateReq_Item;
   PasswordVaultCreateReq: PasswordVaultCreateReq;
   PasswordVaultUpdateReq: PasswordVaultUpdateReq;
-  PerformanceCreateReq: PerformanceCreateReq;
-  PerformanceUpdateReq: PerformanceUpdateReq;
   PersonReq: PersonReq;
   QrLoginModels_BrowserRequest: QrLoginModels_BrowserRequest;
   QrLoginModels_DecisionRequest: QrLoginModels_DecisionRequest;
@@ -1624,6 +1624,39 @@ const fields: Record<string, Record<string, null | string>> = {
     doubanUserId: null,
     duplicatePolicy: null,
     records: 'DoubanMovieImportItemReq',
+  },
+  EventRecordCreateReq: {
+    title: null,
+    participants: null,
+    eventType: null,
+    eventDate: null,
+    city: null,
+    venue: null,
+    ticketPrice: null,
+    seatInfo: null,
+    durationMinutes: null,
+    rating: null,
+    review: null,
+    purchasePlatform: null,
+    orderNumber: null,
+    fileIds: null,
+  },
+  EventRecordUpdateReq: {
+    id: null,
+    title: null,
+    participants: null,
+    eventType: null,
+    eventDate: null,
+    city: null,
+    venue: null,
+    ticketPrice: null,
+    seatInfo: null,
+    durationMinutes: null,
+    rating: null,
+    review: null,
+    purchasePlatform: null,
+    orderNumber: null,
+    fileIds: null,
   },
   ExerciseRecordCreateReq: {
     exerciseTypeId: null,
@@ -2025,39 +2058,6 @@ const fields: Record<string, Record<string, null | string>> = {
     salt: null,
     remark: null,
     favorite: null,
-  },
-  PerformanceCreateReq: {
-    performanceName: null,
-    performer: null,
-    performanceType: null,
-    performanceDate: null,
-    city: null,
-    venue: null,
-    ticketPrice: null,
-    seatInfo: null,
-    durationMinutes: null,
-    rating: null,
-    review: null,
-    purchasePlatform: null,
-    orderNumber: null,
-    fileIds: null,
-  },
-  PerformanceUpdateReq: {
-    id: null,
-    performanceName: null,
-    performer: null,
-    performanceType: null,
-    performanceDate: null,
-    city: null,
-    venue: null,
-    ticketPrice: null,
-    seatInfo: null,
-    durationMinutes: null,
-    rating: null,
-    review: null,
-    purchasePlatform: null,
-    orderNumber: null,
-    fileIds: null,
   },
   PersonReq: {
     name: null,
@@ -2632,16 +2632,13 @@ const queryFields: Record<string, string[]> = {
   '/cbti/results': [],
   '/cbti/result/{id}': [],
   '/cbti/images/{*objectName}': [],
-  '/github/calendar': [],
-  '/github/repos': ['page'],
-  '/github/repository/{section}': ['name'],
-  '/leetcode/data/{section}': [],
   '/csdn/stats': ['username'],
   '/csdn/articles': ['limit', 'username'],
   '/dashboard/tasks': [],
   '/dashboard/card/{type}': [],
   '/device/query': ['name', 'page', 'pageSize', 'type'],
   '/device/{id}': [],
+  '/event-records': ['page', 'pageSize'],
   '/exerciseRecord/query': [
     'description',
     'endDate',
@@ -2694,6 +2691,9 @@ const queryFields: Record<string, string[]> = {
   '/life-footprints/map/geocode': ['address'],
   '/life-footprints/map/reverse': ['latitude', 'longitude'],
   '/github/recent-commits': ['page', 'pageSize'],
+  '/github/calendar': [],
+  '/github/repos': ['page'],
+  '/github/repository/{section}': ['name'],
   '/goals': ['isPinned', 'keyword', 'status', 'type'],
   '/home/sections/memo': [],
   '/home/sections/video': [],
@@ -2713,6 +2713,7 @@ const queryFields: Record<string, string[]> = {
   ],
   '/income/statisticsByYear': [],
   '/income/statisticsByMonth': [],
+  '/leetcode/data/{section}': [],
   '/life-footprints': [],
   '/life-footprints/{id}': [],
   '/mbti/test/{testId}': [],
@@ -2739,7 +2740,6 @@ const queryFields: Record<string, string[]> = {
   '/password/list': [],
   '/password/{id}': [],
   '/password/categories': [],
-  '/performance': ['page', 'pageSize'],
   '/public/images/{id:[a-fA-F0-9]{32}}.{extension:png|jpg|webp|gif|bmp}': [],
   '/read-record/page': [
     'inProgressFirst',
@@ -2753,8 +2753,8 @@ const queryFields: Record<string, string[]> = {
   '/read-record/parse-douban': ['url'],
   '/read-record/active': [],
   '/sysDictData/query': ['dictLabel', 'dictType', 'page', 'pageSize'],
-  '/sysDictType/getByDictType': ['dictType'],
   '/sysDictType/query': ['dictName', 'page', 'pageSize'],
+  '/sysDictType/getByDictType': ['dictType'],
   '/file/preview/{id:[a-fA-F0-9]{32}}': [],
   '/file/download/{id:[a-fA-F0-9]{32}}': [],
   '/taskColumn/query': ['page', 'pageSize'],
@@ -2777,12 +2777,19 @@ const queryFields: Record<string, string[]> = {
   '/timeRecord/recommendType': ['date', 'time'],
   '/timeRecord/recommendNext': ['date'],
   '/timeRecord/relateTypes': [],
+  '/timeTrackerCategory/admin/list': [],
   '/timeTrackerCategory/list': [],
   '/timeTrackerCategory/all': [],
   '/timeTrackerCategory/hidden': [],
-  '/timeTrackerCategory/admin/list': [],
   '/userbinds/list': ['includeToken'],
   '/userbinds/douban/verify': ['accountId'],
+  '/userDictData/admin/query': [
+    'dictLabel',
+    'dictType',
+    'isEnabled',
+    'page',
+    'pageSize',
+  ],
   '/userDictData/query': [
     'dictLabel',
     'dictType',
@@ -2791,13 +2798,6 @@ const queryFields: Record<string, string[]> = {
     'pageSize',
   ],
   '/userDictData/{id}': [],
-  '/userDictData/admin/query': [
-    'dictLabel',
-    'dictType',
-    'isEnabled',
-    'page',
-    'pageSize',
-  ],
   '/userDictType/dictTypeEnum': [],
   '/userDictType/getByDictType': ['dictType'],
   '/notification/channels/wechat-mini': [],
@@ -2815,10 +2815,10 @@ const queryFields: Record<string, string[]> = {
   '/system/scheduled-jobs/{id}/logs': ['page', 'pageSize'],
   '/api-key/list': [],
   '': [],
+  '/message/admin/list': ['page', 'pageSize', 'userId'],
   '/message/list': ['isRead'],
   '/message/page': ['isRead', 'page', 'pageSize'],
   '/message/unread-count': [],
-  '/message/admin/list': ['page', 'pageSize', 'userId'],
   '/auth/qr-login/{id}/status': [],
   '/user-center/list': ['keyword', 'page', 'pageSize'],
   '/auth/info': [],
@@ -3064,6 +3064,18 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
+    path: '/event-records',
+    model: 'EventRecordCreateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/event-records',
+    model: 'EventRecordUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
     path: '/exerciseRecord',
     model: 'ExerciseRecordCreateReq',
     list: false,
@@ -3242,18 +3254,6 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
-    path: '/performance',
-    model: 'PerformanceCreateReq',
-    list: false,
-  },
-  {
-    method: 'PUT',
-    path: '/performance',
-    model: 'PerformanceUpdateReq',
-    list: false,
-  },
-  {
-    method: 'POST',
     path: '/read-record',
     model: 'ReadRecordCreateReq',
     list: false,
@@ -3355,6 +3355,18 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
+    path: '/timeTrackerCategory/admin',
+    model: 'TimeTrackerCategoryAdminCreateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/timeTrackerCategory/admin/{id}',
+    model: 'TimeTrackerCategoryAdminUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
     path: '/timeTrackerCategory',
     model: 'TimeTrackerCategoryCreateReq',
     list: false,
@@ -3373,18 +3385,6 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
-    path: '/timeTrackerCategory/admin',
-    model: 'TimeTrackerCategoryAdminCreateReq',
-    list: false,
-  },
-  {
-    method: 'PUT',
-    path: '/timeTrackerCategory/admin/{id}',
-    model: 'TimeTrackerCategoryAdminUpdateReq',
-    list: false,
-  },
-  {
-    method: 'POST',
     path: '/userbinds',
     model: 'UserBindCreateReq',
     list: false,
@@ -3393,18 +3393,6 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/userbinds',
     model: 'UserBindUpdateReq',
-    list: false,
-  },
-  {
-    method: 'POST',
-    path: '/userDictData',
-    model: 'UserDictDataCreateReq',
-    list: false,
-  },
-  {
-    method: 'PUT',
-    path: '/userDictData',
-    model: 'UserDictDataUpdateReq',
     list: false,
   },
   {
@@ -3423,6 +3411,18 @@ const requestModels: Array<{
     method: 'POST',
     path: '/userDictData/admin/reSort',
     model: 'UserDictDataReSortReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/userDictData',
+    model: 'UserDictDataCreateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/userDictData',
+    model: 'UserDictDataUpdateReq',
     list: false,
   },
   {
@@ -3504,13 +3504,13 @@ const requestModels: Array<{
     list: false,
   },
   { method: 'POST', path: '/auth/register', model: 'RegisterReq', list: false },
-  { method: 'POST', path: '/message', model: 'MessageCreateReq', list: false },
   {
     method: 'POST',
     path: '/message/admin/send',
     model: 'MessageCreateReq',
     list: false,
   },
+  { method: 'POST', path: '/message', model: 'MessageCreateReq', list: false },
   {
     method: 'POST',
     path: '/auth/qr-login/scan',
@@ -3771,4 +3771,1561 @@ export function minimalRequestPayload(
   return route.list
     ? pickPayloadList(route.model, value as unknown[])
     : pickPayload(route.model, value);
+}
+
+/** 响应模型：Controller 返回类型对应的 VO，用于读取响应。 */
+export interface ActivityLogDetailVO {
+  userId?: string;
+  id?: string;
+  logType?: string;
+  username?: string;
+  nickname?: string;
+  ipAddress?: string;
+  browser?: string;
+  functionName?: string;
+  functionItem?: string;
+  accessType?: string;
+  requestPath?: string;
+  requestMethod?: string;
+  requestTime?: string;
+  durationMs?: number;
+  serverIp?: string;
+  success?: boolean;
+  createTime?: string;
+  requestParams?: string;
+}
+
+export interface ActivityLogVO {
+  userId?: string;
+  id?: string;
+  logType?: string;
+  username?: string;
+  nickname?: string;
+  ipAddress?: string;
+  browser?: string;
+  functionName?: string;
+  functionItem?: string;
+  accessType?: string;
+  requestPath?: string;
+  requestMethod?: string;
+  requestTime?: string;
+  durationMs?: number;
+  serverIp?: string;
+  success?: boolean;
+  createTime?: string;
+}
+
+export interface AdminUserVO {
+  id: null | string;
+  username: null | string;
+  nickname: null | string;
+}
+
+export interface AnniversaryRecordVO {
+  isPinned?: number;
+  pinnedSortOrder?: number;
+  id?: string;
+  title?: string;
+  targetDate?: string;
+  type?: string;
+  remark?: string;
+  color?: string;
+  icon?: string;
+}
+
+export interface ApiKeyCreatedVO {
+  apiKey?: string;
+}
+
+export interface ApiKeyVO {
+  id: null | string;
+  apiKey: null | string;
+  remark: null | string;
+  expiredAt: null | string;
+  createTime: null | string;
+  isExpired: boolean | null;
+}
+
+export interface BVideoCoverVO {
+  id: null | string;
+  coverFileId: null | string;
+  coverState: null | string;
+}
+
+export interface BVideoStatisticsVO {
+  studiedSeconds: number;
+  unstudiedSeconds: number;
+  totalSeconds: number;
+  studiedCount: number;
+  unstudiedCount: number;
+  notStartedCount: number;
+  totalCount: number;
+  progressPercentage: null | number;
+}
+
+export interface BVideoVO {
+  coverFileId?: string;
+  coverState?: string;
+  id?: string;
+  title?: string;
+  url?: string;
+  cover?: string;
+  durationSeconds?: number;
+  watchedDurationSeconds?: number;
+  episodes?: number;
+  currentEpisode?: number;
+  status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold';
+  lastWatched?: string;
+  notes?: string;
+  bvid?: string;
+  aid?: string;
+  description?: string;
+  ownerName?: string;
+  pagesInfo?: string;
+}
+
+export interface BankCardCoverTemplateVO {
+  id: null | string;
+  name: null | string;
+  bankId: null | string;
+  bankName: null | string;
+  cardType: null | string;
+  sourceUrl: null | string;
+  isEnabled: number;
+  sortOrder: number;
+  fileId: null | string;
+  usageCount: null | number;
+  publicUrl: null | string;
+}
+
+export interface BankCardCoverTemplateVO_Option {
+  id: null | string;
+  name: null | string;
+  fileId: null | string;
+  publicUrl: null | string;
+}
+
+export interface BankCardOrderVO {
+  id: null | string;
+  sortOrder: null | number;
+}
+
+export interface BankCardVO {
+  id: null | string;
+  bankId: null | string;
+  bankName: null | string;
+  bankCode: null | string;
+  customBankName: null | string;
+  cardName: null | string;
+  alias: null | string;
+  cardType: null | string;
+  cardNoFirst4: null | string;
+  cardNoLast4: null | string;
+  branchName: null | string;
+  status: null | string;
+  openedDate: null | string;
+  expiryMonth: null | string;
+  creditLimit: null | number | string;
+  balance: null | number | string;
+  statementDay: null | number;
+  repaymentDay: null | number;
+  coverTemplateId: null | string;
+  coverTemplateFileId: null | string;
+  coverTemplatePublicUrl: null | string;
+  coverTemplateName: null | string;
+  coverColor: null | string;
+  coverSourceUrl: null | string;
+  sortOrder: null | number;
+  remark: null | string;
+  tags: Array<BankCardVO_Tag> | null;
+  coverFileIds: Array<string> | null;
+}
+
+export interface BankCardVO_Bank {
+  id: null | string;
+  name: null | string;
+  code: null | string;
+  isEnabled: null | number;
+}
+
+export interface BankCardVO_Tag {
+  id: null | string;
+  name: null | string;
+  color: null | string;
+  isEnabled: null | number;
+}
+
+export interface BodyProfileVO {
+  id: null | string;
+  version: null | number;
+  updateTime: null | string;
+  bmi: null | number | string;
+  heightCm: null | number | string;
+  weightKg: null | number | string;
+  bodyFatPercent: null | number | string;
+  shoulderWidthCm: null | number | string;
+  chestCm: null | number | string;
+  upperArmCm: null | number | string;
+  forearmCm: null | number | string;
+  waistCm: null | number | string;
+  hipCm: null | number | string;
+  thighCm: null | number | string;
+  calfCm: null | number | string;
+  inseamCm: null | number | string;
+  gender: null | string;
+  measurementSide: null | string;
+  armState: null | string;
+  shoeSystem: null | string;
+  topSize: null | string;
+  trousersSize: null | string;
+  shoeSize: null | string;
+}
+
+export interface CategoryVO {
+  id: null | string;
+  name: null | string;
+  icon: null | string;
+  parentId: null | string;
+  sortOrder: null | number;
+  categoryType: null | number;
+  children: Array<CategoryVO_CategoryVO> | null;
+}
+
+export interface CategoryVO_CategoryVO {
+  id: null | string;
+  name: null | string;
+  icon: null | string;
+  parentId: null | string;
+  sortOrder: null | number;
+  categoryType: null | number;
+  children: Array<CategoryVO> | null;
+}
+
+export interface CbtiPersonalityAdminVO {
+  id: null | string;
+  code: null | string;
+  name: null | string;
+  motto: null | string;
+  color: null | string;
+  vector: Array<number> | null;
+  description: null | string;
+  strengths: Array<string> | null;
+  weaknesses: Array<string> | null;
+  techStack: null | string;
+  spirit: null | string;
+  imageObject: null | string;
+  imageUrl: null | string;
+  isSpecial: boolean | null;
+  updateTime: null | string;
+  createTime: null | string;
+}
+
+export interface CsdnArticleVO {
+  id: null | string;
+  title: null | string;
+  url: null | string;
+  description: null | string;
+  postTime: null | string;
+  viewCount: null | number;
+  commentCount: null | number;
+  likeCount: null | number;
+  collectCount: null | number;
+}
+
+export interface CsdnStatsVO {
+  viewCount: null | number;
+  originalCount: null | number;
+  rank: null | number;
+  fansCount: null | number;
+  likeCount: null | number;
+  commentCount: null | number;
+}
+
+export interface DashboardCardVO {
+  type?: string;
+  icon?: string;
+  iconColor?: string;
+  iconClickUrl?: string;
+  title?: string;
+  titleClickUrl?: string;
+  value?: string;
+  valueColor?: string;
+  totalTitle?: string;
+  totalValue?: string;
+  refreshInterval?: number;
+}
+
+export interface DeviceVO {
+  id?: string;
+  name?: string;
+  spec?: string;
+  type?: string;
+  status?: string;
+  remark?: string;
+  purchaseDate?: string;
+  purchasePrice?: number | string;
+  purchasePlace?: string;
+  fileId?: string;
+  endDate?: string;
+}
+
+export interface DocumentationVO_Catalog {
+  modules: Array<unknown> | null;
+  operationCount: number;
+}
+
+export interface DocumentationVO_OperationDetail {
+  operationId: null | string;
+  method: null | string;
+  path: null | string;
+  modules: Array<string> | null;
+  definition: null | unknown;
+}
+
+export interface DocumentationVO_OperationPage {
+  items: Array<unknown> | null;
+  total: string;
+  page: number;
+  pageSize: number;
+}
+
+export interface DoubanAccountVO {
+  accountId: null | string;
+  nickname: null | string;
+  homepageUrl: null | string;
+}
+
+export interface DoubanMovieImportPreviewVO {
+  total: number;
+  newCount: number;
+  duplicateCount: number;
+  errorCount: number;
+  duplicates: Array<DoubanMovieImportPreviewVO_DuplicateItem> | null;
+  errors: Array<DoubanMovieImportPreviewVO_ErrorItem> | null;
+}
+
+export interface DoubanMovieImportPreviewVO_DuplicateItem {
+  rowNumber: null | number;
+  doubanSubjectId: null | string;
+  title: null | string;
+  existingId: null | string;
+  existingTitle: null | string;
+}
+
+export interface DoubanMovieImportPreviewVO_ErrorItem {
+  rowNumber: null | number;
+  message: null | string;
+}
+
+export interface DoubanMovieImportResultVO {
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+}
+
+export interface EventRecordVO {
+  id?: string;
+  title?: string;
+  participants?: string;
+  eventType?: string;
+  eventDate?: string;
+  city?: string;
+  venue?: string;
+  ticketPrice?: number | string;
+  seatInfo?: string;
+  durationMinutes?: number;
+  rating?: number;
+  review?: string;
+  purchasePlatform?: string;
+  orderNumber?: string;
+  files?: Array<FileVO>;
+}
+
+export interface ExerciseDashboardDayVO {
+  date: null | string;
+  totalCount: null | number;
+  items: Array<ExerciseDashboardItemVO> | null;
+}
+
+export interface ExerciseDashboardItemVO {
+  exerciseTypeId?: string;
+  typeLabel?: string;
+  icon?: string;
+  color?: string;
+  count?: number;
+  trend?: Array<ExerciseDashboardTrendPointVO>;
+  prevDate?: string;
+  prevCount?: number;
+  deltaCount?: number;
+  deltaPercent?: number;
+}
+
+export interface ExerciseDashboardSummaryVO {
+  lastDate: null | string;
+  hasMore: boolean | null;
+  days: Array<ExerciseDashboardDayVO> | null;
+}
+
+export interface ExerciseDashboardTrendPointVO {
+  date: null | string;
+  count: number;
+}
+
+export interface ExerciseRecordVO {
+  id?: string;
+  exerciseTypeId?: string;
+  exerciseDate?: string;
+  exerciseCount?: number;
+  description?: string;
+  timeId?: string;
+}
+
+export interface ExerciseStatisticsDTO {
+  exerciseTypeId: null | string;
+  exerciseDate: null | string;
+  exerciseCount: null | number;
+  description: null | string;
+}
+
+export interface ExerciseStatisticsPointVO {
+  exerciseTypeId: null | string;
+  exerciseDate: null | string;
+  exerciseCount: null | number | string;
+  recordCount: null | number;
+}
+
+export interface ExpStaByYearVO {
+  year: null | number;
+  month: null | number;
+  amt: null | number | string;
+  typeId: null | string;
+  typeName: null | string;
+}
+
+export interface ExpStaticByYearVO {
+  year: null | number;
+  month: null | number;
+  detail: Array<ExpStaByYearVO> | null;
+}
+
+export interface ExpenseDeviceContextVO {
+  device: DeviceVO | null;
+  defaults: DeviceCreateReq | null;
+}
+
+export interface ExpenseVO {
+  id?: string;
+  deviceId?: string;
+  deviceName?: string;
+  transactionAmt?: number | string;
+  amt?: number | string;
+  expTypeId?: string;
+  payTypeId?: string;
+  counterparty?: string;
+  counterpartyAcct?: string;
+  remark?: string;
+  expTime?: string;
+  transactionId?: string;
+  expDesc?: string;
+  merchantOrderNo?: string;
+  transactionStatus?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface ExportApplicationService_Catalog {
+  version: null | string;
+  artifactHours: number;
+  datasets: Array<unknown> | null;
+  verificationMethod: null | string;
+  exclusions: Array<string> | null;
+}
+
+export interface ExportAuditController_AuditView {
+  id: null | string;
+  userId: null | string;
+  jobId: null | string;
+  eventType: null | string;
+  resultCode: null | string;
+  clientIp: null | string;
+  traceId: null | string;
+  details: null | string;
+  eventTime: null | string;
+}
+
+export interface ExportJobVO {
+  id: null | string;
+  status: null | string;
+  phase: null | string;
+  errorCode: null | string;
+  rowCount: number;
+  fileBytes: null | string;
+  fileName: null | string;
+  sha256: null | string;
+  artifactStatus: null | string;
+  createTime: null | string;
+  finishedAt: null | string;
+  expiresAt: null | string;
+}
+
+export interface ExportQuotaService_Quota {
+  month: null | string;
+  limit: number;
+  used: number;
+  remaining: number;
+  resetsAt: null | string;
+}
+
+export interface FeedbackCommentVO {
+  id: null | string;
+  userId: null | string;
+  userName: null | string;
+  roleType: null | string;
+  content: null | string;
+  files: Array<FileVO> | null;
+  createTime: null | string;
+}
+
+export interface FeedbackDetailVO {
+  id: null | string;
+  userId: null | string;
+  userName: null | string;
+  title: null | string;
+  summary: null | string;
+  feedbackType: null | string;
+  status: null | string;
+  priority: null | string;
+  files: Array<FileVO> | null;
+  commentCount: null | number;
+  createTime: null | string;
+  updateTime: null | string;
+  content: null | string;
+  comments: Array<FeedbackCommentVO> | null;
+}
+
+export interface FeedbackVO {
+  id: null | string;
+  userId: null | string;
+  userName: null | string;
+  title: null | string;
+  summary: null | string;
+  feedbackType: null | string;
+  status: null | string;
+  priority: null | string;
+  files: Array<FileVO> | null;
+  commentCount: null | number;
+  createTime: null | string;
+  updateTime: null | string;
+}
+
+export interface FeishuChannelConfigVO {
+  configured: boolean;
+  isEnabled: null | number;
+  bound: boolean;
+  appId: null | string;
+  receiverOpenId: null | string;
+  receiverName: null | string;
+  openIdMasked: null | string;
+}
+
+export interface FeishuRecipientListVO {
+  items: Array<FeishuRecipientVO> | null;
+  warning: null | string;
+}
+
+export interface FeishuRecipientVO {
+  openId: null | string;
+  name: null | string;
+}
+
+export interface FileVO {
+  id: null | string;
+  fileName: null | string;
+  fileSize: null | string;
+  fileType: null | string;
+  fileUrl: null | string;
+}
+
+export interface FinanceCalendarVO {
+  granularity: null | string;
+  date: null | string;
+  period: null | string;
+  label: null | string;
+  startDate: null | string;
+  endDate: null | string;
+  month: null | string;
+  today: null | string;
+  amount: null | number | string;
+  buckets: Array<FinanceCalendarVO_Bucket> | null;
+  refreshInterval: number;
+}
+
+export interface FinanceCalendarVO_Bucket {
+  key: null | string;
+  label: null | string;
+  startDate: null | string;
+  endDate: null | string;
+  amount: null | number | string;
+  future: boolean;
+}
+
+export interface FinanceOverviewCalendarVO {
+  granularity: null | string;
+  date: null | string;
+  period: null | string;
+  label: null | string;
+  startDate: null | string;
+  endDate: null | string;
+  month: null | string;
+  today: null | string;
+  amount: null | number | string;
+  income: null | number | string;
+  expense: null | number | string;
+  balance: null | number | string;
+  buckets: Array<FinanceOverviewCalendarVO_Bucket> | null;
+  refreshInterval: number;
+}
+
+export interface FinanceOverviewCalendarVO_Bucket {
+  key: null | string;
+  label: null | string;
+  startDate: null | string;
+  endDate: null | string;
+  amount: null | number | string;
+  future: boolean;
+  income: null | number | string;
+  expense: null | number | string;
+  balance: null | number | string;
+}
+
+export interface FootprintLocationVO {
+  placeName: null | string;
+  address: null | string;
+  city: null | string;
+  longitude: number;
+  latitude: number;
+  coordinateSystem: null | string;
+  providerUid: null | string;
+  precise: boolean;
+  level: null | string;
+  region: FootprintLocationVO_Region | null;
+}
+
+export interface FootprintLocationVO_Region {
+  districtCode: null | string;
+  townCode: null | string;
+  townName: null | string;
+}
+
+export interface FootprintMapController_MapConfig {
+  searchEnabled: boolean;
+  coordinateSystem: null | string;
+  tiles: null | unknown;
+  tencent: null | unknown;
+}
+
+export interface GithubCommitVO {
+  id: null | string;
+  repo: null | string;
+  repoUrl: null | string;
+  commitUrl: null | string;
+  message: null | string;
+  date: null | string;
+  avatar: null | string;
+  actor: null | string;
+}
+
+export interface GoalProgressPreviewVO {
+  currentValue: null | number | string;
+  achieved: boolean;
+  progressPercent: number;
+  variables: null | unknown;
+}
+
+export interface GoalVO {
+  progressMode?: string;
+  progressQuery?: string;
+  progressVariables?: string;
+  progressVariableBindings?: string;
+  progressValuePath?: string;
+  targetOperator?: string;
+  isPinned?: number;
+  pinnedSortOrder?: number;
+  id?: string;
+  type?: number;
+  title?: string;
+  description?: string;
+  content?: string;
+  status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold';
+  targetValue?: number | string;
+  currentValue?: number | string;
+  year?: number;
+  month?: number;
+  day?: number;
+  parentId?: string;
+  startDate?: string;
+  endDate?: string;
+  completedAt?: string;
+  tags?: string;
+  completedCount?: number;
+  totalCount?: number;
+  progressCheckedAt?: string;
+  progressError?: string;
+  progressVersion?: string;
+}
+
+export interface GraphEdgeVO {
+  source: null | string;
+  target: null | string;
+  relationType: null | string;
+  direction: null | string;
+  description: null | string;
+}
+
+export interface GraphVO {
+  nodes: Array<PersonBasicVO> | null;
+  edges: Array<GraphEdgeVO> | null;
+}
+
+export interface HomeCardPreferenceVO {
+  cardKey: null | string;
+  group: null | string;
+  title: null | string;
+  icon: null | string;
+  iconColor: null | string;
+  isEnabled: null | number;
+  sortOrder: number;
+}
+
+export interface HomeSectionVO_Items {
+  items: Array<unknown> | null;
+  refreshInterval: number;
+}
+
+export interface HonorCategoryVO {
+  id?: string;
+  name?: string;
+  icon?: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+export interface HonorRecordVO {
+  id?: string;
+  title?: string;
+  description?: string;
+  honorDate?: string;
+  issuer?: string;
+  level?: string;
+  categoryId?: string;
+  customCategory?: string;
+  tags?: string;
+  files?: Array<FileVO>;
+  isTop?: number;
+  isPublic?: number;
+  sortOrder?: number;
+}
+
+export interface IncStaByYearVO {
+  year: null | number;
+  month: null | number;
+  amt: null | number | string;
+  typeId: null | string;
+  typeName: null | string;
+}
+
+export interface IncStaticByYearVO {
+  year: null | number;
+  month: null | number;
+  detail: Array<IncStaByYearVO> | null;
+}
+
+export interface IncomeVO {
+  id?: string;
+  amt?: number | string;
+  incDate?: string;
+  remark?: string;
+  incTypeId?: string;
+  tax?: number | string;
+  updateTime?: string;
+}
+
+export interface LegalPolicyService_PublicPolicies {
+  version: null | string;
+  effectiveDate: null | string;
+  privacy: Array<Array<string>> | null;
+  terms: Array<Array<string>> | null;
+  operator: null | string;
+  contactEmail: null | string;
+}
+
+export interface LifeFootprintVO {
+  id: null | string;
+  startDate: null | string;
+  endDate: null | string;
+  placeName: null | string;
+  address: null | string;
+  city: null | string;
+  regionCode: null | string;
+  longitude: null | number | string;
+  latitude: null | number | string;
+  coordinateSystem: null | string;
+  providerUid: null | string;
+  remark: null | string;
+}
+
+export interface MbtiResultDetailVO {
+  id: null | string;
+  testId: null | string;
+  mbtiType: null | string;
+  resultsPage: null | string;
+  createTime: null | string;
+  predictions: null | unknown;
+  traitOrderConscious: null | unknown;
+  traitOrderShadow: null | unknown;
+  matches: null | unknown;
+}
+
+export interface MbtiResultVO {
+  id?: string;
+  testId?: string;
+  mbtiType?: string;
+  createTime?: string;
+}
+
+export interface MembershipIconCatalog_IconVO {
+  key: null | string;
+  name: null | string;
+  url: null | string;
+}
+
+export interface MembershipProviderVO {
+  id: null | string;
+  name: null | string;
+  code: null | string;
+  category: null | string;
+  iconKey: null | string;
+  sortOrder: null | number;
+  isEnabled: null | number;
+}
+
+export interface MembershipStatsVO {
+  activeCount: null | number;
+  expiringCount: null | number;
+  expiredCount: null | number;
+  expiringThisMonthCount: null | number;
+  monthlyAmount: null | number | string;
+}
+
+export interface MembershipVO {
+  id: null | string;
+  name: null | string;
+  category: null | string;
+  provider: null | string;
+  providerId: null | string;
+  providerName: null | string;
+  providerIconKey: null | string;
+  icon: null | string;
+  color: null | string;
+  startDate: null | string;
+  expiryDate: null | string;
+  price: null | number | string;
+  billingCycle: null | string;
+  monthlyAmount: null | number | string;
+  autoRenew: null | number;
+  remark: null | string;
+  status: null | string;
+  remainingDays: null | string;
+}
+
+export interface MemoVO {
+  id?: string;
+  title?: string;
+  content?: string;
+  hiddenContent?: boolean;
+  createTime?: string;
+  updateTime?: string;
+}
+
+export interface MenuAdminVO {
+  id: null | string;
+  parentId: null | string;
+  name: null | string;
+  path: null | string;
+  iconColor: null | string;
+  component: null | string;
+  redirect: null | string;
+  meta: null | Record<string, unknown>;
+  roles: null | string;
+  sortOrder: null | number;
+  visibleClients: null | number;
+  children: Array<MenuAdminVO_MenuAdminVO> | null;
+}
+
+export interface MenuAdminVO_MenuAdminVO {
+  id: null | string;
+  parentId: null | string;
+  name: null | string;
+  path: null | string;
+  iconColor: null | string;
+  component: null | string;
+  redirect: null | string;
+  meta: null | Record<string, unknown>;
+  roles: null | string;
+  sortOrder: null | number;
+  visibleClients: null | number;
+  children: Array<MenuAdminVO> | null;
+}
+
+export interface MenuRouteVO {
+  id: null | string;
+  path: null | string;
+  name: null | string;
+  iconColor: null | string;
+  component: null | string;
+  redirect: null | string;
+  meta: null | Record<string, unknown>;
+  children: Array<MenuRouteVO_MenuRouteVO> | null;
+}
+
+export interface MenuRouteVO_MenuRouteVO {
+  id: null | string;
+  path: null | string;
+  name: null | string;
+  iconColor: null | string;
+  component: null | string;
+  redirect: null | string;
+  meta: null | Record<string, unknown>;
+  children: Array<MenuRouteVO> | null;
+}
+
+export interface MenuVisualVO {
+  menuId: null | string;
+  path: null | string;
+  icon: null | string;
+  iconColor: null | string;
+}
+
+export interface MenuVisualsVO {
+  menus: Array<MenuVisualVO> | null;
+  cards: null | Record<string, unknown>;
+}
+
+export interface MessageVO {
+  id?: string;
+  senderId?: string;
+  receiverId?: string;
+  title?: string;
+  content?: string;
+  type?: number;
+  isRead?: boolean;
+  createTime?: string;
+}
+
+export interface MilestoneVO {
+  id?: string;
+  title?: string;
+  description?: string;
+  date?: string;
+  end_date?: string;
+  type?: string;
+  tags?: string;
+}
+
+export interface MovieParseVO {
+  title: null | string;
+  type: null | number;
+  director: null | string;
+  url: null | string;
+  fileId: null | string;
+  coverImgUrl: null | string;
+  totalProgress: null | number;
+}
+
+export interface MovieVO {
+  id: null | string;
+  title: null | string;
+  type: null | number;
+  director: null | string;
+  url: null | string;
+  fileId: null | string;
+  name: null | string;
+  status: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
+  totalProgress: null | number;
+  currentProgress: null | number;
+  startTime: null | string;
+  finishTime: null | string;
+  rating: null | number;
+  remark: null | string;
+}
+
+export interface NotificationPreferenceVO {
+  bizType: null | string;
+  description: null | string;
+  visible: boolean;
+  channels: Array<NotificationPreferenceVO_ChannelState> | null;
+}
+
+export interface NotificationPreferenceVO_ChannelState {
+  channel: null | string;
+  isEnabled: null | number;
+}
+
+export interface PasswordVaultVO {
+  id?: string;
+  title?: string;
+  website?: string;
+  category?: string;
+  username?: string;
+  password?: string;
+  salt?: string;
+  remark?: string;
+  favorite?: boolean;
+  updateTime?: string;
+}
+
+export interface PersonBasicVO {
+  id: null | string;
+  name: null | string;
+  avatar: null | string;
+  category: null | string;
+}
+
+export interface PersonDetailVO {
+  id: null | string;
+  name: null | string;
+  avatar: null | string;
+  category: null | string;
+  description: null | string;
+  tags: null | string;
+  birthday: null | string;
+  phone: null | string;
+  email: null | string;
+  school: null | string;
+  socialLinks: null | string;
+  notes: null | string;
+  relationships: Array<RelationshipDetailVO> | null;
+}
+
+export interface PersonVO {
+  id: null | string;
+  name: null | string;
+  avatar: null | string;
+  category: null | string;
+  description: null | string;
+  tags: null | string;
+  birthday: null | string;
+  phone: null | string;
+  email: null | string;
+  school: null | string;
+  socialLinks: null | string;
+  notes: null | string;
+}
+
+export interface QrLoginModels_Created {
+  id: null | string;
+  browserSecret: null | string;
+  qrContent: null | string;
+  verificationCode: null | string;
+  expiresIn: number;
+  pollInterval: number;
+}
+
+export interface QrLoginModels_Scanned {
+  status: null | string;
+  browser: null | string;
+  requestedAt: null | string;
+  verificationCode: null | string;
+  expiresIn: number;
+}
+
+export interface QrLoginModels_Status {
+  status: null | string;
+  expiresIn: number;
+}
+
+export interface QueryAccessModels_Decision {
+  userId: null | string;
+  appId: null | string;
+  grantId: null | string;
+  role: null | string;
+  scopes: null | unknown;
+  expiresAt: string;
+}
+
+export interface QueryAccessModels_Issued {
+  grantId: null | string;
+  accessToken: null | string;
+  tokenType: null | string;
+  audience: null | string;
+  appId: null | string;
+  scopes: null | unknown;
+  expiresAt: string;
+  expiresIn: number;
+}
+
+export interface QueryAccessModels_TokenDecision {
+  userId: null | string;
+  appId: null | string;
+  credentialId: null | string;
+  credentialType: null | string;
+  role: null | string;
+  scopes: null | unknown;
+  expiresAt: string;
+}
+
+export interface QuickNavCandidateVO {
+  menuId: null | string;
+  title: null | string;
+  icon: null | string;
+  color: null | string;
+  path: null | string;
+  target: null | string;
+  parentTitle: null | string;
+}
+
+export interface QuickNavItemVO {
+  menuId: null | string;
+  sortOrder: null | number;
+  isEnabled: null | number;
+  title: null | string;
+  icon: null | string;
+  color: null | string;
+  path: null | string;
+  target: null | string;
+}
+
+export interface ReadRecordParseVO {
+  title: null | string;
+  type: null | number;
+  author: null | string;
+  url: null | string;
+  fileId: null | string;
+  coverImgUrl: null | string;
+  totalProgress: null | number;
+}
+
+export interface ReadRecordVO {
+  id: null | string;
+  title: null | string;
+  type: null | number;
+  author: null | string;
+  url: null | string;
+  fileId: null | string;
+  status: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
+  totalProgress: null | number;
+  currentProgress: null | number;
+  startTime: null | string;
+  finishTime: null | string;
+  remark: null | string;
+}
+
+export interface RelationshipDetailVO {
+  id: null | string;
+  relationType: null | string;
+  direction: null | string;
+  description: null | string;
+  tags: null | string;
+  target: null | PersonBasicVO;
+}
+
+export interface RelationshipVO {
+  id: null | string;
+  relationType: null | string;
+  direction: null | string;
+  description: null | string;
+  tags: null | string;
+  target: null | PersonBasicVO;
+}
+
+export interface ScheduledJobLogVO {
+  id: null | string;
+  jobId: null | string;
+  triggerType: null | string;
+  status: null | string;
+  scheduledTime: null | string;
+  startTime: null | string;
+  endTime: null | string;
+  durationMs: null | string;
+  message: null | string;
+  createUser: null | string;
+}
+
+export interface ScheduledJobVO {
+  id: null | string;
+  jobCode: null | string;
+  name: null | string;
+  cron: null | string;
+  zoneId: null | string;
+  isEnabled: null | number;
+  revision: null | number;
+  schedulerEnabled: boolean;
+  nextExecutionTime: null | string;
+}
+
+export interface StorageObjectVO {
+  key: null | string;
+  directory: boolean;
+  size: string;
+  lastModified: null | string;
+  previewable: boolean;
+}
+
+export interface StoragePageVO {
+  bucket: null | string;
+  prefix: null | string;
+  items: Array<StorageObjectVO> | null;
+  nextCursor: null | string;
+}
+
+export interface SysDictDataRecordVO {
+  dictCode?: string;
+  dictId?: string;
+  dictName?: string;
+  dictType?: string;
+  sortOrder?: number;
+  dictLabel?: string;
+  dictValue?: string;
+  cssClass?: string;
+  listClass?: string;
+  isDefault?: string;
+  isEnabled?: number;
+  remark?: string;
+  updateTime?: string;
+}
+
+export interface SysDictDataVO {
+  id: null | string;
+  value: null | string;
+  label: null | string;
+}
+
+export interface SysDictTypeDetailVO {
+  sysDictTypeEntity: null | SysDictTypeVO;
+  dictDetailList: Array<SysDictDataVO> | null;
+}
+
+export interface SysDictTypeVO {
+  dictId?: string;
+  dictName?: string;
+  dictType?: string;
+  isEnabled?: number;
+  remark?: string;
+  updateTime?: string;
+}
+
+export interface SystemConfigVO {
+  configKey: null | string;
+  configValue: null | string;
+  configType: null | string;
+  description: null | string;
+  updateTime: null | string;
+}
+
+export interface SystemRegionVO {
+  code: null | string;
+  name: null | string;
+  level: null | number;
+  hasChildren: boolean;
+}
+
+export interface TaskColumnVO {
+  id?: string;
+  title?: string;
+  sortOrder?: number;
+  bgColor?: string;
+}
+
+export interface TaskDetailVO {
+  id?: string;
+  taskId?: string;
+  content?: string;
+  isCompleted?: number;
+  sortOrder?: number;
+  priority?: number;
+  isStarred?: number;
+  startTime?: string;
+  endTime?: string;
+  taskName?: string;
+}
+
+export interface TaskVO {
+  id?: string;
+  content?: string;
+  detail?: string;
+  columnId?: string;
+  dueDate?: string;
+  sortOrder?: number;
+  unCompletedCount?: number;
+}
+
+export interface ThoughtEventVO {
+  id?: string;
+  content?: string;
+  createTime?: string;
+}
+
+export interface ThoughtRecordVO {
+  id?: string;
+  content?: string;
+  isPinned?: number;
+  hiddenContent?: boolean;
+  createTime?: string;
+  updateTime?: string;
+  events?: Array<ThoughtEventVO>;
+}
+
+export interface TimeRecordDateRangeVO {
+  id?: string;
+  categoryName?: string;
+  date?: string;
+  startMinute?: number;
+  endMinute?: number;
+  title?: string;
+  exercises?: Array<TimeRecordExerciseVO>;
+}
+
+export interface TimeRecordExerciseVO {
+  exerciseName?: string;
+  exerciseCount?: number;
+}
+
+export interface TimeRecordListVO {
+  categoryId?: string;
+  date?: string;
+  startMinute?: number;
+  endMinute?: number;
+  title?: string;
+  description?: string;
+  durationMinutes?: number;
+  relateType?: number;
+  relateId?: string;
+  isManual?: number;
+  id?: string;
+}
+
+export interface TimeRecordRecommendationVO {
+  recommend?: TimeRecordListVO;
+  records?: Array<TimeRecordListVO>;
+}
+
+export interface TimeRecordVO {
+  categoryId?: string;
+  date?: string;
+  startMinute?: number;
+  endMinute?: number;
+  title?: string;
+  description?: string;
+  durationMinutes?: number;
+  relateType?: number;
+  relateId?: string;
+  isManual?: number;
+  id?: string;
+  exercises?: Array<ExerciseRecordVO>;
+}
+
+export interface TimeTrackerCategoryVO {
+  isHidden?: boolean;
+  userId?: string;
+  id?: string;
+  templateId?: string;
+  parentId?: string;
+  name?: string;
+  color?: string;
+  icon?: string;
+  description?: string;
+  isTrackTime?: number;
+  sortOrder?: number;
+  isEnabled?: number;
+}
+
+export interface UserBasicInfoVO {
+  id: null | string;
+  nickname: null | string;
+  avatarFileId: null | string;
+  avatarUrl: null | string;
+}
+
+export interface UserBindVO {
+  id?: string;
+  platform?: string;
+  platformUsername?: string;
+  accessToken?: string;
+  metaFields?: string;
+}
+
+export interface UserDictDataSortVO {
+  id: null | string;
+  sortOrder: null | number;
+}
+
+export interface UserDictDataVO {
+  userId?: string;
+  id?: string;
+  templateId?: string;
+  dictType?: string;
+  sortOrder?: number;
+  dictLabel?: string;
+  dictValue?: string;
+  color?: string;
+  icon?: string;
+  extData?: string;
+  isDefault?: string;
+  isEnabled?: number;
+  isReadonly?: string;
+  remark?: string;
+}
+
+export interface UserDictTypeDetailVO {
+  userDictTypeEntity?: UserDictTypeVO;
+  dictDetailList?: Array<UserDictDataVO>;
+}
+
+export interface UserDictTypeVO {
+  dictName?: string;
+  dictType?: string;
+}
+
+export interface UserInfoVO {
+  id: null | string;
+  realName: null | string;
+  username: null | string;
+  accountUsername: null | string;
+  hasPassword: boolean;
+  wechatBound: boolean;
+  phoneMasked: null | string;
+  nickname: null | string;
+  avatarFileId: null | string;
+  avatarUrl: null | string;
+  email: null | string;
+  introduction: null | string;
+  roles: Array<string> | null;
+}
+
+export interface UserLoginVO {
+  id: null | string;
+  realName: null | string;
+  roles: Array<string> | null;
+  username: null | string;
+  accessToken: null | string;
+}
+
+export interface UserMenuPreferenceVO {
+  menus: Array<UserMenuPreferenceVO_Menu> | null;
+  hiddenMenuIds: Array<string> | null;
+}
+
+export interface UserMenuPreferenceVO_Menu {
+  id: null | string;
+  title: null | string;
+  children: Array<unknown> | null;
+}
+
+export interface UserVO {
+  id: null | string;
+  username: null | string;
+  nickname: null | string;
+  email: null | string;
+  role: null | string;
+  createTime: null | string;
+  lastActiveTime: null | string;
+  isOnline: boolean | null;
+}
+
+export interface WardrobeItemVO {
+  id: null | string;
+  name: null | string;
+  categoryId: null | string;
+  categoryName: null | string;
+  color: null | string;
+  brand: null | string;
+  season: null | string;
+  purchaseDate: null | string;
+  price: null | number | string;
+  fileId: null | string;
+  size: null | string;
+  remark: null | string;
+  createTime: null | string;
+}
+
+export interface WardrobeStatsVO {
+  totalCount: null | number;
+  categoryCount: null | Record<string, unknown>;
+  seasonCount: null | Record<string, unknown>;
+  totalValue: null | number | string;
+  avgPrice: null | number | string;
+}
+
+export interface WechatLoginVO {
+  id: null | string;
+  realName: null | string;
+  roles: Array<string> | null;
+  username: null | string;
+  accessToken: null | string;
+  status: null | string;
+  loginTicket: null | string;
+  expiresIn: null | number;
+  newUser: boolean;
+  hasPassword: boolean;
+  accountUsername: null | string;
+}
+
+export interface WechatSubscriptionService_Config {
+  enabled: boolean;
+  bound: boolean;
+  bizType: null | string;
+  templateId: null | string;
+}
+
+export interface WechatWebLoginService_Challenge {
+  scene: null | string;
+  browserSecret: null | string;
+  qrCode: null | string;
+  expiresIn: number;
+}
+
+export interface WereadBookLinkVO {
+  deepLink: null | string;
+}
+
+export interface WereadConnectionVO {
+  connected: boolean;
+  lastSyncTime: null | string;
+}
+
+export interface WereadRecentVO {
+  connected: boolean;
+  books: Array<WereadRecentVO_Book> | null;
+  nextCursor: null | string;
+}
+
+export interface WereadRecentVO_Book {
+  bookId: null | string;
+  title: null | string;
+  author: null | string;
+  cover: null | string;
+  readUpdateTime: null | string;
+  progress: null | number;
+  deepLink?: string;
+}
+
+export interface WereadStatsVO {
+  connected: boolean;
+  granularity: null | string;
+  periodStart: null | string;
+  periodEnd: null | string;
+  elapsedDays: number;
+  buckets: Array<WereadStatsVO_Bucket> | null;
+  totalSeconds: number;
+  dailyAverageSeconds: number;
+  previousPeriodStart: null | string;
+  previousPeriodEnd: null | string;
+  previousTotalSeconds: number;
+  refreshInterval: number;
+}
+
+export interface WereadStatsVO_Bucket {
+  key: null | string;
+  label: null | string;
+  seconds: number;
 }

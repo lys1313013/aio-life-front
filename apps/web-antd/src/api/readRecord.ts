@@ -1,6 +1,6 @@
 import type { ProgressStatus } from './core/progress-status';
 
-import type { ApiRequests } from '#/api/payload';
+import type { ApiRequests, ReadRecordParseVO } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
@@ -35,22 +35,6 @@ export namespace ReadRecordApi {
     startTime: string;
     finishTime: string;
     remark: string;
-  }
-
-  export interface ReadRecordReq {
-    id?: string;
-    title: string;
-    type: number;
-    author?: string;
-    url?: string;
-    fileId?: string;
-    coverImgUrl?: string;
-    status?: ProgressStatus;
-    totalProgress?: number;
-    currentProgress?: number;
-    startTime?: string;
-    finishTime?: string;
-    remark?: string;
   }
 
   /**
@@ -94,7 +78,7 @@ export namespace ReadRecordApi {
    * 解析豆瓣链接
    */
   export function parseDouban(url: string) {
-    return requestClient.get<ReadRecordReq>('/read-record/parse-douban', {
+    return requestClient.get<ReadRecordParseVO>('/read-record/parse-douban', {
       params: { url },
     });
   }

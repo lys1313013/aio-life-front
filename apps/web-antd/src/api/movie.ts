@@ -1,6 +1,6 @@
 import type { ProgressStatus } from './core/progress-status';
 
-import type { ApiRequests } from '#/api/payload';
+import type { ApiRequests, MovieParseVO } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { getQuery } from '#/api/query';
@@ -36,23 +36,6 @@ export namespace MovieApi {
     finishTime: string;
     rating?: number;
     remark: string;
-  }
-
-  export interface MovieReq {
-    id?: string;
-    title: string;
-    type: number;
-    director?: string;
-    url?: string;
-    fileId?: string;
-    coverImgUrl?: string;
-    status?: ProgressStatus;
-    totalProgress?: number;
-    currentProgress?: number;
-    startTime?: string;
-    finishTime?: string;
-    rating?: number;
-    remark?: string;
   }
 
   export type DoubanMovieType =
@@ -140,7 +123,7 @@ export namespace MovieApi {
    * 解析豆瓣链接
    */
   export function parseDouban(url: string) {
-    return requestClient.get<MovieReq>('/movie/parse-douban', {
+    return requestClient.get<MovieParseVO>('/movie/parse-douban', {
       params: { url },
     });
   }
