@@ -7,7 +7,12 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import { usePreferences } from '@vben/preferences';
 
-import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons-vue';
+import {
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  StarFilled,
+  StarOutlined,
+} from '@ant-design/icons-vue';
 import { Button, Input, message, Tooltip } from 'ant-design-vue';
 
 import { createMemoApi, getMemoApi, updateMemoApi } from '#/api/core/memo';
@@ -151,6 +156,7 @@ const formState = reactive({
   title: '',
   content: '',
   hiddenContent: false,
+  favorite: false,
 });
 
 const resetModalSize = () => {
@@ -188,6 +194,7 @@ async function loadMemo() {
     title: '',
     content: '',
     hiddenContent: false,
+    favorite: false,
   });
   if (!modalOpen.value) return;
   if (props.memo) {
@@ -273,6 +280,20 @@ onUnmounted(() => {
       />
     </template>
     <template #footer-leading>
+      <Button
+        type="text"
+        shape="circle"
+        :aria-label="formState.favorite ? '取消收藏' : '收藏笔记'"
+        :aria-pressed="formState.favorite"
+        :disabled="confirmLoading || detailLoading || detailError"
+        @click="formState.favorite = !formState.favorite"
+      >
+        <template #icon
+          ><StarFilled
+            v-if="formState.favorite"
+            class="text-yellow-600 dark:text-yellow-400" /><StarOutlined v-else
+        /></template>
+      </Button>
       <Tooltip
         :title="
           formState.hiddenContent ? '在列表中显示正文' : '在列表中隐藏正文'

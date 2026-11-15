@@ -11,6 +11,7 @@ export interface Memo {
   title: string;
   content: string;
   hiddenContent: boolean;
+  favorite: boolean;
   createTime: string;
   updateTime: string;
 }

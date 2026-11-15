@@ -35,6 +35,7 @@ const memo = {
   title: '隐藏笔记',
   content: '完整正文',
   hiddenContent: true,
+  favorite: false,
   createTime: '2026-10-20 12:00:00',
   updateTime: '2026-10-22 12:00:00',
 };
@@ -78,6 +79,24 @@ it('切换笔记后旧详情返回不会覆盖新笔记', async () => {
   resolve(memo);
   await flushPromises();
   expect(wrapper.get('textarea').element.value).toBe('新笔记正文');
+});
+
+it('收藏与列表正文显隐分开保存，保留未提交的正文', async () => {
+  const wrapper = mount(MemoEditorModal, { props: { open: true, memo } });
+  await flushPromises();
+  await wrapper.get('textarea').setValue('模拟未提交正文');
+  await wrapper.get('[aria-label="收藏笔记"]').trigger('click');
+  expect(mocks.update).not.toHaveBeenCalled();
+  await wrapper.get('[data-save]').trigger('click');
+  await flushPromises();
+  expect(mocks.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      id: memo.id,
+      favorite: true,
+      hiddenContent: true,
+      content: '模拟未提交正文',
+    }),
+  );
 });
 
 it('详情失败禁止空内容覆盖，可重试后编辑', async () => {

@@ -8,6 +8,8 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   PlusOutlined,
+  StarFilled,
+  StarOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
@@ -28,6 +30,7 @@ import MemoEditorModal from './MemoEditorModal.vue';
 
 const memos = ref<Memo[]>([]);
 const loading = ref(false);
+const favoriteLoading = ref('');
 const modalOpen = ref(false);
 const editingMemo = ref<Memo>();
 
@@ -59,6 +62,20 @@ const handleToggleHide = async (item: Memo) => {
     item.hiddenContent = newHiddenState;
   } catch {
     // Error handled
+  }
+};
+
+const handleFavorite = async (item: Memo) => {
+  if (favoriteLoading.value) return;
+  favoriteLoading.value = item.id;
+  try {
+    const favorite = !item.favorite;
+    await updateMemoApi({ id: item.id, favorite });
+    item.favorite = favorite;
+  } catch {
+    // 请求客户端统一提示错误，保留原收藏状态。
+  } finally {
+    favoriteLoading.value = '';
   }
 };
 
@@ -163,6 +180,22 @@ onUnmounted(() => {
             </div>
 
             <div class="card-footer">
+              <Button
+                type="text"
+                shape="circle"
+                :aria-label="item.favorite ? '取消收藏' : '收藏笔记'"
+                :aria-pressed="item.favorite"
+                :loading="favoriteLoading === item.id"
+                :disabled="!!favoriteLoading"
+                @click.stop="handleFavorite(item)"
+              >
+                <template #icon
+                  ><StarFilled
+                    v-if="item.favorite"
+                    class="text-yellow-600 dark:text-yellow-400" /><StarOutlined
+                    v-else
+                /></template>
+              </Button>
               <span class="card-date">{{ formatTime(item.updateTime) }}</span>
               <div
                 class="flex items-center opacity-0 transition-opacity duration-200 group-hover:opacity-100"

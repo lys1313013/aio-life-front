@@ -600,12 +600,14 @@ export interface MemoCreateReq {
   title?: null | string;
   content?: null | string;
   hiddenContent?: boolean | null;
+  favorite?: boolean | null;
 }
 
 export interface MemoUpdateReq {
   title?: null | string;
   content?: null | string;
   hiddenContent?: boolean | null;
+  favorite?: boolean | null;
 }
 
 export interface MenuSaveReq {
@@ -1953,11 +1955,13 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     content: null,
     hiddenContent: null,
+    favorite: null,
   },
   MemoUpdateReq: {
     title: null,
     content: null,
     hiddenContent: null,
+    favorite: null,
   },
   MenuSaveReq: {
     parentId: null,
@@ -4643,6 +4647,7 @@ export interface MemoVO {
   title?: string;
   content?: string;
   hiddenContent?: boolean;
+  favorite?: boolean;
   createTime?: string;
   updateTime?: string;
 }
