@@ -5087,6 +5087,7 @@ export interface TimeRecordDateRangeVO {
   startMinute?: number;
   endMinute?: number;
   title?: string;
+  description?: string;
   exercises?: Array<TimeRecordExerciseVO>;
 }
 
