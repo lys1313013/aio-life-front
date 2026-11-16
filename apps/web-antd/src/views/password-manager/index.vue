@@ -47,7 +47,6 @@ import { decryptText } from '#/utils/crypto';
 import PasswordModal from './PasswordModal.vue';
 
 interface DecryptedPassword extends PasswordVault {
-  decryptedUsername?: string;
   decryptedPassword?: string;
   decryptedRemark?: string;
   showPassword?: boolean;
@@ -130,10 +129,6 @@ const fetchPasswords = async () => {
     decryptedPasswords.value = passwords.value.map((p) => ({
       ...p,
       showPassword: false,
-      decryptedUsername:
-        p.username && /^[0-9a-f]{32,}$/i.test(p.username)
-          ? undefined
-          : p.username,
     }));
 
     if (store.isUnlocked) {
@@ -158,20 +153,6 @@ const decryptPasswords = async () => {
   if (!store.masterKey) return;
 
   for (const p of decryptedPasswords.value) {
-    try {
-      if (p.username && /^[0-9a-f]{32,}$/i.test(p.username)) {
-        p.decryptedUsername = await decryptText(
-          p.username,
-          store.masterKey,
-          p.salt,
-        );
-      } else {
-        p.decryptedUsername = p.username;
-      }
-    } catch {
-      p.decryptedUsername = p.username; // fallback to original
-    }
-
     try {
       p.decryptedPassword = await decryptText(
         p.password,
@@ -279,18 +260,13 @@ const handleCopy = (item: DecryptedPassword, type: 'password' | 'username') => {
     }
   };
 
-  if (
-    type === 'username' &&
-    item.decryptedUsername &&
-    item.decryptedUsername !== '******'
-  ) {
-    executeCopy(item.decryptedUsername, 'username');
+  if (type === 'username' && item.username) {
+    executeCopy(item.username, 'username');
     return;
   }
 
   requireUnlock(async () => {
-    const text =
-      type === 'username' ? item.decryptedUsername : item.decryptedPassword;
+    const text = type === 'username' ? item.username : item.decryptedPassword;
     if (text) {
       await executeCopy(text, type);
     }
@@ -344,10 +320,6 @@ const handleManualLock = () => {
   store.lock();
   for (const p of decryptedPasswords.value) {
     p.showPassword = false;
-    p.decryptedUsername =
-      p.username && /^[0-9a-f]{32,}$/i.test(p.username)
-        ? undefined
-        : p.username;
     p.decryptedPassword = undefined;
     p.decryptedRemark = undefined;
   }
@@ -377,10 +349,6 @@ onMounted(() => {
       // Hide decrypted passwords
       for (const p of decryptedPasswords.value) {
         p.showPassword = false;
-        p.decryptedUsername =
-          p.username && /^[0-9a-f]{32,}$/i.test(p.username)
-            ? undefined
-            : p.username;
         p.decryptedPassword = undefined;
         p.decryptedRemark = undefined;
       }
@@ -529,9 +497,9 @@ onUnmounted(() => {
                 >
                   <span
                     class="truncate font-mono text-sm text-foreground"
-                    :title="item.decryptedUsername || '******'"
+                    :title="item.username"
                   >
-                    {{ item.decryptedUsername || '******' }}
+                    {{ item.username }}
                   </span>
                   <Tooltip title="复制账号">
                     <CopyOutlined

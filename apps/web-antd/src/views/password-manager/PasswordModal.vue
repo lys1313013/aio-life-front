@@ -101,23 +101,9 @@ const fetchPasswordForEdit = async (id: string) => {
       } catch {
         // 备注解密失败可以忽略
       }
-      try {
-        if (data.username && /^[0-9a-f]{32,}$/i.test(data.username)) {
-          formState.value.username = await decryptText(
-            data.username,
-            store.masterKey,
-            data.salt,
-          );
-        } else {
-          formState.value.username = data.username || '';
-        }
-      } catch {
-        formState.value.username = data.username || '';
-      }
-    } else {
-      formState.value.username = data.username || '';
     }
 
+    formState.value.username = data.username || '';
     formState.value.title = data.title;
     formState.value.website = data.website || '';
     formState.value.category = data.category || '其他';
@@ -190,7 +176,7 @@ const handleSubmit = async () => {
       title: formState.value.title,
       website: formState.value.website,
       category: formState.value.category,
-      username: formState.value.username, // 不再加密账号，直接明文保存以便展示
+      username: formState.value.username,
       password: encryptedPassword,
       salt: formState.value.salt,
       remark: encryptedRemark,
