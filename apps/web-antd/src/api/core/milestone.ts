@@ -12,7 +12,7 @@ export interface MilestoneEntity {
   title: string;
   description?: string;
   date: string;
-  end_date?: string;
+  endDate?: null | string;
   type: string;
   tags?: string; // JSON string
   createTime?: string;

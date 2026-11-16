@@ -158,7 +158,7 @@ const loadData = async () => {
         id: item.id!,
         title: item.title,
         date: item.date,
-        endDate: item.end_date,
+        endDate: item.endDate ?? undefined,
         description: item.description || '',
         type: item.type,
         tags,
@@ -221,7 +221,7 @@ const handleSave = async () => {
       id: formState.value.id,
       title: formState.value.title,
       date: formState.value.date!.format('YYYY-MM-DD'),
-      end_date: formState.value.endDate?.format('YYYY-MM-DD'),
+      endDate: formState.value.endDate?.format('YYYY-MM-DD') ?? null,
       description: formState.value.description,
       type: formState.value.type,
       tags: JSON.stringify(
