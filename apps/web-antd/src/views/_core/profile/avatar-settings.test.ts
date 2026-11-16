@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { avatarFileList, avatarProfilePayload } from './avatar-settings';
 
-const id = '0123456789abcdef0123456789abcdef';
+const id = '1234567890123456789';
 const base = { nickname: '测试用户', introduction: '简介' };
 
 describe('头像文件绑定', () => {

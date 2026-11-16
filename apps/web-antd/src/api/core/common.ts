@@ -41,14 +41,14 @@ export interface FileVO {
 
 export const FILE_BIZ_TYPE = {
   AVATAR: 'avatar',
-  DEVICE: 'device',
+  DEVICE: 'device_cover',
   FEEDBACK: 'feedback',
   FEEDBACK_COMMENT: 'feedback_comment',
   HONOR_RECORD: 'honor_record',
-  MOVIE: 'movie',
+  MOVIE: 'movie_cover',
   EVENT_RECORD: 'event_record',
-  READ_RECORD: 'read',
-  WARDROBE_ITEM: 'wardrobe_item',
+  READ_RECORD: 'read_cover',
+  WARDROBE_ITEM: 'wardrobe_item_cover',
 } as const;
 
 export type FileBizType = (typeof FILE_BIZ_TYPE)[keyof typeof FILE_BIZ_TYPE];

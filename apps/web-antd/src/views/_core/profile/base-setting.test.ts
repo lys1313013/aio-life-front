@@ -28,7 +28,7 @@ vi.mock('@vben/common-ui', async () => {
 });
 vi.mock('ant-design-vue', () => ({ message: { error: vi.fn() } }));
 
-const id = '0123456789abcdef0123456789abcdef';
+const id = '1234567890123456789';
 const url = 'https://example.test/api/file/preview/' + id;
 const profile = {
   nickname: '测试用户',

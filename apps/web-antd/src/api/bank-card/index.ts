@@ -90,5 +90,5 @@ export const deleteTag = (id: string) =>
 export const uploadCover = (file: File) =>
   requestClient.upload<{ id: string }>('/file/upload', {
     file,
-    bizType: 'bank_card_cover',
+    bizType: 'bank_card_face',
   });
