@@ -8,7 +8,7 @@ import { requestClient } from '#/api/request';
  */
 export interface TimeTrackerCategoryEntity {
   id?: string;
-  userId?: string;
+  preset?: boolean;
   templateId?: null | string;
   parentId?: null | string;
   name: string;

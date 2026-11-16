@@ -180,7 +180,7 @@ const fetchCategories = async () => {
     const merged: MergedCategory[] = [];
 
     visibleList.forEach((item) => {
-      const isPublic = item.userId === '0';
+      const isPublic = item.preset === true;
       const isOverride = !!item.templateId;
       merged.push({
         id: item.id as string,
@@ -210,7 +210,7 @@ const fetchCategories = async () => {
         description: item.description,
         isTrackTime: item.isTrackTime === 1,
         categoryType:
-          item.templateId || item.userId === '0' ? 'public' : 'private',
+          item.templateId || item.preset === true ? 'public' : 'private',
         isOverridden: false,
         isHidden: true,
         originalId: item.templateId?.toString() || item.id,

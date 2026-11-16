@@ -89,14 +89,14 @@ export function isOverrideRecord(category: TimeTrackerCategoryEntity): boolean {
 
 // 判断是否为公共分类
 export function isPublicCategory(category: TimeTrackerCategoryEntity): boolean {
-  return category.userId === '0' && !category.templateId;
+  return category.preset === true && !category.templateId;
 }
 
 // 判断是否为私有分类
 export function isPrivateCategory(
   category: TimeTrackerCategoryEntity,
 ): boolean {
-  return category.userId !== '0' && !category.templateId;
+  return !category.preset && !category.templateId;
 }
 
 // 获取分类颜色（考虑覆盖）
@@ -235,39 +235,4 @@ export function mergeCategoriesWithOverrides(
   });
 
   return result;
-}
-
-// 生成覆盖记录
-export function generateOverrideRecord(
-  publicCategory: TimeTrackerCategoryEntity,
-  currentUserId: string,
-  changes: Partial<TimeTrackerCategoryEntity>,
-): TimeTrackerCategoryEntity {
-  return {
-    userId: currentUserId,
-    templateId: publicCategory.id!,
-    name: changes.name ?? publicCategory.name,
-    color: changes.color ?? publicCategory.color,
-    icon: changes.icon ?? publicCategory.icon,
-    description: changes.description ?? publicCategory.description,
-    isTrackTime: changes.isTrackTime ?? publicCategory.isTrackTime,
-    sortOrder: changes.sortOrder,
-    isHidden: false,
-  };
-}
-
-// 生成隐藏记录
-export function generateHideRecord(
-  publicCategory: TimeTrackerCategoryEntity,
-  currentUserId: string,
-): TimeTrackerCategoryEntity {
-  return {
-    userId: currentUserId,
-    templateId: publicCategory.id!,
-    name: publicCategory.name,
-    color: publicCategory.color,
-    description: publicCategory.description,
-    isTrackTime: publicCategory.isTrackTime,
-    isHidden: true,
-  };
 }

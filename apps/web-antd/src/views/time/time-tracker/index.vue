@@ -136,7 +136,7 @@ const loadCategories = async () => {
     const data = await listCategories(true);
     if (data) {
       config.value.categories = data.map((item) => {
-        const isPublic = item.userId === '0';
+        const isPublic = item.preset === true;
         const isOverride = !!item.templateId;
         return {
           id: item.id as string,

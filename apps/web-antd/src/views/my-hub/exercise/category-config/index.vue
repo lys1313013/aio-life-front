@@ -417,7 +417,7 @@ onMounted(async () => {
           <Input
             v-model:value="formState.dictLabel"
             placeholder="请输入分类名称"
-            :disabled="formState.isReadonly === 'Y'"
+            :disabled="formState.isReadonly === 1"
           />
         </Form.Item>
 
@@ -425,7 +425,7 @@ onMounted(async () => {
           <div class="space-y-3">
             <div
               class="rounded-lg border border-border bg-muted p-3 text-foreground"
-              v-if="formState.isReadonly !== 'Y'"
+              v-if="formState.isReadonly !== 1"
             >
               <div class="mb-2 text-xs text-muted-foreground">常用图标</div>
               <div
@@ -451,7 +451,7 @@ onMounted(async () => {
             <Button
               type="link"
               size="small"
-              v-if="formState.isReadonly !== 'Y'"
+              v-if="formState.isReadonly !== 1"
               @click="showIconPickerModal = true"
             >
               📋 选择更多图标...
@@ -470,13 +470,13 @@ onMounted(async () => {
                 placeholder="输入图标名称，如 lucide:run"
                 class="flex-1"
                 size="small"
-                :disabled="formState.isReadonly === 'Y'"
+                :disabled="formState.isReadonly === 1"
               />
               <Button
                 type="link"
                 size="small"
                 danger
-                v-if="formState.isReadonly !== 'Y'"
+                v-if="formState.isReadonly !== 1"
                 @click="formState.icon = ''"
               >
                 清除
@@ -490,27 +490,27 @@ onMounted(async () => {
             <Input
               v-model:value="formState.color"
               placeholder="请输入颜色值（如 #1890ff）"
-              :disabled="formState.isReadonly === 'Y'"
+              :disabled="formState.isReadonly === 1"
             />
             <div
               class="relative h-8 w-8 shrink-0 cursor-pointer overflow-hidden rounded border transition-transform hover:scale-110"
               :style="{ backgroundColor: formState.color }"
               :class="{
-                'cursor-not-allowed opacity-50': formState.isReadonly === 'Y',
+                'cursor-not-allowed opacity-50': formState.isReadonly === 1,
               }"
             >
               <input
                 type="color"
                 :value="formState.color"
                 class="absolute -inset-1 h-[200%] w-[200%] cursor-pointer opacity-0"
-                :disabled="formState.isReadonly === 'Y'"
+                :disabled="formState.isReadonly === 1"
                 @input="(e: any) => (formState.color = e.target.value)"
               />
             </div>
           </div>
           <div
             class="mt-2 flex flex-wrap gap-2"
-            v-if="formState.isReadonly !== 'Y'"
+            v-if="formState.isReadonly !== 1"
           >
             <div
               v-for="color in CATEGORY_COLOR_PRESETS"

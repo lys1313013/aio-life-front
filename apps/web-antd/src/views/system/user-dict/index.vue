@@ -88,7 +88,7 @@ const formState = ref<any>({
   icon: '',
   sortOrder: 0,
   isEnabled: 1,
-  isReadonly: 'N',
+  isReadonly: 0,
 });
 
 const presetIcons = computed(() =>
@@ -348,7 +348,7 @@ const handleAdd = () => {
 };
 
 const handleEdit = (row: any) => {
-  if (row.userId !== '0' && row.userId !== 0) {
+  if (!row.preset) {
     message.warning('只能编辑基础值 (用户ID为0的数据)');
     return;
   }
@@ -466,8 +466,8 @@ const handleSave = async () => {
 
           <!-- 是否只读 插槽 -->
           <template #readonlySlot="{ row }">
-            <Tag :color="row.isReadonly === 'Y' ? 'blue' : 'default'">
-              {{ row.isReadonly === 'Y' ? '是' : '否' }}
+            <Tag :color="row.isReadonly === 1 ? 'blue' : 'default'">
+              {{ row.isReadonly === 1 ? '是' : '否' }}
             </Tag>
           </template>
 
@@ -476,7 +476,7 @@ const handleSave = async () => {
             <div class="flex items-center justify-center gap-2">
               <Tooltip title="编辑">
                 <Button
-                  v-if="row.userId === '0' || row.userId === 0"
+                  v-if="row.preset"
                   type="link"
                   size="small"
                   @click="handleEdit(row)"
@@ -661,8 +661,8 @@ const handleSave = async () => {
             </template>
             <Switch
               v-model:checked="formState.isReadonly"
-              checked-value="Y"
-              un-checked-value="N"
+              :checked-value="1"
+              :un-checked-value="0"
               checked-children="是"
               un-checked-children="否"
             />

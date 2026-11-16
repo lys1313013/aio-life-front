@@ -129,12 +129,12 @@ describe('新增时迹前检查当天剩余时间', () => {
     wrapper.unmount();
   });
 
-  it('公共分类按字符串零判断，用户 ID 保留完整精度', async () => {
-    const ids = ['0', '9223372036854775807', undefined];
+  it('公共分类按 preset 标记区分，长 ID 保留为字符串', async () => {
+    const presets = [true, false, false];
     mocks.listCategories.mockResolvedValue(
-      ids.map((userId, index) => ({
+      presets.map((preset, index) => ({
         id: `922337203685477580${index}`,
-        userId,
+        preset,
         name: `分类 ${index}`,
         color: '#123456',
         isTrackTime: 1,
