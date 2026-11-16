@@ -641,8 +641,8 @@ export interface MessageCreateReq {
 export interface MilestoneCreateReq {
   title?: null | string;
   description?: null | string;
-  date?: null | string;
-  end_date?: null | string;
+  date: string;
+  endDate?: null | string;
   type?: null | string;
   tags?: null | string;
 }
@@ -652,7 +652,7 @@ export interface MilestoneUpdateReq {
   title?: null | string;
   description?: null | string;
   date?: null | string;
-  end_date?: null | string;
+  endDate?: null | string;
   type?: null | string;
   tags?: null | string;
 }
@@ -879,7 +879,7 @@ export interface SysDictDataCreateReq {
   dictValue: string;
   cssClass?: null | string;
   listClass?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
   remark?: null | string;
 }
@@ -891,7 +891,7 @@ export interface SysDictDataUpdateReq {
   dictValue?: null | string;
   cssClass?: null | string;
   listClass?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
   remark?: null | string;
 }
@@ -1135,9 +1135,9 @@ export interface UserDictDataAdminCreateReq {
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
-  isReadonly?: null | string;
+  isReadonly?: null | number;
   remark?: null | string;
 }
 
@@ -1149,9 +1149,9 @@ export interface UserDictDataAdminUpdateReq {
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
-  isReadonly?: null | string;
+  isReadonly?: null | number;
   remark?: null | string;
 }
 
@@ -1164,9 +1164,9 @@ export interface UserDictDataCreateReq {
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
-  isReadonly?: null | string;
+  isReadonly?: null | number;
   remark?: null | string;
 }
 
@@ -1187,9 +1187,9 @@ export interface UserDictDataUpdateReq {
   color?: null | string;
   icon?: null | string;
   extData?: null | string;
-  isDefault?: null | string;
+  isDefault?: null | number;
   isEnabled?: null | number;
-  isReadonly?: null | string;
+  isReadonly?: null | number;
   remark?: null | string;
 }
 
@@ -1221,7 +1221,7 @@ export interface WardrobeItemSaveReq {
   brand?: null | string;
   season?: Array<string> | null;
   purchaseDate?: null | string;
-  price?: null | number | string;
+  purchasePrice?: null | number | string;
   fileId?: null | string;
   size?: null | string;
   remark?: null | string;
@@ -1991,7 +1991,7 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     description: null,
     date: null,
-    end_date: null,
+    endDate: null,
     type: null,
     tags: null,
   },
@@ -2000,7 +2000,7 @@ const fields: Record<string, Record<string, null | string>> = {
     title: null,
     description: null,
     date: null,
-    end_date: null,
+    endDate: null,
     type: null,
     tags: null,
   },
@@ -2500,7 +2500,7 @@ const fields: Record<string, Record<string, null | string>> = {
     brand: null,
     season: null,
     purchaseDate: null,
-    price: null,
+    purchasePrice: null,
     fileId: null,
     size: null,
     remark: null,
@@ -2744,7 +2744,7 @@ const queryFields: Record<string, string[]> = {
   '/password/list': [],
   '/password/{id}': [],
   '/password/categories': [],
-  '/public/images/{id:[a-fA-F0-9]{32}}.{extension:png|jpg|webp|gif|bmp}': [],
+  '/f/{id:[a-f0-9]{64}}.{extension:png|jpg|webp|gif|bmp}': [],
   '/read-record/page': [
     'inProgressFirst',
     'page',
@@ -2759,8 +2759,8 @@ const queryFields: Record<string, string[]> = {
   '/sysDictData/query': ['dictLabel', 'dictType', 'page', 'pageSize'],
   '/sysDictType/query': ['dictName', 'page', 'pageSize'],
   '/sysDictType/getByDictType': ['dictType'],
-  '/file/preview/{id:[a-fA-F0-9]{32}}': [],
-  '/file/download/{id:[a-fA-F0-9]{32}}': [],
+  '/file/preview/{id:[1-9][0-9]{0,18}}': [],
+  '/file/download/{id:[1-9][0-9]{0,18}}': [],
   '/taskColumn/query': ['page', 'pageSize'],
   '/tasks': ['page', 'pageSize', 'taskId'],
   '/taskDetails': ['taskId'],
@@ -3991,7 +3991,7 @@ export interface CategoryVO {
   icon: null | string;
   parentId: null | string;
   sortOrder: null | number;
-  categoryType: null | number;
+  preset: boolean | null;
   children: Array<CategoryVO_CategoryVO> | null;
 }
 
@@ -4001,7 +4001,7 @@ export interface CategoryVO_CategoryVO {
   icon: null | string;
   parentId: null | string;
   sortOrder: null | number;
-  categoryType: null | number;
+  preset: boolean | null;
   children: Array<CategoryVO> | null;
 }
 
@@ -4732,7 +4732,7 @@ export interface MilestoneVO {
   title?: string;
   description?: string;
   date?: string;
-  end_date?: string;
+  endDate?: string;
   type?: string;
   tags?: string;
 }
@@ -4993,7 +4993,7 @@ export interface SysDictDataRecordVO {
   dictValue?: string;
   cssClass?: string;
   listClass?: string;
-  isDefault?: string;
+  isDefault?: number;
   isEnabled?: number;
   remark?: string;
   updateTime?: string;
@@ -5132,7 +5132,7 @@ export interface TimeRecordVO {
 
 export interface TimeTrackerCategoryVO {
   isHidden?: boolean;
-  userId?: string;
+  preset?: boolean;
   id?: string;
   templateId?: string;
   parentId?: string;
@@ -5166,7 +5166,7 @@ export interface UserDictDataSortVO {
 }
 
 export interface UserDictDataVO {
-  userId?: string;
+  preset?: boolean;
   id?: string;
   templateId?: string;
   dictType?: string;
@@ -5176,9 +5176,9 @@ export interface UserDictDataVO {
   color?: string;
   icon?: string;
   extData?: string;
-  isDefault?: string;
+  isDefault?: number;
   isEnabled?: number;
-  isReadonly?: string;
+  isReadonly?: number;
   remark?: string;
 }
 
@@ -5247,7 +5247,7 @@ export interface WardrobeItemVO {
   brand: null | string;
   season: null | string;
   purchaseDate: null | string;
-  price: null | number | string;
+  purchasePrice: null | number | string;
   fileId: null | string;
   size: null | string;
   remark: null | string;
@@ -5259,7 +5259,7 @@ export interface WardrobeStatsVO {
   categoryCount: null | Record<string, unknown>;
   seasonCount: null | Record<string, unknown>;
   totalValue: null | number | string;
-  avgPrice: null | number | string;
+  avgPurchasePrice: null | number | string;
 }
 
 export interface WechatLoginVO {

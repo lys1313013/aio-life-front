@@ -84,7 +84,7 @@ describe('web 请求参数契约', () => {
     const id = '9223372036854775807';
     const payload = {
       title: '工作账号',
-      username: 'encrypted-user',
+      username: 'fixture-user',
       password: 'encrypted-password',
       salt: 'salt',
       favorite: false,
