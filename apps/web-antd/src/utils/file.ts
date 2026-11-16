@@ -1,6 +1,6 @@
 import { useAccessStore } from '@vben/stores';
 
-export const getFilePreviewUrl = (fileId?: null | number | string) => {
+export const getFilePreviewUrl = (fileId?: null | string) => {
   if (!fileId) return '';
   const baseUrl = import.meta.env.VITE_GLOB_API_URL || '';
   return `${baseUrl}/file/preview/${fileId}`;
@@ -32,10 +32,10 @@ function cacheImage(key: string, blobUrl: string) {
 }
 
 export async function fetchAuthImageUrl(
-  fileId?: null | number | string,
+  fileId?: null | string,
 ): Promise<string> {
   if (!fileId) return '';
-  const key = String(fileId);
+  const key = fileId;
   const cached = getCachedImage(key);
   if (cached) return cached;
 
@@ -81,9 +81,9 @@ export async function fetchAuthImageUrl(
   }
 }
 
-export function clearImageCache(fileId?: null | number | string) {
+export function clearImageCache(fileId?: null | string) {
   if (fileId) {
-    const key = String(fileId);
+    const key = fileId;
     if (activeImageRequests.has(key)) {
       cacheVersions.set(key, (cacheVersions.get(key) ?? 0) + 1);
     }

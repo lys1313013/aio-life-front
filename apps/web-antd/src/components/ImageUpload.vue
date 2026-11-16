@@ -7,14 +7,14 @@ import { message, Upload } from 'ant-design-vue';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 interface UploadResult {
-  id: number | string;
+  id: string;
   [key: string]: any;
 }
 
 const props = withDefaults(
   defineProps<{
-    fileId?: null | number | string;
-    fileIds?: (number | string)[];
+    fileId?: null | string;
+    fileIds?: string[];
     hint?: string;
     maxCount?: number;
     uploadFn: (file: File) => Promise<UploadResult>;
@@ -28,8 +28,8 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  'update:fileId': [value: null | number | string];
-  'update:fileIds': [value: (number | string)[]];
+  'update:fileId': [value: null | string];
+  'update:fileIds': [value: string[]];
 }>();
 
 const fileList = ref<any[]>([]);
@@ -38,10 +38,10 @@ const previewLoading = ref(false);
 const isMulti = props.maxCount > 1;
 let previewRequestId = 0;
 
-const buildFileItem = async (id: number | string) => {
+const buildFileItem = async (id: string) => {
   const url = await fetchAuthImageUrl(id);
   return {
-    uid: String(id),
+    uid: id,
     name: `image-${id}`,
     status: 'done',
     url,
@@ -49,7 +49,7 @@ const buildFileItem = async (id: number | string) => {
   };
 };
 
-const syncExistingFiles = async (ids: (number | string)[]) => {
+const syncExistingFiles = async (ids: string[]) => {
   const requestId = ++previewRequestId;
   if (ids.length === 0) {
     fileList.value = [];
@@ -69,11 +69,11 @@ const syncExistingFiles = async (ids: (number | string)[]) => {
   }
 };
 
-const syncSingle = async (id?: null | number | string) => {
+const syncSingle = async (id?: null | string) => {
   await syncExistingFiles(id ? [id] : []);
 };
 
-const syncMulti = async (ids?: (number | string)[]) => {
+const syncMulti = async (ids?: string[]) => {
   await syncExistingFiles(ids ?? []);
 };
 

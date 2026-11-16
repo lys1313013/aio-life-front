@@ -32,6 +32,7 @@ export async function getByDictType(dictType: string): Promise<ResponseData> {
  * 文件VO
  */
 export interface FileVO {
+  /** 附件对外 UUIDv4，对应 file_key，内部数字主键不进入客户端。 */
   id: string;
   fileName: string;
   fileUrl: string;

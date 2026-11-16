@@ -2759,8 +2759,10 @@ const queryFields: Record<string, string[]> = {
   '/sysDictData/query': ['dictLabel', 'dictType', 'page', 'pageSize'],
   '/sysDictType/query': ['dictName', 'page', 'pageSize'],
   '/sysDictType/getByDictType': ['dictType'],
-  '/file/preview/{id:[1-9][0-9]{0,18}}': [],
-  '/file/download/{id:[1-9][0-9]{0,18}}': [],
+  '/file/preview/{id:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}}':
+    [],
+  '/file/download/{id:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}}':
+    [],
   '/taskColumn/query': ['page', 'pageSize'],
   '/tasks': ['page', 'pageSize', 'taskId'],
   '/taskDetails': ['taskId'],

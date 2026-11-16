@@ -2,19 +2,14 @@
 import { useAuthImageUrl } from '#/composables/useAuthImageUrl';
 
 const props = defineProps<{
-  fileId?: number | string | null;
+  fileId?: string | null;
 }>();
 
 const { blobUrl, loading } = useAuthImageUrl(() => props.fileId);
 </script>
 
 <template>
-  <img
-    v-if="blobUrl"
-    :src="blobUrl"
-    v-bind="$attrs"
-    class="auth-image-img"
-  />
+  <img v-if="blobUrl" :src="blobUrl" v-bind="$attrs" class="auth-image-img" />
   <div
     v-else
     v-bind="$attrs"
@@ -39,12 +34,21 @@ const { blobUrl, loading } = useAuthImageUrl(() => props.fileId);
 }
 
 @keyframes auth-image-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes auth-image-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

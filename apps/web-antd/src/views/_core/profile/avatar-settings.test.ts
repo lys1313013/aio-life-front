@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { avatarFileList, avatarProfilePayload } from './avatar-settings';
 
-const id = '1234567890123456789';
+const id = 'a1b2c3d4-1234-4abc-8def-1234567890ab';
 const base = { nickname: '测试用户', introduction: '简介' };
 
 describe('头像文件绑定', () => {
@@ -36,7 +36,13 @@ describe('头像文件绑定', () => {
     },
   );
   it('上传成功也不能把 URL 或数字当作文件 ID', () => {
-    for (const invalid of ['/image.png', 123, undefined]) {
+    for (const invalid of [
+      '/image.png',
+      123,
+      '1234567890123456789',
+      '019535d9-3df7-79fb-b466-fa907fa17f9e',
+      undefined,
+    ]) {
       expect(() =>
         avatarProfilePayload({
           ...base,

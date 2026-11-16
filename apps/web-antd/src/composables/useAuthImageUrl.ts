@@ -3,7 +3,7 @@ import { ref, watchEffect } from 'vue';
 import { fetchAuthImageUrl } from '#/utils/file';
 
 export function useAuthImageUrl(
-  source: () => null | number | string | undefined,
+  source: () => null | string | undefined,
   publicSource?: () => null | string | undefined,
 ) {
   const blobUrl = ref('');

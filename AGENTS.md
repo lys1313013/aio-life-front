@@ -199,7 +199,9 @@ export async function queryMyFeedbacks(params: {
   page: number;
   pageSize: number;
 }) {
-  return await requestClient.get<PageResp<FeedbackVO>>('/feedback/my', { params });
+  return await requestClient.get<PageResp<FeedbackVO>>('/feedback/my', {
+    params,
+  });
 }
 ```
 
@@ -207,7 +209,7 @@ export async function queryMyFeedbacks(params: {
 
 统一上传入口为 `POST /file/upload`（API 基址包含 `/api`），multipart 字段为 `file` 和 `bizType`。前端复用 `api/core/common.ts` 的 `uploadFile(file, FILE_BIZ_TYPE.XXX)`，服务端按业务类型校验权限、文件格式、大小与绑定规则。不要新增业务上传入口或复用其他业务的类型绕过检查。
 
-1. **上传**：写入全局 `file` 表，绑定业务记录前 `biz_id` 可为空。
+1. **上传**：写入 `attachment`，绑定业务记录前 `biz_id` 可为空；接口所有附件标识均为 `file_key` 的 UUIDv4（包括 `FileVO.id`、`fileId`、`avatarFileId`、`coverFileId`、`fileIds`）。内部 bigint 主键不对外暴露，不提供数字附件 ID 兼容入口。
 2. **绑定**：创建／更新业务记录时提交 `fileIds: string[]`，由后端校验文件归属并完成关联。未提交与空数组的语义以 DTO 为准。
 3. **查询**：响应 VO 返回 `files: FileVO[]`；不要为了带附件而将 Entity 整体当作请求模型。
 

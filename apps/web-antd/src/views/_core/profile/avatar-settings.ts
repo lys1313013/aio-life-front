@@ -37,7 +37,12 @@ export function avatarProfilePayload(values: {
   if (!item) return { ...result, avatarFileId: null };
   if (item.status !== 'done') throw new Error('请等待头像上传成功后再保存');
   const id = item.response?.id;
-  if (typeof id !== 'string' || !/^[1-9][0-9]{0,18}$/.test(id))
+  if (
+    typeof id !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+      id,
+    )
+  )
     throw new Error('头像上传结果异常，请重新上传');
   return { ...result, avatarFileId: id };
 }
