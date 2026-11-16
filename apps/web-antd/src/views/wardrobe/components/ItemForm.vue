@@ -44,7 +44,7 @@ const formData = ref<WardrobeItemReq>({
   brand: '',
   season: [],
   purchaseDate: undefined,
-  price: undefined,
+  purchasePrice: undefined,
   fileId: undefined,
   size: '',
   remark: '',
@@ -97,7 +97,7 @@ watch(
           brand: props.item.brand,
           season: props.item.season?.split(',').filter(Boolean) || [],
           purchaseDate: props.item.purchaseDate,
-          price: props.item.price,
+          purchasePrice: props.item.purchasePrice,
           fileId: props.item.fileId,
           size: props.item.size,
           remark: props.item.remark,
@@ -110,7 +110,7 @@ watch(
           brand: '',
           season: [],
           purchaseDate: undefined,
-          price: undefined,
+          purchasePrice: undefined,
           fileId: undefined,
           size: '',
           remark: '',
@@ -182,9 +182,9 @@ const handleSubmit = async () => {
         <FormItem label="尺码" name="size">
           <Input v-model:value="formData.size" placeholder="如: M, 42" />
         </FormItem>
-        <FormItem label="价格" name="price">
+        <FormItem label="购入价" name="purchasePrice">
           <InputNumber
-            v-model:value="formData.price"
+            v-model:value="formData.purchasePrice"
             :min="0"
             :precision="2"
             placeholder="0.00"

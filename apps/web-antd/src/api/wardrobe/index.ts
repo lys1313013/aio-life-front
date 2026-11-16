@@ -16,7 +16,7 @@ export interface WardrobeItemReq {
   brand?: string;
   season?: string[];
   purchaseDate?: string;
-  price?: number;
+  purchasePrice?: number;
   fileId?: string;
   size?: string;
   remark?: string;
@@ -34,7 +34,7 @@ export interface WardrobeItemVO {
   brand?: string;
   season?: string;
   purchaseDate?: string;
-  price?: number;
+  purchasePrice?: number;
   fileId?: string;
   size?: string;
   remark?: string;
@@ -61,7 +61,7 @@ export interface CategoryVO {
   icon?: string;
   parentId?: string;
   sortOrder?: number;
-  categoryType?: number;
+  preset?: boolean;
   children?: CategoryVO[];
 }
 
@@ -73,7 +73,7 @@ export interface WardrobeStatsVO {
   categoryCount: Record<string, number>;
   seasonCount: Record<string, number>;
   totalValue: number;
-  avgPrice: number;
+  avgPurchasePrice: number;
 }
 
 // ==================== 衣物接口 ====================

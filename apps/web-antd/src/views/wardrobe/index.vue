@@ -146,8 +146,8 @@ onMounted(() => {
         <Col :span="6">
           <Card size="small">
             <Statistic
-              title="平均价格"
-              :value="stats?.avgPrice || 0"
+              title="平均购入价"
+              :value="stats?.avgPurchasePrice || 0"
               prefix="¥"
               :precision="2"
             />
