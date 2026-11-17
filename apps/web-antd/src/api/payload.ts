@@ -291,14 +291,14 @@ export interface ExpenseCreateReq {
   newDevice?: DeviceCreateReq | null;
   transactionAmount?: null | number | string;
   bookkeepingAmount?: null | number | string;
-  expTypeId?: null | string;
+  expenseTypeId?: null | string;
   payTypeId?: null | string;
   counterparty?: null | string;
   counterpartyAcct?: null | string;
   remark?: null | string;
-  expTime?: null | string;
+  expenseTime?: null | string;
   transactionId?: null | string;
-  expDesc?: null | string;
+  expenseDesc?: null | string;
   merchantOrderNo?: null | string;
   transactionStatus?: null | string;
 }
@@ -311,14 +311,14 @@ export interface ExpenseUpdateReq {
   id: string;
   transactionAmount?: null | number | string;
   bookkeepingAmount?: null | number | string;
-  expTypeId?: null | string;
+  expenseTypeId?: null | string;
   payTypeId?: null | string;
   counterparty?: null | string;
   counterpartyAcct?: null | string;
   remark?: null | string;
-  expTime?: null | string;
+  expenseTime?: null | string;
   transactionId?: null | string;
-  expDesc?: null | string;
+  expenseDesc?: null | string;
   merchantOrderNo?: null | string;
   transactionStatus?: null | string;
 }
@@ -493,7 +493,7 @@ export interface IncomeCreateReq {
   grossAmount?: null | number | string;
   incDate?: null | string;
   remark?: null | string;
-  incTypeId?: null | string;
+  incomeTypeId?: null | string;
   taxAmount?: null | number | string;
 }
 
@@ -501,7 +501,7 @@ export interface IncomeUpdateReq {
   grossAmount?: null | number | string;
   incDate?: null | string;
   remark?: null | string;
-  incTypeId?: null | string;
+  incomeTypeId?: null | string;
   taxAmount?: null | number | string;
 }
 
@@ -634,7 +634,7 @@ export interface MessageCreateReq {
   receiverId?: null | string;
   title?: null | string;
   content?: null | string;
-  type?: null | number;
+  type: number;
 }
 
 export interface MilestoneCreateReq {
@@ -872,7 +872,7 @@ export interface SetSecondaryPasswordReq {
 }
 
 export interface SysDictDataCreateReq {
-  dictId: string;
+  dictTypeId: string;
   sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue: string;
@@ -884,7 +884,7 @@ export interface SysDictDataCreateReq {
 }
 
 export interface SysDictDataUpdateReq {
-  dictId?: null | string;
+  dictTypeId?: null | string;
   sortOrder?: null | number;
   dictLabel?: null | string;
   dictValue?: null | string;
@@ -1061,6 +1061,7 @@ export interface TimeTrackerCategoryAdminUpdateReq {
 
 export interface TimeTrackerCategoryCreateReq {
   parentId?: null | string;
+  inheritParent?: boolean | null;
   name?: null | string;
   color?: null | string;
   icon?: null | string;
@@ -1080,6 +1081,7 @@ export interface TimeTrackerCategorySortReq {
 export interface TimeTrackerCategoryUpdateReq {
   id: string;
   parentId?: null | string;
+  inheritParent?: boolean | null;
   name?: null | string;
   color?: null | string;
   icon?: null | string;
@@ -1675,14 +1677,14 @@ const fields: Record<string, Record<string, null | string>> = {
     newDevice: 'DeviceCreateReq',
     transactionAmount: null,
     bookkeepingAmount: null,
-    expTypeId: null,
+    expenseTypeId: null,
     payTypeId: null,
     counterparty: null,
     counterpartyAcct: null,
     remark: null,
-    expTime: null,
+    expenseTime: null,
     transactionId: null,
-    expDesc: null,
+    expenseDesc: null,
     merchantOrderNo: null,
     transactionStatus: null,
   },
@@ -1693,14 +1695,14 @@ const fields: Record<string, Record<string, null | string>> = {
     id: null,
     transactionAmount: null,
     bookkeepingAmount: null,
-    expTypeId: null,
+    expenseTypeId: null,
     payTypeId: null,
     counterparty: null,
     counterpartyAcct: null,
     remark: null,
-    expTime: null,
+    expenseTime: null,
     transactionId: null,
-    expDesc: null,
+    expenseDesc: null,
     merchantOrderNo: null,
     transactionStatus: null,
   },
@@ -1857,14 +1859,14 @@ const fields: Record<string, Record<string, null | string>> = {
     grossAmount: null,
     incDate: null,
     remark: null,
-    incTypeId: null,
+    incomeTypeId: null,
     taxAmount: null,
   },
   IncomeUpdateReq: {
     grossAmount: null,
     incDate: null,
     remark: null,
-    incTypeId: null,
+    incomeTypeId: null,
     taxAmount: null,
   },
   LifeFootprintBatchItemReq: {
@@ -2190,7 +2192,7 @@ const fields: Record<string, Record<string, null | string>> = {
     oldPassword: null,
   },
   SysDictDataCreateReq: {
-    dictId: null,
+    dictTypeId: null,
     sortOrder: null,
     dictLabel: null,
     dictValue: null,
@@ -2201,7 +2203,7 @@ const fields: Record<string, Record<string, null | string>> = {
     remark: null,
   },
   SysDictDataUpdateReq: {
-    dictId: null,
+    dictTypeId: null,
     sortOrder: null,
     dictLabel: null,
     dictValue: null,
@@ -2355,6 +2357,7 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   TimeTrackerCategoryCreateReq: {
     parentId: null,
+    inheritParent: null,
     name: null,
     color: null,
     icon: null,
@@ -2372,6 +2375,7 @@ const fields: Record<string, Record<string, null | string>> = {
   TimeTrackerCategoryUpdateReq: {
     id: null,
     parentId: null,
+    inheritParent: null,
     name: null,
     color: null,
     icon: null,
@@ -2672,8 +2676,8 @@ const queryFields: Record<string, string[]> = {
     'counterparty',
     'endTime',
     'endTimeBefore',
-    'expDesc',
-    'expTypeId',
+    'expenseDesc',
+    'expenseTypeId',
     'page',
     'pageSize',
     'payTypeId',
@@ -2706,7 +2710,7 @@ const queryFields: Record<string, string[]> = {
   '/income/query': [
     'endTime',
     'endTimeBefore',
-    'incTypeId',
+    'incomeTypeId',
     'page',
     'pageSize',
     'startTime',
@@ -3270,7 +3274,7 @@ const requestModels: Array<{
   },
   {
     method: 'PUT',
-    path: '/sysDictData/{dictCode}',
+    path: '/sysDictData/{id}',
     model: 'SysDictDataUpdateReq',
     list: false,
   },
@@ -3282,7 +3286,7 @@ const requestModels: Array<{
   },
   {
     method: 'PUT',
-    path: '/sysDictType/{dictId}',
+    path: '/sysDictType/{id}',
     model: 'SysDictTypeUpdateReq',
     list: false,
   },
@@ -4187,7 +4191,7 @@ export interface ExerciseRecordVO {
   exerciseDate?: string;
   exerciseCount?: number;
   description?: string;
-  timeId?: string;
+  timeRecordId?: string;
 }
 
 export interface ExerciseStatisticsDTO {
@@ -4229,14 +4233,14 @@ export interface ExpenseVO {
   deviceName?: string;
   transactionAmount?: number | string;
   bookkeepingAmount?: number | string;
-  expTypeId?: string;
+  expenseTypeId?: string;
   payTypeId?: string;
   counterparty?: string;
   counterpartyAcct?: string;
   remark?: string;
-  expTime?: string;
+  expenseTime?: string;
   transactionId?: string;
-  expDesc?: string;
+  expenseDesc?: string;
   merchantOrderNo?: string;
   transactionStatus?: string;
   createTime?: string;
@@ -4547,7 +4551,7 @@ export interface IncomeVO {
   grossAmount?: number | string;
   incDate?: string;
   remark?: string;
-  incTypeId?: string;
+  incomeTypeId?: string;
   taxAmount?: number | string;
   updateTime?: string;
 }
@@ -4959,7 +4963,6 @@ export interface ScheduledJobVO {
   jobCode: null | string;
   name: null | string;
   cron: null | string;
-  zoneId: null | string;
   isEnabled: null | number;
   revision: null | number;
   schedulerEnabled: boolean;
@@ -4982,8 +4985,8 @@ export interface StoragePageVO {
 }
 
 export interface SysDictDataRecordVO {
-  dictCode?: string;
-  dictId?: string;
+  id?: string;
+  dictTypeId?: string;
   dictName?: string;
   dictType?: string;
   sortOrder?: number;
@@ -5009,7 +5012,7 @@ export interface SysDictTypeDetailVO {
 }
 
 export interface SysDictTypeVO {
-  dictId?: string;
+  id?: string;
   dictName?: string;
   dictType?: string;
   isEnabled?: number;
@@ -5134,6 +5137,7 @@ export interface TimeTrackerCategoryVO {
   id?: string;
   templateId?: string;
   parentId?: string;
+  inheritParent?: boolean;
   name?: string;
   color?: string;
   icon?: string;

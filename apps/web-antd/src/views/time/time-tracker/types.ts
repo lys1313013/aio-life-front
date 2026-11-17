@@ -24,6 +24,7 @@ export interface ExerciseDetail {
 export interface TimeSlotCategory {
   id: string;
   parentId?: null | string;
+  inheritParent?: boolean;
   isHidden?: boolean;
   sortOrder?: number;
   name: string;

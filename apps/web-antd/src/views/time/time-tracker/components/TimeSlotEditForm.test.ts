@@ -188,7 +188,7 @@ describe('二级运动分类', () => {
         endMinute: 569,
       },
       categories: [
-        { id: 'sports', name: '运动', color: '#52c41a', parentId: '0' },
+        { id: 'sports', name: '运动', color: '#52c41a', parentId: null },
         { id: 'running', name: '跑步', color: '#52c41a', parentId: 'sports' },
       ],
     });

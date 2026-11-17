@@ -91,7 +91,7 @@ it.each(['income', 'expense'] as const)(
         : { transactionAmount: 99 }),
       transactionId: 'original-order',
       counterpartyAcct: 'original-account',
-      expTime: '2026-09-28 18:32:49',
+      expenseTime: '2026-09-28 18:32:49',
       incDate: '2026-09-28',
     };
     mocks.data = { values: original };

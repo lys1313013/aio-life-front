@@ -32,7 +32,9 @@ vi.mock('#/api/core/message', () => ({
   createMessageApi: mocks.create,
   deleteMessageApi: mocks.remove,
   getMessageListApi: mocks.getMessages,
+  isSystemMessage: (message: { type?: number }) => message.type === 0,
   markAsReadApi: mocks.markRead,
+  SYSTEM_CONVERSATION_ID: 'system',
 }));
 vi.mock('#/api/core/user', () => ({ getUserBasicInfoApi: mocks.getUser }));
 vi.mock('./components/ConversationList.vue', () => ({
@@ -46,7 +48,7 @@ vi.mock('./components/ConversationList.vue', () => ({
 vi.mock('./components/ChatWindow.vue', () => ({
   default: {
     name: 'ChatWindow',
-    props: ['messages', 'targetId', 'sending'],
+    props: ['messages', 'readOnly', 'sending', 'targetId', 'targetName'],
     emits: ['send', 'delete', 'back'],
     template: '<div data-testid="chat" />',
   },
@@ -132,5 +134,29 @@ describe('普通消息中心', () => {
     expect(mocks.push).toHaveBeenCalledWith({
       query: { userId: undefined, conversationId: undefined },
     });
+  });
+
+  it('系统通知归入固定会话且不可发送', async () => {
+    mocks.query = { userId: 'system' };
+    mocks.getMessages.mockResolvedValue([
+      {
+        id: '20',
+        type: 0,
+        receiverId: '1',
+        title: '系统通知',
+        content: '维护提醒',
+        isRead: false,
+        createTime: '2026-10-04T10:00:00',
+      },
+    ]);
+    const wrapper = mount(MessagePage);
+    await flushPromises();
+
+    expect(mocks.markRead).toHaveBeenCalledWith('20');
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    const chat = wrapper.findComponent({ name: 'ChatWindow' });
+    expect(chat.props('readOnly')).toBe(true);
+    expect(chat.props('targetName')).toBe('系统通知');
+    expect(chat.props('messages')).toHaveLength(1);
   });
 });

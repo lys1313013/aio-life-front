@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
   row: {
     id: '9007199254740993',
     grossAmount: 100,
-    incTypeId: '9007199254740995',
+    incomeTypeId: '9007199254740995',
     incDate: '2026-10-11',
     remark: '',
   },
@@ -110,7 +110,7 @@ describe('收入记录 ID 契约', () => {
       '/income/9007199254740993',
       {
         grossAmount: 200,
-        incTypeId: '9007199254740995',
+        incomeTypeId: '9007199254740995',
         incDate: '2026-10-11',
         remark: '',
       },

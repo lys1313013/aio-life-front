@@ -79,10 +79,10 @@ const paginationTotal = computed(
 );
 function description(row: FinanceCalendarDetail) {
   return (
-    row.expDesc ||
+    row.expenseDesc ||
     row.counterparty ||
     row.remark ||
-    dictionaryLabel(categories.value, row.incTypeId) ||
+    dictionaryLabel(categories.value, row.incomeTypeId) ||
     '未填写描述'
   );
 }
@@ -113,12 +113,12 @@ function metadata(row: FinanceCalendarDetail) {
   return [
     row.incDate
       ? row.incDate
-      : row.expTime
-        ? dayjs(row.expTime).format('YYYY-MM-DD HH:mm')
+      : row.expenseTime
+        ? dayjs(row.expenseTime).format('YYYY-MM-DD HH:mm')
         : '未填日期',
     dictionaryLabel(
       categories.value,
-      displayedKind.value === 'income' ? row.incTypeId : row.expTypeId,
+      displayedKind.value === 'income' ? row.incomeTypeId : row.expenseTypeId,
     ),
     dictionaryLabel(payments.value, row.payTypeId),
   ]
@@ -282,7 +282,7 @@ onBeforeUnmount(() => {
                     {{ description(row) }}
                   </div>
                   <div
-                    v-if="row.counterparty && row.counterparty !== row.expDesc"
+                    v-if="row.counterparty && row.counterparty !== row.expenseDesc"
                     class="mt-1 break-words text-xs text-muted-foreground"
                   >
                     {{ row.counterparty }}

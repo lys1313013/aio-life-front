@@ -23,9 +23,9 @@ async function loadDictOptions() {
   try {
     const res = await query({});
     dictOptions.value = res.items.map(
-      (item: { dictId: string; dictName: string }) => ({
+      (item: { id: string; dictName: string }) => ({
         label: item.dictName,
-        value: item.dictId,
+        value: item.id,
       }),
     );
   } catch (error) {
@@ -41,11 +41,11 @@ const [Form, formApi] = useAppForm({
   schema: [
     {
       component: 'Input',
-      fieldName: 'dictCode',
-      label: 'dictCode',
+      fieldName: 'id',
+      label: 'id',
       disabled: true,
       dependencies: {
-        triggerFields: ['dictCode'],
+        triggerFields: ['id'],
         show: false,
       },
     },
@@ -58,7 +58,7 @@ const [Form, formApi] = useAppForm({
         optionFilterProp: 'label', // 按标签过滤
         style: { width: '100%' }, // 设置为100%宽度
       },
-      fieldName: 'dictId',
+      fieldName: 'dictTypeId',
       label: '字典类型',
     },
     {
@@ -108,9 +108,9 @@ const [Modal, modalApi] = useVbenModal({
       const { valid } = await formApi.validate();
       if (!valid) return;
       const newVar: Record<string, any> = toRaw(await formApi.submitForm());
-      if (newVar.dictCode) {
+      if (newVar.id) {
         await update(
-          newVar.dictCode,
+          newVar.id,
           newVar as ApiRequests['SysDictDataUpdateReq'],
         );
       } else {

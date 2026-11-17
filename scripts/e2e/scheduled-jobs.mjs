@@ -9,8 +9,8 @@ const preferencesModule = `/@fs${new URL('../../packages/@core/preferences/src/i
 const id = '9223372036854775806';
 const secondId = '9223372036854775805';
 const seed = [
-  { id, jobCode: 'leetcode.check', name: 'LeetCode 打卡检查', cron: '0 30 23 * * ?', zoneId: 'Asia/Shanghai', enabled: true, revision: 0, schedulerEnabled: true, nextExecutionTime: '2026-10-26 23:30:00' },
-  { id: secondId, jobCode: 'leetcode.daily-question', name: 'LeetCode 每日一题通知', cron: '0 0 7 * * ?', zoneId: 'Asia/Shanghai', enabled: true, revision: 0, schedulerEnabled: true, nextExecutionTime: '2026-10-26 07:00:00' },
+  { id, jobCode: 'leetcode.check', name: 'LeetCode 打卡检查', cron: '0 30 23 * * ?', enabled: true, revision: 0, schedulerEnabled: true, nextExecutionTime: '2026-10-26 23:30:00' },
+  { id: secondId, jobCode: 'leetcode.daily-question', name: 'LeetCode 每日一题通知', cron: '0 0 7 * * ?', enabled: true, revision: 0, schedulerEnabled: true, nextExecutionTime: '2026-10-26 07:00:00' },
 ];
 let jobs = structuredClone(seed);
 let delay = 0;

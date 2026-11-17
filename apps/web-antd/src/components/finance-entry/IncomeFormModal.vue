@@ -94,7 +94,7 @@ const [Form, formApi] = useAppForm({
         style: { width: '100%' },
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'incTypeId',
+      fieldName: 'incomeTypeId',
       label: '收入类型',
     },
     {

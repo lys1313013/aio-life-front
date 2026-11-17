@@ -23,7 +23,7 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '【自动生成】',
       },
-      fieldName: 'dictId',
+      fieldName: 'id',
       label: '主键',
       disabled: true,
       dependencies: {
@@ -70,9 +70,9 @@ const [Modal, modalApi] = useVbenModal({
       const { valid } = await formApi.validate();
       if (!valid) return;
       const newVar: Record<string, any> = toRaw(await formApi.submitForm());
-      if (newVar.dictId) {
+      if (newVar.id) {
         await update(
-          newVar.dictId,
+          newVar.id,
           newVar as ApiRequests['SysDictTypeUpdateReq'],
         );
       } else {

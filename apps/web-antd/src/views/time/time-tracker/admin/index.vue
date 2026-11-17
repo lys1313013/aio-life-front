@@ -118,7 +118,7 @@ const handleIconSelect = (icon: string) => {
 };
 
 const formState = ref<TimeTrackerCategoryEntity>({
-  parentId: '0',
+  parentId: '',
   name: '',
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
@@ -132,7 +132,7 @@ const parentOptions = computed(() => {
   const id = formState.value.id;
   const hasChildren = publicCategories.value.some((c) => c.parentId === id);
   return [
-    { label: '无（一级分类）', value: '0' },
+    { label: '无（一级分类）', value: '' },
     ...(hasChildren
       ? []
       : publicCategories.value
@@ -141,7 +141,7 @@ const parentOptions = computed(() => {
   ];
 });
 const parentValue = computed({
-  get: () => formState.value.parentId ?? '0',
+  get: () => formState.value.parentId ?? '',
   set: (value: string) => {
     formState.value.parentId = value;
     formState.value.sortOrder = undefined;
@@ -157,14 +157,14 @@ const modalTitle = computed(() =>
   isEdit.value ? '编辑公共分类' : '新增公共分类',
 );
 
-const handleAddCategory = (parentId = '0') => {
+const handleAddCategory = (parentId = '') => {
   isEdit.value = false;
   selectedIconSet.value = 'lucide';
   const nextSort =
     Math.max(
       -10,
       ...publicCategories.value
-        .filter((item) => (item.parentId ?? '0') === parentId)
+        .filter((item) => (item.parentId ?? '') === parentId)
         .map((item) => item.sortOrder ?? -10),
     ) + 10;
   formState.value = {
@@ -188,7 +188,7 @@ const handleEditCategory = (record: any) => {
   } else {
     selectedIconSet.value = 'lucide';
   }
-  formState.value = { ...record, parentId: record.parentId ?? '0' };
+  formState.value = { ...record, parentId: record.parentId ?? '' };
   editModalVisible.value = true;
 };
 

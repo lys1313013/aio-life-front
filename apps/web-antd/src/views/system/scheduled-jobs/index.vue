@@ -303,10 +303,6 @@ onBeforeUnmount(() => {
             <dd class="break-all font-mono">{{ job.cron }}</dd>
           </div>
           <div class="flex flex-wrap justify-between gap-x-4 gap-y-1">
-            <dt class="text-muted-foreground">时区</dt>
-            <dd>{{ job.zoneId }}</dd>
-          </div>
-          <div class="flex flex-wrap justify-between gap-x-4 gap-y-1">
             <dt class="text-muted-foreground">下次执行</dt>
             <dd>
               {{

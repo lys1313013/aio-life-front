@@ -38,7 +38,7 @@ describe('最小请求契约', () => {
         exerciseCount: 0,
         description: null,
         userId: 'other',
-        timeId: 'other-time',
+        timeRecordId: 'other-time',
         createTime: '2000-01-01',
       },
       { exerciseTypeId: '77', exerciseCount: 20 },

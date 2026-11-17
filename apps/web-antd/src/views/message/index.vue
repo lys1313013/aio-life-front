@@ -13,7 +13,9 @@ import {
   createMessageApi,
   deleteMessageApi,
   getMessageListApi,
+  isSystemMessage,
   markAsReadApi,
+  SYSTEM_CONVERSATION_ID,
 } from '#/api/core/message';
 import { getUserBasicInfoApi } from '#/api/core/user';
 
@@ -42,13 +44,28 @@ const selectedUserId = computed(() => {
   return id ? String(id) : undefined;
 });
 
+const selectedConversationName = computed(() => {
+  const id = selectedUserId.value;
+  if (!id) return '';
+  if (id === SYSTEM_CONVERSATION_ID) return '系统通知';
+  return userCache.value.get(id)?.nickname || `User ${id}`;
+});
+
+// 会话标识：系统通知归到固定会话，其余按对方用户归组
+const conversationIdOf = (msg: Message) => {
+  if (isSystemMessage(msg)) return SYSTEM_CONVERSATION_ID;
+  return String(msg.senderId) === String(myId.value)
+    ? String(msg.receiverId)
+    : String(msg.senderId);
+};
+
 // Mark conversation as read
-const markConversationAsRead = async (senderId: string) => {
+const markConversationAsRead = async (conversationId: string) => {
   if (!myId.value) return;
 
   const unreadMessages = messages.value.filter(
     (m) =>
-      String(m.senderId) === senderId &&
+      conversationIdOf(m) === conversationId &&
       String(m.receiverId) === myId.value &&
       !m.isRead,
   );
@@ -64,8 +81,13 @@ const markConversationAsRead = async (senderId: string) => {
 };
 
 const checkUser = async (userId: string) => {
+  if (userId === SYSTEM_CONVERSATION_ID) {
+    tempConversation.value = null;
+    return;
+  }
+
   const existing = messages.value.some(
-    (m) => String(m.senderId) === userId || String(m.receiverId) === userId,
+    (m) => conversationIdOf(m) === userId,
   );
 
   if (existing) {
@@ -130,7 +152,11 @@ const fetchingUserIds = new Set<string>();
 const conversationCache = new Map<string, any>();
 
 const fetchUserInfo = async (userId: string) => {
-  if (userCache.value.has(userId) || fetchingUserIds.has(userId)) {
+  if (
+    userId === SYSTEM_CONVERSATION_ID ||
+    userCache.value.has(userId) ||
+    fetchingUserIds.has(userId)
+  ) {
     return;
   }
 
@@ -153,10 +179,7 @@ const conversations = computed(() => {
   const groups = new Map<string, Message[]>();
 
   messages.value.forEach((msg) => {
-    const otherId =
-      String(msg.senderId) === String(myId.value)
-        ? String(msg.receiverId)
-        : String(msg.senderId);
+    const otherId = conversationIdOf(msg);
     if (!groups.has(otherId)) {
       groups.set(otherId, []);
     }
@@ -179,10 +202,13 @@ const conversations = computed(() => {
         (m) => String(m.receiverId) === String(myId.value) && !m.isRead,
       ).length;
 
-      const userInfo = userCache.value.get(userId);
+      const isSystem = userId === SYSTEM_CONVERSATION_ID;
+      const userInfo = isSystem ? undefined : userCache.value.get(userId);
 
-      const username = userInfo?.nickname || `User ${userId}`;
-      const avatar = userInfo?.avatar;
+      const username = isSystem
+        ? '系统通知'
+        : userInfo?.nickname || `User ${userId}`;
+      const avatar = isSystem ? undefined : userInfo?.avatar;
       const lastMessage = lastMsg.content;
       const time = lastMsg.createTime;
 
@@ -237,14 +263,24 @@ watch(
 
 const currentChatMessages = computed(() => {
   if (!selectedUserId.value) return [];
+  const systemConversation =
+    selectedUserId.value === SYSTEM_CONVERSATION_ID;
   return messages.value
-    .filter(
-      (m) =>
+    .filter((m) => {
+      if (systemConversation) {
+        return (
+          isSystemMessage(m) &&
+          String(m.receiverId) === String(myId.value)
+        );
+      }
+      if (isSystemMessage(m)) return false;
+      return (
         (String(m.senderId) === String(myId.value) &&
           String(m.receiverId) === String(selectedUserId.value)) ||
         (String(m.senderId) === String(selectedUserId.value) &&
-          String(m.receiverId) === String(myId.value)),
-    )
+          String(m.receiverId) === String(myId.value))
+      );
+    })
     .sort(
       (a, b) =>
         new Date(a.createTime).getTime() - new Date(b.createTime).getTime(),
@@ -272,7 +308,8 @@ watch(
 );
 
 const handleSendMessage = async (content: string) => {
-  if (!selectedUserId.value) return;
+  if (!selectedUserId.value || selectedUserId.value === SYSTEM_CONVERSATION_ID)
+    return;
 
   try {
     sendingMessage.value = true;
@@ -304,7 +341,7 @@ const handleDeleteMessage = (id: string) => {
 
 const handleDeleteConversation = async (userId: string) => {
   const conversationMessages = messages.value.filter(
-    (m) => String(m.senderId) === userId || String(m.receiverId) === userId,
+    (m) => conversationIdOf(m) === userId,
   );
 
   try {
@@ -313,7 +350,7 @@ const handleDeleteConversation = async (userId: string) => {
       conversationMessages.map((msg) => deleteMessageApi(msg.id)),
     );
     messages.value = messages.value.filter(
-      (m) => String(m.senderId) !== userId && String(m.receiverId) !== userId,
+      (m) => conversationIdOf(m) !== userId,
     );
     if (selectedUserId.value === userId) {
       handleBack();
@@ -362,14 +399,13 @@ onMounted(() => {
           v-if="selectedUserId"
           :messages="currentChatMessages"
           :target-id="selectedUserId"
-          :target-name="
-            userCache.get(selectedUserId)?.nickname || `User ${selectedUserId}`
-          "
+          :target-name="selectedConversationName"
           :my-id="myId"
           :my-avatar="userStore.userInfo?.avatar"
           :loading="loading"
           :sending="sendingMessage"
           :is-mobile="isMobile"
+          :read-only="selectedUserId === SYSTEM_CONVERSATION_ID"
           @send="handleSendMessage"
           @delete="handleDeleteMessage"
           @back="handleBack"

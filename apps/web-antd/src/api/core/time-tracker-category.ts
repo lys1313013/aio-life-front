@@ -11,6 +11,7 @@ export interface TimeTrackerCategoryEntity {
   preset?: boolean;
   templateId?: null | string;
   parentId?: null | string;
+  inheritParent?: boolean;
   name: string;
   color: string;
   icon?: string;
@@ -53,7 +54,7 @@ export async function saveCategory(
 ): Promise<boolean> {
   return await requestClient.post(
     '/timeTrackerCategory',
-    pickPayload('TimeTrackerCategoryCreateReq', data),
+    pickPayload('TimeTrackerCategoryCreateReq', normalizeParent(data)),
   );
 }
 
@@ -65,7 +66,7 @@ export async function updateCategory(
 ): Promise<boolean> {
   return await requestClient.put(
     '/timeTrackerCategory',
-    pickPayload('TimeTrackerCategoryUpdateReq', data),
+    pickPayload('TimeTrackerCategoryUpdateReq', normalizeParent(data)),
   );
 }
 
@@ -88,6 +89,10 @@ export async function reSortCategories(
   );
 }
 
+function normalizeParent<T extends { parentId?: null | string }>(data: T): T {
+  return data.parentId === '' ? { ...data, parentId: null } : data;
+}
+
 // ================= 管理员 API =================
 
 export async function adminListCategories(): Promise<
@@ -101,7 +106,7 @@ export async function adminSaveCategory(
 ): Promise<boolean> {
   return await requestClient.post(
     '/timeTrackerCategory/admin',
-    pickPayload('TimeTrackerCategoryAdminCreateReq', data),
+    pickPayload('TimeTrackerCategoryAdminCreateReq', normalizeParent(data)),
   );
 }
 
@@ -110,7 +115,7 @@ export async function adminUpdateCategory(
 ): Promise<boolean> {
   return await requestClient.put(
     `/timeTrackerCategory/admin/${data.id}`,
-    pickPayload('TimeTrackerCategoryAdminUpdateReq', data),
+    pickPayload('TimeTrackerCategoryAdminUpdateReq', normalizeParent(data)),
   );
 }
 

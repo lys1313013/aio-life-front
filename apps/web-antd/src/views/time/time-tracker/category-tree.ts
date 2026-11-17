@@ -8,7 +8,7 @@ interface CategoryNode {
 }
 
 export function isRootCategory(category: { parentId?: null | string }) {
-  return !category.parentId || category.parentId === '0';
+  return !category.parentId;
 }
 
 export function categoryPath(id: string, categories: CategoryNode[]): string {

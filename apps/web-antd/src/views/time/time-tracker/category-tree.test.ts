@@ -11,7 +11,7 @@ import {
 import { getSlotDuration } from './utils';
 
 const categories: TimeSlotCategory[] = [
-  { id: 'work', name: '工作', parentId: '0', color: '#1890ff', sortOrder: 0 },
+  { id: 'work', name: '工作', parentId: null, color: '#1890ff', sortOrder: 0 },
   { id: 'coding', name: '开发', parentId: 'work', color: '#389eff', sortOrder: 10 },
   { id: 'meeting', name: '会议', parentId: 'work', color: '#489eff', sortOrder: 20 },
   { id: 'rest', name: '休息', color: '#777777', sortOrder: 30 },

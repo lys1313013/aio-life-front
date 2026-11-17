@@ -29,7 +29,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import FormModal from './form-modal.vue';
 
 interface RowType {
-  dictId: any;
+  id: any;
   dictName: string;
   dictType: string;
   remark: string;
@@ -219,7 +219,7 @@ const openColumnConfig = () => {
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      dictId: row.dictId,
+      id: row.id,
     });
     gridApi.reload();
   } catch (error) {
@@ -247,7 +247,7 @@ function handleTouchStart(item: RowType) {
   longPressTimer = setTimeout(() => {
     if (!isMoving) {
       isLongPress = true;
-      activeDeleteId.value = item.dictId;
+      activeDeleteId.value = item.id;
     }
   }, 600); // 600ms 长按触发
 }
@@ -319,7 +319,7 @@ function handleDelete(item: RowType) {
       >
         <div
           v-for="(item, index) in tableData"
-          :key="item.dictId"
+          :key="item.id"
           class="relative cursor-pointer p-5 transition-transform duration-100 active:scale-[0.98]"
           :class="{
             'border-t border-zinc-100 dark:border-zinc-800/50': index !== 0,
@@ -330,7 +330,7 @@ function handleDelete(item: RowType) {
         >
           <!-- 删除按钮遮罩层 -->
           <div
-            v-if="activeDeleteId === item.dictId"
+            v-if="activeDeleteId === item.id"
             class="absolute inset-0 z-10 flex items-center justify-center bg-black/5 backdrop-blur-[2px] transition-all duration-200"
             @touchstart.stop="() => {}"
             @click.stop="activeDeleteId = null"

@@ -31,11 +31,11 @@ interface RowType {
   productName: string;
   releaseDate: string;
   bookkeepingAmount: number;
-  expTypeId: string;
+  expenseTypeId: string;
   payTypeId: string;
   remark: string;
-  expTime: string;
-  expDesc: string;
+  expenseTime: string;
+  expenseDesc: string;
   counterparty: string;
   transactionId: string;
   createTime: string;
@@ -136,7 +136,7 @@ const formOptions: VbenFormProps = {
         optionFilterProp: 'label', // 按标签过滤
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'expTypeId',
+      fieldName: 'expenseTypeId',
       label: '支出类型',
     },
     {
@@ -160,7 +160,7 @@ const formOptions: VbenFormProps = {
         valueFormat: 'YYYY-MM-DD',
         style: { width: '100%' },
       },
-      fieldName: 'expTimeRange',
+      fieldName: 'expenseTimeRange',
       label: '日期区间',
     },
     {
@@ -170,7 +170,7 @@ const formOptions: VbenFormProps = {
     },
     {
       component: 'Input',
-      fieldName: 'expDesc',
+      fieldName: 'expenseDesc',
       label: '交易描述',
     },
     {
@@ -231,7 +231,7 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
-      field: 'expTypeId',
+      field: 'expenseTypeId',
       title: '支出类型',
       sortable: true,
       width: 100,
@@ -255,8 +255,8 @@ const gridOptions: VxeGridProps<RowType> = {
       slots: { default: 'device' },
     },
     { field: 'remark', title: '备注', sortable: true, width: 100 },
-    { field: 'expTime', title: '时间', sortable: true, width: 180 },
-    { field: 'expDesc', title: '交易描述', sortable: true, width: 200 },
+    { field: 'expenseTime', title: '时间', sortable: true, width: 180 },
+    { field: 'expenseDesc', title: '交易描述', sortable: true, width: 200 },
     { field: 'counterparty', title: '交易对方', sortable: true, width: 150 },
     { field: 'transactionId', title: '交易号', sortable: true, width: 200 },
     {
@@ -385,8 +385,8 @@ const deleteRow = async (row: RowType) => {
 const processQueryCondition = (formValues: any) => {
   const condition = { ...formValues };
   // 处理日期区间
-  if (condition.expTimeRange && Array.isArray(condition.expTimeRange)) {
-    const [startTime, endTime] = condition.expTimeRange;
+  if (condition.expenseTimeRange && Array.isArray(condition.expenseTimeRange)) {
+    const [startTime, endTime] = condition.expenseTimeRange;
     if (startTime) {
       // 确保开始时间包含完整的时间部分
       condition.startTime = startTime.includes(' ')
@@ -400,7 +400,7 @@ const processQueryCondition = (formValues: any) => {
         : `${endTime} 23:59:59`;
     }
     // 删除原始的日期区间字段
-    delete condition.expTimeRange;
+    delete condition.expenseTimeRange;
   }
   return condition;
 };

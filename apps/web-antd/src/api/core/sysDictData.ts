@@ -25,11 +25,11 @@ export async function add(data: ApiRequests['SysDictDataCreateReq']) {
  * 更新
  */
 export async function update(
-  dictCode: string,
+  id: string,
   data: ApiRequests['SysDictDataUpdateReq'],
 ) {
   return await requestClient.put(
-    `/sysDictData/${dictCode}`,
+    `/sysDictData/${id}`,
     pickPayload('SysDictDataUpdateReq', data),
   );
 }
@@ -37,6 +37,6 @@ export async function update(
 /**
  * 删除
  */
-export async function deleteData(data: { dictCode: string }) {
-  return await requestClient.delete(`/sysDictData/${data.dictCode}`);
+export async function deleteData(data: { id: string }) {
+  return await requestClient.delete(`/sysDictData/${data.id}`);
 }

@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       icon: 'ant-design:book-outlined',
       order: 9,
-      title: '衣柜',
+      title: '衣橱',
     },
     name: 'Wardrobe',
     path: '/wardrobe',

@@ -8,7 +8,6 @@ export interface ScheduledJobVO {
   jobCode: string;
   name: string;
   cron: string;
-  zoneId: string;
   isEnabled: number;
   revision: number;
   schedulerEnabled: boolean;

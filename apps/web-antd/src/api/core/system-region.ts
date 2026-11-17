@@ -6,9 +6,9 @@ export interface SystemRegion {
   level: 1 | 2 | 3 | 4;
   hasChildren: boolean;
 }
-export async function getRegionChildren(parentCode = '0') {
+export async function getRegionChildren(parentCode?: string) {
   return await requestClient.get<SystemRegion[]>('/system/regions', {
-    params: { parentCode },
+    params: parentCode ? { parentCode } : {},
   });
 }
 export async function getRegionPath(code: string) {

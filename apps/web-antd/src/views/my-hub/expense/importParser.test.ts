@@ -131,13 +131,13 @@ describe('parseMobileCSV（支付宝手机端）', () => {
       transactionId: '2026073122001421021431983942',
       merchantOrderNo: '6612660000483300037895217368118022',
       createdTime: '2026-07-31 18:20:31',
-      expTime: '2026-07-31 18:20:31',
+      expenseTime: '2026-07-31 18:20:31',
       source: '支付宝手机端',
       type: '餐饮美食',
       transactionType: '餐饮美食',
       counterparty: '某食堂',
       counterpartyAcct: '/',
-      expDesc: '福州某餐饮公司',
+      expenseDesc: '福州某餐饮公司',
       bookkeepingAmount: 15,
       transactionAmount: 15,
       flow: '支出',
@@ -153,8 +153,8 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     const { transactions } = parseMobileCSV(REAL_CASE_CSV, ctx);
     const meal = transactions.find((t) => t.bookkeepingAmount === 15);
     const kimi = transactions.find((t) => t.transactionAmount === 99);
-    expect(meal!.expTypeId).toBe('d1'); // 餐饮美食命中字典
-    expect(kimi!.expTypeId).toBe('d0'); // 文化休闲未命中 → 默认
+    expect(meal!.expenseTypeId).toBe('d1'); // 餐饮美食命中字典
+    expect(kimi!.expenseTypeId).toBe('d0'); // 文化休闲未命中 → 默认
   });
 
   it('跨月退款：原交易不在本账单时生成负数支出行', () => {
@@ -220,7 +220,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     ]);
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.expDesc).toBe('咖啡,甜点');
+    expect(transactions[0]!.expenseDesc).toBe('咖啡,甜点');
     expect(transactions[0]!.bookkeepingAmount).toBe(30.5);
   });
 
@@ -295,10 +295,10 @@ describe('parseCSV（支付宝电脑端）', () => {
       transactionId: 'T001',
       merchantOrderNo: 'M001',
       createdTime: '2026-07-01 10:00:00',
-      expTime: '2026-07-01 10:00:01',
+      expenseTime: '2026-07-01 10:00:01',
       type: '餐饮美食',
       counterparty: '某食堂',
-      expDesc: '午餐',
+      expenseDesc: '午餐',
       transactionAmount: 15,
       bookkeepingAmount: 15,
       flow: '支出',
@@ -306,7 +306,7 @@ describe('parseCSV（支付宝电脑端）', () => {
       serviceFee: 0,
       successfulRefund: 0,
       fundStatus: '已支出',
-      expTypeId: 'd0',
+      expenseTypeId: 'd0',
       payTypeId: 'p1',
     });
   });
@@ -435,14 +435,14 @@ describe('parseWechatExcel（微信支付账单）', () => {
       source: '微信支付',
       transactionType: '商户消费',
       counterparty: '某商店',
-      expDesc: '早餐',
+      expenseDesc: '早餐',
       bookkeepingAmount: 15.5,
       transactionAmount: 15.5,
       flow: '支出',
       transactionStatus: '支付成功',
       fundStatus: '零钱',
       payTypeId: 'p2',
-      expTypeId: 'd0',
+      expenseTypeId: 'd0',
     });
   });
 
@@ -599,7 +599,7 @@ describe('parseWechatExcel（微信支付账单）', () => {
     const { transactions, minDate, maxDate } = parseWechatExcel(buffer, ctx);
     expect(transactions).toHaveLength(1);
     expect(transactions[0]!.bookkeepingAmount).toBe(10.8);
-    expect(transactions[0]!.expTime).toBe('2026-04-05 19:56:09');
+    expect(transactions[0]!.expenseTime).toBe('2026-04-05 19:56:09');
     expect(minDate).toEqual(new Date('2026-04-05 19:56:09'));
     expect(maxDate).toEqual(new Date('2026-04-05 19:56:09'));
   });

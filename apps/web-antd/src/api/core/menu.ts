@@ -47,7 +47,7 @@ export interface SysMenuAdminItem {
   id: string;
   meta?: Record<string, any>;
   name: string;
-  parentId: string;
+  parentId: null | string;
   path: string;
   redirect?: string;
   roles?: string;
@@ -60,7 +60,7 @@ export interface SysMenuSaveReq {
   iconColor?: string;
   meta?: Record<string, any>;
   name: string;
-  parentId?: string;
+  parentId?: null | string;
   path: string;
   redirect?: string;
   roles?: string;

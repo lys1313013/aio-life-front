@@ -216,7 +216,7 @@ const handleFile = async (file: File) => {
     if (dictOptions.value.length > 0) {
       // 检查是否有未设置支出类型的记录
       const hasUnmatchedRecords = transactions.value.some(
-        (t) => !t.expTypeId || t.expTypeId === defaultExpTypeId.value,
+        (t) => !t.expenseTypeId || t.expenseTypeId === defaultExpTypeId.value,
       );
       if (hasUnmatchedRecords) {
         matchExpenseTypes();
@@ -293,7 +293,7 @@ const updateStats = (
   if ((!startTime || !endTime) && transactions.length > 0) {
     // 提取所有有效的时间
     const validTimes = transactions
-      .map((t) => t.expTime || t.createdTime)
+      .map((t) => t.expenseTime || t.createdTime)
       .filter((time) => time && time.trim() !== '')
       .map((time) => new Date(time))
       .filter((date) => !isNaN(date.getTime()));
@@ -349,7 +349,7 @@ const updateCharts = (transactions: Transaction[]) => {
 
   transactions.forEach((transaction) => {
     if (transaction.flow === '支出') {
-      const dateStr = transaction.expTime || transaction.createdTime;
+      const dateStr = transaction.expenseTime || transaction.createdTime;
       if (dateStr) {
         const date = new Date(dateStr);
         if (!isNaN(date.getTime())) {
@@ -630,7 +630,7 @@ const loadExpTypes = async () => {
     // 更新表格列的支出类型选项
     if (gridOptions.columns) {
       const columns = gridOptions.columns;
-      const expTypeColumn = columns.find((col) => col.field === 'expTypeId');
+      const expTypeColumn = columns.find((col) => col.field === 'expenseTypeId');
       if (expTypeColumn && expTypeColumn.editRender) {
         expTypeColumn.editRender.options = selectOptions.value;
       }
@@ -650,8 +650,8 @@ const matchExpenseTypes = () => {
   transactions.value.forEach((transaction) => {
     // 如果支出类型还没有设置，或者设置为默认值，则尝试匹配
     if (
-      !transaction.expTypeId ||
-      transaction.expTypeId === defaultExpTypeId.value
+      !transaction.expenseTypeId ||
+      transaction.expenseTypeId === defaultExpTypeId.value
     ) {
       const transactionType = transaction.transactionType || transaction.type;
       if (transactionType) {
@@ -660,7 +660,7 @@ const matchExpenseTypes = () => {
           (option) => option.label === transactionType,
         );
         if (matchedOption) {
-          transaction.expTypeId = matchedOption.id;
+          transaction.expenseTypeId = matchedOption.id;
         }
       }
     }
@@ -736,12 +736,12 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
     },
     {
-      field: 'expDesc',
+      field: 'expenseDesc',
       title: '商品描述',
       sortable: true,
     },
     {
-      field: 'expTime',
+      field: 'expenseTime',
       title: '交易时间',
       sortable: true,
     },
@@ -759,7 +759,7 @@ const gridOptions: VxeGridProps<RowType> = {
       sortable: true,
     },
     {
-      field: 'expTypeId',
+      field: 'expenseTypeId',
       title: '支出类型',
       sortable: true,
       editRender: {

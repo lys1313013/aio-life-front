@@ -51,12 +51,12 @@ export interface FinanceCalendarDetail {
   grossAmount?: null | number;
   taxAmount?: null | number;
   incDate?: null | string;
-  incTypeId?: null | string;
-  expTime?: null | string;
-  expDesc?: null | string;
+  incomeTypeId?: null | string;
+  expenseTime?: null | string;
+  expenseDesc?: null | string;
   counterparty?: null | string;
   remark?: null | string;
-  expTypeId?: null | string;
+  expenseTypeId?: null | string;
   payTypeId?: null | string;
   transactionId?: null | string;
   transactionStatus?: null | string;

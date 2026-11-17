@@ -13,14 +13,14 @@ export interface Transaction {
   transactionId: string;
   merchantOrderNo: string;
   createdTime: string;
-  expTime: string;
+  expenseTime: string;
   lastModifiedTime: string;
   source: string;
   type: string;
   transactionType?: string; // 交易类型字段
   counterparty: string;
   counterpartyAcct: string; // 对方账号字段
-  expDesc: string;
+  expenseDesc: string;
   bookkeepingAmount: number;
   flow: string;
   transactionStatus: string;
@@ -28,7 +28,7 @@ export interface Transaction {
   successfulRefund: number;
   remark: string;
   fundStatus: string;
-  expTypeId?: string; // 支出类型字段
+  expenseTypeId?: string; // 支出类型字段
   transactionAmount?: number; // 交易金额字段
   payTypeId: string; // 支付类型ID，关联字典表
 }
@@ -226,8 +226,8 @@ export function parseCSV(csvText: string, ctx: ParseContext): ParseResult {
     if (columns.length >= 15) {
       // 收集所有记录的时间（包含收入和支出）
       const createdTime = columns[2] || '';
-      const expTime = columns[3] || '';
-      pushValidTime(expTime || createdTime, validTimes);
+      const expenseTime = columns[3] || '';
+      pushValidTime(expenseTime || createdTime, validTimes);
 
       const grossAmt = Number.parseFloat(columns[9] || '0') || 0;
       const successfulRefund = Number.parseFloat(columns[13] || '0') || 0;
@@ -236,13 +236,13 @@ export function parseCSV(csvText: string, ctx: ParseContext): ParseResult {
         transactionId: columns[0] || '', // 交易号
         merchantOrderNo: columns[1] || '', // 商户订单号
         createdTime,
-        expTime,
+        expenseTime,
         lastModifiedTime: columns[4] || '',
         source: columns[5] || '',
         type: columns[6] || '',
         counterparty: columns[7] || '',
         counterpartyAcct: '', // 电脑端CSV没有对方账号字段，设为空
-        expDesc: columns[8] || '',
+        expenseDesc: columns[8] || '',
         transactionAmount: grossAmt, // 交易金额（原始金额）
         // 记账金额 = 原始金额 - 成功退款（部分退款时原交易仍是"交易成功"）
         bookkeepingAmount: round2(Math.max(0, grossAmt - successfulRefund)),
@@ -252,7 +252,7 @@ export function parseCSV(csvText: string, ctx: ParseContext): ParseResult {
         successfulRefund,
         remark: columns[14] || '',
         fundStatus: columns[15] ? columns[15] : '',
-        expTypeId: ctx.defaultExpTypeId, // 初始化支出类型字段
+        expenseTypeId: ctx.defaultExpTypeId, // 初始化支出类型字段
         payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
@@ -376,14 +376,14 @@ export function parseMobileCSV(
         transactionId: columns[9] || '', // 交易订单号
         merchantOrderNo: columns[10] || '', // 商家订单号
         createdTime: columns[0] || '', // 交易时间
-        expTime: columns[0] || '', // 交易时间作为支出时间
+        expenseTime: columns[0] || '', // 交易时间作为支出时间
         lastModifiedTime: columns[0] || '', // 交易时间作为最后修改时间
         source: '支付宝手机端',
         type: transactionType, // 交易分类
         transactionType, // 交易分类
         counterparty: columns[2] || '', // 交易对方
         counterpartyAcct: columns[3] || '', // 对方账号
-        expDesc: columns[4] || '', // 商品说明
+        expenseDesc: columns[4] || '', // 商品说明
         transactionAmount: amount, // 交易金额（原始金额）
         bookkeepingAmount: amount, // 记账金额（退款扣减在 applyMobileRefunds 中处理）
         flow: columns[5] || '', // 收/支
@@ -392,7 +392,7 @@ export function parseMobileCSV(
         successfulRefund: 0,
         remark: columns[11] || '', // 备注
         fundStatus: columns[7] || '', // 收/付款方式作为资金状态
-        expTypeId: matchExpTypeId(transactionType, ctx), // 根据交易分类匹配的支出类型ID
+        expenseTypeId: matchExpTypeId(transactionType, ctx), // 根据交易分类匹配的支出类型ID
         payTypeId: alipayTypeId, // 支付宝支付类型
       };
 
@@ -583,14 +583,14 @@ export function parseWechatExcel(
         transactionId: transactionId || '',
         merchantOrderNo: merchantOrderNo || '',
         createdTime: transactionTime || '',
-        expTime: transactionTime || '',
+        expenseTime: transactionTime || '',
         lastModifiedTime: transactionTime || '',
         source: '微信支付',
         type: transactionType || '',
         transactionType: transactionType || '',
         counterparty: counterparty || '',
         counterpartyAcct: '',
-        expDesc: goods || '',
+        expenseDesc: goods || '',
         transactionAmount: amount,
         bookkeepingAmount: round2(Math.max(0, amount - successfulRefund)),
         flow: flow || '',
@@ -599,7 +599,7 @@ export function parseWechatExcel(
         successfulRefund,
         remark: remark || '',
         fundStatus: paymentMethod || '',
-        expTypeId: ctx.defaultExpTypeId, // 默认支出类型
+        expenseTypeId: ctx.defaultExpTypeId, // 默认支出类型
         payTypeId: wechatTypeId, // 微信支付类型
       };
 

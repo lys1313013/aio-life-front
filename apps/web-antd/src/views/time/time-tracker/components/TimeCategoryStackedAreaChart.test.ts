@@ -78,7 +78,7 @@ describe('两级分类图表统计', () => {
   it('日模式按一级汇总子分类，选择一级后展示各子级且不漏数据', () => {
     const props = {
       categories: [
-        { id: 'work', name: '工作', color: '#1890ff', parentId: '0' },
+        { id: 'work', name: '工作', color: '#1890ff', parentId: null },
         { id: 'code', name: '开发', color: '#2890ff', parentId: 'work' },
       ],
       selectedDate: dayjs('2026-09-12'),

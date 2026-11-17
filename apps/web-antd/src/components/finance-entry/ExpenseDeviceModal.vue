@@ -173,12 +173,12 @@ function draftContext() {
       ? { id: props.selection.deviceId, name: props.selection.deviceName }
       : null,
     defaults: props.selection?.newDevice ?? {
-      name: text(expense.expDesc) ?? text(expense.remark),
+      name: text(expense.expenseDesc) ?? text(expense.remark),
       purchasePrice:
         expense.bookkeepingAmount === '' || expense.bookkeepingAmount == null
           ? undefined
           : Number(expense.bookkeepingAmount),
-      purchaseDate: expense.expTime?.slice(0, 10),
+      purchaseDate: expense.expenseTime?.slice(0, 10),
       purchasePlace: text(expense.counterparty),
       remark: text(expense.remark),
       status: '1',

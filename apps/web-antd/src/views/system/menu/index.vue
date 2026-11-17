@@ -112,8 +112,7 @@ const applyMenu = (saved: SysMenuAdminItem) => {
   const previous = findMenu(saved.id);
   // Single-menu responses do not include descendants.
   const updated = { ...previous, ...saved, children: previous?.children };
-  const parent =
-    updated.parentId === '0' ? undefined : findMenu(updated.parentId);
+  const parent = updated.parentId ? findMenu(updated.parentId) : undefined;
   if (previous?.parentId === updated.parentId) {
     Object.assign(previous, updated);
   } else {
@@ -138,7 +137,7 @@ const authStore = useAuthStore();
 const form = ref<SysMenuSaveReq>({
   name: '',
   path: '',
-  parentId: '0',
+  parentId: '',
   visibleClients: 3,
   sortOrder: 0,
   roles: '',
@@ -230,9 +229,9 @@ const parentTreeOptions = computed<ParentTreeNode[]>(() => {
       }));
   return [
     {
-      key: '0',
-      title: '根节点 (0)',
-      value: '0',
+      key: 'root',
+      title: '根节点',
+      value: '',
       children: build(list.value),
     },
   ];
@@ -297,7 +296,7 @@ const refreshAccessibleMenus = async () => {
   await refreshNavigation({ roles: userRoles, router, routes: accessRoutes });
 };
 
-const openCreate = (parentId = '0') => {
+const openCreate = (parentId = '') => {
   editingId.value = null;
   form.value = {
     name: '',
@@ -324,7 +323,7 @@ const openEdit = (row: any) => {
   form.value = {
     name: r.name,
     path: r.path,
-    parentId: r.parentId ? String(r.parentId) : '0',
+    parentId: r.parentId ?? '',
     visibleClients: r.visibleClients,
     sortOrder: r.sortOrder ?? 0,
     roles: r.roles ?? '',
@@ -375,6 +374,7 @@ const save = async () => {
 
     const payload: SysMenuSaveReq = {
       ...form.value,
+      parentId: form.value.parentId || null,
       iconColor,
       name: form.value.name?.trim(),
       path: form.value.path?.trim(),
@@ -401,7 +401,7 @@ const save = async () => {
     }
     // Reveal the selected node after creation or a parent change.
     let ancestor = findMenu(selectedId.value)?.parentId;
-    while (ancestor && ancestor !== '0') {
+    while (ancestor) {
       if (!expandedTreeKeys.value.includes(ancestor))
         expandedTreeKeys.value.push(ancestor);
       if (!expandedRowKeys.value.includes(ancestor))
@@ -468,7 +468,7 @@ const handleDrop: TreeProps['onDrop'] = async ({
   )
     return;
   const siblings =
-    source.parentId === '0' ? list.value : findMenu(source.parentId)?.children;
+    source.parentId ? findMenu(source.parentId)?.children : list.value;
   if (!siblings || siblings.some((item) => isBusy(item.id))) return;
   const ordered = siblings.filter((item) => item.id !== source.id);
   const targetIndex = ordered.findIndex((item) => item.id === target.id);
@@ -512,7 +512,7 @@ const handleDelete = async (id: string) => {
     pruneExpandedKeys();
     if (removedSelection) {
       selectedId.value = null;
-      if (findMenu(row.parentId)) selectMenu(row.parentId);
+      if (row.parentId && findMenu(row.parentId)) selectMenu(row.parentId);
     }
     message.success('删除成功');
     await refreshAccessibleMenus();

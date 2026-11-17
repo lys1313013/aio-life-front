@@ -17,6 +17,7 @@ const props = defineProps<{
   messages: Message[];
   myAvatar?: string;
   myId: string;
+  readOnly?: boolean;
   sending?: boolean;
   targetId: string;
   targetName?: string;
@@ -193,6 +194,7 @@ watch(
 
     <!-- Input Area -->
     <div
+      v-if="!readOnly"
       class="border-t border-border bg-card"
       :class="isMobile ? 'p-2' : 'p-4'"
     >

@@ -43,7 +43,7 @@ describe('gET 查询参数', () => {
       page: 1,
       pageSize: 20,
       condition: {
-        expTypeId: '9007199254740993',
+        expenseTypeId: '9007199254740993',
         userId: '1',
         isDeleted: 1,
         createTime: 'ignored',
@@ -51,7 +51,7 @@ describe('gET 查询参数', () => {
       },
     });
     expect(requestClient.get).toHaveBeenLastCalledWith('/expense/query', {
-      params: { page: 1, pageSize: 20, expTypeId: '9007199254740993' },
+      params: { page: 1, pageSize: 20, expenseTypeId: '9007199254740993' },
       paramsSerializer: 'repeat',
     });
   });

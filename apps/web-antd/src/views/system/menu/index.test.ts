@@ -46,7 +46,7 @@ vi.mock('#/router/navigation', () => ({
 }));
 
 const parentId = '90071992547409930';
-function menu(id: string, parent = '0', sortOrder = 0): SysMenuAdminItem {
+function menu(id: string, parent: null | string = null, sortOrder = 0): SysMenuAdminItem {
   return {
     id,
     parentId: parent,

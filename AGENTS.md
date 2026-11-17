@@ -153,7 +153,7 @@ export async function uploadHonorAttachment(file: File) {
 
 ### Long 响应与数值判断
 
-- **先核对序列化契约**：后端 `aio-life-server/src/main/java/top/aiolife/config/JsonConfig.java` 为 `Long.class` 和 `Long.TYPE` 注册了 `ToStringSerializer`。因此没有字段级覆盖时，所有 `Long/long` 响应字段都返回字符串，`0` 也返回 `"0"`；ID、`fileSize` 等仍适用。业务实际数量（如 `usageCount`、会员数量、衣柜数量和消息未读数）已使用 `Integer`，以 JSON 数字返回。分页 `PageResp.total` 已用 `CountSerializer` 覆盖，以 JSON 整数返回，未提供总数时保留 `null`。`Integer/int` 不受这条配置影响，不能仅凭字段名推断类型。
+- **先核对序列化契约**：后端 `aio-life-server/src/main/java/top/aiolife/config/JsonConfig.java` 为 `Long.class` 和 `Long.TYPE` 注册了 `ToStringSerializer`。因此没有字段级覆盖时，所有 `Long/long` 响应字段都返回字符串，`0` 也返回 `"0"`；ID、`fileSize` 等仍适用。业务实际数量（如 `usageCount`、会员数量、衣橱数量和消息未读数）已使用 `Integer`，以 JSON 数字返回。分页 `PageResp.total` 已用 `CountSerializer` 覆盖，以 JSON 整数返回，未提供总数时保留 `null`。`Integer/int` 不受这条配置影响，不能仅凭字段名推断类型。
 - **类型声明不等于运行时转换**：原始响应类型按实际 JSON 声明，ID 等未覆盖的 `Long` 用 `string`，`Integer` 计数和数字分页总数用 `number`，可空字段另加 `null`；不得为旧响应扩展 `string | number` 联合类型。`requestClient.get<T>()` 和 TypeScript 类型断言不会把 `"0"` 转成 `0`。需要数值模型时，在 API 适配层统一解析，区分原始响应和解析后的类型。
 - **ID 不转数字**：ID 在接口、路由、表单、组件 key、比较和提交过程中始终使用字符串，不使用 `Number()`、`parseInt()` 或一元 `+`，避免大整数精度丢失。
 - **数量不按真假值判断**：禁止用 `!!count`、`Boolean(count)`、`if (count)` 或 `v-if="count"` 判断是否有记录，因为 `"0"` 为真。先解析再比较 `> 0` 或 `=== 0`；也不要直接对原始字符串相加、排序或与数字严格相等比较。

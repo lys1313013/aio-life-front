@@ -187,7 +187,7 @@ const [Form, formApi] = useAppForm({
         style: { width: '100%' },
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'expTypeId',
+      fieldName: 'expenseTypeId',
       label: '支出类型',
       rules: 'selectRequired',
     },
@@ -214,7 +214,7 @@ const [Form, formApi] = useAppForm({
         showTime: { format: 'HH:mm:ss' },
         style: { width: '100%' },
       },
-      fieldName: 'expTime',
+      fieldName: 'expenseTime',
       label: '支出日期',
       rules: 'required',
     },
@@ -256,11 +256,11 @@ const [Modal, modalApi] = useVbenModal({
 
       // 处理日期字段，确保格式正确
       if (
-        processedData.expTime && // 如果只有日期部分，添加时间部分
-        typeof processedData.expTime === 'string' &&
-        !processedData.expTime.includes(' ')
+        processedData.expenseTime && // 如果只有日期部分，添加时间部分
+        typeof processedData.expenseTime === 'string' &&
+        !processedData.expenseTime.includes(' ')
       ) {
-        processedData.expTime = `${processedData.expTime} 00:00:00`;
+        processedData.expenseTime = `${processedData.expenseTime} 00:00:00`;
       }
 
       if (processedData.id) {
@@ -308,19 +308,19 @@ const [Modal, modalApi] = useVbenModal({
         deviceSelection.value = null;
         // 处理日期字段显示
         const processedValues = { ...values };
-        if (processedValues.expTime) {
+        if (processedValues.expenseTime) {
           // 确保日期格式正确，直接使用后端返回的日期时间格式
           // DatePicker 会自动根据 format 和 valueFormat 进行显示
           if (
-            typeof processedValues.expTime === 'string' &&
-            processedValues.expTime.includes('T')
+            typeof processedValues.expenseTime === 'string' &&
+            processedValues.expenseTime.includes('T')
           ) {
             // 如果是 ISO 格式，转换为本地格式
-            processedValues.expTime = processedValues.expTime.replace('T', ' ');
+            processedValues.expenseTime = processedValues.expenseTime.replace('T', ' ');
           }
         } else {
           // 新增时，如果没有日期值，设置默认时间为当前日期的00:00:00
-          processedValues.expTime = dayjs()
+          processedValues.expenseTime = dayjs()
             .startOf('day')
             .format('YYYY-MM-DD HH:mm:ss');
         }

@@ -122,7 +122,8 @@ const handleIconSelect = (icon: string) => {
 };
 
 const formState = ref<TimeTrackerCategoryEntity>({
-  parentId: '0',
+  parentId: '',
+  inheritParent: false,
   name: '',
   color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
   icon: '',
@@ -136,7 +137,7 @@ const parentOptions = computed(() => {
   const id = editingCategory.value?.id;
   const hasChildren = mergedCategories.value.some((c) => c.parentId === id);
   return [
-    { label: '无（一级分类）', value: '0' },
+    { label: '无（一级分类）', value: '' },
     ...(hasChildren
       ? []
       : categories.value
@@ -149,10 +150,11 @@ const parentOptions = computed(() => {
 });
 const parentValue = computed({
   get: () =>
-    formState.value.parentId === null
+    formState.value.inheritParent
       ? 'inherit'
-      : (formState.value.parentId ?? '0'),
+      : (formState.value.parentId ?? ''),
   set: (value: string) => {
+    formState.value.inheritParent = value === 'inherit';
     formState.value.parentId = value === 'inherit' ? null : value;
   },
 });
@@ -195,6 +197,7 @@ const fetchCategories = async () => {
         isOverridden: isOverride,
         isHidden: false,
         originalId: item.templateId?.toString() || item.id,
+        inheritParent: item.inheritParent,
         sortOrder: item.sortOrder,
       } as MergedCategory);
     });
@@ -214,6 +217,7 @@ const fetchCategories = async () => {
         isOverridden: false,
         isHidden: true,
         originalId: item.templateId?.toString() || item.id,
+        inheritParent: item.inheritParent,
         sortOrder: item.sortOrder,
       } as MergedCategory);
     });
@@ -227,12 +231,13 @@ const fetchCategories = async () => {
   }
 };
 
-const handleAddCategory = (parentId = '0') => {
+const handleAddCategory = (parentId = '') => {
   editingCategory.value = null;
   isOverrideMode.value = false;
   selectedIconSet.value = 'ant-design';
   formState.value = {
     parentId,
+    inheritParent: false,
     name: '',
     color: CATEGORY_COLOR_PRESETS[0] || '#1890ff',
     icon: '',
@@ -254,7 +259,8 @@ const handleEditClick = (record: any) => {
 const handleEdit = (record: any) => {
   editingCategory.value = {
     id: record.realId,
-    parentId: record.parentId ?? '0',
+    parentId: record.parentId ?? '',
+    inheritParent: false,
     name: record.name,
     color: record.color,
     icon: record.icon,
@@ -272,7 +278,8 @@ const handleEdit = (record: any) => {
 const handleOverride = (record: any) => {
   editingCategory.value = {
     id: record.realId,
-    parentId: record.parentId ?? '0',
+    parentId: record.parentId ?? '',
+    inheritParent: !!record.inheritParent,
     templateId: record.originalId,
     name: record.name,
     color: record.color,
@@ -360,8 +367,13 @@ const handleSaveCategory = async () => {
         ...formState.value,
         id: editingCategory.value?.templateId || editingCategory.value?.id,
       };
-      if (data.parentId === editingCategory.value?.parentId)
+      if (
+        data.parentId === editingCategory.value?.parentId &&
+        data.inheritParent === editingCategory.value?.inheritParent
+      ) {
         delete data.parentId;
+        delete data.inheritParent;
+      }
       if (!data.id) return;
       await updateCategory({ ...data, id: data.id });
       message.success('设置已保存');
@@ -409,7 +421,7 @@ const initSortable = () => {
         if (
           !source ||
           !target ||
-          (source.parentId ?? '0') !== (target.parentId ?? '0')
+          (source.parentId ?? '') !== (target.parentId ?? '')
         ) {
           message.info('只能在同一上级分类下排序');
           await nextTick();
@@ -417,7 +429,7 @@ const initSortable = () => {
           return;
         }
         const list = displayed.filter(
-          (c) => (c.parentId ?? '0') === (source.parentId ?? '0'),
+          (c) => (c.parentId ?? '') === (source.parentId ?? ''),
         );
         list.splice(list.indexOf(source), 1);
         list.splice(

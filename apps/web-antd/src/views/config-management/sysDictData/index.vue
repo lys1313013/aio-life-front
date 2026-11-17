@@ -30,7 +30,7 @@ import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 import FormModal from './form-modal.vue';
 
 interface RowType {
-  dictCode: string;
+  id: string;
   dictName: string;
   dictType: string;
   dictValue: string;
@@ -144,7 +144,7 @@ const gridOptions: VxeGridProps<RowType> = {
   stripe: true, // 是否显示斑马纹
   columns: [
     { title: '序号', type: 'seq', width: 50 },
-    { title: 'dictCode', visible: false },
+    { title: 'id', visible: false },
     { field: 'dictName', title: '字典名称', sortable: true },
     { field: 'dictType', title: '字典标识', sortable: true },
     { field: 'dictValue', title: '实际值', sortable: true },
@@ -259,7 +259,7 @@ const openColumnConfig = () => {
 const deleteRow = async (row: RowType) => {
   try {
     await deleteData({
-      dictCode: row.dictCode,
+      id: row.id,
     });
     gridApi.reload();
   } catch (error) {
@@ -287,7 +287,7 @@ function handleTouchStart(item: RowType) {
   longPressTimer = setTimeout(() => {
     if (!isMoving) {
       isLongPress = true;
-      activeDeleteId.value = item.dictCode;
+      activeDeleteId.value = item.id;
     }
   }, 600); // 600ms 长按触发
 }
@@ -359,7 +359,7 @@ function handleDelete(item: RowType) {
       >
         <div
           v-for="(item, index) in tableData"
-          :key="item.dictCode"
+          :key="item.id"
           class="relative cursor-pointer p-5 transition-transform duration-100 active:scale-[0.98]"
           :class="{
             'border-t border-zinc-100 dark:border-zinc-800/50': index !== 0,
@@ -370,7 +370,7 @@ function handleDelete(item: RowType) {
         >
           <!-- 删除按钮遮罩层 -->
           <div
-            v-if="activeDeleteId === item.dictCode"
+            v-if="activeDeleteId === item.id"
             class="absolute inset-0 z-10 flex items-center justify-center bg-black/5 backdrop-blur-[2px] transition-all duration-200"
             @touchstart.stop="() => {}"
             @click.stop="activeDeleteId = null"

@@ -5,7 +5,7 @@ import { requestClient } from '#/api/request';
 
 export interface Message {
   id: string;
-  senderId: string;
+  senderId?: string;
   receiverId: string;
   title: string;
   content: string;
@@ -13,6 +13,12 @@ export interface Message {
   isRead: boolean;
   createTime: string;
   avatar?: string;
+}
+
+export const SYSTEM_CONVERSATION_ID = 'system';
+
+export function isSystemMessage(message: Pick<Message, 'type'>): boolean {
+  return message.type === 0;
 }
 
 export async function getMessageListApi(params?: { isRead?: boolean }) {

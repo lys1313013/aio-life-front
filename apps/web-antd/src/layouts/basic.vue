@@ -20,8 +20,10 @@ import { formatDate } from '@vben/utils';
 import {
   getMessagePageApi,
   getUnreadCountApi,
+  isSystemMessage,
   markAllAsReadApi,
   markAsReadApi,
+  SYSTEM_CONVERSATION_ID,
 } from '#/api/core/message';
 import { getUserBasicInfoApi } from '#/api/core/user';
 import { $t } from '#/locales';
@@ -113,8 +115,9 @@ async function fetchNotifications() {
 
   const notificationsWithAvatar = await Promise.all(
     unreadMsgs.map(async (msg) => {
+      const system = isSystemMessage(msg);
       let avatarUrl = msg.avatar || '';
-      const senderId = String(msg.senderId);
+      const senderId = system ? '' : String(msg.senderId || '');
 
       if (!avatarUrl && senderId) {
         if (avatarCache.has(senderId)) {
@@ -137,8 +140,10 @@ async function fetchNotifications() {
         date: formatDate(msg.createTime),
         isRead: false,
         message: msg.content,
-        title: msg.title || `User ${msg.senderId}`,
-        link: `/message?userId=${msg.senderId}`,
+        title: msg.title || (system ? '系统通知' : `User ${msg.senderId}`),
+        link: system
+          ? `/message?userId=${SYSTEM_CONVERSATION_ID}`
+          : `/message?userId=${msg.senderId}`,
       };
     }),
   );

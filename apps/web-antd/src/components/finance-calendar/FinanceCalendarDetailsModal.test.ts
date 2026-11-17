@@ -56,11 +56,11 @@ const bucket = {
 const row = {
   id: '9007199254740993123',
   bookkeepingAmount: 608.02,
-  expTime: '2026-08-12 12:30:00',
-  expDesc: '午餐',
+  expenseTime: '2026-08-12 12:30:00',
+  expenseDesc: '午餐',
   counterparty: '测试餐厅',
   remark: '备注',
-  expTypeId: 'type',
+  expenseTypeId: 'type',
   payTypeId: 'pay',
 };
 enableAutoUnmount(afterEach);
@@ -141,7 +141,7 @@ it('翻页失败保留已有明细并重试失败页，不跳回第一页', asyn
     .mockResolvedValueOnce({ items: [row], total: 21 })
     .mockRejectedValueOnce(new Error('failed'))
     .mockResolvedValueOnce({
-      items: [{ ...row, id: 'next', expDesc: '第二页' }],
+      items: [{ ...row, id: 'next', expenseDesc: '第二页' }],
       total: 21,
     });
   const wrapper = mount(FinanceCalendarDetailsModal, {
@@ -204,7 +204,7 @@ it('收入明细沿用共享弹窗，显示日期、分类、备注和税额且�
         id: '9007199254740993124',
         grossAmount: 8000,
         incDate: '2026-08-12',
-        incTypeId: 'salary',
+        incomeTypeId: 'salary',
         remark: '八月工资',
         taxAmount: 120,
       },
@@ -250,7 +250,7 @@ it('概览切换明细类型重置页码，合计使用对应收入支出且忽�
     20,
   );
   mocks.query.mockResolvedValueOnce({
-    items: [{ ...row, expDesc: '最新支出' }],
+    items: [{ ...row, expenseDesc: '最新支出' }],
     total: 1,
   });
   await wrapper.findAll('[aria-label="明细类型"] button')[1]!.trigger('click');

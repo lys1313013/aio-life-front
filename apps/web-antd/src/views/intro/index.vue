@@ -57,7 +57,7 @@ const features = [
   },
   {
     icon: 'mdi:hanger',
-    title: '衣柜管理',
+    title: '衣橱管理',
     desc: '数字化你的衣橱，穿搭有据可依。',
   },
 ];

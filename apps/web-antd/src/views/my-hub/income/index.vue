@@ -26,7 +26,7 @@ interface RowType {
   id: string;
   grossAmount: number;
   remark: string;
-  incTypeId: string;
+  incomeTypeId: string;
   incDate: string;
   updateTime: string;
 }
@@ -83,7 +83,7 @@ const formOptions: VbenFormProps = {
         optionFilterProp: 'label', // 按标签过滤
         fieldNames: { label: 'label', value: 'id' }, // 指定 label 和 value 的字段名
       },
-      fieldName: 'incTypeId', // 修改为按收入类型查询
+      fieldName: 'incomeTypeId', // 修改为按收入类型查询
       label: '收入类型',
     },
     {
@@ -120,7 +120,7 @@ const gridOptions: VxeGridProps<RowType> = {
   columns: [
     { title: '序号', type: 'seq', width: 60 },
     {
-      field: 'incTypeId',
+      field: 'incomeTypeId',
       title: '收入类型',
       width: 120,
       sortable: true,
