@@ -1101,21 +1101,6 @@ export interface UpdateUserReq {
   avatarFileId?: null | string;
 }
 
-export interface UserBindCreateReq {
-  platform?: null | string;
-  platformUsername?: null | string;
-  accessToken?: null | string;
-  metaFields?: null | string;
-}
-
-export interface UserBindUpdateReq {
-  id: string;
-  platform?: null | string;
-  platformUsername?: null | string;
-  accessToken?: null | string;
-  metaFields?: null | string;
-}
-
 export interface UserCreateReq {
   username?: null | string;
   password?: null | string;
@@ -1194,6 +1179,21 @@ export interface UserDictDataUpdateReq {
 
 export interface UserMenuHiddenSaveReq {
   menuIds?: Array<string> | null;
+}
+
+export interface UserThirdPartyAccountCreateReq {
+  platform?: null | string;
+  platformUsername?: null | string;
+  accessToken?: null | string;
+  metaFields?: null | string;
+}
+
+export interface UserThirdPartyAccountUpdateReq {
+  id: string;
+  platform?: null | string;
+  platformUsername?: null | string;
+  accessToken?: null | string;
+  metaFields?: null | string;
 }
 
 export interface UserUpdateReq {
@@ -1386,8 +1386,6 @@ export interface ApiRequests {
   TimeTrackerCategoryUpdateReq: TimeTrackerCategoryUpdateReq;
   ToolCallRequest: ToolCallRequest;
   UpdateUserReq: UpdateUserReq;
-  UserBindCreateReq: UserBindCreateReq;
-  UserBindUpdateReq: UserBindUpdateReq;
   UserCreateReq: UserCreateReq;
   UserDictDataAdminCreateReq: UserDictDataAdminCreateReq;
   UserDictDataAdminUpdateReq: UserDictDataAdminUpdateReq;
@@ -1395,6 +1393,8 @@ export interface ApiRequests {
   UserDictDataReSortReq: UserDictDataReSortReq;
   UserDictDataUpdateReq: UserDictDataUpdateReq;
   UserMenuHiddenSaveReq: UserMenuHiddenSaveReq;
+  UserThirdPartyAccountCreateReq: UserThirdPartyAccountCreateReq;
+  UserThirdPartyAccountUpdateReq: UserThirdPartyAccountUpdateReq;
   UserUpdateReq: UserUpdateReq;
   WardrobeCategorySaveReq: WardrobeCategorySaveReq;
   WardrobeItemSaveReq: WardrobeItemSaveReq;
@@ -2390,19 +2390,6 @@ const fields: Record<string, Record<string, null | string>> = {
     introduction: null,
     avatarFileId: null,
   },
-  UserBindCreateReq: {
-    platform: null,
-    platformUsername: null,
-    accessToken: null,
-    metaFields: null,
-  },
-  UserBindUpdateReq: {
-    id: null,
-    platform: null,
-    platformUsername: null,
-    accessToken: null,
-    metaFields: null,
-  },
   UserCreateReq: {
     username: null,
     password: null,
@@ -2475,6 +2462,19 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   UserMenuHiddenSaveReq: {
     menuIds: null,
+  },
+  UserThirdPartyAccountCreateReq: {
+    platform: null,
+    platformUsername: null,
+    accessToken: null,
+    metaFields: null,
+  },
+  UserThirdPartyAccountUpdateReq: {
+    id: null,
+    platform: null,
+    platformUsername: null,
+    accessToken: null,
+    metaFields: null,
   },
   UserUpdateReq: {
     id: null,
@@ -2784,8 +2784,6 @@ const queryFields: Record<string, string[]> = {
   '/timeTrackerCategory/list': [],
   '/timeTrackerCategory/all': [],
   '/timeTrackerCategory/hidden': [],
-  '/userbinds/list': ['includeToken'],
-  '/userbinds/douban/verify': ['accountId'],
   '/userDictData/admin/query': [
     'dictLabel',
     'dictType',
@@ -2803,6 +2801,8 @@ const queryFields: Record<string, string[]> = {
   '/userDictData/{id}': [],
   '/userDictType/dictTypeEnum': [],
   '/userDictType/getByDictType': ['dictType'],
+  '/userbinds/list': ['includeToken'],
+  '/userbinds/douban/verify': ['accountId'],
   '/notification/channels/wechat-mini': [],
   '/weread/recent': ['cursor', 'pageSize'],
   '/weread/connection': [],
@@ -3388,18 +3388,6 @@ const requestModels: Array<{
   },
   {
     method: 'POST',
-    path: '/userbinds',
-    model: 'UserBindCreateReq',
-    list: false,
-  },
-  {
-    method: 'PUT',
-    path: '/userbinds',
-    model: 'UserBindUpdateReq',
-    list: false,
-  },
-  {
-    method: 'POST',
     path: '/userDictData/admin',
     model: 'UserDictDataAdminCreateReq',
     list: false,
@@ -3426,6 +3414,18 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/userDictData',
     model: 'UserDictDataUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/userbinds',
+    model: 'UserThirdPartyAccountCreateReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/userbinds',
+    model: 'UserThirdPartyAccountUpdateReq',
     list: false,
   },
   {
@@ -5150,14 +5150,6 @@ export interface UserBasicInfoVO {
   avatarUrl: null | string;
 }
 
-export interface UserBindVO {
-  id?: string;
-  platform?: string;
-  platformUsername?: string;
-  accessToken?: string;
-  metaFields?: string;
-}
-
 export interface UserDictDataSortVO {
   id: null | string;
   sortOrder: null | number;
@@ -5223,6 +5215,14 @@ export interface UserMenuPreferenceVO_Menu {
   id: null | string;
   title: null | string;
   children: Array<unknown> | null;
+}
+
+export interface UserThirdPartyAccountVO {
+  id?: string;
+  platform?: string;
+  platformUsername?: string;
+  accessToken?: string;
+  metaFields?: string;
 }
 
 export interface UserVO {
