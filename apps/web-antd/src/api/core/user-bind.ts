@@ -26,17 +26,17 @@ export const getUserBindListApi = (includeToken?: boolean) => {
   });
 };
 
-export const addUserBindApi = (data: ApiRequests['UserBindCreateReq']) => {
+export const addUserBindApi = (data: ApiRequests['UserThirdPartyAccountCreateReq']) => {
   return requestClient.post<boolean>(
     '/userbinds',
-    pickPayload('UserBindCreateReq', data),
+    pickPayload('UserThirdPartyAccountCreateReq', data),
   );
 };
 
-export const updateUserBindApi = (data: ApiRequests['UserBindUpdateReq']) => {
+export const updateUserBindApi = (data: ApiRequests['UserThirdPartyAccountUpdateReq']) => {
   return requestClient.put<boolean>(
     '/userbinds',
-    pickPayload('UserBindUpdateReq', data),
+    pickPayload('UserThirdPartyAccountUpdateReq', data),
   );
 };
 
