@@ -14,7 +14,7 @@ export interface MilestoneEntity {
   date: string;
   endDate?: null | string;
   type: string;
-  tags?: string; // JSON string
+  tags?: string[];
   createTime?: string;
   updateTime?: string;
 }

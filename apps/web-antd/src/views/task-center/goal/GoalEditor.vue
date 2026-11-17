@@ -310,17 +310,8 @@ const handleEdit = (item: GoalEntity) => {
   modalVisible.value = false;
   modalTitle.value = '编辑';
 
-  // Parse tags if stored as JSON array string, else split by comma
-  let tagsStr = '';
-  try {
-    if (item.tags) {
-      const parsed = JSON.parse(item.tags);
-      tagsStr = Array.isArray(parsed) ? parsed.join(', ') : item.tags;
-    }
-  } catch {
-    tagsStr = item.tags || '';
-  }
-
+  // 标签在表单中按逗号分隔文本编辑
+  const tagsStr = (item.tags ?? []).join(', ');
   formState.value = {
     id: item.id,
     isPinned: item.isPinned === 1 ? 1 : 0,
@@ -361,7 +352,7 @@ const handleSave = async () => {
     await formRef.value.validate();
     submitLoading.value = true;
 
-    // Convert tags string to JSON array string
+    // 标签按逗号分隔文本编辑，提交时转为字符串数组
     const tagsArray = formState.value.tags
       .split(/[,，]/)
       .map((t) => t.trim())
@@ -383,7 +374,7 @@ const handleSave = async () => {
       startDate: formState.value.startDate?.format('YYYY-MM-DD HH:mm:ss'),
       endDate: formState.value.endDate?.format('YYYY-MM-DD HH:mm:ss'),
       description: formState.value.description,
-      tags: JSON.stringify(tagsArray),
+      tags: tagsArray,
     };
 
     const saved = formState.value.id

@@ -385,7 +385,7 @@ export interface GoalCreateReq {
   parentId?: null | string;
   startDate?: null | string;
   endDate?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
 }
 
 export interface GoalProgressPreviewReq {
@@ -409,7 +409,7 @@ export interface GoalProgressPreviewReq {
   parentId?: null | string;
   startDate?: null | string;
   endDate?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
 }
 
 export interface GoalProgressRefreshReq {
@@ -438,7 +438,7 @@ export interface GoalUpdateReq {
   parentId?: null | string;
   startDate?: null | string;
   endDate?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
 }
 
 export interface HomeCardOrderReq {
@@ -466,7 +466,7 @@ export interface HonorRecordCreateReq {
   level?: null | string;
   categoryId?: null | string;
   customCategory?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
   isTop?: null | number;
   isPublic?: null | number;
   sortOrder?: null | number;
@@ -482,7 +482,7 @@ export interface HonorRecordUpdateReq {
   level?: null | string;
   categoryId?: null | string;
   customCategory?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
   isTop?: null | number;
   isPublic?: null | number;
   sortOrder?: null | number;
@@ -643,7 +643,7 @@ export interface MilestoneCreateReq {
   date: string;
   endDate?: null | string;
   type?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
 }
 
 export interface MilestoneUpdateReq {
@@ -653,7 +653,7 @@ export interface MilestoneUpdateReq {
   date?: null | string;
   endDate?: null | string;
   type?: null | string;
-  tags?: null | string;
+  tags?: Array<string> | null;
 }
 
 export interface MovieCreateReq {
@@ -666,8 +666,8 @@ export interface MovieCreateReq {
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress?: null | number;
   currentProgress?: null | number;
-  startTime?: null | string;
-  finishTime?: null | string;
+  startDate?: null | string;
+  finishDate?: null | string;
   rating?: null | number;
   remark?: null | string;
 }
@@ -683,8 +683,8 @@ export interface MovieReq {
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress?: null | number;
   currentProgress?: null | number;
-  startTime?: null | string;
-  finishTime?: null | string;
+  startDate?: null | string;
+  finishDate?: null | string;
   rating?: null | number;
   remark?: null | string;
 }
@@ -784,8 +784,8 @@ export interface ReadRecordCreateReq {
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress?: null | number;
   currentProgress?: null | number;
-  startTime?: null | string;
-  finishTime?: null | string;
+  startDate?: null | string;
+  finishDate?: null | string;
   remark?: null | string;
 }
 
@@ -800,8 +800,8 @@ export interface ReadRecordReq {
   status?: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress?: null | number;
   currentProgress?: null | number;
-  startTime?: null | string;
-  finishTime?: null | string;
+  startDate?: null | string;
+  finishDate?: null | string;
   remark?: null | string;
 }
 
@@ -2012,8 +2012,8 @@ const fields: Record<string, Record<string, null | string>> = {
     status: null,
     totalProgress: null,
     currentProgress: null,
-    startTime: null,
-    finishTime: null,
+    startDate: null,
+    finishDate: null,
     rating: null,
     remark: null,
   },
@@ -2028,8 +2028,8 @@ const fields: Record<string, Record<string, null | string>> = {
     status: null,
     totalProgress: null,
     currentProgress: null,
-    startTime: null,
-    finishTime: null,
+    startDate: null,
+    finishDate: null,
     rating: null,
     remark: null,
   },
@@ -2115,8 +2115,8 @@ const fields: Record<string, Record<string, null | string>> = {
     status: null,
     totalProgress: null,
     currentProgress: null,
-    startTime: null,
-    finishTime: null,
+    startDate: null,
+    finishDate: null,
     remark: null,
   },
   ReadRecordReq: {
@@ -2130,8 +2130,8 @@ const fields: Record<string, Record<string, null | string>> = {
     status: null,
     totalProgress: null,
     currentProgress: null,
-    startTime: null,
-    finishTime: null,
+    startDate: null,
+    finishDate: null,
     remark: null,
   },
   RegisterReq: {
@@ -3783,7 +3783,7 @@ export interface ActivityLogDetailVO {
   logType?: string;
   username?: string;
   nickname?: string;
-  ipAddress?: string;
+  clientIp?: string;
   browser?: string;
   functionName?: string;
   functionItem?: string;
@@ -3804,7 +3804,7 @@ export interface ActivityLogVO {
   logType?: string;
   username?: string;
   nickname?: string;
-  ipAddress?: string;
+  clientIp?: string;
   browser?: string;
   functionName?: string;
   functionItem?: string;
@@ -4468,7 +4468,7 @@ export interface GoalVO {
   startDate?: string;
   endDate?: string;
   completedAt?: string;
-  tags?: string;
+  tags?: Array<string>;
   completedCount?: number;
   totalCount?: number;
   progressCheckedAt?: string;
@@ -4521,7 +4521,7 @@ export interface HonorRecordVO {
   level?: string;
   categoryId?: string;
   customCategory?: string;
-  tags?: string;
+  tags?: Array<string>;
   files?: Array<AttachmentVO>;
   isTop?: number;
   isPublic?: number;
@@ -4732,7 +4732,7 @@ export interface MilestoneVO {
   date?: string;
   endDate?: string;
   type?: string;
-  tags?: string;
+  tags?: Array<string>;
 }
 
 export interface MovieParseVO {
@@ -4756,8 +4756,8 @@ export interface MovieVO {
   status: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress: null | number;
   currentProgress: null | number;
-  startTime: null | string;
-  finishTime: null | string;
+  startDate: null | string;
+  finishDate: null | string;
   rating: null | number;
   remark: null | string;
 }
@@ -4918,8 +4918,8 @@ export interface ReadRecordVO {
   status: 'completed' | 'in_progress' | 'not_started' | 'on_hold' | null;
   totalProgress: null | number;
   currentProgress: null | number;
-  startTime: null | string;
-  finishTime: null | string;
+  startDate: null | string;
+  finishDate: null | string;
   remark: null | string;
 }
 
@@ -5243,7 +5243,7 @@ export interface WardrobeItemVO {
   categoryName: null | string;
   color: null | string;
   brand: null | string;
-  season: null | string;
+  season: Array<string> | null;
   purchaseDate: null | string;
   purchasePrice: null | number | string;
   fileId: null | string;

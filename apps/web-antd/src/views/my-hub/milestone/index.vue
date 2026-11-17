@@ -152,7 +152,7 @@ const loadData = async () => {
     const res = await queryMilestone();
     // Transform backend entity to frontend interface
     milestones.value = res.map((item) => {
-      const tags: string[] = item.tags ? JSON.parse(item.tags) : [];
+      const tags: string[] = item.tags ?? [];
 
       return {
         id: item.id!,
@@ -224,12 +224,10 @@ const handleSave = async () => {
       endDate: formState.value.endDate?.format('YYYY-MM-DD') ?? null,
       description: formState.value.description,
       type: formState.value.type,
-      tags: JSON.stringify(
-        formState.value.tags
-          .split(/[,，]/)
-          .map((t) => t.trim())
-          .filter(Boolean),
-      ),
+      tags: formState.value.tags
+        .split(/[,，]/)
+        .map((t) => t.trim())
+        .filter(Boolean),
     };
 
     await (formState.value.id

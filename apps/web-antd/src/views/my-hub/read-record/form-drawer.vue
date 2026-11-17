@@ -119,13 +119,13 @@ const [Form, formApi] = useAppForm({
       },
     },
     {
-      fieldName: 'finishTime',
-      label: '读完时间',
+      fieldName: 'finishDate',
+      label: '读完日期',
       component: 'DatePicker',
       componentProps: {
-        placeholder: '请选择读完时间',
+        placeholder: '请选择读完日期',
         showTime: false,
-        valueFormat: 'YYYY-MM-DD 00:00:00',
+        valueFormat: 'YYYY-MM-DD',
         style: { width: '100%' },
       },
       dependencies: {

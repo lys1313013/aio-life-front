@@ -258,12 +258,12 @@ const tableReload = () => {
               </div>
 
               <!-- 日期信息 -->
-              <div v-if="item.finishTime" class="mt-2 w-full px-1 text-center">
+              <div v-if="item.finishDate" class="mt-2 w-full px-1 text-center">
                 <div
                   class="truncate text-[11px] text-gray-400"
-                  :title="item.finishTime"
+                  :title="item.finishDate"
                 >
-                  {{ item.finishTime.split(' ')[0] }}
+                  {{ item.finishDate }}
                 </div>
               </div>
             </div>

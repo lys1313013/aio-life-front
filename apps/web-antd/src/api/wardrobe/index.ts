@@ -32,7 +32,7 @@ export interface WardrobeItemVO {
   categoryName?: string;
   color?: string;
   brand?: string;
-  season?: string;
+  season?: string[];
   purchaseDate?: string;
   purchasePrice?: number;
   fileId?: string;

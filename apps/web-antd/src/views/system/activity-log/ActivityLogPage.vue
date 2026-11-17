@@ -89,7 +89,7 @@ const columns = computed(() =>
         { title: '请求参数', key: 'params', width: 90 },
         { title: '请求时间', key: 'requestTime', width: 220 },
         { title: '处理时间', key: 'duration', width: 120 },
-        { title: '请求IP', dataIndex: 'ipAddress', width: 160, ellipsis: true },
+        { title: '请求IP', dataIndex: 'clientIp', width: 160, ellipsis: true },
         {
           title: '服务器IP',
           dataIndex: 'serverIp',
@@ -112,7 +112,7 @@ const columns = computed(() =>
           width: 120,
           ellipsis: true,
         },
-        { title: 'IP地址', dataIndex: 'ipAddress', width: 150, ellipsis: true },
+        { title: 'IP地址', dataIndex: 'clientIp', width: 150, ellipsis: true },
         { title: '浏览器', dataIndex: 'browser', width: 110, ellipsis: true },
         { title: '登录方式', dataIndex: 'accessType', width: 130 },
         { title: '结果', key: 'success', width: 80 },

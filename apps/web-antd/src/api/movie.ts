@@ -32,8 +32,8 @@ export namespace MovieApi {
     status: ProgressStatus;
     totalProgress: number;
     currentProgress: number;
-    startTime: string;
-    finishTime: string;
+    startDate: string;
+    finishDate: string;
     rating?: number;
     remark: string;
   }

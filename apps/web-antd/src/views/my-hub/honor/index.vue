@@ -166,17 +166,9 @@ const loadData = async () => {
     let urlIdx = 0;
 
     honors.value = honorsRes.map((item, i) => {
-      let tags: string[] = [];
+      const tags: string[] = item.tags ?? [];
       let attachments: string[] = [];
       let fileIds: string[] = [];
-
-      try {
-        if (item.tags) {
-          tags = JSON.parse(item.tags);
-        }
-      } catch {
-        tags = item.tags ? [item.tags] : [];
-      }
 
       if (item.files) {
         fileIds = item.files.map((f: any) => String(f.id));
@@ -288,12 +280,10 @@ const handleSave = async () => {
       level: formState.value.level,
       categoryId: formState.value.categoryId,
       customCategory: formState.value.customCategory || undefined,
-      tags: JSON.stringify(
-        formState.value.tags
-          .split(/[,，]/)
-          .map((t) => t.trim())
-          .filter(Boolean),
-      ),
+      tags: formState.value.tags
+        .split(/[,，]/)
+        .map((t) => t.trim())
+        .filter(Boolean),
       fileIds: formState.value.fileIds,
       isPublic: formState.value.isPublic ? 1 : 0,
     };

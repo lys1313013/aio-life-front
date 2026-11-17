@@ -31,7 +31,7 @@ export interface GoalEntity {
   content?: string;
   startDate?: string;
   endDate?: string;
-  tags?: string;
+  tags?: string[];
   [key: string]: any;
 }
 

@@ -95,7 +95,7 @@ watch(
           categoryId: props.item.categoryId,
           color: props.item.color,
           brand: props.item.brand,
-          season: props.item.season?.split(',').filter(Boolean) || [],
+          season: [...(props.item.season || [])],
           purchaseDate: props.item.purchaseDate,
           purchasePrice: props.item.purchasePrice,
           fileId: props.item.fileId,

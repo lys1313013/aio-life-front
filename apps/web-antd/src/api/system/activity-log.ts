@@ -17,7 +17,7 @@ export interface ActivityLog {
   functionItem: string;
   functionName: string;
   id: string;
-  ipAddress: string;
+  clientIp: string;
   nickname: string;
   success: boolean;
   username: string;

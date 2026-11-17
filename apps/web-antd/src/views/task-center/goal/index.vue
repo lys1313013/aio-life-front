@@ -118,7 +118,7 @@ const handleSaved = (record: GoalEntity) => {
     (!status || goalDisplayStatus(record) === status) &&
     (!type || record.type === type) &&
     (!keyword ||
-      [record.title, record.description, record.tags].some((value) =>
+      [record.title, record.description, record.tags?.join(' ')].some((value) =>
         value?.toLocaleLowerCase().includes(keyword.toLocaleLowerCase()),
       ));
   if (!matches) {
@@ -162,17 +162,6 @@ const handlePin = async (item: GoalEntity) => {
 };
 
 const calculateProgress = goalProgressPercent;
-
-// Helper methods for UI
-const parseTags = (tagsStr?: string): string[] => {
-  if (!tagsStr) return [];
-  try {
-    const parsed = JSON.parse(tagsStr);
-    return Array.isArray(parsed) ? parsed : [tagsStr];
-  } catch {
-    return [tagsStr];
-  }
-};
 
 const getStatusBadgeColor = (status: ProgressStatus) => {
   switch (status) {
@@ -321,12 +310,9 @@ const getStatusBadgeColor = (status: ProgressStatus) => {
             </h3>
 
             <!-- Tags -->
-            <div
-              class="mb-3 flex flex-wrap gap-1.5"
-              v-if="item.tags && parseTags(item.tags).length > 0"
-            >
+            <div class="mb-3 flex flex-wrap gap-1.5" v-if="item.tags?.length">
               <span
-                v-for="tag in parseTags(item.tags)"
+                v-for="tag in item.tags"
                 :key="tag"
                 class="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground"
               >

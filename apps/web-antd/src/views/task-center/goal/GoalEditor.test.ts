@@ -78,7 +78,7 @@ const existing = {
   startDate: '2026-01-12 12:34:56',
   endDate: '2026-08-19 13:20:00',
   description: '保持说明',
-  tags: '["阅读","运动"]',
+  tags: ['阅读', '运动'],
   isPinned: 1 as const,
 };
 describe('目标复用编辑器', () => {

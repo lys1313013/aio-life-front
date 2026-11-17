@@ -32,8 +32,8 @@ export namespace ReadRecordApi {
     status: ProgressStatus;
     totalProgress: number;
     currentProgress: number;
-    startTime: string;
-    finishTime: string;
+    startDate: string;
+    finishDate: string;
     remark: string;
   }
 

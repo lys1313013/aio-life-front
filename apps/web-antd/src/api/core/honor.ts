@@ -19,7 +19,7 @@ export interface HonorRecordEntity {
   level?: string;
   categoryId?: string;
   customCategory?: string;
-  tags?: string;
+  tags?: string[];
   fileIds?: string[];
   files?: AttachmentVO[];
   isTop?: number;
