@@ -175,9 +175,9 @@ function draftContext() {
     defaults: props.selection?.newDevice ?? {
       name: text(expense.expDesc) ?? text(expense.remark),
       purchasePrice:
-        expense.amt === '' || expense.amt == null
+        expense.bookkeepingAmount === '' || expense.bookkeepingAmount == null
           ? undefined
-          : Number(expense.amt),
+          : Number(expense.bookkeepingAmount),
       purchaseDate: expense.expTime?.slice(0, 10),
       purchasePlace: text(expense.counterparty),
       remark: text(expense.remark),

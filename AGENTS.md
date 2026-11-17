@@ -121,7 +121,7 @@ pnpm run test:e2e       # 运行端到端测试
 ```ts
 import { requestClient } from '#/api/request';
 import { FILE_BIZ_TYPE, uploadFile } from '#/api/core/common';
-import type { FileVO } from '#/api/core/common';
+import type { AttachmentVO } from '#/api/core/common';
 
 // 实体类型在此文件内定义并导出
 export interface HonorRecordEntity { ... }
@@ -148,7 +148,7 @@ export async function uploadHonorAttachment(file: File) {
 }
 ```
 
-- `FileVO` 类型定义在 `api/core/common.ts`，各模块通过 `import type { FileVO } from './common'` 复用
+- `AttachmentVO` 类型定义在 `api/core/common.ts`，各模块通过 `import type { AttachmentVO } from './common'` 复用
 - ID 全程保留 **string**；非 ID 的 `Long/long` 字段同样遵守下述规则。
 
 ### Long 响应与数值判断
@@ -167,7 +167,7 @@ export async function uploadHonorAttachment(file: File) {
 
 - **Entity**：纯表映射，不加瞬态字段；仅在持久化场景使用
 - **`XxxRequest`**：请求 DTO，仅含业务入参字段（创建时不含 `id` / `createTime` 等系统字段；更新时按需携带 `id`）
-- **`XxxVO`**：响应 VO，含 Entity 字段 + 关联数据（如 `files: FileVO[]`、`userName: string`）；计数字段按实际 JSON 声明，后端 `long commentCount` 对应 `commentCount: string`，不能默认写成 number
+- **`XxxVO`**：响应 VO，含 Entity 字段 + 关联数据（如 `files: AttachmentVO[]`、`userName: string`）；计数字段按实际 JSON 声明，后端 `long commentCount` 对应 `commentCount: string`，不能默认写成 number
 - **详情 VO**：字段多时可单独定义 `XxxDetailVO extends XxxVO`，携带嵌套列表（如 `comments: XxxCommentVO[]`）
 
 前端 API 文件也要对应拆分类型：
@@ -185,7 +185,7 @@ export interface FeedbackVO {
   id: string;
   title: string;
   status: string;
-  files: FileVO[];
+  files: AttachmentVO[];
   // ...
 }
 
@@ -209,11 +209,11 @@ export async function queryMyFeedbacks(params: {
 
 统一上传入口为 `POST /file/upload`（API 基址包含 `/api`），multipart 字段为 `file` 和 `bizType`。前端复用 `api/core/common.ts` 的 `uploadFile(file, FILE_BIZ_TYPE.XXX)`，服务端按业务类型校验权限、文件格式、大小与绑定规则。不要新增业务上传入口或复用其他业务的类型绕过检查。
 
-1. **上传**：写入 `attachment`，绑定业务记录前 `biz_id` 可为空；接口所有附件标识均为 `file_key` 的 UUIDv4（包括 `FileVO.id`、`fileId`、`avatarFileId`、`coverFileId`、`fileIds`）。内部 bigint 主键不对外暴露，不提供数字附件 ID 兼容入口。
+1. **上传**：写入 `attachment`，绑定业务记录前 `biz_id` 可为空；接口所有附件标识均为 `file_key` 的 UUIDv4（包括 `AttachmentVO.id`、`fileId`、`avatarFileId`、`coverFileId`、`fileIds`）。内部 bigint 主键不对外暴露，不提供数字附件 ID 兼容入口。
 2. **绑定**：创建／更新业务记录时提交 `fileIds: string[]`，由后端校验文件归属并完成关联。未提交与空数组的语义以 DTO 为准。
-3. **查询**：响应 VO 返回 `files: FileVO[]`；不要为了带附件而将 Entity 整体当作请求模型。
+3. **查询**：响应 VO 返回 `files: AttachmentVO[]`；不要为了带附件而将 Entity 整体当作请求模型。
 
-`FileVO`、`FileBizType` 和业务类型常量统一从 `api/core/common.ts` 引用。私有图片通过 `fetchAuthImageUrl`、`useAuthImageUrl` 或 `AuthImage` 获取；不能把私有预览地址直接赋给 `img.src`。详细说明见 [图片鉴权](docs/image-auth-401-fix.md)。
+`AttachmentVO`、`AttachmentBizType` 和业务类型常量统一从 `api/core/common.ts` 引用。私有图片通过 `fetchAuthImageUrl`、`useAuthImageUrl` 或 `AuthImage` 获取；不能把私有预览地址直接赋给 `img.src`。详细说明见 [图片鉴权](docs/image-auth-401-fix.md)。
 
 ### 路由与权限
 
@@ -251,7 +251,7 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 - 时间处理统一用 **dayjs**（非 moment）
 - 表单验证用 `ant-design-vue/es/form` 的 `Rule` 类型
 - 全局浮动按钮：`<GlobalFloatBtn @click="handleAdd" />`
-- 文件上传：`<ImageUpload v-model:file-ids="..." :upload-fn="uploadXxxAttachment" />`，uploadFn 签名为 `(file: File) => Promise<FileVO>`
+- 文件上传：`<ImageUpload v-model:file-ids="..." :upload-fn="uploadXxxAttachment" />`，uploadFn 签名为 `(file: File) => Promise<AttachmentVO>`
 - 图片显示需要鉴权：用 `fetchAuthImageUrl(id)` 获取带 token 的 blob URL（`utils/file.ts`），或直接使用 `useAuthImageUrl` composable
 
 ### 首页跨端需求入口

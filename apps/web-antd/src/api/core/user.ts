@@ -5,7 +5,7 @@ import type { ApiRequests } from '#/api/payload';
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 获取用户信息
@@ -51,5 +51,5 @@ export async function updateUserInfoApi(params: ApiRequests['UpdateUserReq']) {
  * 上传头像
  */
 export async function uploadAvatarApi(file: File) {
-  return uploadFile(file, FILE_BIZ_TYPE.AVATAR);
+  return uploadFile(file, ATTACHMENT_BIZ_TYPE.AVATAR);
 }

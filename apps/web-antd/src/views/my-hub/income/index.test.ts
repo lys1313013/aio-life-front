@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   values: {} as Record<string, any>,
   row: {
     id: '9007199254740993',
-    amt: 100,
+    grossAmount: 100,
     incTypeId: '9007199254740995',
     incDate: '2026-10-11',
     remark: '',
@@ -103,13 +103,13 @@ describe('收入记录 ID 契约', () => {
     expect(mocks.formOptions.schema).toEqual(
       expect.arrayContaining([expect.objectContaining({ fieldName: 'id' })]),
     );
-    mocks.values = { ...mocks.row, amt: 200 };
+    mocks.values = { ...mocks.row, grossAmount: 200 };
     await mocks.modalOptions.onConfirm();
 
     expect(mocks.put).toHaveBeenCalledExactlyOnceWith(
       '/income/9007199254740993',
       {
-        amt: 200,
+        grossAmount: 200,
         incTypeId: '9007199254740995',
         incDate: '2026-10-11',
         remark: '',
@@ -121,11 +121,11 @@ describe('收入记录 ID 契约', () => {
   it('没有 id 的新记录仍调用新增接口', async () => {
     mount(FormModal);
     await flushPromises();
-    mocks.values = { amt: 100, incDate: '2026-10-11' };
+    mocks.values = { grossAmount: 100, incDate: '2026-10-11' };
     await mocks.modalOptions.onConfirm();
 
     expect(mocks.post).toHaveBeenCalledExactlyOnceWith('/income', {
-      amt: 100,
+      grossAmount: 100,
       incDate: '2026-10-11',
     });
     expect(mocks.put).not.toHaveBeenCalled();

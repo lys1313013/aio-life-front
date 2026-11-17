@@ -3,7 +3,7 @@ import type { ApiRequests } from '#/api/payload';
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
-import { FILE_BIZ_TYPE, uploadFile } from '../core/common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from '../core/common';
 
 /**
  * 衣物请求 DTO
@@ -139,7 +139,7 @@ export async function getWardrobeStats() {
  * 上传衣物照片
  */
 export async function uploadWardrobePhoto(file: File) {
-  return uploadFile(file, FILE_BIZ_TYPE.WARDROBE_ITEM);
+  return uploadFile(file, ATTACHMENT_BIZ_TYPE.WARDROBE_ITEM);
 }
 
 // ==================== 分类接口 ====================

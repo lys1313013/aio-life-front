@@ -28,7 +28,7 @@ try {
   };
   if (Object.hasOwn(fixtures, path)) data = fixtures[path];
   if (path === '/userDictType/getByDictType') data = { dictDetailList: [{ id: '81', dictLabel: '电子设备', dictValue: '1' }] };
-  if (path === '/expense/query') data = { items: [{ id: expenseId, amt: 42.5, transactionAmt: 60, expTime: '2026-10-22 23:30:00', remark: '模拟账单', expTypeId: '81', payTypeId: '81', deviceId: linked?.id, deviceName: linked?.name }], total: 1 };
+  if (path === '/expense/query') data = { items: [{ id: expenseId, bookkeepingAmount: 42.5, transactionAmount: 60, expTime: '2026-10-22 23:30:00', remark: '模拟账单', expTypeId: '81', payTypeId: '81', deviceId: linked?.id, deviceName: linked?.name }], total: 1 };
   if (path === '/device/query') {
    const current = Number(url.searchParams.get('page') || 1), name = url.searchParams.get('name') || '';
    pages.push(current); const matches = devices.filter(row => row.name.includes(name));

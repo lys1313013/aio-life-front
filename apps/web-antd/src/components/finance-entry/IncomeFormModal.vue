@@ -81,7 +81,7 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '请输入',
       },
-      fieldName: 'amt',
+      fieldName: 'grossAmount',
       label: '金额',
     },
     {

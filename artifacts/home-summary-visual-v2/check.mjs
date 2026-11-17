@@ -39,7 +39,7 @@ try{
   if(kind==='income')await dialog.getByPlaceholder('请输入',{exact:true}).first().fill('123.45');
   else {await dialog.getByPlaceholder('交易金额',{exact:true}).fill('88.50');assert.equal(await dialog.getByPlaceholder('实际记账的钱',{exact:true}).inputValue(),'88.50');}
   for(let i=0;i<(kind==='income'?1:2);i++){await dialog.locator('.ant-select').nth(i).click();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);}
-  await page.screenshot({path:`${output}/${kind}-entry.png`,fullPage:true});await dialog.getByRole('button',{name:/保\s*存/}).click();await page.waitForTimeout(350);await settle();assert(f.writes.some(w=>w.path===`/${kind}`&&w.body.amt===(kind==='income'?'123.45':'88.50')));await assertPeriod(kind,'all');await assertPeriod('finance','year');
+  await page.screenshot({path:`${output}/${kind}-entry.png`,fullPage:true});await dialog.getByRole('button',{name:/保\s*存/}).click();await page.waitForTimeout(350);await settle();assert(f.writes.some(w=>w.path===`/${kind}`&&w.body[kind==='income'?'grossAmount':'bookkeepingAmount']===(kind==='income'?'123.45':'88.50')));await assertPeriod(kind,'all');await assertPeriod('finance','year');
  }
  await page.screenshot({path:`${output}/updated-totals.png`,fullPage:true});
  assert.deepEqual(errors,[]);await writeFile(`${output}/results.json`,JSON.stringify({results,errors,events:f.events,writes:f.writes},null,2));console.log('V2_OK',JSON.stringify({combinations:results.length,writes:f.writes}));

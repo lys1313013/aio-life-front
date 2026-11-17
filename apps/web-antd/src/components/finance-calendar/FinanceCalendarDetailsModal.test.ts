@@ -55,7 +55,7 @@ const bucket = {
 };
 const row = {
   id: '9007199254740993123',
-  amt: 608.02,
+  bookkeepingAmount: 608.02,
   expTime: '2026-08-12 12:30:00',
   expDesc: '午餐',
   counterparty: '测试餐厅',
@@ -202,11 +202,11 @@ it('收入明细沿用共享弹窗，显示日期、分类、备注和税额且�
     items: [
       {
         id: '9007199254740993124',
-        amt: 8000,
+        grossAmount: 8000,
         incDate: '2026-08-12',
         incTypeId: 'salary',
         remark: '八月工资',
-        tax: 120,
+        taxAmount: 120,
       },
     ],
     total: 1,
@@ -263,7 +263,7 @@ it('概览切换明细类型重置页码，合计使用对应收入支出且忽�
   );
   resolveIncome({
     items: [
-      { id: 'old', amt: 608.02, incDate: '2026-08-12', remark: '旧收入' },
+      { id: 'old', grossAmount: 608.02, incDate: '2026-08-12', remark: '旧收入' },
     ],
     total: 1,
   });

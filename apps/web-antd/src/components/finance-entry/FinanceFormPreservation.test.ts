@@ -82,18 +82,20 @@ beforeEach(() => vi.clearAllMocks());
 it.each(['income', 'expense'] as const)(
   '%s 保存表单字段时保留未显示的税额与交易信息',
   async (kind) => {
+    const amountField = kind === 'income' ? 'grossAmount' : 'bookkeepingAmount';
     const original = {
       id: '9223372036854775807',
-      amt: 26,
-      tax: 120,
+      [amountField]: 26,
+      ...(kind === 'income'
+        ? { taxAmount: 120 }
+        : { transactionAmount: 99 }),
       transactionId: 'original-order',
       counterpartyAcct: 'original-account',
-      transactionAmt: 99,
       expTime: '2026-09-28 18:32:49',
       incDate: '2026-09-28',
     };
     mocks.data = { values: original };
-    mocks.values = { id: original.id, amt: '100', remark: '已修改' };
+    mocks.values = { id: original.id, [amountField]: '100', remark: '已修改' };
     mount(kind === 'income' ? IncomeForm : ExpenseForm);
     mocks.options.onOpenChange(true);
     await flushPromises();
@@ -103,7 +105,7 @@ it.each(['income', 'expense'] as const)(
       kind === 'income' ? update.mock.calls[0]![1] : update.mock.calls[0]![0];
     expect(payload).toMatchObject({
       ...original,
-      amt: '100',
+      [amountField]: '100',
       remark: '已修改',
     });
     expect(mocks.close).toHaveBeenCalledOnce();
@@ -121,7 +123,11 @@ it.each([
   '新增支出暂存设备，保存失败可重试且连续录入清空关联 $deviceName',
   async (selection) => {
     mocks.data = { values: {} };
-    mocks.values = { amt: '100', transactionAmt: '100', remark: '买耳机' };
+    mocks.values = {
+      bookkeepingAmount: '100',
+      transactionAmount: '100',
+      remark: '买耳机',
+    };
     const wrapper = mount(ExpenseForm);
     mocks.options.onOpenChange(true);
     await flushPromises();
@@ -162,7 +168,13 @@ it.each(['expense', 'income'] as const)(
   '%s 删除失败保留编辑器，重试成功关闭并通知明细与列表刷新',
   async (kind) => {
     const id = '9223372036854775807';
-    mocks.data = { values: { id, amt: 26, remark: '原始备注' } };
+    mocks.data = {
+      values: {
+        id,
+        [kind === 'income' ? 'grossAmount' : 'bookkeepingAmount']: 26,
+        remark: '原始备注',
+      },
+    };
     const wrapper = mount(kind === 'income' ? IncomeForm : ExpenseForm);
     mocks.options.onOpenChange(true);
     await flushPromises();

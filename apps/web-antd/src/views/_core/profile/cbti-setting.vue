@@ -545,7 +545,6 @@ const openEditPersonality = (row: any) => {
     strengths: r.strengths ?? [],
     weaknesses: r.weaknesses ?? [],
     isSpecial: Boolean(r.isSpecial),
-    imageObject: r.imageObject,
   };
   adminVectorUseJson.value = false;
   adminVector.value = [

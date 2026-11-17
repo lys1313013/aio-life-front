@@ -46,11 +46,12 @@ export async function getFinanceCalendar(
 
 export interface FinanceCalendarDetail {
   id: string;
-  amt: null | number;
-  transactionAmt?: null | number;
+  bookkeepingAmount?: null | number;
+  transactionAmount?: null | number;
+  grossAmount?: null | number;
+  taxAmount?: null | number;
   incDate?: null | string;
   incTypeId?: null | string;
-  tax?: null | number;
   expTime?: null | string;
   expDesc?: null | string;
   counterparty?: null | string;

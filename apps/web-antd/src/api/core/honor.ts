@@ -1,11 +1,11 @@
-import type { FileVO } from './common';
+import type { AttachmentVO } from './common';
 
 import type { ApiRequests } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 荣誉记录实体
@@ -21,7 +21,7 @@ export interface HonorRecordEntity {
   customCategory?: string;
   tags?: string;
   fileIds?: string[];
-  files?: FileVO[];
+  files?: AttachmentVO[];
   isTop?: number;
   isPublic?: number;
   sortOrder?: number;
@@ -106,5 +106,5 @@ export async function queryHonorCategories() {
  * 上传附件
  */
 export async function uploadHonorAttachment(file: File) {
-  return await uploadFile(file, FILE_BIZ_TYPE.HONOR_RECORD);
+  return await uploadFile(file, ATTACHMENT_BIZ_TYPE.HONOR_RECORD);
 }

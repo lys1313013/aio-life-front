@@ -61,6 +61,11 @@ function changeKind(kind: FinanceRecordKind) {
   void load(1);
 }
 const rows = ref<FinanceCalendarDetail[]>([]);
+function rowAmount(row: FinanceCalendarDetail) {
+  return displayedKind.value === 'income'
+    ? row.grossAmount
+    : row.bookkeepingAmount;
+}
 const listRef = ref<HTMLDivElement>();
 const page = ref(1);
 const pageSize = 20;
@@ -286,7 +291,9 @@ onBeforeUnmount(() => {
                 <span
                   class="shrink-0 text-sm font-[450] tabular-nums"
                   aria-label="记账金额"
-                  >{{ row.amt == null ? '—' : money(row.amt) }}</span
+                  >{{
+                    rowAmount(row) == null ? '—' : money(rowAmount(row) ?? 0)
+                  }}</span
                 >
               </div>
               <div
@@ -301,10 +308,10 @@ onBeforeUnmount(() => {
                 {{ row.remark }}
               </div>
               <div
-                v-if="row.tax != null"
+                v-if="row.taxAmount != null"
                 class="mt-1.5 break-words text-xs leading-5 text-muted-foreground"
               >
-                税额：{{ money(row.tax) }}
+                税额：{{ money(row.taxAmount) }}
               </div>
             </button>
           </article>

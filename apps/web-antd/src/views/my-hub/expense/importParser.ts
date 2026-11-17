@@ -21,7 +21,7 @@ export interface Transaction {
   counterparty: string;
   counterpartyAcct: string; // 对方账号字段
   expDesc: string;
-  amt: number;
+  bookkeepingAmount: number;
   flow: string;
   transactionStatus: string;
   serviceFee: number;
@@ -29,7 +29,7 @@ export interface Transaction {
   remark: string;
   fundStatus: string;
   expTypeId?: string; // 支出类型字段
-  transactionAmt?: number; // 交易金额字段
+  transactionAmount?: number; // 交易金额字段
   payTypeId: string; // 支付类型ID，关联字典表
 }
 
@@ -149,15 +149,15 @@ function applyMobileRefunds(
 ): void {
   for (const refund of refundRows) {
     const originalId = (refund.transactionId.split('_')[0] || '').trim();
-    const refundAmt = round2(refund.amt);
+    const refundAmt = round2(refund.bookkeepingAmount);
     if (!originalId || refundAmt <= 0) continue;
 
     const target = transactions.find((t) => t.transactionId === originalId);
     if (target) {
       // 部分退款：原交易仍计入支出，扣减退款金额
       target.successfulRefund = round2(target.successfulRefund + refundAmt);
-      const gross = target.transactionAmt ?? target.amt;
-      target.amt = round2(Math.max(0, gross - target.successfulRefund));
+      const gross = target.transactionAmount ?? target.bookkeepingAmount;
+      target.bookkeepingAmount = round2(Math.max(0, gross - target.successfulRefund));
       continue;
     }
 
@@ -172,8 +172,8 @@ function applyMobileRefunds(
       flow: '支出',
       type: refund.type || '退款',
       transactionType: refund.transactionType || '退款',
-      amt: -refundAmt,
-      transactionAmt: -refundAmt,
+      bookkeepingAmount: -refundAmt,
+      transactionAmount: -refundAmt,
       remark: refund.remark || `退款（原交易 ${originalId} 不在本账单内）`,
     });
   }
@@ -243,9 +243,9 @@ export function parseCSV(csvText: string, ctx: ParseContext): ParseResult {
         counterparty: columns[7] || '',
         counterpartyAcct: '', // 电脑端CSV没有对方账号字段，设为空
         expDesc: columns[8] || '',
-        transactionAmt: grossAmt, // 交易金额（原始金额）
+        transactionAmount: grossAmt, // 交易金额（原始金额）
         // 记账金额 = 原始金额 - 成功退款（部分退款时原交易仍是"交易成功"）
-        amt: round2(Math.max(0, grossAmt - successfulRefund)),
+        bookkeepingAmount: round2(Math.max(0, grossAmt - successfulRefund)),
         flow: columns[10] || '', // 收支方向
         transactionStatus: columns[11] || '',
         serviceFee: Number.parseFloat(columns[12] || '0') || 0,
@@ -384,8 +384,8 @@ export function parseMobileCSV(
         counterparty: columns[2] || '', // 交易对方
         counterpartyAcct: columns[3] || '', // 对方账号
         expDesc: columns[4] || '', // 商品说明
-        transactionAmt: amount, // 交易金额（原始金额）
-        amt: amount, // 记账金额（退款扣减在 applyMobileRefunds 中处理）
+        transactionAmount: amount, // 交易金额（原始金额）
+        bookkeepingAmount: amount, // 记账金额（退款扣减在 applyMobileRefunds 中处理）
         flow: columns[5] || '', // 收/支
         transactionStatus: columns[8] || '', // 交易状态
         serviceFee: 0, // 手机端没有服务费字段
@@ -591,8 +591,8 @@ export function parseWechatExcel(
         counterparty: counterparty || '',
         counterpartyAcct: '',
         expDesc: goods || '',
-        transactionAmt: amount,
-        amt: round2(Math.max(0, amount - successfulRefund)),
+        transactionAmount: amount,
+        bookkeepingAmount: round2(Math.max(0, amount - successfulRefund)),
         flow: flow || '',
         transactionStatus: transactionStatus || '',
         serviceFee: 0,

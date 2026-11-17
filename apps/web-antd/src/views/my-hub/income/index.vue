@@ -24,7 +24,7 @@ import TransactionDashboard from '../components/TransactionDashboard.vue';
 
 interface RowType {
   id: string;
-  amt: number;
+  grossAmount: number;
   remark: string;
   incTypeId: string;
   incDate: string;
@@ -130,9 +130,9 @@ const gridOptions: VxeGridProps<RowType> = {
     },
     { field: 'incDate', title: '时间', sortable: true, width: 140 },
     {
-      field: 'amt',
+      field: 'grossAmount',
       cellType: 'number',
-      title: '金额',
+      title: '收入金额',
       width: 120,
       sortable: true,
       align: 'right',
@@ -163,7 +163,7 @@ const gridOptions: VxeGridProps<RowType> = {
     columns.forEach((column) => {
       const field = column.field;
       if (!field) return;
-      if (field === 'amt') {
+      if (field === 'grossAmount') {
         const total = data.reduce((prev, row) => {
           const value = row[field as keyof RowType];
           return prev + (Number(value) || 0);

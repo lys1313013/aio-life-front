@@ -31,7 +31,7 @@ export async function getByDictType(dictType: string): Promise<ResponseData> {
 /**
  * 文件VO
  */
-export interface FileVO {
+export interface AttachmentVO {
   /** 附件对外 UUIDv4，对应 file_key，内部数字主键不进入客户端。 */
   id: string;
   fileName: string;
@@ -40,7 +40,7 @@ export interface FileVO {
   fileType: string;
 }
 
-export const FILE_BIZ_TYPE = {
+export const ATTACHMENT_BIZ_TYPE = {
   AVATAR: 'avatar',
   DEVICE: 'device_cover',
   FEEDBACK: 'feedback',
@@ -52,11 +52,11 @@ export const FILE_BIZ_TYPE = {
   WARDROBE_ITEM: 'wardrobe_item_cover',
 } as const;
 
-export type FileBizType = (typeof FILE_BIZ_TYPE)[keyof typeof FILE_BIZ_TYPE];
+export type AttachmentBizType = (typeof ATTACHMENT_BIZ_TYPE)[keyof typeof ATTACHMENT_BIZ_TYPE];
 
 /**
  * 统一文件上传入口。
  */
-export async function uploadFile(file: File, bizType: FileBizType) {
-  return requestClient.upload<FileVO>('/file/upload', { file, bizType });
+export async function uploadFile(file: File, bizType: AttachmentBizType) {
+  return requestClient.upload<AttachmentVO>('/file/upload', { file, bizType });
 }

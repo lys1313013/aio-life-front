@@ -30,7 +30,7 @@ interface RowType {
   price: string;
   productName: string;
   releaseDate: string;
-  amt: number;
+  bookkeepingAmount: number;
   expTypeId: string;
   payTypeId: string;
   remark: string;
@@ -201,7 +201,7 @@ const gridOptions: VxeGridProps<RowType> = {
     { type: 'checkbox', title: '', width: 60 },
     { title: '序号', type: 'seq', width: 50 },
     {
-      field: 'transactionAmt',
+      field: 'transactionAmount',
       cellType: 'number',
       title: '交易金额',
       sortable: true,
@@ -216,7 +216,7 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
-      field: 'amt',
+      field: 'bookkeepingAmount',
       cellType: 'number',
       title: '记账金额',
       sortable: true,
@@ -285,7 +285,7 @@ const gridOptions: VxeGridProps<RowType> = {
     const sums: Record<string, string> = {};
     columns.forEach((column) => {
       const field = column.field;
-      if (field === 'amt') {
+      if (field === 'bookkeepingAmount') {
         const total = data.reduce((prev, row) => {
           const value = row[field];
           return prev + (Number(value) || 0);

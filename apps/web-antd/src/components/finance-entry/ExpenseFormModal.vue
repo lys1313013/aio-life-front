@@ -37,7 +37,7 @@ const emit = defineEmits([
 const continuousMode = ref(false);
 
 // 上一次交易金额，用于判断记账金额是否为级联填充值
-const prevTransactionAmt = ref<null | string | undefined>();
+const prevTransactionAmount = ref<null | string | undefined>();
 
 const tableReload = () => {
   emit('tableReload');
@@ -149,7 +149,7 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '交易金额',
       },
-      fieldName: 'transactionAmt',
+      fieldName: 'transactionAmount',
       label: '交易金额',
       rules: 'required',
     },
@@ -158,22 +158,22 @@ const [Form, formApi] = useAppForm({
       componentProps: {
         placeholder: '实际记账的钱',
       },
-      fieldName: 'amt',
+      fieldName: 'bookkeepingAmount',
       label: '记账金额',
       rules: 'required',
       dependencies: {
-        triggerFields: ['transactionAmt'],
+        triggerFields: ['transactionAmount'],
         trigger(value, actions) {
           // 记账金额为空（或仍等于上一次交易金额的级联值）时，跟随交易金额变化
           if (
-            value.amt === '' ||
-            value.amt === null ||
-            value.amt === undefined ||
-            String(value.amt) === String(prevTransactionAmt.value ?? '')
+            value.bookkeepingAmount === '' ||
+            value.bookkeepingAmount === null ||
+            value.bookkeepingAmount === undefined ||
+            String(value.bookkeepingAmount) === String(prevTransactionAmount.value ?? '')
           ) {
-            actions.setFieldValue('amt', value.transactionAmt);
+            actions.setFieldValue('bookkeepingAmount', value.transactionAmount);
           }
-          prevTransactionAmt.value = value.transactionAmt;
+          prevTransactionAmount.value = value.transactionAmount;
         },
       },
     },
@@ -233,10 +233,10 @@ const [Form, formApi] = useAppForm({
 // 重置表单数据
 const resetForm = () => {
   formApi.setValues({
-    amt: '',
-    transactionAmt: '',
+    bookkeepingAmount: '',
+    transactionAmount: '',
   });
-  prevTransactionAmt.value = '';
+  prevTransactionAmount.value = '';
   deviceSelection.value = null;
 };
 
@@ -325,7 +325,7 @@ const [Modal, modalApi] = useVbenModal({
             .format('YYYY-MM-DD HH:mm:ss');
         }
         formApi.setValues(processedValues);
-        prevTransactionAmt.value = processedValues.transactionAmt;
+        prevTransactionAmount.value = processedValues.transactionAmount;
       });
     } else {
       // 弹窗关闭时重置连续录入模式

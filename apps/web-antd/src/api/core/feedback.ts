@@ -1,11 +1,11 @@
-import type { FileVO } from './common';
+import type { AttachmentVO } from './common';
 
 import type { ApiRequests } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 分页响应
@@ -27,7 +27,7 @@ export interface FeedbackVO {
   feedbackType: string;
   status: string;
   priority: string;
-  files: FileVO[];
+  files: AttachmentVO[];
   commentCount: number;
   createTime: string;
   updateTime: string;
@@ -50,7 +50,7 @@ export interface FeedbackCommentVO {
   userName: string;
   roleType: 'ADMIN' | 'USER';
   content: string;
-  files: FileVO[];
+  files: AttachmentVO[];
   createTime: string;
 }
 
@@ -143,7 +143,7 @@ export async function cancelFeedback(id: string) {
  */
 export async function uploadFeedbackAttachment(
   file: File,
-  bizType: 'feedback' | 'feedback_comment' = FILE_BIZ_TYPE.FEEDBACK,
+  bizType: 'feedback' | 'feedback_comment' = ATTACHMENT_BIZ_TYPE.FEEDBACK,
 ) {
   return await uploadFile(file, bizType);
 }
@@ -152,7 +152,7 @@ export async function uploadFeedbackAttachment(
  * 上传反馈评论附件
  */
 export async function uploadFeedbackCommentAttachment(file: File) {
-  return await uploadFile(file, FILE_BIZ_TYPE.FEEDBACK_COMMENT);
+  return await uploadFile(file, ATTACHMENT_BIZ_TYPE.FEEDBACK_COMMENT);
 }
 
 // ==================== 管理员侧 ====================

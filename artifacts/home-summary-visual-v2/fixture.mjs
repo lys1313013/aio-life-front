@@ -43,7 +43,7 @@ export async function installFixture(page) {
   if(path.startsWith('/home/cards/')&&method==='PUT'){const body=route.request().postDataJSON();cards.find(c=>c.cardKey===decodeURIComponent(path.split('/').at(-1))).enabled=body.enabled;writes.push({path,body});return route.fulfill({json:{code:0,data:cards}});}
   if(path.startsWith('/memo/')&&method==='GET')return route.fulfill({json:{code:0,data:{id:path.split('/').at(-1),title:'详情标题',content:'隐藏正文仅在详情加载后显示',hiddenContent:true,updateTime:'2026-10-22T14:30:00'}}});
   if(path.includes('getByDictType')||path.startsWith('/userDict'))return route.fulfill({json:{code:0,data:{dictDetailList:[{id:'9007199254740993',dictLabel:'测试类别',dictValue:'fixture'}]}}});
-  if(['POST','PUT'].includes(method)&&path!='/auth/login'){const body=route.request().postDataJSON();writes.push({path,method,body});if(path==='/income')addedIncome+=Number(body.amt);if(path==='/expense')addedExpense+=Number(body.amt);return route.fulfill({json:{code:0,data:true}});}
+  if(['POST','PUT'].includes(method)&&path!='/auth/login'){const body=route.request().postDataJSON();writes.push({path,method,body});if(path==='/income')addedIncome+=Number(body.grossAmount);if(path==='/expense')addedExpense+=Number(body.bookkeepingAmount);return route.fulfill({json:{code:0,data:true}});}
   return route.fulfill({json:{code:0,data:fixtures[path]??[]}});
  });
  return {specs,events,writes,hold,fail,totals,setCount(value){count=value;},payload};

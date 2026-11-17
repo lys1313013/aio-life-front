@@ -269,7 +269,7 @@ const getCategoryStats = (transactions: Transaction[]) => {
         transaction.transactionType || transaction.type || '其他';
       if (category) {
         categoryData[category] =
-          (categoryData[category] || 0) + transaction.amt;
+          (categoryData[category] || 0) + transaction.bookkeepingAmount;
       }
     }
   });
@@ -313,7 +313,7 @@ const updateStats = (
 
   transactions.forEach((transaction) => {
     if (transaction.flow === '支出') {
-      totalExpense += transaction.amt;
+      totalExpense += transaction.bookkeepingAmount;
       expenseCount++;
     }
   });
@@ -364,7 +364,7 @@ const updateCharts = (transactions: Transaction[]) => {
             monthlyCategoryData[monthKey] = {};
           }
           monthlyCategoryData[monthKey][category] =
-            (monthlyCategoryData[monthKey][category] || 0) + transaction.amt;
+            (monthlyCategoryData[monthKey][category] || 0) + transaction.bookkeepingAmount;
         }
       }
     }
@@ -702,7 +702,7 @@ const gridOptions: VxeGridProps<RowType> = {
     { title: '序号', type: 'seq', width: 50 },
     { title: '主键', visible: false },
     {
-      field: 'transactionAmt',
+      field: 'transactionAmount',
       title: '交易金额',
       sortable: true,
       headerAlign: 'center',
@@ -713,7 +713,7 @@ const gridOptions: VxeGridProps<RowType> = {
       },
     },
     {
-      field: 'amt',
+      field: 'bookkeepingAmount',
       title: '记账金额',
       sortable: true,
       headerAlign: 'center',
@@ -795,7 +795,7 @@ const gridOptions: VxeGridProps<RowType> = {
     const sums: Record<string, string> = {};
     columns.forEach((column) => {
       const field = column.field;
-      if (field === 'amt' || field === 'transactionAmt') {
+      if (field === 'bookkeepingAmount' || field === 'transactionAmount') {
         const total = data.reduce((prev, row) => {
           const value = row[field];
           return prev + (Number(value) || 0);

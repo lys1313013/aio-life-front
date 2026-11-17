@@ -1,11 +1,11 @@
-import type { FileVO } from './common';
+import type { AttachmentVO } from './common';
 
 import type { ApiRequests } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from './common';
 
 export interface EventRecordEntity {
   id?: string;
@@ -17,7 +17,7 @@ export interface EventRecordEntity {
   venue?: string;
   ticketPrice?: string;
   fileIds?: string[];
-  files?: FileVO[];
+  files?: AttachmentVO[];
 }
 
 /**
@@ -65,5 +65,5 @@ export async function deleteEventRecord(id: string) {
  * 上传活动封面/票根图片
  */
 export async function uploadEventRecordAttachment(file: File) {
-  return await uploadFile(file, FILE_BIZ_TYPE.EVENT_RECORD);
+  return await uploadFile(file, ATTACHMENT_BIZ_TYPE.EVENT_RECORD);
 }

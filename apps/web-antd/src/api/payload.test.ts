@@ -12,14 +12,14 @@ describe('最小请求契约', () => {
     const id = '9223372036854775806';
     expect(
       minimalRequestPayload('/expense', 'POST', {
-        amt: 0,
+        bookkeepingAmount: 0,
         deviceId: id,
         deviceName: '只读名称',
       }),
-    ).toEqual({ amt: 0, deviceId: id });
+    ).toEqual({ bookkeepingAmount: 0, deviceId: id });
     expect(
       minimalRequestPayload('/expense', 'POST', {
-        amt: 100,
+        bookkeepingAmount: 100,
         newDevice: {
           name: '耳机',
           purchasePrice: 100,
@@ -28,7 +28,7 @@ describe('最小请求契约', () => {
           createTime: '2026-01-01',
         },
       }),
-    ).toEqual({ amt: 100, newDevice: { name: '耳机', purchasePrice: 100 } });
+    ).toEqual({ bookkeepingAmount: 100, newDevice: { name: '耳机', purchasePrice: 100 } });
   });
   it('时迹明细保留已有字符串 ID，新增项无 ID，剔除归属和审计字段', () => {
     const exercises = [

@@ -83,9 +83,9 @@ describe('parseMobileCSV（支付宝手机端）', () => {
       (t) => t.transactionId === '2026072023001421021407153653',
     );
     expect(kimi).toBeDefined();
-    expect(kimi!.transactionAmt).toBe(99); // 交易金额保持原始值
+    expect(kimi!.transactionAmount).toBe(99); // 交易金额保持原始值
     expect(kimi!.successfulRefund).toBe(72.6);
-    expect(kimi!.amt).toBe(26.4); // 99 - 72.6，且不能是 26.400000000000006
+    expect(kimi!.bookkeepingAmount).toBe(26.4); // 99 - 72.6，且不能是 26.400000000000006
   });
 
   it('部分退款且备注为空时，备注自动补充退款金额', () => {
@@ -103,7 +103,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     ]);
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(80);
+    expect(transactions[0]!.bookkeepingAmount).toBe(80);
     expect(transactions[0]!.remark).toBe('送朋友生日礼物');
   });
 
@@ -119,14 +119,14 @@ describe('parseMobileCSV（支付宝手机端）', () => {
 
   it('总支出与支付宝官方口径一致（支出合计 - 退款合计）', () => {
     const { transactions } = parseMobileCSV(REAL_CASE_CSV, ctx);
-    const total = transactions.reduce((sum, t) => sum + t.amt, 0);
+    const total = transactions.reduce((sum, t) => sum + t.bookkeepingAmount, 0);
     // 官方公式：(15 + 99 + 43) - (72.6 + 43) = 41.40
     expect(Math.round(total * 100) / 100).toBe(41.4);
   });
 
   it('字段映射正确（含订单号尾部 tab 的清理）', () => {
     const { transactions } = parseMobileCSV(REAL_CASE_CSV, ctx);
-    const meal = transactions.find((t) => t.amt === 15);
+    const meal = transactions.find((t) => t.bookkeepingAmount === 15);
     expect(meal).toMatchObject({
       transactionId: '2026073122001421021431983942',
       merchantOrderNo: '6612660000483300037895217368118022',
@@ -138,8 +138,8 @@ describe('parseMobileCSV（支付宝手机端）', () => {
       counterparty: '某食堂',
       counterpartyAcct: '/',
       expDesc: '福州某餐饮公司',
-      amt: 15,
-      transactionAmt: 15,
+      bookkeepingAmount: 15,
+      transactionAmount: 15,
       flow: '支出',
       transactionStatus: '交易成功',
       serviceFee: 0,
@@ -151,8 +151,8 @@ describe('parseMobileCSV（支付宝手机端）', () => {
 
   it('按交易分类自动匹配支出类型字典', () => {
     const { transactions } = parseMobileCSV(REAL_CASE_CSV, ctx);
-    const meal = transactions.find((t) => t.amt === 15);
-    const kimi = transactions.find((t) => t.transactionAmt === 99);
+    const meal = transactions.find((t) => t.bookkeepingAmount === 15);
+    const kimi = transactions.find((t) => t.transactionAmount === 99);
     expect(meal!.expTypeId).toBe('d1'); // 餐饮美食命中字典
     expect(kimi!.expTypeId).toBe('d0'); // 文化休闲未命中 → 默认
   });
@@ -164,11 +164,11 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     ]);
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(2);
-    const refund = transactions.find((t) => t.amt < 0);
+    const refund = transactions.find((t) => t.bookkeepingAmount < 0);
     expect(refund).toBeDefined();
     expect(refund).toMatchObject({
-      amt: -50,
-      transactionAmt: -50,
+      bookkeepingAmount: -50,
+      transactionAmount: -50,
       flow: '支出',
       transactionType: '退款',
       transactionStatus: '退款成功',
@@ -176,7 +176,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     });
     expect(refund!.remark).toContain('2026062023001421021407153999');
     // 总额 = 15 - 50 = -35，本月净支出被正确拉低
-    const total = transactions.reduce((sum, t) => sum + t.amt, 0);
+    const total = transactions.reduce((sum, t) => sum + t.bookkeepingAmount, 0);
     expect(total).toBe(-35);
   });
 
@@ -188,8 +188,8 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     ]);
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(70);
-    expect(transactions[0]!.transactionAmt).toBe(100);
+    expect(transactions[0]!.bookkeepingAmount).toBe(70);
+    expect(transactions[0]!.transactionAmount).toBe(100);
     expect(transactions[0]!.successfulRefund).toBe(30);
   });
 
@@ -210,7 +210,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     ]);
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(0);
+    expect(transactions[0]!.bookkeepingAmount).toBe(0);
   });
 
   it('商品说明中含英文逗号（引号包裹）时不拆错列', () => {
@@ -221,7 +221,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
     expect(transactions[0]!.expDesc).toBe('咖啡,甜点');
-    expect(transactions[0]!.amt).toBe(30.5);
+    expect(transactions[0]!.bookkeepingAmount).toBe(30.5);
   });
 
   it('行尾只有单个逗号（备注为空）时也能解析', () => {
@@ -232,7 +232,7 @@ describe('parseMobileCSV（支付宝手机端）', () => {
     const { transactions } = parseMobileCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
     expect(transactions[0]!.remark).toBe('');
-    expect(transactions[0]!.amt).toBe(30.5);
+    expect(transactions[0]!.bookkeepingAmount).toBe(30.5);
   });
 
   it('支持非标准表头（模糊匹配）', () => {
@@ -299,8 +299,8 @@ describe('parseCSV（支付宝电脑端）', () => {
       type: '餐饮美食',
       counterparty: '某食堂',
       expDesc: '午餐',
-      transactionAmt: 15,
-      amt: 15,
+      transactionAmount: 15,
+      bookkeepingAmount: 15,
       flow: '支出',
       transactionStatus: '交易成功',
       serviceFee: 0,
@@ -317,9 +317,9 @@ describe('parseCSV（支付宝电脑端）', () => {
     ]);
     const { transactions } = parseCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.transactionAmt).toBe(199);
+    expect(transactions[0]!.transactionAmount).toBe(199);
     expect(transactions[0]!.successfulRefund).toBe(72.6);
-    expect(transactions[0]!.amt).toBe(126.4);
+    expect(transactions[0]!.bookkeepingAmount).toBe(126.4);
     // 备注为空时自动补充退款金额
     expect(transactions[0]!.remark).toBe('退款￥72.60');
   });
@@ -330,7 +330,7 @@ describe('parseCSV（支付宝电脑端）', () => {
     ]);
     const { transactions } = parseCSV(csv, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(0);
+    expect(transactions[0]!.bookkeepingAmount).toBe(0);
   });
 
   it('只保留"交易成功"的支出：收入/不计收支/交易关闭均排除', () => {
@@ -436,8 +436,8 @@ describe('parseWechatExcel（微信支付账单）', () => {
       transactionType: '商户消费',
       counterparty: '某商店',
       expDesc: '早餐',
-      amt: 15.5,
-      transactionAmt: 15.5,
+      bookkeepingAmount: 15.5,
+      transactionAmount: 15.5,
       flow: '支出',
       transactionStatus: '支付成功',
       fundStatus: '零钱',
@@ -533,7 +533,7 @@ describe('parseWechatExcel（微信支付账单）', () => {
     const { transactions } = parseWechatExcel(buffer, ctx);
     // 只剩正常支付的一笔，全额退款/退还的两笔都排除
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(15);
+    expect(transactions[0]!.bookkeepingAmount).toBe(15);
   });
 
   it('部分退款：已退款(￥X) 与 已退款￥X 两种格式都从金额中扣减', () => {
@@ -569,15 +569,15 @@ describe('parseWechatExcel（微信支付账单）', () => {
     expect(transactions).toHaveLength(2);
 
     const meal = transactions.find((t) => t.counterparty === '某餐厅');
-    expect(meal!.transactionAmt).toBe(241.5); // 交易金额保持原始值
+    expect(meal!.transactionAmount).toBe(241.5); // 交易金额保持原始值
     expect(meal!.successfulRefund).toBe(18);
-    expect(meal!.amt).toBe(223.5); // 241.5 - 18
+    expect(meal!.bookkeepingAmount).toBe(223.5); // 241.5 - 18
     // 微信空备注为 "/"，视为空并补充退款金额
     expect(meal!.remark).toBe('退款￥18.00');
 
     const redpack = transactions.find((t) => t.counterparty === '发出群红包');
     expect(redpack!.successfulRefund).toBe(11.73);
-    expect(redpack!.amt).toBe(13.27); // 25 - 11.73
+    expect(redpack!.bookkeepingAmount).toBe(13.27); // 25 - 11.73
   });
 
   it('兼容 Excel 数字序列号日期与纯数字金额（2026 年起的新导出格式）', () => {
@@ -598,7 +598,7 @@ describe('parseWechatExcel（微信支付账单）', () => {
     ]);
     const { transactions, minDate, maxDate } = parseWechatExcel(buffer, ctx);
     expect(transactions).toHaveLength(1);
-    expect(transactions[0]!.amt).toBe(10.8);
+    expect(transactions[0]!.bookkeepingAmount).toBe(10.8);
     expect(transactions[0]!.expTime).toBe('2026-04-05 19:56:09');
     expect(minDate).toEqual(new Date('2026-04-05 19:56:09'));
     expect(maxDate).toEqual(new Date('2026-04-05 19:56:09'));
@@ -635,7 +635,7 @@ describe('parseWechatExcel（微信支付账单）', () => {
     ]);
     const { transactions } = parseWechatExcel(buffer, ctx);
     expect(transactions).toHaveLength(2);
-    const total = transactions.reduce((sum, t) => sum + t.amt, 0);
+    const total = transactions.reduce((sum, t) => sum + t.bookkeepingAmount, 0);
     expect(total).toBe(2198);
   });
 });

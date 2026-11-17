@@ -110,14 +110,12 @@ export interface CbtiHistoryDetail {
 }
 
 export interface CbtiAdminPersonality extends CbtiPersonality {
-  imageObject?: string;
   createTime?: string;
   id: string;
   updateTime?: string;
 }
 
 export interface CbtiPersonalitySaveReq {
-  imageObject?: string;
   code: string;
   color?: string;
   description?: string;
@@ -132,7 +130,6 @@ export interface CbtiPersonalitySaveReq {
 }
 
 export interface CbtiPersonalityImageResp {
-  imageObject: string;
   imageUrl: string;
 }
 

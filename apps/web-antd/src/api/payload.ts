@@ -164,7 +164,6 @@ export interface CbtiPersonalitySaveReq {
   weaknesses?: Array<string> | null;
   techStack?: null | string;
   spirit?: null | string;
-  imageObject?: null | string;
   isSpecial?: boolean | null;
 }
 
@@ -290,8 +289,8 @@ export interface ExerciseRecordUpdateReq {
 export interface ExpenseCreateReq {
   deviceId?: null | string;
   newDevice?: DeviceCreateReq | null;
-  transactionAmt?: null | number | string;
-  amt?: null | number | string;
+  transactionAmount?: null | number | string;
+  bookkeepingAmount?: null | number | string;
   expTypeId?: null | string;
   payTypeId?: null | string;
   counterparty?: null | string;
@@ -310,8 +309,8 @@ export interface ExpenseDeviceBindReq {
 
 export interface ExpenseUpdateReq {
   id: string;
-  transactionAmt?: null | number | string;
-  amt?: null | number | string;
+  transactionAmount?: null | number | string;
+  bookkeepingAmount?: null | number | string;
   expTypeId?: null | string;
   payTypeId?: null | string;
   counterparty?: null | string;
@@ -491,19 +490,19 @@ export interface HonorRecordUpdateReq {
 }
 
 export interface IncomeCreateReq {
-  amt?: null | number | string;
+  grossAmount?: null | number | string;
   incDate?: null | string;
   remark?: null | string;
   incTypeId?: null | string;
-  tax?: null | number | string;
+  taxAmount?: null | number | string;
 }
 
 export interface IncomeUpdateReq {
-  amt?: null | number | string;
+  grossAmount?: null | number | string;
   incDate?: null | string;
   remark?: null | string;
   incTypeId?: null | string;
-  tax?: null | number | string;
+  taxAmount?: null | number | string;
 }
 
 export interface LifeFootprintBatchItemReq {
@@ -1562,7 +1561,6 @@ const fields: Record<string, Record<string, null | string>> = {
     weaknesses: null,
     techStack: null,
     spirit: null,
-    imageObject: null,
     isSpecial: null,
   },
   CbtiTestReq: {
@@ -1675,8 +1673,8 @@ const fields: Record<string, Record<string, null | string>> = {
   ExpenseCreateReq: {
     deviceId: null,
     newDevice: 'DeviceCreateReq',
-    transactionAmt: null,
-    amt: null,
+    transactionAmount: null,
+    bookkeepingAmount: null,
     expTypeId: null,
     payTypeId: null,
     counterparty: null,
@@ -1693,8 +1691,8 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   ExpenseUpdateReq: {
     id: null,
-    transactionAmt: null,
-    amt: null,
+    transactionAmount: null,
+    bookkeepingAmount: null,
     expTypeId: null,
     payTypeId: null,
     counterparty: null,
@@ -1856,18 +1854,18 @@ const fields: Record<string, Record<string, null | string>> = {
     fileIds: null,
   },
   IncomeCreateReq: {
-    amt: null,
+    grossAmount: null,
     incDate: null,
     remark: null,
     incTypeId: null,
-    tax: null,
+    taxAmount: null,
   },
   IncomeUpdateReq: {
-    amt: null,
+    grossAmount: null,
     incDate: null,
     remark: null,
     incTypeId: null,
-    tax: null,
+    taxAmount: null,
   },
   LifeFootprintBatchItemReq: {
     startDate: null,
@@ -2635,7 +2633,6 @@ const queryFields: Record<string, string[]> = {
   '/cbti/personalities/{code}': [],
   '/cbti/results': [],
   '/cbti/result/{id}': [],
-  '/cbti/images/{*objectName}': [],
   '/csdn/stats': ['username'],
   '/csdn/articles': ['limit', 'username'],
   '/dashboard/tasks': [],
@@ -3852,6 +3849,14 @@ export interface ApiKeyVO {
   isExpired: boolean | null;
 }
 
+export interface AttachmentVO {
+  id: null | string;
+  fileName: null | string;
+  fileSize: null | string;
+  fileType: null | string;
+  fileUrl: null | string;
+}
+
 export interface BVideoCoverVO {
   id: null | string;
   coverFileId: null | string;
@@ -4019,7 +4024,6 @@ export interface CbtiPersonalityAdminVO {
   weaknesses: Array<string> | null;
   techStack: null | string;
   spirit: null | string;
-  imageObject: null | string;
   imageUrl: null | string;
   isSpecial: boolean | null;
   updateTime: null | string;
@@ -4144,7 +4148,7 @@ export interface EventRecordVO {
   review?: string;
   purchasePlatform?: string;
   orderNumber?: string;
-  files?: Array<FileVO>;
+  files?: Array<AttachmentVO>;
 }
 
 export interface ExerciseDashboardDayVO {
@@ -4203,7 +4207,7 @@ export interface ExerciseStatisticsPointVO {
 export interface ExpStaByYearVO {
   year: null | number;
   month: null | number;
-  amt: null | number | string;
+  bookkeepingAmount: null | number | string;
   typeId: null | string;
   typeName: null | string;
 }
@@ -4223,8 +4227,8 @@ export interface ExpenseVO {
   id?: string;
   deviceId?: string;
   deviceName?: string;
-  transactionAmt?: number | string;
-  amt?: number | string;
+  transactionAmount?: number | string;
+  bookkeepingAmount?: number | string;
   expTypeId?: string;
   payTypeId?: string;
   counterparty?: string;
@@ -4288,7 +4292,7 @@ export interface FeedbackCommentVO {
   userName: null | string;
   roleType: null | string;
   content: null | string;
-  files: Array<FileVO> | null;
+  files: Array<AttachmentVO> | null;
   createTime: null | string;
 }
 
@@ -4301,7 +4305,7 @@ export interface FeedbackDetailVO {
   feedbackType: null | string;
   status: null | string;
   priority: null | string;
-  files: Array<FileVO> | null;
+  files: Array<AttachmentVO> | null;
   commentCount: null | number;
   createTime: null | string;
   updateTime: null | string;
@@ -4318,7 +4322,7 @@ export interface FeedbackVO {
   feedbackType: null | string;
   status: null | string;
   priority: null | string;
-  files: Array<FileVO> | null;
+  files: Array<AttachmentVO> | null;
   commentCount: null | number;
   createTime: null | string;
   updateTime: null | string;
@@ -4342,14 +4346,6 @@ export interface FeishuRecipientListVO {
 export interface FeishuRecipientVO {
   openId: null | string;
   name: null | string;
-}
-
-export interface FileVO {
-  id: null | string;
-  fileName: null | string;
-  fileSize: null | string;
-  fileType: null | string;
-  fileUrl: null | string;
 }
 
 export interface FinanceCalendarVO {
@@ -4526,7 +4522,7 @@ export interface HonorRecordVO {
   categoryId?: string;
   customCategory?: string;
   tags?: string;
-  files?: Array<FileVO>;
+  files?: Array<AttachmentVO>;
   isTop?: number;
   isPublic?: number;
   sortOrder?: number;
@@ -4535,7 +4531,7 @@ export interface HonorRecordVO {
 export interface IncStaByYearVO {
   year: null | number;
   month: null | number;
-  amt: null | number | string;
+  grossAmount: null | number | string;
   typeId: null | string;
   typeName: null | string;
 }
@@ -4548,11 +4544,11 @@ export interface IncStaticByYearVO {
 
 export interface IncomeVO {
   id?: string;
-  amt?: number | string;
+  grossAmount?: number | string;
   incDate?: string;
   remark?: string;
   incTypeId?: string;
-  tax?: number | string;
+  taxAmount?: number | string;
   updateTime?: string;
 }
 

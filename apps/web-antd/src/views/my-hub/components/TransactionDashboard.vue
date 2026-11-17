@@ -45,7 +45,7 @@ const labelName = computed(() => (isIncome.value ? '收入' : '支出'));
 
 interface DetailData {
   typeName: string;
-  amt: number;
+  amount: number;
 }
 
 interface YearData {
@@ -128,7 +128,7 @@ const getMonths = () => {
 // 计算每个月份的总金额
 const getMonthlyTotalAmount = () => {
   return filteredMonthlyData.value.map((item) => {
-    const total = item.detail.reduce((sum, current) => sum + current.amt, 0);
+    const total = item.detail.reduce((sum, current) => sum + current.amount, 0);
     return Number(total.toFixed(2));
   });
 };
@@ -151,7 +151,7 @@ const getTypes = () => {
 // 计算每年的总额
 const getTotalAmountByYear = () => {
   return filteredData.value.map((item) => {
-    const total = item.detail.reduce((sum, current) => sum + current.amt, 0);
+    const total = item.detail.reduce((sum, current) => sum + current.amount, 0);
     return Number(total.toFixed(2));
   });
 };
@@ -165,7 +165,7 @@ const getTypeTotals = () => {
       if (!typeTotals[detail.typeName]) {
         typeTotals[detail.typeName] = 0;
       }
-      typeTotals[detail.typeName]! += detail.amt;
+      typeTotals[detail.typeName]! += detail.amount;
     });
   });
 
@@ -198,7 +198,7 @@ const getTimePieData = (useMonthly: boolean) => {
   dataSource.forEach((item: any) => {
     const key = `${item[keyField]}${keySuffix}`;
     const itemTotal = item.detail.reduce(
-      (sum: number, cur: any) => sum + cur.amt,
+      (sum: number, cur: any) => sum + cur.amount,
       0,
     );
     totals[key] = (totals[key] || 0) + itemTotal;
@@ -232,7 +232,7 @@ const getBarSeriesData = (
 
   const getValue = (item: any, type: string) => {
     const detail = item.detail.find((d: any) => d.typeName == type);
-    return detail ? detail.amt : 0;
+    return detail ? detail.amount : 0;
   };
 
   // 只给每根柱子最上方的可见色块加圆角，避免堆叠衔接处出现缺口。
@@ -305,7 +305,7 @@ const getPieTitleConfig = (total: number) => ({
 const updateCharts = () => {
   // 总金额始终基于全部数据，不受年份筛选影响
   const allYearsTotal = yearDataList.value.reduce((sum, year) => {
-    return sum + year.detail.reduce((s, d) => s + d.amt, 0);
+    return sum + year.detail.reduce((s, d) => s + d.amount, 0);
   }, 0);
   totalAmount.value = Number(allYearsTotal.toFixed(2));
 
@@ -318,7 +318,7 @@ const updateCharts = () => {
     (item) => item.year === targetYear,
   );
   currentYearAmount.value = targetYearData
-    ? targetYearData.detail.reduce((sum, item) => sum + item.amt, 0)
+    ? targetYearData.detail.reduce((sum, item) => sum + item.amount, 0)
     : 0;
 
   // 类型分布饼图仍然基于筛选后的数据
@@ -523,8 +523,21 @@ const refreshData = async () => {
       apiStatYear({}),
       apiStatMonth({}),
     ]);
-    yearDataList.value = yearRes as YearData[];
-    monthDataList.value = monthRes as MonthData[];
+    const normalize = (rows: any[]) =>
+      rows.map((row) => ({
+        ...row,
+        detail: (row.detail ?? []).map((detail: any) => ({
+          ...detail,
+          amount:
+            Number(
+              isIncome.value
+                ? detail.grossAmount
+                : detail.bookkeepingAmount,
+            ) || 0,
+        })),
+      }));
+    yearDataList.value = normalize(yearRes) as YearData[];
+    monthDataList.value = normalize(monthRes) as MonthData[];
 
     const years = [
       ...new Set(yearDataList.value.map((item) => item.year)),

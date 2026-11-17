@@ -34,7 +34,7 @@ const { renderEcharts: renderDepositChart } = useEcharts(depositChartRef);
 // 数据接口
 interface FinanceDetail {
   typeName: string;
-  amt: number;
+  amount: number;
 }
 
 interface FinanceData {
@@ -109,8 +109,19 @@ const loadData = async () => {
       incomeStatisticsByMonth({}),
       expenseStatisticsByMonth({}),
     ]);
-    incomeData.value = income;
-    expenseData.value = expense;
+    const normalize = (
+      rows: any[],
+      amountKey: 'bookkeepingAmount' | 'grossAmount',
+    ) =>
+      rows.map((row) => ({
+        ...row,
+        detail: (row.detail ?? []).map((detail: any) => ({
+          ...detail,
+          amount: Number(detail[amountKey]) || 0,
+        })),
+      }));
+    incomeData.value = normalize(income, 'grossAmount');
+    expenseData.value = normalize(expense, 'bookkeepingAmount');
 
     // 处理数据
     processData();
@@ -139,7 +150,7 @@ const processData = () => {
 // 计算总额
 const calculateTotal = (data: FinanceData[]) => {
   return data.reduce((total, item) => {
-    const itemTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
+    const itemTotal = item.detail.reduce((sum, detail) => sum + detail.amount, 0);
     return total + itemTotal;
   }, 0);
 };
@@ -151,7 +162,7 @@ const calculateMonthlyBalances = () => {
   // 处理收入数据
   incomeData.value.forEach((item) => {
     const monthKey = `${item.year}-${item.month?.toString().padStart(2, '0') || '01'}`;
-    const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
+    const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amount, 0);
 
     if (!monthlyData[monthKey]) {
       monthlyData[monthKey] = { income: 0, expense: 0 };
@@ -162,7 +173,7 @@ const calculateMonthlyBalances = () => {
   // 处理支出数据
   expenseData.value.forEach((item) => {
     const monthKey = `${item.year}-${item.month?.toString().padStart(2, '0') || '01'}`;
-    const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
+    const monthTotal = item.detail.reduce((sum, detail) => sum + detail.amount, 0);
 
     if (!monthlyData[monthKey]) {
       monthlyData[monthKey] = { income: 0, expense: 0 };
@@ -187,7 +198,7 @@ const calculateYearlyBalances = () => {
 
   // 处理收入数据
   incomeData.value.forEach((item) => {
-    const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
+    const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amount, 0);
 
     if (!yearlyData[item.year]) {
       yearlyData[item.year] = { income: 0, expense: 0 };
@@ -197,7 +208,7 @@ const calculateYearlyBalances = () => {
 
   // 处理支出数据
   expenseData.value.forEach((item) => {
-    const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amt, 0);
+    const yearTotal = item.detail.reduce((sum, detail) => sum + detail.amount, 0);
 
     if (!yearlyData[item.year]) {
       yearlyData[item.year] = { income: 0, expense: 0 };
@@ -455,7 +466,7 @@ const updateCategoryChart = (
   data?.forEach((item) => {
     item.detail?.forEach((detail) => {
       const current = types.get(detail.typeName) || 0;
-      types.set(detail.typeName, current + detail.amt);
+      types.set(detail.typeName, current + detail.amount);
     });
   });
 

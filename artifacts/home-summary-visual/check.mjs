@@ -31,7 +31,7 @@ if(path.startsWith('/home/cards/')&&route.request().method()==='PUT'){const body
 if(path.startsWith('/home/sections/')){if(delay)await pending; if(fail)return route.fulfill({json:{code:1,message:'模拟刷新失败'}});return route.fulfill({json:{code:0,data:payload(path.split('/').at(-1))}});}
 if(path.startsWith('/memo/')&&route.request().method()==='GET')return route.fulfill({json:{code:0,data:{id:path.split('/').at(-1),title:'详情标题',content:'隐藏正文仅在详情加载后显示',hiddenContent:true,updateTime:'2026-10-22T14:30:00'}}});
 if(path.includes('getByDictType')||path.startsWith('/userDict'))return route.fulfill({json:{code:0,data:{dictDetailList:[{id:'9007199254740993',dictLabel:'测试类别',dictValue:'fixture'}]}}});
-if(['POST','PUT'].includes(route.request().method())&&path!='/auth/login'){writes.push({path,method:route.request().method(),body:route.request().postDataJSON()});if(path==='/expense')expense+=Number(route.request().postDataJSON().amt);if(path==='/income')income+=Number(route.request().postDataJSON().amt);return route.fulfill({json:{code:0,data:true}});}
+if(['POST','PUT'].includes(route.request().method())&&path!='/auth/login'){writes.push({path,method:route.request().method(),body:route.request().postDataJSON()});if(path==='/expense')expense+=Number(route.request().postDataJSON().bookkeepingAmount);if(path==='/income')income+=Number(route.request().postDataJSON().grossAmount);return route.fulfill({json:{code:0,data:true}});}
 return route.fulfill({json:{code:0,data:fixtures[path]??[]}});
 });
 async function geometry(){return page.locator('.summary-home-card').evaluateAll(els=>els.map(el=>({title:el.getAttribute('aria-label'),height:el.getBoundingClientRect().height,width:el.getBoundingClientRect().width,scrollWidth:el.scrollWidth,top:el.offsetTop})));}
@@ -68,12 +68,12 @@ await page.getByPlaceholder('交易金额',{exact:true}).fill('88.50');
 assert.equal(await page.getByPlaceholder('实际记账的钱',{exact:true}).inputValue(),'88.50');
 for(let i=0;i<2;i++){await page.locator('[role=dialog]:visible .ant-select').nth(i).click();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(200);}
 await page.locator('[role=dialog]:visible').getByRole('button',{name:/保\s*存/}).click();await page.waitForTimeout(300);
-assert(writes.some(w=>w.path==='/expense'&&w.body.amt==='88.50'&&w.body.expTypeId==='9007199254740993'));
+assert(writes.some(w=>w.path==='/expense'&&w.body.bookkeepingAmount==='88.50'&&w.body.expTypeId==='9007199254740993'));
 await page.getByRole('button',{name:'记一笔',exact:true}).click();await page.waitForTimeout(400);await page.locator('[role=dialog]:visible').getByText('收入',{exact:true}).click();await page.waitForTimeout(350);
 await page.locator('[role=dialog]:visible').getByPlaceholder('请输入',{exact:true}).first().fill('123.45');
 await page.locator('[role=dialog]:visible .ant-select').click();await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(200);
 await page.screenshot({path:`${output}/income-form.png`,fullPage:true});
-await page.locator('[role=dialog]:visible').getByRole('button',{name:/保\s*存/}).click();await page.waitForTimeout(300);assert(writes.some(w=>w.path==='/income'&&w.body.amt==='123.45'&&w.body.incTypeId==='9007199254740993'));
+await page.locator('[role=dialog]:visible').getByRole('button',{name:/保\s*存/}).click();await page.waitForTimeout(300);assert(writes.some(w=>w.path==='/income'&&w.body.grossAmount==='123.45'&&w.body.incTypeId==='9007199254740993'));
 await page.locator('.summary-home-card[aria-label=本月收支]').getByText('12,469.12',{exact:true}).waitFor();await page.locator('.summary-home-card[aria-label=本月收支]').getByText('2,434.17',{exact:true}).waitFor();await page.locator('.summary-home-card[aria-label=本月收支]').getByText('10,034.95',{exact:true}).waitFor();await page.screenshot({path:`${output}/finance-updated.png`,fullPage:true});
 await page.goto(`${origin}/profile`);await page.getByText('首页卡片',{exact:true}).first().click();
 for(const[,title]of specs){const toggle=page.getByRole('switch',{name:`显示${title}`,exact:true});await toggle.click();await page.waitForTimeout(100);assert.equal(await toggle.getAttribute('aria-checked'),'false');await toggle.click();await page.waitForTimeout(100);assert.equal(await toggle.getAttribute('aria-checked'),'true');}

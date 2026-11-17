@@ -5,7 +5,7 @@ import { getQuery } from '#/api/query';
 import { requestClient } from '#/api/request';
 import { afterHomeSectionWrite } from '#/utils/home-section-change';
 
-import { FILE_BIZ_TYPE, uploadFile } from './common';
+import { ATTACHMENT_BIZ_TYPE, uploadFile } from './common';
 
 /**
  * 查询
@@ -48,7 +48,7 @@ export async function update(
  * 上传设备图片
  */
 export async function uploadImage(file: File) {
-  return await uploadFile(file, FILE_BIZ_TYPE.DEVICE);
+  return await uploadFile(file, ATTACHMENT_BIZ_TYPE.DEVICE);
 }
 
 /**
