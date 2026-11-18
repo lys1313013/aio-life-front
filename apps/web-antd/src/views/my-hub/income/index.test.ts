@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
     id: '9007199254740993',
     grossAmount: 100,
     incomeTypeId: '9007199254740995',
-    incDate: '2026-10-11',
+    incomeDate: '2026-10-11',
     remark: '',
   },
 }));
@@ -111,7 +111,7 @@ describe('收入记录 ID 契约', () => {
       {
         grossAmount: 200,
         incomeTypeId: '9007199254740995',
-        incDate: '2026-10-11',
+        incomeDate: '2026-10-11',
         remark: '',
       },
     );
@@ -121,12 +121,12 @@ describe('收入记录 ID 契约', () => {
   it('没有 id 的新记录仍调用新增接口', async () => {
     mount(FormModal);
     await flushPromises();
-    mocks.values = { grossAmount: 100, incDate: '2026-10-11' };
+    mocks.values = { grossAmount: 100, incomeDate: '2026-10-11' };
     await mocks.modalOptions.onConfirm();
 
     expect(mocks.post).toHaveBeenCalledExactlyOnceWith('/income', {
       grossAmount: 100,
-      incDate: '2026-10-11',
+      incomeDate: '2026-10-11',
     });
     expect(mocks.put).not.toHaveBeenCalled();
   });

@@ -27,7 +27,7 @@ interface RowType {
   grossAmount: number;
   remark: string;
   incomeTypeId: string;
-  incDate: string;
+  incomeDate: string;
   updateTime: string;
 }
 
@@ -128,7 +128,7 @@ const gridOptions: VxeGridProps<RowType> = {
         return getIncomeTypeLabel(cellValue);
       },
     },
-    { field: 'incDate', title: '时间', sortable: true, width: 140 },
+    { field: 'incomeDate', title: '时间', sortable: true, width: 140 },
     {
       field: 'grossAmount',
       cellType: 'number',

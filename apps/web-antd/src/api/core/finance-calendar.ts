@@ -50,7 +50,7 @@ export interface FinanceCalendarDetail {
   transactionAmount?: null | number;
   grossAmount?: null | number;
   taxAmount?: null | number;
-  incDate?: null | string;
+  incomeDate?: null | string;
   incomeTypeId?: null | string;
   expenseTime?: null | string;
   expenseDesc?: null | string;

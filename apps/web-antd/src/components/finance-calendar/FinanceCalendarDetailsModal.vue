@@ -111,8 +111,8 @@ function dictionaryLabel(items: UserDictDataEntity[], id?: null | string) {
 }
 function metadata(row: FinanceCalendarDetail) {
   return [
-    row.incDate
-      ? row.incDate
+    row.incomeDate
+      ? row.incomeDate
       : row.expenseTime
         ? dayjs(row.expenseTime).format('YYYY-MM-DD HH:mm')
         : '未填日期',

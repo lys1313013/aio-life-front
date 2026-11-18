@@ -104,7 +104,7 @@ const [Form, formApi] = useAppForm({
         format: 'YYYY-MM-DD',
         valueFormat: 'YYYY-MM-DD',
       },
-      fieldName: 'incDate',
+      fieldName: 'incomeDate',
       label: '收入日期',
       rules: 'required',
     },
@@ -149,7 +149,7 @@ const [Modal, modalApi] = useVbenModal({
       formApi.resetForm();
       const { values = {} } = modalApi.getData<Record<string, any>>() ?? {};
       originalValues.value = { ...values };
-      formApi.setValues({ incDate: dayjs().format('YYYY-MM-DD'), ...values });
+      formApi.setValues({ incomeDate: dayjs().format('YYYY-MM-DD'), ...values });
     }
   },
   title: '',

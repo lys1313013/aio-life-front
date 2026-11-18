@@ -491,7 +491,7 @@ export interface HonorRecordUpdateReq {
 
 export interface IncomeCreateReq {
   grossAmount?: null | number | string;
-  incDate?: null | string;
+  incomeDate?: null | string;
   remark?: null | string;
   incomeTypeId?: null | string;
   taxAmount?: null | number | string;
@@ -499,7 +499,7 @@ export interface IncomeCreateReq {
 
 export interface IncomeUpdateReq {
   grossAmount?: null | number | string;
-  incDate?: null | string;
+  incomeDate?: null | string;
   remark?: null | string;
   incomeTypeId?: null | string;
   taxAmount?: null | number | string;
@@ -874,7 +874,7 @@ export interface SetSecondaryPasswordReq {
 export interface SysDictDataCreateReq {
   dictTypeId: string;
   sortOrder?: null | number;
-  dictLabel?: null | string;
+  dictLabel: string;
   dictValue: string;
   cssClass?: null | string;
   listClass?: null | string;
@@ -1857,14 +1857,14 @@ const fields: Record<string, Record<string, null | string>> = {
   },
   IncomeCreateReq: {
     grossAmount: null,
-    incDate: null,
+    incomeDate: null,
     remark: null,
     incomeTypeId: null,
     taxAmount: null,
   },
   IncomeUpdateReq: {
     grossAmount: null,
-    incDate: null,
+    incomeDate: null,
     remark: null,
     incomeTypeId: null,
     taxAmount: null,
@@ -4549,7 +4549,7 @@ export interface IncStaticByYearVO {
 export interface IncomeVO {
   id?: string;
   grossAmount?: number | string;
-  incDate?: string;
+  incomeDate?: string;
   remark?: string;
   incomeTypeId?: string;
   taxAmount?: number | string;

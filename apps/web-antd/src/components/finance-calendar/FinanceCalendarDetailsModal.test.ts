@@ -203,7 +203,7 @@ it('收入明细沿用共享弹窗，显示日期、分类、备注和税额且�
       {
         id: '9007199254740993124',
         grossAmount: 8000,
-        incDate: '2026-08-12',
+        incomeDate: '2026-08-12',
         incomeTypeId: 'salary',
         remark: '八月工资',
         taxAmount: 120,
@@ -263,7 +263,7 @@ it('概览切换明细类型重置页码，合计使用对应收入支出且忽�
   );
   resolveIncome({
     items: [
-      { id: 'old', grossAmount: 608.02, incDate: '2026-08-12', remark: '旧收入' },
+      { id: 'old', grossAmount: 608.02, incomeDate: '2026-08-12', remark: '旧收入' },
     ],
     total: 1,
   });
