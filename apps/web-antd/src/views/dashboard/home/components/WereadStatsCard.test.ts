@@ -58,7 +58,9 @@ vi.mock('#/store/secondary-lock', () => ({
 }));
 vi.mock('@vben/plugins/echarts', () => ({
   EchartsUI: { template: '<div class="chart" />' },
-  useEcharts: () => ({ renderEcharts: mocks.chart }),
+  useEcharts: () => ({
+    renderEcharts: (options: () => unknown) => mocks.chart(options()),
+  }),
 }));
 vi.mock('#/components/BusinessIcon.vue', () => ({
   default: { template: '<i />' },
@@ -181,6 +183,39 @@ it('无阅读时保留日期与空态且不绘制零值柱体', async () => {
         (item: { value: null | number }) => item.value === null,
       ),
   ).toBe(true);
+});
+
+it('首次有阅读数据时逐柱入场，刷新和切换粒度直接更新', async () => {
+  const empty = payload({
+    buckets: payload().buckets.map((bucket) => ({ ...bucket, seconds: 0 })),
+    totalSeconds: 0,
+  });
+  const populated = payload({
+    buckets: empty.buckets.map((bucket, index) => ({
+      ...bucket,
+      seconds: [0, 1800, 0, 2100][index] ?? 0,
+    })),
+  });
+  mocks.stats.mockResolvedValueOnce(empty).mockResolvedValueOnce(populated);
+  const wrapper = mount(WereadStatsCard);
+  const chart = () => mocks.chart.mock.calls.at(-1)?.[0];
+  const refresh = wrapper.find('[aria-label="刷新阅读统计"]');
+  await flushPromises();
+  expect(chart().animation).toBe(false);
+
+  await refresh.trigger('click');
+  await flushPromises();
+  expect(chart().animation).toBe(true);
+  expect(chart().animationDelay(1)).toBe(0);
+  expect(chart().animationDelay(3)).toBe(150);
+
+  await refresh.trigger('click');
+  await flushPromises();
+  expect(chart().animation).toBe(false);
+
+  await wrapper.find('[aria-label="按月统计"]').trigger('click');
+  await flushPromises();
+  expect(chart().animation).toBe(false);
 });
 
 it('首次失败显示卡内重试并可恢复', async () => {

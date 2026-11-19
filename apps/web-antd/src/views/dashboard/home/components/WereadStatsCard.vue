@@ -9,7 +9,6 @@ import type {
 
 import {
   computed,
-  nextTick,
   onActivated,
   onBeforeUnmount,
   onDeactivated,
@@ -55,6 +54,7 @@ const data = ref<null | WereadStatsSection>(null);
 const denied = ref(false);
 const lastSuccess = ref(0);
 let active = true;
+let hasShownBars = false;
 let resettingForIdentity = false;
 let timer: ReturnType<typeof setInterval> | undefined;
 let visibilityBound = false;
@@ -221,17 +221,34 @@ function bucketTitle(bucket: WereadStatsBucket, mode: WereadStatsGranularity) {
   return `${Number(month)}月${Number(day)}日`;
 }
 
-async function draw() {
+function draw() {
   const current = data.value;
-  if (!current) return;
+  if (!current?.connected || !chartRef.value) return;
+
   const minutes = current.buckets.map((bucket) =>
     Math.max(0, bucket.seconds / 60),
   );
   const maxMinutes = Math.max(1, ...minutes);
+  const barCount = minutes.filter((value) => value > 0).length;
+  const delayStep = Math.min(150, 660 / Math.max(1, barCount - 1));
+  let barIndex = 0;
+  const barDelays = minutes.map((value) => {
+    const delay = Math.round(barIndex * delayStep);
+    if (value > 0) barIndex++;
+    return delay;
+  });
   const mode = current.granularity;
-  await nextTick();
-  renderEcharts({
-    animationDuration: 240,
+
+  function animateFirstBars() {
+    if (hasShownBars || barCount === 0 || data.value !== current) return false;
+    hasShownBars = true;
+    return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  renderEcharts(() => ({
+    animation: animateFirstBars(),
+    animationDelay: (index: number) => barDelays[index] ?? 0,
+    animationDuration: 180,
     grid: { bottom: 0, containLabel: true, left: 2, right: 2, top: 6 },
     tooltip: {
       axisPointer: { type: 'shadow' },
@@ -280,7 +297,7 @@ async function draw() {
         type: 'bar',
       },
     ],
-  });
+  }));
 }
 
 function clearTimer() {
@@ -346,6 +363,13 @@ watch(granularity, (next) => {
   void request.load(true);
 });
 watch(
+  identity,
+  () => {
+    hasShownBars = false;
+  },
+  { flush: 'sync' },
+);
+watch(
   [identity, available, locked],
   () => {
     request.invalidate();
@@ -362,14 +386,13 @@ watch(
   },
   { flush: 'sync', immediate: true },
 );
-watch(data, () => void draw());
+watch([data, chartRef], draw, { flush: 'post' });
 
 onMounted(() => {
   void visuals.load();
   void locks.loadLockedMenus();
   document.addEventListener('visibilitychange', visibilityChanged);
   visibilityBound = true;
-  void draw();
   resume();
 });
 onActivated(() => {
