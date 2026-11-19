@@ -35,6 +35,17 @@ const routes: RouteRecordRaw[] = [
       },
       {
         meta: {
+          authority: ['admin'],
+          icon: 'lucide:network',
+          keepAlive: false,
+          title: '数据库关系图谱',
+        },
+        name: 'QuerySchema',
+        path: '/query/schema',
+        component: () => import('#/views/data-query/schema/index.vue'),
+      },
+      {
+        meta: {
           icon: 'carbon:cube',
           title: '连接器（MCP）',
         },
