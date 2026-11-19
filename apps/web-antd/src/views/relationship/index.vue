@@ -1,37 +1,48 @@
 <script setup lang="ts">
 import type {
+  GraphData,
   PersonDetailVO,
   PersonReq,
   RelationshipDetailVO,
   RelationshipReq,
 } from '#/api/relationship';
 
-import { computed, markRaw, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
+
+import { usePreferences } from '@vben/preferences';
 
 import {
   DeleteOutlined,
   EditOutlined,
+  EllipsisOutlined,
   FullscreenOutlined,
+  PauseOutlined,
+  PlayCircleOutlined,
   PlusOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
-  TeamOutlined,
+  RetweetOutlined,
   ZoomInOutlined,
   ZoomOutOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
+  Checkbox,
   DatePicker,
   Drawer,
+  Dropdown,
   Empty,
   Form,
   FormItem,
   Input,
+  Menu,
+  MenuItem,
   message,
   Popconfirm,
+  Popover,
   Select,
   SelectOption,
   Spin,
-  Tag,
   Tooltip,
 } from 'ant-design-vue';
 
@@ -47,28 +58,32 @@ import {
 } from '#/api/relationship';
 import { AppModal as Modal } from '#/components/app-modal';
 
-import ForceGraph2DWrapper from './components/ForceGraph2DWrapper.vue';
-import {
-  getCategoryColor,
-  getRelationColor,
-  ONE_WAY_RELATION_TYPES,
-} from './constants';
+import PaperRelationshipCanvas from './components/PaperRelationshipCanvas.vue';
+import { ONE_WAY_RELATION_TYPES, SCHOOL_FIELDS } from './constants';
+import { paperCategoryColor } from './paper-graph';
 
-// ==================== 状态 ====================
+const { isDark } = usePreferences();
+const graphData = ref<GraphData>({ nodes: [], edges: [] });
+const allNodes = computed(() => graphData.value.nodes);
 const loading = ref(false);
+const loaded = ref(false);
+const loadFailed = ref(false);
 const detailLoading = ref(false);
-// allNodes / allLinks 保持对象引用不变（force-graph 会在其上写入坐标），
-// 过滤时复用同一批对象可避免布局被重置
-const allNodes = ref<any[]>([]);
-const allLinks = ref<any[]>([]);
+const detailFailed = ref(false);
+const selectedPersonId = ref<string>();
 const selectedPersonDetail = ref<null | PersonDetailVO>(null);
 const drawerVisible = ref(false);
 const personFormVisible = ref(false);
 const personSubmitLoading = ref(false);
 const relationshipFormVisible = ref(false);
+const relationshipSubmitLoading = ref(false);
+const deletingPerson = ref(false);
+const deletingRelationships = ref(new Set<string>());
 const editingPersonId = ref<null | string>(null);
-
-const graphRef = ref<InstanceType<typeof ForceGraph2DWrapper> | null>(null);
+const motion = ref(true);
+const graphRef = ref<InstanceType<typeof PaperRelationshipCanvas> | null>(null);
+let graphRequest = 0;
+let detailRequest = 0;
 
 // 搜索定位
 const searchValue = ref<string | undefined>();
@@ -116,189 +131,114 @@ const relationshipForm = ref<RelationshipReq>({
 });
 const editingRelationshipId = ref<null | string>(null);
 
-// ==================== 计算属性 ====================
-const linkIdOf = (endpoint: any): string =>
-  typeof endpoint === 'object' ? endpoint.id : String(endpoint);
-
-const relTypeOf = (link: any): string => link.relationType || '其他';
-const catOf = (node: any): string => node.category || '未分类';
-
 const presentRelationTypes = computed(() => [
-  ...new Set(allLinks.value.map((l) => relTypeOf(l))),
+  ...new Set(
+    graphData.value.edges.map(({ relationType }) => relationType || '其他'),
+  ),
 ]);
-
 const presentCategories = computed(() => [
-  ...new Set(allNodes.value.map((n) => catOf(n))),
+  ...new Set(allNodes.value.map(({ category }) => category || '未分类')),
 ]);
-
 const searchOptions = computed(() =>
-  allNodes.value.map((n) => ({ label: n.name, value: n.id })),
+  allNodes.value.map(({ name, id }) => ({ label: name, value: id })),
 );
 
-const filteredGraphData = computed(() => {
+const filteredGraphData = computed<GraphData>(() => {
   const nodes = allNodes.value.filter(
-    (n) => !uncheckedCategories.value.includes(catOf(n)),
+    ({ category }) => !uncheckedCategories.value.includes(category || '未分类'),
   );
-  const ids = new Set(nodes.map((n) => n.id));
+  const ids = new Set(nodes.map(({ id }) => id));
   return {
     nodes,
-    links: allLinks.value.filter(
-      (l) =>
-        ids.has(linkIdOf(l.source)) &&
-        ids.has(linkIdOf(l.target)) &&
-        !uncheckedRelationTypes.value.includes(relTypeOf(l)),
+    edges: graphData.value.edges.filter(
+      ({ source, target, relationType }) =>
+        ids.has(source) &&
+        ids.has(target) &&
+        !uncheckedRelationTypes.value.includes(relationType || '其他'),
     ),
   };
 });
+const shownRelationTypes = computed(
+  () =>
+    presentRelationTypes.value.filter(
+      (type) => !uncheckedRelationTypes.value.includes(type),
+    ).length,
+);
 
-// ==================== 数据获取 ====================
-const fetchGraphData = async () => {
+async function fetchGraphData() {
+  const request = ++graphRequest;
   loading.value = true;
+  loadFailed.value = false;
   try {
     const data = await getGraphData();
-    const nodes = data.nodes || [];
-    const edges = data.edges || [];
-
-    // 计算每个节点的关系数量（对边去重，避免双向关系算两次）
-    const relCountMap = new Map<string, number>();
-    for (const node of nodes) {
-      relCountMap.set(node.id, 0);
-    }
-    const seenEdges = new Set<string>();
-    for (const edge of edges) {
-      const key = [edge.source, edge.target].sort().join('|');
-      if (seenEdges.has(key)) continue;
-      seenEdges.add(key);
-      relCountMap.set(edge.source, (relCountMap.get(edge.source) || 0) + 1);
-      relCountMap.set(edge.target, (relCountMap.get(edge.target) || 0) + 1);
-    }
-
-    // 按关系数量排序，关系最多的排第一
-    const sortedNodes = [...nodes].sort(
-      (a, b) => (relCountMap.get(b.id) || 0) - (relCountMap.get(a.id) || 0),
-    );
-
-    // 径向布局作为力模拟初始位置：关系最多的在中心 (0,0)，其他按同心圆分布
-    allNodes.value = sortedNodes.map((n, i) => {
-      const count = relCountMap.get(n.id) || 0;
-      let x = 0;
-      let y = 0;
-
-      if (i > 0) {
-        // 第1层最多6个，第2层最多12个，第3层最多18个...
-        let layer = 1;
-        let cumulativeCount = 0;
-        while (cumulativeCount + Math.floor(6 * layer) < i && layer < 5) {
-          cumulativeCount += Math.floor(6 * layer);
-          layer++;
-        }
-        const indexInLayer = i - 1 - cumulativeCount;
-        const nodesInThisLayer = Math.min(
-          Math.floor(6 * layer),
-          sortedNodes.length - i + indexInLayer,
-        );
-        const angle =
-          (2 * Math.PI * indexInLayer) / Math.max(nodesInThisLayer, 1) -
-          Math.PI / 2;
-        const layerRadius = layer * 120;
-        x = layerRadius * Math.cos(angle);
-        y = layerRadius * Math.sin(angle);
-      }
-
-      // markRaw：力模拟每帧读写 x/y/vx/vy，不能走 Vue 响应式代理
-      return markRaw({
-        id: n.id,
-        name: n.name,
-        category: n.category,
-        relationshipCount: count,
-        // 力模拟初始位置（不固定，可自由展开）
-        x,
-        y,
-        initialX: x,
-        initialY: y,
-        val: 20,
-      });
-    });
-
-    allLinks.value = edges.map((e) =>
-      markRaw({
-        source: e.source,
-        target: e.target,
-        relationType: e.relationType,
-        direction: e.direction || '双向',
-      }),
-    );
-  } catch (error) {
-    console.error('Failed to fetch graph data:', error);
-    // 具体错误提示由全局拦截器展示（如后端未开启 Neo4j 时给出明确指引）
-  } finally {
-    loading.value = false;
-  }
-};
-
-// ==================== 交互处理 ====================
-const handleNodeDblClick = async (node: any) => {
-  if (!node?.id || node.id === 'null' || node.id === 'undefined') {
-    message.error('该人物数据缺少有效 ID，请到 Neo4j 删除该节点后重新添加');
-    return;
-  }
-  detailLoading.value = true;
-  drawerVisible.value = true;
-  try {
-    selectedPersonDetail.value = await getPerson(node.id);
+    if (request !== graphRequest) return;
+    graphData.value = data;
+    loaded.value = true;
   } catch {
-    // 全局拦截器已提示
-    drawerVisible.value = false;
+    if (request === graphRequest) loadFailed.value = true;
   } finally {
-    detailLoading.value = false;
+    if (request === graphRequest) loading.value = false;
   }
-};
+}
 
-const handleSearchSelect = (id: any) => {
-  graphRef.value?.centerOnNode(String(id));
-};
-
-const toggleRelationType = (type: string) => {
-  const idx = uncheckedRelationTypes.value.indexOf(type);
-  if (idx === -1) {
-    uncheckedRelationTypes.value.push(type);
-  } else {
-    uncheckedRelationTypes.value.splice(idx, 1);
+async function loadPersonDetail(id: string) {
+  const request = ++detailRequest;
+  detailLoading.value = true;
+  detailFailed.value = false;
+  try {
+    const person = await getPerson(id);
+    if (request === detailRequest) selectedPersonDetail.value = person;
+  } catch {
+    if (request === detailRequest) detailFailed.value = true;
+  } finally {
+    if (request === detailRequest) detailLoading.value = false;
   }
-};
+}
 
-const toggleCategory = (cat: string) => {
-  const idx = uncheckedCategories.value.indexOf(cat);
-  if (idx === -1) {
-    uncheckedCategories.value.push(cat);
-  } else {
-    uncheckedCategories.value.splice(idx, 1);
-  }
-};
+function openPersonDetail(id: string) {
+  if (!id || (drawerVisible.value && selectedPersonId.value === id)) return;
+  selectedPersonId.value = id;
+  selectedPersonDetail.value = null;
+  drawerVisible.value = true;
+  void loadPersonDetail(id);
+}
 
-const relTagStyle = (type: string) => {
-  const color = getRelationColor(type);
-  const checked = !uncheckedRelationTypes.value.includes(type);
-  return checked
-    ? { borderColor: color, color, backgroundColor: `${color}26` }
-    : {
-        borderColor: `${color}55`,
-        color: `${color}99`,
-        backgroundColor: 'transparent',
-      };
-};
+function handleDrawerChange(open: boolean) {
+  drawerVisible.value = open;
+  if (open) return;
+  detailRequest++;
+  detailLoading.value = false;
+  selectedPersonId.value = undefined;
+  selectedPersonDetail.value = null;
+}
 
-const catTagStyle = (category: string) => {
-  const color = getCategoryColor(category === '未分类' ? '' : category);
-  const checked = !uncheckedCategories.value.includes(category);
-  return checked
-    ? { borderColor: color, color, backgroundColor: `${color}26` }
-    : {
-        borderColor: `${color}55`,
-        color: `${color}99`,
-        backgroundColor: 'transparent',
-      };
-};
+async function handleSearchSelect(value: unknown) {
+  if (typeof value !== 'string') return;
+  const person = allNodes.value.find(({ id }) => id === value);
+  if (!person) return;
+  const category = person.category || '未分类';
+  uncheckedCategories.value = uncheckedCategories.value.filter(
+    (item) => item !== category,
+  );
+  await nextTick();
+  graphRef.value?.centerOnNode(value);
+}
+
+function toggleFilter(items: string[], value: string) {
+  return items.includes(value)
+    ? items.filter((item) => item !== value)
+    : [...items, value];
+}
+
+function resetFilters() {
+  uncheckedCategories.value = [];
+  uncheckedRelationTypes.value = [];
+}
+
+function refreshDetails(id?: string) {
+  if (id && drawerVisible.value && selectedPersonId.value === id)
+    return loadPersonDetail(id);
+}
 
 // ==================== 表单处理 ====================
 const personForm = ref<PersonReq>({
@@ -310,7 +250,6 @@ const personForm = ref<PersonReq>({
   birthday: '',
   phone: '',
   email: '',
-  school: '',
   socialLinks: '',
   notes: '',
 });
@@ -329,7 +268,12 @@ const openPersonForm = (personId?: string) => {
         birthday: detail.birthday || '',
         phone: detail.phone || '',
         email: detail.email || '',
-        school: detail.school || '',
+        primarySchool: detail.primarySchool,
+        juniorHighSchool: detail.juniorHighSchool,
+        highSchool: detail.highSchool,
+        undergraduateSchool: detail.undergraduateSchool,
+        mastersSchool: detail.mastersSchool,
+        doctoralSchool: detail.doctoralSchool,
         socialLinks: detail.socialLinks || '',
         notes: detail.notes || '',
       };
@@ -345,7 +289,6 @@ const openPersonForm = (personId?: string) => {
       birthday: '',
       phone: '',
       email: '',
-      school: '',
       socialLinks: '',
       notes: '',
     };
@@ -354,20 +297,15 @@ const openPersonForm = (personId?: string) => {
 };
 
 const handlePersonSubmit = async () => {
+  if (personSubmitLoading.value) return;
+  const id = editingPersonId.value;
   personSubmitLoading.value = true;
   try {
-    if (editingPersonId.value) {
-      await updatePerson(editingPersonId.value, personForm.value);
-      message.success('保存成功');
-    } else {
-      await createPerson(personForm.value);
-      message.success('添加成功');
-    }
+    if (id) await updatePerson(id, personForm.value);
+    else await createPerson(personForm.value);
+    message.success(id ? '保存成功' : '添加成功');
     personFormVisible.value = false;
-    await fetchGraphData();
-    if (editingPersonId.value && selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(editingPersonId.value);
-    }
+    await Promise.all([fetchGraphData(), refreshDetails(id ?? undefined)]);
   } catch {
     // 全局拦截器已提示
   } finally {
@@ -376,14 +314,18 @@ const handlePersonSubmit = async () => {
 };
 
 const handleDeletePerson = async (id: string) => {
+  if (deletingPerson.value) return;
+  deletingPerson.value = true;
   try {
     await deletePerson(id);
     message.success('删除成功');
-    drawerVisible.value = false;
-    selectedPersonDetail.value = null;
+    if (selectedPersonId.value === id) handleDrawerChange(false);
+    if (searchValue.value === id) searchValue.value = undefined;
     await fetchGraphData();
   } catch {
     // 全局拦截器已提示
+  } finally {
+    deletingPerson.value = false;
   }
 };
 
@@ -423,195 +365,283 @@ const openEditRelationshipForm = (rel: RelationshipDetailVO) => {
 };
 
 const handleRelationshipSubmit = async () => {
+  if (relationshipSubmitLoading.value) return;
+  const id = editingRelationshipId.value;
+  const source = relationshipForm.value.sourcePersonId;
+  relationshipSubmitLoading.value = true;
   try {
-    if (editingRelationshipId.value === null) {
-      await createRelationship(relationshipForm.value);
-      message.success('添加成功');
-    } else {
-      await updateRelationship(
-        editingRelationshipId.value,
-        relationshipForm.value,
-      );
-      message.success('保存成功');
-    }
+    if (id === null) await createRelationship(relationshipForm.value);
+    else await updateRelationship(id, relationshipForm.value);
+    message.success(id === null ? '添加成功' : '保存成功');
     relationshipFormVisible.value = false;
-    await fetchGraphData();
-    if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(
-        selectedPersonDetail.value.id,
-      );
-    }
+    await Promise.all([fetchGraphData(), refreshDetails(source)]);
   } catch {
     // 全局拦截器已提示
+  } finally {
+    relationshipSubmitLoading.value = false;
   }
 };
 
-const handleDeleteRelationship = async (targetId: string) => {
-  if (!selectedPersonDetail.value) return;
+const handleDeleteRelationship = async (relationship: RelationshipDetailVO) => {
+  const source = selectedPersonDetail.value?.id;
+  const target = relationship.target?.id;
+  if (!source || !target || deletingRelationships.value.has(relationship.id))
+    return;
+  deletingRelationships.value.add(relationship.id);
   try {
     await deleteRelationship({
-      sourcePersonId: selectedPersonDetail.value.id,
-      targetPersonId: targetId,
+      sourcePersonId: source,
+      targetPersonId: target,
     });
     message.success('删除成功');
-    await fetchGraphData();
-    if (selectedPersonDetail.value) {
-      selectedPersonDetail.value = await getPerson(
-        selectedPersonDetail.value.id,
-      );
-    }
+    await Promise.all([fetchGraphData(), refreshDetails(source)]);
   } catch {
     // 全局拦截器已提示
+  } finally {
+    deletingRelationships.value.delete(relationship.id);
   }
 };
 
-// ==================== 生命周期 ====================
-onMounted(() => {
-  fetchGraphData();
-});
+onMounted(fetchGraphData);
 </script>
 
 <template>
-  <div class="relationship-page">
-    <Spin :spinning="loading">
-      <!-- 顶部工具栏 -->
-      <div
-        class="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-card px-4 py-3"
+  <div class="relationship-page p-4">
+    <section
+      class="relationship-card overflow-hidden rounded-lg bg-card text-card-foreground"
+    >
+      <header
+        class="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
       >
-        <div class="flex flex-wrap items-center gap-2">
-          <TeamOutlined class="text-xl text-primary" />
-          <span class="text-base font-medium text-card-foreground">
-            人际关系图谱
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 class="text-base font-semibold">关系图谱</h1>
+          <span
+            v-if="loaded"
+            class="text-sm tabular-nums text-muted-foreground"
+          >
+            {{ filteredGraphData.nodes.length }} 人 ·
+            {{ filteredGraphData.edges.length }} 条关系
           </span>
-          <span class="text-sm text-muted-foreground">
-            {{ filteredGraphData.nodes.length || 0 }} 人 ·
-            {{ filteredGraphData.links.length || 0 }} 条关系
-          </span>
+        </div>
+        <div class="flex min-w-0 items-center gap-1">
+          <label class="sr-only" for="relationship-person-search">
+            搜索人物并定位
+          </label>
           <Select
+            id="relationship-person-search"
             v-model:value="searchValue"
-            show-search
-            allow-clear
-            placeholder="搜索人物并定位"
-            class="w-44"
             :options="searchOptions"
+            class="w-44 max-w-[55vw]"
+            placeholder="搜索人物并定位"
             option-filter-prop="label"
+            allow-clear
+            show-search
             @select="handleSearchSelect"
+            @clear="graphRef?.clearFocus()"
           />
+          <Tooltip title="刷新图谱">
+            <Button
+              type="text"
+              aria-label="刷新图谱"
+              :loading="loading"
+              @click="fetchGraphData"
+            >
+              <template #icon><ReloadOutlined /></template>
+            </Button>
+          </Tooltip>
+          <Dropdown :trigger="['click']">
+            <Button type="text" aria-label="更多操作" title="更多操作">
+              <template #icon><EllipsisOutlined /></template>
+            </Button>
+            <template #overlay>
+              <Menu>
+                <MenuItem key="create-person" @click="openPersonForm()">
+                  新建人物
+                </MenuItem>
+              </Menu>
+            </template>
+          </Dropdown>
         </div>
-        <div class="flex items-center">
-          <Button type="primary" @click="openPersonForm()">
-            <PlusOutlined /> 添加人物
-          </Button>
-        </div>
-      </div>
+      </header>
 
-      <!-- 筛选栏 -->
-      <div
-        v-if="allNodes.length > 0"
-        class="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-card px-4 py-2"
-      >
-        <div class="flex flex-wrap items-center gap-1">
-          <span class="mr-1 text-xs text-muted-foreground">关系类型</span>
-          <Tag.CheckableTag
-            v-for="t in presentRelationTypes"
-            :key="t"
-            :checked="!uncheckedRelationTypes.includes(t)"
-            class="rel-type-tag"
-            :style="relTagStyle(t)"
-            @change="toggleRelationType(t)"
-          >
-            {{ t }}
-          </Tag.CheckableTag>
-        </div>
-        <div class="flex flex-wrap items-center gap-1">
-          <span class="mr-1 text-xs text-muted-foreground">分类</span>
-          <Tag.CheckableTag
-            v-for="c in presentCategories"
-            :key="c"
-            :checked="!uncheckedCategories.includes(c)"
-            class="rel-type-tag"
-            :style="catTagStyle(c)"
-            @change="toggleCategory(c)"
-          >
-            {{ c }}
-          </Tag.CheckableTag>
-        </div>
-        <span class="ml-auto hidden text-xs text-muted-foreground md:inline">
-          单击节点聚焦 · 双击查看详情 · 拖拽后固定位置
-        </span>
-      </div>
-
-      <!-- 图谱区域 -->
-      <div class="graph-container bg-card">
-        <ForceGraph2DWrapper
-          v-if="filteredGraphData.nodes.length > 0"
+      <div class="graph-container">
+        <PaperRelationshipCanvas
           ref="graphRef"
           :graph-data="filteredGraphData"
-          node-label="name"
-          :link-directional-arrow-length="6"
-          :link-directional-arrow-rel-pos="1"
-          :paused="personFormVisible || relationshipFormVisible"
-          @node-dblclick="handleNodeDblClick"
+          :motion="motion && !personFormVisible && !relationshipFormVisible"
+          @person-open="openPersonDetail"
         />
-        <Empty
-          v-if="filteredGraphData.nodes.length === 0"
-          description="暂无人物，点击添加开始"
+        <div
+          v-if="!loaded && loading"
           class="empty-overlay"
-        />
+          role="status"
+          aria-label="加载图谱"
+        >
+          <Spin />
+        </div>
+        <div v-else-if="!loaded && loadFailed" class="empty-overlay">
+          <Empty
+            description="图谱加载失败"
+            :image="Empty.PRESENTED_IMAGE_SIMPLE"
+          >
+            <Button @click="fetchGraphData">重试</Button>
+          </Empty>
+        </div>
+        <div
+          v-else-if="loaded && filteredGraphData.nodes.length === 0"
+          class="empty-overlay"
+        >
+          <Empty
+            :description="
+              allNodes.length > 0 ? '没有符合筛选条件的人物' : '暂无人物'
+            "
+            :image="Empty.PRESENTED_IMAGE_SIMPLE"
+          >
+            <Button v-if="allNodes.length > 0" @click="resetFilters">
+              清空筛选
+            </Button>
+          </Empty>
+        </div>
 
-        <!-- 画布工具栏 -->
         <div
           v-if="filteredGraphData.nodes.length > 0"
-          class="absolute bottom-4 right-4 z-10 flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-md"
+          class="canvas-controls flex items-center gap-1 rounded-lg bg-card p-1 shadow-sm"
         >
-          <Tooltip title="放大" placement="left">
-            <button
-              class="canvas-tool-btn"
-              type="button"
-              @click="graphRef?.zoomIn()"
+          <Tooltip :title="motion ? '暂停动效' : '播放动效'">
+            <Button
+              type="text"
+              :aria-label="motion ? '暂停动效' : '播放动效'"
+              @click="motion = !motion"
             >
-              <ZoomInOutlined />
-            </button>
+              <template #icon>
+                <PauseOutlined v-if="motion" /><PlayCircleOutlined v-else />
+              </template>
+            </Button>
           </Tooltip>
-          <Tooltip title="缩小" placement="left">
-            <button
-              class="canvas-tool-btn"
-              type="button"
-              @click="graphRef?.zoomOut()"
-            >
-              <ZoomOutOutlined />
-            </button>
+          <Tooltip title="放大">
+            <Button type="text" aria-label="放大" @click="graphRef?.zoomIn()">
+              <template #icon><ZoomInOutlined /></template>
+            </Button>
           </Tooltip>
-          <Tooltip title="适应全屏" placement="left">
-            <button
-              class="canvas-tool-btn"
-              type="button"
+          <Tooltip title="缩小">
+            <Button type="text" aria-label="缩小" @click="graphRef?.zoomOut()">
+              <template #icon><ZoomOutOutlined /></template>
+            </Button>
+          </Tooltip>
+          <Tooltip title="适应画布">
+            <Button
+              type="text"
+              aria-label="适应画布"
               @click="graphRef?.fitView()"
             >
-              <FullscreenOutlined />
-            </button>
+              <template #icon><FullscreenOutlined /></template>
+            </Button>
           </Tooltip>
-          <Tooltip title="重置布局" placement="left">
-            <button
-              class="canvas-tool-btn"
-              type="button"
+          <Tooltip title="重置布局">
+            <Button
+              type="text"
+              aria-label="重置布局"
               @click="graphRef?.resetLayout()"
             >
-              <ReloadOutlined />
-            </button>
+              <template #icon><RetweetOutlined /></template>
+            </Button>
           </Tooltip>
         </div>
       </div>
-    </Spin>
+
+      <footer
+        class="flex min-h-12 flex-wrap items-center justify-between gap-2 px-4 py-2"
+      >
+        <div
+          class="flex flex-wrap items-center gap-1"
+          role="group"
+          aria-label="人物分类筛选"
+        >
+          <Button
+            v-for="category in presentCategories"
+            :key="category"
+            type="text"
+            size="small"
+            class="category-filter"
+            :aria-pressed="!uncheckedCategories.includes(category)"
+            :style="{
+              '--category-color': paperCategoryColor(category, isDark),
+            }"
+            @click="
+              uncheckedCategories = toggleFilter(uncheckedCategories, category)
+            "
+          >
+            <span class="category-dot" aria-hidden="true"></span>{{ category }}
+          </Button>
+        </div>
+        <div
+          v-if="loaded && allNodes.length > 0"
+          class="ml-auto flex items-center gap-1"
+        >
+          <Popover placement="topRight" trigger="click">
+            <Button size="small">
+              {{
+                shownRelationTypes === presentRelationTypes.length
+                  ? '全部关系'
+                  : `${shownRelationTypes} 类关系`
+              }}
+            </Button>
+            <template #content>
+              <div class="relation-options" role="group" aria-label="关系类型">
+                <Checkbox
+                  v-for="type in presentRelationTypes"
+                  :key="type"
+                  :checked="!uncheckedRelationTypes.includes(type)"
+                  @change="
+                    uncheckedRelationTypes = toggleFilter(
+                      uncheckedRelationTypes,
+                      type,
+                    )
+                  "
+                >
+                  {{ type }}
+                </Checkbox>
+                <Button
+                  size="small"
+                  type="link"
+                  @click="uncheckedRelationTypes = []"
+                >
+                  全部关系
+                </Button>
+              </div>
+            </template>
+          </Popover>
+          <Tooltip
+            title="单击聚焦，双击或按回车查看详情，拖动可调整位置。触屏轻点查看详情。"
+          >
+            <Button type="text" size="small" aria-label="图谱操作说明">
+              <template #icon><QuestionCircleOutlined /></template>
+            </Button>
+          </Tooltip>
+        </div>
+      </footer>
+    </section>
 
     <!-- 人物详情抽屉 -->
     <Drawer
-      v-model:open="drawerVisible"
+      :open="drawerVisible"
+      @update:open="handleDrawerChange"
       :title="selectedPersonDetail?.name || '人物详情'"
       :mask="false"
-      width="400"
+      width="min(400px, 100vw)"
     >
       <Spin :spinning="detailLoading">
+        <Empty
+          v-if="detailFailed"
+          description="人物详情加载失败"
+          :image="Empty.PRESENTED_IMAGE_SIMPLE"
+        >
+          <Button
+            @click="selectedPersonId && loadPersonDetail(selectedPersonId)"
+          >
+            重试
+          </Button>
+        </Empty>
         <template v-if="selectedPersonDetail">
           <div class="person-detail">
             <div class="detail-section">
@@ -628,9 +658,12 @@ onMounted(() => {
               <p v-if="selectedPersonDetail.phone">
                 <strong>电话：</strong>{{ selectedPersonDetail.phone }}
               </p>
-              <p v-if="selectedPersonDetail.school">
-                <strong>学校：</strong>{{ selectedPersonDetail.school }}
-              </p>
+              <template v-for="field in SCHOOL_FIELDS" :key="field.key">
+                <p v-if="selectedPersonDetail[field.key]">
+                  <strong>{{ field.label }}：</strong
+                  >{{ selectedPersonDetail[field.key] }}
+                </p>
+              </template>
               <p v-if="selectedPersonDetail.email">
                 <strong>邮箱：</strong>{{ selectedPersonDetail.email }}
               </p>
@@ -647,9 +680,16 @@ onMounted(() => {
                 <h4>
                   关系 ({{ selectedPersonDetail.relationships?.length || 0 }})
                 </h4>
-                <Button type="link" size="small" @click="openRelationshipForm">
-                  <PlusOutlined /> 添加关系
-                </Button>
+                <Tooltip title="新建关系">
+                  <Button
+                    type="text"
+                    size="small"
+                    aria-label="新建关系"
+                    @click="openRelationshipForm"
+                  >
+                    <template #icon><PlusOutlined /></template>
+                  </Button>
+                </Tooltip>
               </div>
               <div
                 v-if="selectedPersonDetail.relationships?.length"
@@ -665,13 +705,29 @@ onMounted(() => {
                     <span class="rel-name"> → {{ rel.target?.name }}</span>
                   </div>
                   <div class="rel-actions">
-                    <EditOutlined
-                      class="rel-edit-icon"
+                    <Button
+                      type="text"
+                      size="small"
+                      aria-label="编辑关系"
+                      title="编辑关系"
                       @click="openEditRelationshipForm(rel)"
-                    />
-                    <DeleteOutlined
-                      @click="handleDeleteRelationship(rel.target?.id || '')"
-                    />
+                    >
+                      <template #icon><EditOutlined /></template>
+                    </Button>
+                    <Popconfirm
+                      title="确定删除这条关系？"
+                      @confirm="handleDeleteRelationship(rel)"
+                    >
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        aria-label="删除关系"
+                        :loading="deletingRelationships.has(rel.id)"
+                      >
+                        <template #icon><DeleteOutlined /></template>
+                      </Button>
+                    </Popconfirm>
                   </div>
                 </div>
               </div>
@@ -690,7 +746,9 @@ onMounted(() => {
                 title="确定删除此人物？"
                 @confirm="handleDeletePerson(selectedPersonDetail.id)"
               >
-                <Button type="primary" danger> <DeleteOutlined /> 删除 </Button>
+                <Button type="primary" danger :loading="deletingPerson">
+                  <DeleteOutlined /> 删除
+                </Button>
               </Popconfirm>
             </div>
           </div>
@@ -746,9 +804,19 @@ onMounted(() => {
         <FormItem label="电话">
           <Input v-model:value="personForm.phone" placeholder="手机号" />
         </FormItem>
-        <FormItem label="学校">
-          <Input v-model:value="personForm.school" placeholder="请输入学校" />
-        </FormItem>
+        <div class="form-item-full person-form">
+          <FormItem
+            v-for="field in SCHOOL_FIELDS"
+            :key="field.key"
+            :label="field.label"
+          >
+            <Input
+              :aria-label="field.label"
+              :value="personForm[field.key] ?? undefined"
+              @update:value="personForm[field.key] = $event"
+            />
+          </FormItem>
+        </div>
         <FormItem class="form-item-full" label="备注">
           <Input.TextArea
             v-model:value="personForm.notes"
@@ -763,6 +831,8 @@ onMounted(() => {
     <Modal
       v-model:open="relationshipFormVisible"
       :title="editingRelationshipId === null ? '添加关系' : '编辑关系'"
+      :confirm-loading="relationshipSubmitLoading"
+      centered
       width="400px"
       @ok="handleRelationshipSubmit"
     >
@@ -824,59 +894,56 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.relationship-page {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-}
-
-.relationship-page :deep(.ant-spin-container) {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
 .graph-container {
-  flex: 1;
-  border-radius: 8px;
   position: relative;
-  min-height: calc(100vh - 260px);
+  height: clamp(390px, calc(100dvh - 237px), 1080px);
   overflow: hidden;
 }
 
 .empty-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
 }
 
-.canvas-tool-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  cursor: pointer;
-  color: hsl(var(--card-foreground));
+.empty-overlay :deep(.ant-btn) {
+  pointer-events: auto;
+}
+
+.canvas-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+}
+
+.category-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 6px;
+  vertical-align: 0.1em;
+  background: var(--category-color);
+  border-radius: 50%;
+}
+
+.category-filter[aria-pressed='false'] {
+  color: hsl(var(--muted-foreground));
+  text-decoration: line-through;
+}
+
+.category-filter[aria-pressed='false'] .category-dot {
   background: transparent;
-  border: none;
+  border: 1px solid var(--category-color);
 }
 
-.canvas-tool-btn:hover {
-  color: hsl(var(--primary));
-  background: hsl(var(--secondary));
-}
-
-.rel-type-tag {
-  border: 1px solid;
-  border-radius: 4px;
-  margin-inline-end: 0;
-}
-
-.rel-type-tag::before {
-  display: none;
+.relation-options {
+  display: grid;
+  gap: 6px;
+  min-width: 120px;
+  max-height: min(55dvh, 330px);
+  overflow-y: auto;
 }
 
 .person-detail {
@@ -926,15 +993,10 @@ onMounted(() => {
 }
 
 .rel-actions {
-  color: hsl(var(--destructive, 0 84% 60%));
-  cursor: pointer;
   display: flex;
+  flex: none;
   align-items: center;
-  gap: 10px;
-}
-
-.rel-actions .rel-edit-icon {
-  color: hsl(var(--muted-foreground, 215 16% 47%));
+  gap: 4px;
 }
 
 .detail-actions {

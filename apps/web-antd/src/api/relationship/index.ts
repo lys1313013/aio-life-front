@@ -32,10 +32,20 @@ export interface GraphData {
   edges: GraphEdge[];
 }
 
+type PersonSchoolFields = Pick<
+  ApiRequests['PersonReq'],
+  | 'doctoralSchool'
+  | 'highSchool'
+  | 'juniorHighSchool'
+  | 'mastersSchool'
+  | 'primarySchool'
+  | 'undergraduateSchool'
+>;
+
 /**
  * 人物请求 DTO
  */
-export interface PersonReq {
+export interface PersonReq extends PersonSchoolFields {
   name: string;
   avatar?: string;
   category?: string;
@@ -44,7 +54,6 @@ export interface PersonReq {
   birthday?: string;
   phone?: string;
   email?: string;
-  school?: string;
   socialLinks?: string;
   notes?: string;
 }
@@ -74,7 +83,7 @@ export interface RelationshipDetailVO {
 /**
  * 人物详情 VO（包含关系）
  */
-export interface PersonDetailVO {
+export interface PersonDetailVO extends PersonSchoolFields {
   id: string;
   name: string;
   avatar?: string;
@@ -84,7 +93,6 @@ export interface PersonDetailVO {
   birthday?: string;
   phone?: string;
   email?: string;
-  school?: string;
   socialLinks?: string;
   notes?: string;
   relationships: RelationshipDetailVO[];

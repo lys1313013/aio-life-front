@@ -302,7 +302,6 @@ import type { HonorRecordEntity } from '#/api/core/honor';
 
 - **dayjs** — 时间处理（非 moment）
 - **ECharts** — 图表（通过 vue-echarts 或直接用）
-- **d3 / force-graph** — 关系图谱
 - **marked** — Markdown 渲染
 - **gm-crypto** — 密码管理器加密
 - **xe-utils / xlsx** — 表格导出
