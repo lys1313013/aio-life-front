@@ -15,7 +15,6 @@ import { createIconifyIcon } from '@vben/icons';
 
 import {
   AppstoreOutlined,
-  CloseOutlined,
   DeleteOutlined,
   PlusOutlined,
   RightOutlined,
@@ -581,14 +580,9 @@ const handleExerciseTypeChange = (value: any, index: number) => {
   }
 };
 
-const removeExercise = (index: number) => {
-  if (props.busy) return;
-  formState.value.exercises.splice(index, 1);
-};
-
 const removeEditingExercise = () => {
   if (props.busy) return;
-  removeExercise(currentEditingExerciseIndex.value);
+  formState.value.exercises.splice(currentEditingExerciseIndex.value, 1);
   exerciseEditorVisible.value = false;
 };
 
@@ -773,7 +767,7 @@ onUnmounted(() => {
               }}</span>
             </span>
             <span class="exercise-tab-summary"
-              >{{ group.indices.length }}组 · {{ group.total }}次</span
+              >{{ group.indices.length }}组 · {{ group.total }}</span
             >
           </button>
         </div>
@@ -794,15 +788,6 @@ onUnmounted(() => {
               <span class="exercise-set-value">{{
                 formState.exercises[exerciseIndex]?.exerciseCount ?? '未填写'
               }}</span>
-            </button>
-            <button
-              type="button"
-              class="exercise-set-remove"
-              :disabled="busy"
-              :aria-label="`删除${exerciseName(activeExerciseGroup.typeId)}第${groupIndex + 1}组`"
-              @click="removeExercise(exerciseIndex)"
-            >
-              <CloseOutlined />
             </button>
           </div>
           <button
@@ -1252,24 +1237,25 @@ onUnmounted(() => {
 }
 
 .exercise-set-tile {
-  position: relative;
+  display: flex;
   min-width: 0;
-  min-height: 76px;
+  min-height: 64px;
   padding: 0;
-  background: v-bind('token.colorFillQuaternary');
-  border: 1px solid v-bind('token.colorBorderSecondary');
+  background: v-bind('token.colorFillTertiary');
+  border: 0;
   border-radius: 10px;
 }
 
 .exercise-set-edit {
   display: flex;
   width: 100%;
-  min-height: 76px;
+  min-width: 0;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 4px;
-  padding: 8px;
+  gap: 2px;
+  padding: 8px 12px;
+  text-align: left;
   background: transparent;
   border: 0;
   border-radius: inherit;
@@ -1277,47 +1263,27 @@ onUnmounted(() => {
 }
 
 .exercise-set-order {
-  align-self: flex-start;
-  padding-right: 24px;
   color: v-bind('token.colorTextSecondary');
   font-size: 12px;
+  line-height: 18px;
 }
 
 .exercise-set-value {
+  width: 100%;
   color: v-bind('token.colorText');
-  font-size: 24px;
-  line-height: 32px;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+  text-align: center;
   overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
 
-.exercise-set-remove {
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: flex;
-  width: 44px;
-  height: 44px;
-  align-items: flex-start;
-  justify-content: flex-end;
-  padding: 8px;
-  color: v-bind('token.colorTextTertiary');
-  background: transparent;
-  border: 0;
-  border-radius: inherit;
-  cursor: pointer;
-}
-
-.exercise-set-remove:hover {
-  color: v-bind('token.colorError');
-}
-
 .exercise-set-add {
-  display: flex;
   align-items: center;
   justify-content: center;
   color: v-bind('token.colorPrimary');
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
 }
 
@@ -1366,7 +1332,6 @@ onUnmounted(() => {
 
 .exercise-tab:focus-visible,
 .exercise-set-edit:focus-visible,
-.exercise-set-remove:focus-visible,
 .exercise-set-add:focus-visible {
   outline: 2px solid v-bind('token.colorPrimary');
   outline-offset: -2px;
