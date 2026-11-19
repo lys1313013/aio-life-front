@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { ProgressStatus } from '#/api/core/progress-status';
+
 import { ref, watch } from 'vue';
 
 import { IconifyIcon } from '@vben/icons';
@@ -11,11 +13,16 @@ import { ReadRecordApi } from '#/api/readRecord';
 import { AppModalDelete, AppModalFooter } from '#/components/app-modal';
 import { fetchAuthImageUrl } from '#/utils/file';
 
+import { retryWorkCover } from '#/api/rankings';
+
 const props = defineProps<{
   values?: any;
 }>();
 
-const emit = defineEmits(['close', 'table-reload']);
+const emit = defineEmits<{
+  close: [];
+  'table-reload': [status?: ProgressStatus];
+}>();
 
 const typeOptions = [
   { label: '书籍', value: 1 },
@@ -147,20 +154,37 @@ const [Form, formApi] = useAppForm({
 });
 
 const previewImg = ref<string>('');
+const retryCoverWorkId = ref<null | string>(null);
+const retrying = ref(false);
+async function retryCover() {
+  const id = retryCoverWorkId.value;
+  if (!id || retrying.value) return;
+  retrying.value = true;
+  try {
+    const path = await retryWorkCover(id);
+    const preview = await fetchAuthImageUrl(path);
+    if (retryCoverWorkId.value === id) {
+      previewImg.value = preview;
+      retryCoverWorkId.value = null;
+    }
+  } finally {
+    retrying.value = false;
+  }
+}
 const doubanUrl = ref<string>('');
 
 watch(
   () => props.values,
   (newVal) => {
+    retryCoverWorkId.value = newVal?.retryCoverWorkId || null;
     if (newVal) {
       formApi.setValues(newVal);
       previewImg.value = '';
-      if (newVal.fileId) {
-        fetchAuthImageUrl(newVal.fileId).then((url) => {
-          previewImg.value = url;
-        });
-      } else {
-        previewImg.value = newVal.coverImgUrl || '';
+      const image = newVal.fileId || newVal.coverImgUrl;
+      if (image) {
+        fetchAuthImageUrl(image).then((url) => {
+          if (props.values === newVal) previewImg.value = url;
+        }).catch(() => {});
       }
       doubanUrl.value = newVal.url || '';
     } else {
@@ -190,11 +214,13 @@ const handleParseDouban = async () => {
       if (res.title) parsedValues.title = res.title;
       if (res.author) parsedValues.author = res.author;
       parsedValues.coverImgUrl = res.coverImgUrl || null;
-      parsedValues.fileId = res.fileId || null;
-      if (res.fileId) {
-        previewImg.value = await fetchAuthImageUrl(res.fileId);
+      const selectedFile = (await formApi.getValues()).fileId || res.fileId || null;
+      parsedValues.fileId = selectedFile;
+      retryCoverWorkId.value = res.retryCoverWorkId;
+      if (selectedFile) {
+        previewImg.value = await fetchAuthImageUrl(selectedFile);
       } else if (res.coverImgUrl) {
-        previewImg.value = res.coverImgUrl;
+        previewImg.value = await fetchAuthImageUrl(res.coverImgUrl).catch(() => '');
       } else {
         previewImg.value = '';
       }
@@ -259,6 +285,7 @@ const onSubmit = async () => {
 
     submitLoading.value = true;
     const values = await formApi.getValues();
+    delete values.coverImgUrl;
 
     // 兜底逻辑：不管用户是否点击了解析，都以 UI 上的豆瓣链接为准
     values.url = doubanUrl.value;
@@ -269,7 +296,7 @@ const onSubmit = async () => {
       await ReadRecordApi.save(values as any);
       message.success('添加成功');
     }
-    emit('table-reload');
+    emit('table-reload', values.status);
     emit('close');
   } catch (error) {
     console.error(error);
@@ -283,7 +310,7 @@ const handleDelete = async () => {
   try {
     await ReadRecordApi.remove(props.values.id);
     message.success('删除成功');
-    emit('table-reload');
+    emit('table-reload', props.values.status);
     emit('close');
   } catch (error) {
     console.error(error);
@@ -338,6 +365,7 @@ const handleDelete = async () => {
               </div>
             </div>
           </Upload>
+          <Button v-if="retryCoverWorkId && !previewImg" type="link" size="small" :loading="retrying" @click="retryCover">重试封面</Button>
         </div>
 
         <div class="min-w-0 flex-1 self-center">

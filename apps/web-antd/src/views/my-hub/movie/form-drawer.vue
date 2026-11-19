@@ -11,6 +11,8 @@ import { MovieApi } from '#/api/movie';
 import { AppModalDelete, AppModalFooter } from '#/components/app-modal';
 import { fetchAuthImageUrl } from '#/utils/file';
 
+import { retryWorkCover } from '#/api/rankings';
+
 const props = defineProps<{
   values?: any;
 }>();
@@ -155,20 +157,37 @@ const [Form, formApi] = useAppForm({
 });
 
 const previewImg = ref<string>('');
+const retryCoverWorkId = ref<null | string>(null);
+const retrying = ref(false);
+async function retryCover() {
+  const id = retryCoverWorkId.value;
+  if (!id || retrying.value) return;
+  retrying.value = true;
+  try {
+    const path = await retryWorkCover(id);
+    const preview = await fetchAuthImageUrl(path);
+    if (retryCoverWorkId.value === id) {
+      previewImg.value = preview;
+      retryCoverWorkId.value = null;
+    }
+  } finally {
+    retrying.value = false;
+  }
+}
 const doubanUrl = ref<string>('');
 
 watch(
   () => props.values,
   (newVal) => {
+    retryCoverWorkId.value = newVal?.retryCoverWorkId || null;
     if (newVal) {
       formApi.setValues(newVal);
       previewImg.value = '';
-      if (newVal.fileId) {
-        fetchAuthImageUrl(newVal.fileId).then((url) => {
-          previewImg.value = url;
-        });
-      } else {
-        previewImg.value = newVal.coverImgUrl || '';
+      const image = newVal.fileId || newVal.coverImgUrl;
+      if (image) {
+        fetchAuthImageUrl(image).then((url) => {
+          if (props.values === newVal) previewImg.value = url;
+        }).catch(() => {});
       }
       doubanUrl.value = newVal.url || '';
     } else {
@@ -198,13 +217,15 @@ const handleParseDouban = async () => {
       if (res.title) parsedValues.title = res.title;
       if (res.director) parsedValues.director = res.director;
       if (res.type) parsedValues.type = res.type;
-      // 每次解析都覆盖封面字段，避免预览已更新但保存仍携带旧 fileId。
+      // 用户选择的附件优先于共享作品封面。
       parsedValues.coverImgUrl = res.coverImgUrl || null;
-      parsedValues.fileId = res.fileId || null;
-      if (res.fileId) {
-        previewImg.value = await fetchAuthImageUrl(res.fileId);
+      const selectedFile = (await formApi.getValues()).fileId || res.fileId || null;
+      parsedValues.fileId = selectedFile;
+      retryCoverWorkId.value = res.retryCoverWorkId;
+      if (selectedFile) {
+        previewImg.value = await fetchAuthImageUrl(selectedFile);
       } else if (res.coverImgUrl) {
-        previewImg.value = res.coverImgUrl;
+        previewImg.value = await fetchAuthImageUrl(res.coverImgUrl).catch(() => '');
       } else {
         previewImg.value = '';
       }
@@ -269,6 +290,7 @@ const onSubmit = async () => {
 
     submitLoading.value = true;
     const values = await formApi.getValues();
+    delete values.coverImgUrl;
 
     // 兜底逻辑：不管用户是否点击了解析，都以 UI 上的豆瓣链接为准
     values.url = doubanUrl.value;
@@ -346,6 +368,7 @@ const handleDelete = async () => {
               </div>
             </div>
           </Upload>
+          <Button v-if="retryCoverWorkId && !previewImg" type="link" size="small" :loading="retrying" @click="retryCover">重试封面</Button>
         </div>
 
         <div class="min-w-0 flex-1 self-center">

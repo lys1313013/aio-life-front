@@ -16,6 +16,8 @@ import { Button, Empty, Input, Select, Spin } from 'ant-design-vue';
 import { PROGRESS_STATUS } from '#/api/core/progress-status';
 import { MovieApi } from '#/api/movie';
 import { AppModal as Modal } from '#/components/app-modal';
+import { fetchRankings, type RankingOption } from '#/api/rankings';
+import RankingBadges from '#/components/RankingBadges.vue';
 import AuthImage from '#/components/AuthImage.vue';
 import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
@@ -45,7 +47,9 @@ const total = ref(0);
 const gridScrollRef = ref<HTMLElement>();
 let resizeTimer: ReturnType<typeof setTimeout> | undefined;
 
+const rankingOptions = ref<RankingOption[]>([]);
 const queryForm = ref({
+  rankingListId: undefined as string | undefined,
   page: 1,
   pageSize: 24,
   title: '',
@@ -91,7 +95,9 @@ const statusMap: Record<ProgressStatus, { color: string; label: string }> = {
   [PROGRESS_STATUS.ON_HOLD]: { label: '搁置', color: 'warning' },
 };
 
+let listRequest = 0;
 const loadData = async (isLoadMore = false) => {
+  const revision = ++listRequest;
   if (!isLoadMore) {
     loading.value = true;
     queryForm.value.page = 1;
@@ -100,6 +106,7 @@ const loadData = async (isLoadMore = false) => {
 
   try {
     const res = await MovieApi.pageList(queryForm.value);
+    if (revision !== listRequest) return;
     const newRecords = res.items || [];
     const totalCount = res.total ?? 0;
     total.value = totalCount;
@@ -116,7 +123,7 @@ const loadData = async (isLoadMore = false) => {
     // 全局拦截器已提示
     console.error('Failed to load movie records', error);
   } finally {
-    loading.value = false;
+    if (revision === listRequest) loading.value = false;
   }
 };
 
@@ -138,6 +145,7 @@ onMounted(async () => {
   await nextTick();
   queryForm.value.pageSize = calculatePageSize();
   loadData();
+  void fetchRankings('movie').then((options) => { rankingOptions.value = options; }).catch(() => { /* 请求客户端已提示 */ });
 });
 
 useResizeObserver(gridScrollRef, () => {
@@ -231,6 +239,9 @@ const tableReload = () => {
           </Select.Option>
           <Select.Option :value="PROGRESS_STATUS.ON_HOLD">搁置</Select.Option>
         </Select>
+        <Select v-model:value="queryForm.rankingListId" placeholder="榜单" allow-clear class="w-32" @change="handleSearch">
+          <Select.Option v-for="list in rankingOptions" :key="list.id" :value="list.id">{{ list.name }}</Select.Option>
+        </Select>
         <Button type="primary" @click="handleSearch">搜索</Button>
         <Button @click="importVisible = true">
           <template #icon><UploadOutlined /></template>
@@ -282,8 +293,8 @@ const tableReload = () => {
                 class="relative aspect-[3/4] w-full overflow-hidden rounded border border-gray-100 shadow-sm transition-shadow duration-300 hover:shadow-md dark:border-gray-800"
               >
                 <AuthImage
-                  v-if="item.fileId"
-                  :file-id="item.fileId"
+                  v-if="item.fileId || item.coverImgUrl"
+                  :file-id="item.fileId || item.coverImgUrl"
                   class="h-full w-full object-cover"
                 />
                 <div
@@ -322,6 +333,8 @@ const tableReload = () => {
                   {{ statusMap[item.status]?.label || '未知' }}
                 </div>
               </div>
+
+              <RankingBadges :rankings="item.rankings" />
 
               <!-- 日期信息 -->
               <div v-if="item.finishDate" class="mt-2 w-full px-1 text-center">

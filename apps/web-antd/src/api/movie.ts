@@ -1,3 +1,4 @@
+import type { RankingBadgeVO } from '#/api/payload';
 import type { ProgressStatus } from './core/progress-status';
 
 import type { ApiRequests, MovieParseVO } from '#/api/payload';
@@ -13,6 +14,7 @@ import { ATTACHMENT_BIZ_TYPE, uploadFile } from './core/common';
  */
 export namespace MovieApi {
   export interface MovieQuery {
+    rankingListId?: string;
     title?: string;
     type?: number;
     statuses?: ProgressStatus[];
@@ -28,6 +30,8 @@ export namespace MovieApi {
     director: string;
     url: string;
     fileId: string;
+    creativeWorkId?: null | string;
+    rankings?: RankingBadgeVO[];
     coverImgUrl: string;
     status: ProgressStatus;
     totalProgress: number;

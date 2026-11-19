@@ -3,7 +3,8 @@ import { useAccessStore } from '@vben/stores';
 export const getFilePreviewUrl = (fileId?: null | string) => {
   if (!fileId) return '';
   const baseUrl = import.meta.env.VITE_GLOB_API_URL || '';
-  return `${baseUrl}/file/preview/${fileId}`;
+  if (/^\/creative-works\/\d+\/cover$/.test(fileId)) return baseUrl + fileId;
+  return `${baseUrl}/file/preview/${encodeURIComponent(fileId)}`;
 };
 
 const MAX_IMAGE_CACHE_SIZE = 100;

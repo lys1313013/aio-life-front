@@ -13,9 +13,10 @@ const props = defineProps<{
   naturalRatio?: boolean;
   url?: string;
 }>();
+const sharedCover = () => props.url && /^\/creative-works\/\d+\/cover$/.test(props.url) ? props.url : undefined;
 const { blobUrl } = useAuthImageUrl(
-  () => props.fileId,
-  () => (props.fileId ? undefined : props.url),
+  () => props.fileId || sharedCover(),
+  () => (props.fileId || sharedCover() ? undefined : props.url),
 );
 const failed = ref(false);
 const aspectRatio = ref(2 / 3);
