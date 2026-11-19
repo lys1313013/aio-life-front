@@ -730,7 +730,12 @@ export interface PersonReq {
   birthday?: null | string;
   phone?: null | string;
   email?: null | string;
-  school?: null | string;
+  primarySchool?: null | string;
+  juniorHighSchool?: null | string;
+  highSchool?: null | string;
+  undergraduateSchool?: null | string;
+  mastersSchool?: null | string;
+  doctoralSchool?: null | string;
   socialLinks?: null | string;
   notes?: null | string;
 }
@@ -855,6 +860,30 @@ export interface ScheduledJobUpdateReq {
   cron: string;
   isEnabled: number;
   revision: number;
+}
+
+export interface SchemaColumnMapping {
+  sourceColumn: string;
+  targetColumn: string;
+}
+
+export interface SchemaRelationCondition {
+  side: string;
+  column: string;
+  operator: string;
+  value?: null | string;
+}
+
+export interface SchemaRelationSaveReq {
+  sourceTable: string;
+  targetTable: string;
+  relationKey: string;
+  displayName: string;
+  relationKind: string;
+  cardinality: string;
+  columnMapping: Array<SchemaColumnMapping>;
+  conditions: Array<SchemaRelationCondition>;
+  description?: null | string;
 }
 
 export interface SecondaryVerifyReq {
@@ -1356,6 +1385,9 @@ export interface ApiRequests {
   ResetSecondaryPasswordReq: ResetSecondaryPasswordReq;
   SaveSecondaryLockMenusReq: SaveSecondaryLockMenusReq;
   ScheduledJobUpdateReq: ScheduledJobUpdateReq;
+  SchemaColumnMapping: SchemaColumnMapping;
+  SchemaRelationCondition: SchemaRelationCondition;
+  SchemaRelationSaveReq: SchemaRelationSaveReq;
   SecondaryVerifyReq: SecondaryVerifyReq;
   SendEmailCodeReq: SendEmailCodeReq;
   SetSecondaryPasswordReq: SetSecondaryPasswordReq;
@@ -2072,7 +2104,12 @@ const fields: Record<string, Record<string, null | string>> = {
     birthday: null,
     phone: null,
     email: null,
-    school: null,
+    primarySchool: null,
+    juniorHighSchool: null,
+    highSchool: null,
+    undergraduateSchool: null,
+    mastersSchool: null,
+    doctoralSchool: null,
     socialLinks: null,
     notes: null,
   },
@@ -2179,6 +2216,27 @@ const fields: Record<string, Record<string, null | string>> = {
     cron: null,
     isEnabled: null,
     revision: null,
+  },
+  SchemaColumnMapping: {
+    sourceColumn: null,
+    targetColumn: null,
+  },
+  SchemaRelationCondition: {
+    side: null,
+    column: null,
+    operator: null,
+    value: null,
+  },
+  SchemaRelationSaveReq: {
+    sourceTable: null,
+    targetTable: null,
+    relationKey: null,
+    displayName: null,
+    relationKind: null,
+    cardinality: null,
+    columnMapping: 'SchemaColumnMapping',
+    conditions: 'SchemaRelationCondition',
+    description: null,
   },
   SecondaryVerifyReq: {
     password: null,
@@ -2637,6 +2695,8 @@ const queryFields: Record<string, string[]> = {
   '/cbti/personalities/{code}': [],
   '/cbti/results': [],
   '/cbti/result/{id}': [],
+  '/creative-works/rankings': ['media'],
+  '/creative-works/{id}/cover': [],
   '/csdn/stats': ['username'],
   '/csdn/articles': ['limit', 'username'],
   '/dashboard/tasks': [],
@@ -2732,6 +2792,7 @@ const queryFields: Record<string, string[]> = {
     'inProgressFirst',
     'page',
     'pageSize',
+    'rankingListId',
     'statuses',
     'title',
     'type',
@@ -2750,6 +2811,7 @@ const queryFields: Record<string, string[]> = {
     'inProgressFirst',
     'page',
     'pageSize',
+    'rankingListId',
     'statuses',
     'title',
     'type',
@@ -2856,6 +2918,7 @@ const queryFields: Record<string, string[]> = {
   '/menu/admin/role-options': [],
   '/menu/all': ['client'],
   '/menu/visuals': ['client'],
+  '/query/schema': [],
   '/quick-nav/candidates': ['client'],
   '/quick-nav/my': ['client'],
   '/system/storage/objects': ['cursor', 'pageSize', 'prefix'],
@@ -3683,6 +3746,18 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/menu/admin/{id}/sort',
     model: 'MenuSortUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/query/schema/relations',
+    model: 'SchemaRelationSaveReq',
+    list: false,
+  },
+  {
+    method: 'PUT',
+    path: '/query/schema/relations/{id}',
+    model: 'SchemaRelationSaveReq',
     list: false,
   },
   {
@@ -4741,6 +4816,7 @@ export interface MilestoneVO {
 
 export interface MovieParseVO {
   title: null | string;
+  retryCoverWorkId: null | string;
   type: null | number;
   director: null | string;
   url: null | string;
@@ -4750,8 +4826,12 @@ export interface MovieParseVO {
 }
 
 export interface MovieVO {
+  creativeWorkId: null | string;
+  coverImgUrl: null | string;
+  rankings: Array<RankingBadgeVO> | null;
   id: null | string;
   title: null | string;
+  retryCoverWorkId: null | string;
   type: null | number;
   director: null | string;
   url: null | string;
@@ -4808,7 +4888,12 @@ export interface PersonDetailVO {
   birthday: null | string;
   phone: null | string;
   email: null | string;
-  school: null | string;
+  primarySchool: null | string;
+  juniorHighSchool: null | string;
+  highSchool: null | string;
+  undergraduateSchool: null | string;
+  mastersSchool: null | string;
+  doctoralSchool: null | string;
   socialLinks: null | string;
   notes: null | string;
   relationships: Array<RelationshipDetailVO> | null;
@@ -4824,7 +4909,12 @@ export interface PersonVO {
   birthday: null | string;
   phone: null | string;
   email: null | string;
-  school: null | string;
+  primarySchool: null | string;
+  juniorHighSchool: null | string;
+  highSchool: null | string;
+  undergraduateSchool: null | string;
+  mastersSchool: null | string;
+  doctoralSchool: null | string;
   socialLinks: null | string;
   notes: null | string;
 }
@@ -4881,6 +4971,12 @@ export interface QueryAccessModels_TokenDecision {
   expiresAt: string;
 }
 
+export interface QuerySchemaVO {
+  schema: null | string;
+  tables: Array<SchemaTableVO> | null;
+  relations: Array<SchemaRelationVO> | null;
+}
+
 export interface QuickNavCandidateVO {
   menuId: null | string;
   title: null | string;
@@ -4902,8 +4998,21 @@ export interface QuickNavItemVO {
   target: null | string;
 }
 
+export interface RankingBadgeVO {
+  creativeWorkId: null | string;
+  rankingListId: null | string;
+  name: null | string;
+  rank: null | number;
+}
+
+export interface RankingOptionVO {
+  id: null | string;
+  name: null | string;
+}
+
 export interface ReadRecordParseVO {
   title: null | string;
+  retryCoverWorkId: null | string;
   type: null | number;
   author: null | string;
   url: null | string;
@@ -4913,8 +5022,12 @@ export interface ReadRecordParseVO {
 }
 
 export interface ReadRecordVO {
+  creativeWorkId: null | string;
+  coverImgUrl: null | string;
+  rankings: Array<RankingBadgeVO> | null;
   id: null | string;
   title: null | string;
+  retryCoverWorkId: null | string;
   type: null | number;
   author: null | string;
   url: null | string;
@@ -4967,6 +5080,35 @@ export interface ScheduledJobVO {
   revision: null | number;
   schedulerEnabled: boolean;
   nextExecutionTime: null | string;
+}
+
+export interface SchemaColumnVO {
+  name: null | string;
+  dataType: null | string;
+  comment: null | string;
+  nullable: boolean;
+  primaryKey: boolean;
+}
+
+export interface SchemaRelationVO {
+  id: null | string;
+  sourceTable: null | string;
+  targetTable: null | string;
+  relationKey: null | string;
+  displayName: null | string;
+  relationKind: null | string;
+  cardinality: null | string;
+  columnMapping: Array<SchemaColumnMapping> | null;
+  conditions: Array<SchemaRelationCondition> | null;
+  description: null | string;
+  valid: boolean;
+  invalidReason: null | string;
+}
+
+export interface SchemaTableVO {
+  name: null | string;
+  comment: null | string;
+  columns: Array<SchemaColumnVO> | null;
 }
 
 export interface StorageObjectVO {
