@@ -12,7 +12,7 @@ export interface UserDictDataEntity {
   dictValue: string;
   color?: string;
   icon?: string;
-  extData?: string;
+  extraData?: string;
   isReadonly?: number; // 是否只读，1 是，0 否
   // 为兼容现有逻辑，添加 label 和 value
   label?: string;

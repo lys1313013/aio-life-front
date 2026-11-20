@@ -1149,7 +1149,7 @@ export interface UserDictDataAdminCreateReq {
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
-  extData?: null | string;
+  extraData?: null | string;
   isDefault?: null | number;
   isEnabled?: null | number;
   isReadonly?: null | number;
@@ -1163,7 +1163,7 @@ export interface UserDictDataAdminUpdateReq {
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
-  extData?: null | string;
+  extraData?: null | string;
   isDefault?: null | number;
   isEnabled?: null | number;
   isReadonly?: null | number;
@@ -1178,7 +1178,7 @@ export interface UserDictDataCreateReq {
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
-  extData?: null | string;
+  extraData?: null | string;
   isDefault?: null | number;
   isEnabled?: null | number;
   isReadonly?: null | number;
@@ -1201,7 +1201,7 @@ export interface UserDictDataUpdateReq {
   dictValue?: null | string;
   color?: null | string;
   icon?: null | string;
-  extData?: null | string;
+  extraData?: null | string;
   isDefault?: null | number;
   isEnabled?: null | number;
   isReadonly?: null | number;
@@ -2468,7 +2468,7 @@ const fields: Record<string, Record<string, null | string>> = {
     dictValue: null,
     color: null,
     icon: null,
-    extData: null,
+    extraData: null,
     isDefault: null,
     isEnabled: null,
     isReadonly: null,
@@ -2481,7 +2481,7 @@ const fields: Record<string, Record<string, null | string>> = {
     dictValue: null,
     color: null,
     icon: null,
-    extData: null,
+    extraData: null,
     isDefault: null,
     isEnabled: null,
     isReadonly: null,
@@ -2495,7 +2495,7 @@ const fields: Record<string, Record<string, null | string>> = {
     dictValue: null,
     color: null,
     icon: null,
-    extData: null,
+    extraData: null,
     isDefault: null,
     isEnabled: null,
     isReadonly: null,
@@ -2516,7 +2516,7 @@ const fields: Record<string, Record<string, null | string>> = {
     dictValue: null,
     color: null,
     icon: null,
-    extData: null,
+    extraData: null,
     isDefault: null,
     isEnabled: null,
     isReadonly: null,
@@ -5311,7 +5311,7 @@ export interface UserDictDataVO {
   dictValue?: string;
   color?: string;
   icon?: string;
-  extData?: string;
+  extraData?: string;
   isDefault?: number;
   isEnabled?: number;
   isReadonly?: number;
