@@ -217,11 +217,14 @@ function changeDate(value: unknown) {
     cursor.value = dayjs(value).format('YYYY-MM-DD');
 }
 function rangeLabel(bucket: FinanceCalendarBucket) {
-  if (!bucket.startDate || !bucket.endDate) return bucket.label;
-  if (displayed.value.granularity === 'week')
-    return `${dayjs(bucket.startDate).format('M月D日')}—${dayjs(bucket.endDate).subtract(1, 'day').format('D日')}`;
+  if (!bucket.startDate) return bucket.label;
+  const start = dayjs(bucket.startDate);
+  if (displayed.value.granularity === 'week') {
+    const monday = start.subtract((start.day() + 6) % 7, 'day');
+    return `${monday.format('MM.DD')} ～ ${monday.add(6, 'day').format('MM.DD')}`;
+  }
   return displayed.value.granularity === 'day'
-    ? dayjs(bucket.startDate).format('M月D日')
+    ? start.format('M月D日')
     : bucket.label;
 }
 function bucketAmount(bucket: FinanceCalendarBucket) {
@@ -428,12 +431,11 @@ function navigate() {
             :disabled="unavailable(bucket) || loading"
             @click="openDetails(bucket)"
           >
-            <span class="finance-calendar-cell-label">{{ bucket.label }}</span>
-            <span
-              v-if="displayed.granularity === 'week'"
-              class="finance-calendar-week-range"
-              >{{ rangeLabel(bucket) }}</span
-            >
+            <span class="finance-calendar-cell-label">{{
+              displayed.granularity === 'week'
+                ? rangeLabel(bucket)
+                : bucket.label
+            }}</span>
             <span
               class="finance-calendar-cell-amount tabular-nums"
               :class="{
@@ -638,8 +640,7 @@ function navigate() {
   outline-offset: -1px;
 }
 
-.finance-calendar-cell-label,
-.finance-calendar-week-range {
+.finance-calendar-cell-label {
   font-size: 10px;
   line-height: 11px;
   color: hsl(var(--muted-foreground));
@@ -666,39 +667,35 @@ function navigate() {
   opacity: 0.35;
 }
 
-.finance-calendar-week {
-  gap: 4px;
+.finance-calendar-week .finance-calendar-cell-label {
+  white-space: nowrap;
 }
 
-.finance-calendar-week .finance-calendar-cell {
-  display: grid;
-  grid-template-columns: 48px 1fr auto;
-  gap: 6px;
-  padding: 2px 8px;
-  text-align: left;
-}
-
-.finance-calendar-week .finance-calendar-cell-amount {
-  text-align: right;
-}
-
+.finance-calendar-week,
 .finance-calendar-month,
 .finance-calendar-year {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
+.finance-calendar-week,
 .finance-calendar-year {
   grid-auto-rows: minmax(40px, max-content);
   align-content: start;
 }
 
+.finance-calendar-week .finance-calendar-cell,
 .finance-calendar-month .finance-calendar-cell,
 .finance-calendar-year .finance-calendar-cell {
   min-height: 24px;
   gap: 2px;
 }
 
+:where(.finance-calendar-week) .finance-calendar-cell {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.finance-calendar-week .finance-calendar-cell-amount,
 .finance-calendar-month .finance-calendar-cell-amount,
 .finance-calendar-year .finance-calendar-cell-amount {
   font-size: 12px;
@@ -815,6 +812,7 @@ function navigate() {
   grid-auto-rows: 56px;
 }
 
+.finance-calendar-page .finance-calendar-week,
 .finance-calendar-page .finance-calendar-year {
   grid-auto-rows: 40px;
 }

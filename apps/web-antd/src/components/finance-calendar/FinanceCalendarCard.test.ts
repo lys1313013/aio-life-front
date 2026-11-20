@@ -85,6 +85,13 @@ it('收入只展示周月年，支出保留日；金额和格子使用相同结�
       .map((button) => button.text()),
   ).toEqual(['日', '周', '月', '年']);
   expect(income.get('.finance-calendar-total').text()).toBe('1,234.56');
+  expect(income.get('.finance-calendar-cell-label').text()).toBe(
+    '07.27 ～ 08.02',
+  );
+  expect(expense.get('.finance-calendar-cell').attributes('aria-label')).toBe(
+    '07.27 ～ 08.02，1,234.56',
+  );
+  expect(expense.text()).not.toContain('第1周');
 });
 it('点击格子打开对应业务明细，卡片内不添加汇总行；锁定时关闭弹窗', async () => {
   const wrapper = mount(FinanceCalendarCard, { props: { kind: 'income' } });
