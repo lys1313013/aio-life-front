@@ -7,39 +7,26 @@ import type {
   RelationshipReq,
 } from '#/api/relationship';
 
-import { computed, nextTick, onMounted, ref } from 'vue';
-
-import { usePreferences } from '@vben/preferences';
+import { computed, onMounted, ref } from 'vue';
 
 import {
   DeleteOutlined,
   EditOutlined,
-  EllipsisOutlined,
   FullscreenOutlined,
-  PauseOutlined,
-  PlayCircleOutlined,
   PlusOutlined,
   QuestionCircleOutlined,
-  ReloadOutlined,
   RetweetOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
 } from '@ant-design/icons-vue';
 import {
   Button,
-  Checkbox,
   DatePicker,
   Drawer,
-  Dropdown,
   Empty,
   Form,
   FormItem,
   Input,
-  Menu,
-  MenuItem,
   message,
   Popconfirm,
-  Popover,
   Select,
   SelectOption,
   Spin,
@@ -57,12 +44,11 @@ import {
   updateRelationship,
 } from '#/api/relationship';
 import { AppModal as Modal } from '#/components/app-modal';
+import GlobalFloatBtn from '#/components/global-float-btn/index.vue';
 
 import PaperRelationshipCanvas from './components/PaperRelationshipCanvas.vue';
 import { ONE_WAY_RELATION_TYPES, SCHOOL_FIELDS } from './constants';
-import { paperCategoryColor } from './paper-graph';
 
-const { isDark } = usePreferences();
 const graphData = ref<GraphData>({ nodes: [], edges: [] });
 const allNodes = computed(() => graphData.value.nodes);
 const loading = ref(false);
@@ -80,17 +66,12 @@ const relationshipSubmitLoading = ref(false);
 const deletingPerson = ref(false);
 const deletingRelationships = ref(new Set<string>());
 const editingPersonId = ref<null | string>(null);
-const motion = ref(true);
 const graphRef = ref<InstanceType<typeof PaperRelationshipCanvas> | null>(null);
 let graphRequest = 0;
 let detailRequest = 0;
 
 // 搜索定位
 const searchValue = ref<string | undefined>();
-
-// 筛选：用「未勾选」集合，新出现的类型/分类默认选中
-const uncheckedRelationTypes = ref<string[]>([]);
-const uncheckedCategories = ref<string[]>([]);
 
 // 关系类型选项
 const relationTypes = [
@@ -131,38 +112,8 @@ const relationshipForm = ref<RelationshipReq>({
 });
 const editingRelationshipId = ref<null | string>(null);
 
-const presentRelationTypes = computed(() => [
-  ...new Set(
-    graphData.value.edges.map(({ relationType }) => relationType || '其他'),
-  ),
-]);
-const presentCategories = computed(() => [
-  ...new Set(allNodes.value.map(({ category }) => category || '未分类')),
-]);
 const searchOptions = computed(() =>
   allNodes.value.map(({ name, id }) => ({ label: name, value: id })),
-);
-
-const filteredGraphData = computed<GraphData>(() => {
-  const nodes = allNodes.value.filter(
-    ({ category }) => !uncheckedCategories.value.includes(category || '未分类'),
-  );
-  const ids = new Set(nodes.map(({ id }) => id));
-  return {
-    nodes,
-    edges: graphData.value.edges.filter(
-      ({ source, target, relationType }) =>
-        ids.has(source) &&
-        ids.has(target) &&
-        !uncheckedRelationTypes.value.includes(relationType || '其他'),
-    ),
-  };
-});
-const shownRelationTypes = computed(
-  () =>
-    presentRelationTypes.value.filter(
-      (type) => !uncheckedRelationTypes.value.includes(type),
-    ).length,
 );
 
 async function fetchGraphData() {
@@ -212,27 +163,8 @@ function handleDrawerChange(open: boolean) {
   selectedPersonDetail.value = null;
 }
 
-async function handleSearchSelect(value: unknown) {
-  if (typeof value !== 'string') return;
-  const person = allNodes.value.find(({ id }) => id === value);
-  if (!person) return;
-  const category = person.category || '未分类';
-  uncheckedCategories.value = uncheckedCategories.value.filter(
-    (item) => item !== category,
-  );
-  await nextTick();
-  graphRef.value?.centerOnNode(value);
-}
-
-function toggleFilter(items: string[], value: string) {
-  return items.includes(value)
-    ? items.filter((item) => item !== value)
-    : [...items, value];
-}
-
-function resetFilters() {
-  uncheckedCategories.value = [];
-  uncheckedRelationTypes.value = [];
+function handleSearchSelect(value: unknown) {
+  if (typeof value === 'string') graphRef.value?.centerOnNode(value);
 }
 
 function refreshDetails(id?: string) {
@@ -406,221 +338,101 @@ onMounted(fetchGraphData);
 </script>
 
 <template>
-  <div class="relationship-page p-4">
+  <div class="relationship-page h-full">
     <section
-      class="relationship-card overflow-hidden rounded-lg bg-card text-card-foreground"
+      class="relative h-full overflow-hidden bg-card text-card-foreground"
     >
-      <header
-        class="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
-      >
-        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 class="text-base font-semibold">关系图谱</h1>
-          <span
-            v-if="loaded"
-            class="text-sm tabular-nums text-muted-foreground"
-          >
-            {{ filteredGraphData.nodes.length }} 人 ·
-            {{ filteredGraphData.edges.length }} 条关系
-          </span>
-        </div>
-        <div class="flex min-w-0 items-center gap-1">
-          <label class="sr-only" for="relationship-person-search">
-            搜索人物并定位
-          </label>
-          <Select
-            id="relationship-person-search"
-            v-model:value="searchValue"
-            :options="searchOptions"
-            class="w-44 max-w-[55vw]"
-            placeholder="搜索人物并定位"
-            option-filter-prop="label"
-            allow-clear
-            show-search
-            @select="handleSearchSelect"
-            @clear="graphRef?.clearFocus()"
-          />
-          <Tooltip title="刷新图谱">
-            <Button
-              type="text"
-              aria-label="刷新图谱"
-              :loading="loading"
-              @click="fetchGraphData"
-            >
-              <template #icon><ReloadOutlined /></template>
-            </Button>
-          </Tooltip>
-          <Dropdown :trigger="['click']">
-            <Button type="text" aria-label="更多操作" title="更多操作">
-              <template #icon><EllipsisOutlined /></template>
-            </Button>
-            <template #overlay>
-              <Menu>
-                <MenuItem key="create-person" @click="openPersonForm()">
-                  新建人物
-                </MenuItem>
-              </Menu>
-            </template>
-          </Dropdown>
-        </div>
-      </header>
-
-      <div class="graph-container">
-        <PaperRelationshipCanvas
-          ref="graphRef"
-          :graph-data="filteredGraphData"
-          :motion="motion && !personFormVisible && !relationshipFormVisible"
-          @person-open="openPersonDetail"
+      <PaperRelationshipCanvas
+        ref="graphRef"
+        :graph-data="graphData"
+        :motion="!personFormVisible && !relationshipFormVisible"
+        @person-open="openPersonDetail"
+      />
+      <div class="absolute right-4 top-3">
+        <label class="sr-only" for="relationship-person-search">
+          搜索人物并定位
+        </label>
+        <Select
+          id="relationship-person-search"
+          v-model:value="searchValue"
+          :options="searchOptions"
+          class="w-44 max-w-[55vw]"
+          placeholder="搜索人物并定位"
+          option-filter-prop="label"
+          allow-clear
+          show-search
+          @select="handleSearchSelect"
+          @clear="graphRef?.clearFocus()"
         />
+      </div>
+
+      <div
+        v-if="!loaded && loading"
+        class="empty-overlay"
+        role="status"
+        aria-label="加载图谱"
+      >
+        <Spin />
+      </div>
+      <div v-else-if="!loaded && loadFailed" class="empty-overlay">
+        <Empty description="图谱加载失败" :image="Empty.PRESENTED_IMAGE_SIMPLE">
+          <Button @click="fetchGraphData">重试</Button>
+        </Empty>
+      </div>
+      <div v-else-if="loaded && allNodes.length === 0" class="empty-overlay">
+        <Empty description="暂无人物" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+      </div>
+
+      <div
+        v-if="loaded && (loading || loadFailed)"
+        class="absolute left-4 top-3"
+      >
+        <Button v-if="loadFailed" size="small" @click="fetchGraphData">
+          重试
+        </Button>
         <div
-          v-if="!loaded && loading"
-          class="empty-overlay"
+          v-else
+          class="pointer-events-none"
           role="status"
           aria-label="加载图谱"
         >
-          <Spin />
-        </div>
-        <div v-else-if="!loaded && loadFailed" class="empty-overlay">
-          <Empty
-            description="图谱加载失败"
-            :image="Empty.PRESENTED_IMAGE_SIMPLE"
-          >
-            <Button @click="fetchGraphData">重试</Button>
-          </Empty>
-        </div>
-        <div
-          v-else-if="loaded && filteredGraphData.nodes.length === 0"
-          class="empty-overlay"
-        >
-          <Empty
-            :description="
-              allNodes.length > 0 ? '没有符合筛选条件的人物' : '暂无人物'
-            "
-            :image="Empty.PRESENTED_IMAGE_SIMPLE"
-          >
-            <Button v-if="allNodes.length > 0" @click="resetFilters">
-              清空筛选
-            </Button>
-          </Empty>
-        </div>
-
-        <div
-          v-if="filteredGraphData.nodes.length > 0"
-          class="canvas-controls flex items-center gap-1 rounded-lg bg-card p-1 shadow-sm"
-        >
-          <Tooltip :title="motion ? '暂停动效' : '播放动效'">
-            <Button
-              type="text"
-              :aria-label="motion ? '暂停动效' : '播放动效'"
-              @click="motion = !motion"
-            >
-              <template #icon>
-                <PauseOutlined v-if="motion" /><PlayCircleOutlined v-else />
-              </template>
-            </Button>
-          </Tooltip>
-          <Tooltip title="放大">
-            <Button type="text" aria-label="放大" @click="graphRef?.zoomIn()">
-              <template #icon><ZoomInOutlined /></template>
-            </Button>
-          </Tooltip>
-          <Tooltip title="缩小">
-            <Button type="text" aria-label="缩小" @click="graphRef?.zoomOut()">
-              <template #icon><ZoomOutOutlined /></template>
-            </Button>
-          </Tooltip>
-          <Tooltip title="适应画布">
-            <Button
-              type="text"
-              aria-label="适应画布"
-              @click="graphRef?.fitView()"
-            >
-              <template #icon><FullscreenOutlined /></template>
-            </Button>
-          </Tooltip>
-          <Tooltip title="重置布局">
-            <Button
-              type="text"
-              aria-label="重置布局"
-              @click="graphRef?.resetLayout()"
-            >
-              <template #icon><RetweetOutlined /></template>
-            </Button>
-          </Tooltip>
+          <Spin size="small" />
         </div>
       </div>
 
-      <footer
-        class="flex min-h-12 flex-wrap items-center justify-between gap-2 px-4 py-2"
+      <div
+        v-if="allNodes.length > 0"
+        class="absolute bottom-6 left-6 flex items-center gap-1 rounded-lg bg-card p-1 shadow-sm"
       >
-        <div
-          class="flex flex-wrap items-center gap-1"
-          role="group"
-          aria-label="人物分类筛选"
-        >
+        <Tooltip title="适应画布">
           <Button
-            v-for="category in presentCategories"
-            :key="category"
             type="text"
-            size="small"
-            class="category-filter"
-            :aria-pressed="!uncheckedCategories.includes(category)"
-            :style="{
-              '--category-color': paperCategoryColor(category, isDark),
-            }"
-            @click="
-              uncheckedCategories = toggleFilter(uncheckedCategories, category)
-            "
+            aria-label="适应画布"
+            @click="graphRef?.fitView()"
           >
-            <span class="category-dot" aria-hidden="true"></span>{{ category }}
+            <template #icon><FullscreenOutlined /></template>
           </Button>
-        </div>
-        <div
-          v-if="loaded && allNodes.length > 0"
-          class="ml-auto flex items-center gap-1"
-        >
-          <Popover placement="topRight" trigger="click">
-            <Button size="small">
-              {{
-                shownRelationTypes === presentRelationTypes.length
-                  ? '全部关系'
-                  : `${shownRelationTypes} 类关系`
-              }}
-            </Button>
-            <template #content>
-              <div class="relation-options" role="group" aria-label="关系类型">
-                <Checkbox
-                  v-for="type in presentRelationTypes"
-                  :key="type"
-                  :checked="!uncheckedRelationTypes.includes(type)"
-                  @change="
-                    uncheckedRelationTypes = toggleFilter(
-                      uncheckedRelationTypes,
-                      type,
-                    )
-                  "
-                >
-                  {{ type }}
-                </Checkbox>
-                <Button
-                  size="small"
-                  type="link"
-                  @click="uncheckedRelationTypes = []"
-                >
-                  全部关系
-                </Button>
-              </div>
-            </template>
-          </Popover>
-          <Tooltip
-            title="单击聚焦，双击或按回车查看详情，拖动可调整位置。触屏轻点查看详情。"
+        </Tooltip>
+        <Tooltip title="重置布局">
+          <Button
+            type="text"
+            aria-label="重置布局"
+            @click="graphRef?.resetLayout()"
           >
-            <Button type="text" size="small" aria-label="图谱操作说明">
-              <template #icon><QuestionCircleOutlined /></template>
-            </Button>
-          </Tooltip>
-        </div>
-      </footer>
+            <template #icon><RetweetOutlined /></template>
+          </Button>
+        </Tooltip>
+        <Tooltip
+          title="单击聚焦，双击或按回车查看详情，拖动可调整位置。触屏轻点查看详情。"
+        >
+          <Button type="text" aria-label="图谱操作说明">
+            <template #icon><QuestionCircleOutlined /></template>
+          </Button>
+        </Tooltip>
+      </div>
     </section>
+
+    <GlobalFloatBtn aria-label="添加人物" @click="openPersonForm()" />
 
     <!-- 人物详情抽屉 -->
     <Drawer
@@ -894,12 +706,6 @@ onMounted(fetchGraphData);
 </template>
 
 <style scoped>
-.graph-container {
-  position: relative;
-  height: clamp(390px, calc(100dvh - 237px), 1080px);
-  overflow: hidden;
-}
-
 .empty-overlay {
   position: absolute;
   inset: 0;
@@ -910,40 +716,6 @@ onMounted(fetchGraphData);
 
 .empty-overlay :deep(.ant-btn) {
   pointer-events: auto;
-}
-
-.canvas-controls {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-}
-
-.category-dot {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-inline-end: 6px;
-  vertical-align: 0.1em;
-  background: var(--category-color);
-  border-radius: 50%;
-}
-
-.category-filter[aria-pressed='false'] {
-  color: hsl(var(--muted-foreground));
-  text-decoration: line-through;
-}
-
-.category-filter[aria-pressed='false'] .category-dot {
-  background: transparent;
-  border: 1px solid var(--category-color);
-}
-
-.relation-options {
-  display: grid;
-  gap: 6px;
-  min-width: 120px;
-  max-height: min(55dvh, 330px);
-  overflow-y: auto;
 }
 
 .person-detail {

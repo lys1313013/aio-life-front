@@ -61,8 +61,6 @@ defineExpose({
   clearFocus: () => graph?.focus(),
   fitView: () => graph?.fitView(),
   resetLayout: () => graph?.resetLayout(),
-  zoomIn: () => graph?.zoom(1.25),
-  zoomOut: () => graph?.zoom(0.8),
 });
 </script>
 

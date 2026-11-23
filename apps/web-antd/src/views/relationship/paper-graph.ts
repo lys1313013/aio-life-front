@@ -13,7 +13,16 @@ type Positioned = Point & {
   radius: number;
 };
 type Pointer = Point & { id: number; moved: boolean; nodeId?: string };
-type Link = { edge: GraphEdge; end: Positioned; start: Positioned };
+type LoopPath = { distances: number[]; inset: number; length: number };
+type Link = {
+  edge: GraphEdge;
+  end: Positioned;
+  lineKey: string;
+  loopPath?: LoopPath;
+  start: Positioned;
+};
+type LinkExit = { link: Link; reverse: boolean };
+type MovingDot = { arrived: boolean; distance: number; exit: LinkExit };
 type PaperTheme = { dark: boolean; labelBackground: string };
 
 const colors = new Map([
@@ -32,6 +41,10 @@ export function paperCategoryColor(
 }
 
 const tau = 2 * Math.PI;
+const loopControlOffset = { x: 55, y: -60 };
+const loopSamples = 64;
+const dotSpeed = 20; // CSS 像素/秒
+const maxDots = 3;
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
@@ -45,6 +58,10 @@ function hashId(id: string) {
   return hash;
 }
 
+function pickRandom<T>(items: T[]): T | undefined {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 function along(start: Point, end: Point, progress: number): Point {
   return {
     x: start.x + (end.x - start.x) * progress,
@@ -52,16 +69,57 @@ function along(start: Point, end: Point, progress: number): Point {
   };
 }
 
+function alongLoop(center: Point, inset: number, progress: number): Point {
+  const remaining = 1 - progress;
+  const startWeight = remaining ** 3;
+  const endWeight = progress ** 3;
+  const controlWeight = 3 * remaining * progress;
+  return {
+    x:
+      center.x +
+      inset * (startWeight - endWeight) +
+      loopControlOffset.x * controlWeight * (remaining - progress),
+    y:
+      center.y -
+      inset * (startWeight + endWeight) +
+      loopControlOffset.y * controlWeight,
+  };
+}
+
+function measureLoop(inset: number): LoopPath {
+  const center = { x: 0, y: 0 };
+  const distances = [0];
+  let previous = alongLoop(center, inset, 0);
+  let length = 0;
+  for (let index = 1; index <= loopSamples; index++) {
+    const point = alongLoop(center, inset, index / loopSamples);
+    length += Math.hypot(point.x - previous.x, point.y - previous.y);
+    distances.push(length);
+    previous = point;
+  }
+  return { distances, inset, length };
+}
+
+function loopProgress({ distances, length }: LoopPath, distance: number) {
+  if (distance >= length) return 1;
+  const next = distances.findIndex((sample) => sample > distance);
+  const start = distances[next - 1]!;
+  const end = distances[next]!;
+  return (next - 1 + (distance - start) / (end - start)) / loopSamples;
+}
+
 export class PaperGraph {
   private readonly buttons = new Map<string, HTMLButtonElement>();
   private camera = { x: 0, y: 0, zoom: 1 };
   private readonly canvasContext: CanvasRenderingContext2D;
   private data: GraphData = { nodes: [], edges: [] };
+  private dots: MovingDot[] = [];
   private readonly events = new AbortController();
   private fit = 1;
   private frame = 0;
   private height = 0;
   private hovered?: string;
+  private readonly linkExits = new Map<string, LinkExit[]>();
   private links: Link[] = [];
   private motion = true;
   private motionTime = 0;
@@ -205,6 +263,12 @@ export class PaperGraph {
     this.invalidate();
   }
 
+  private addExit(id: string, exit: LinkExit) {
+    const exits = this.linkExits.get(id);
+    if (exits) exits.push(exit);
+    else this.linkExits.set(id, [exit]);
+  }
+
   private draw = (time: number) => {
     this.frame = 0;
     const running =
@@ -229,46 +293,103 @@ export class PaperGraph {
     ctx.save();
     ctx.translate(x, y);
     ctx.scale(zoom, zoom);
-    this.links.forEach((link, index) =>
-      this.drawLink(link, running ? this.motionTime : 0, index),
-    );
+    for (const link of this.links) this.drawLink(link);
+    if (running) {
+      const occupied = new Set(this.dots.map(({ exit }) => exit.link.lineKey));
+      for (const dot of this.dots) this.drawDot(dot, elapsed, occupied);
+    }
     ctx.restore();
     if (running) this.invalidate();
   };
 
-  private drawLink({ edge, start, end }: Link, time: number, index: number) {
+  private drawDot(dot: MovingDot, elapsed: number, occupied: Set<string>) {
+    if (dot.arrived) {
+      occupied.delete(dot.exit.link.lineKey);
+      dot.exit = this.nextExit(dot.exit, occupied);
+      occupied.add(dot.exit.link.lineKey);
+      dot.distance = 0;
+    }
+
+    const { link, reverse } = dot.exit;
+    const start = reverse ? link.end : link.start;
+    const end = reverse ? link.start : link.end;
+    const { zoom } = this.camera;
+    const startRadius = displayedRadius(start.radius, zoom);
+    const endRadius = displayedRadius(end.radius, zoom);
+    const loopInset = startRadius / (Math.SQRT2 * zoom);
+    if (start === end && link.loopPath?.inset !== loopInset) {
+      link.loopPath = measureLoop(loopInset);
+    }
+    const { loopPath } = link;
+    const span = loopPath
+      ? loopPath.length * zoom
+      : Math.max(
+          0,
+          Math.hypot(end.x - start.x, end.y - start.y) * zoom -
+            startRadius -
+            endRadius,
+        );
+    dot.distance = Math.min(span, dot.distance + (elapsed * dotSpeed) / 1000);
+    dot.arrived = dot.distance === span;
+    const point = loopPath
+      ? alongLoop(start, loopInset, loopProgress(loopPath, dot.distance / zoom))
+      : along(
+          start,
+          end,
+          (startRadius + dot.distance) / (startRadius + span + endRadius),
+        );
+    const ctx = this.canvasContext;
+    const active = this.hovered || this.selected;
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 1.6 / zoom, 0, tau);
+    ctx.globalAlpha =
+      active && active !== link.edge.source && active !== link.edge.target
+        ? 0.25
+        : 0.8;
+    ctx.fillStyle = end.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  private drawLink({ edge, start, end }: Link) {
     const ctx = this.canvasContext;
     const { zoom } = this.camera;
     const active = this.hovered || this.selected;
     const focused = active === edge.source || active === edge.target;
+    const loop = start === end;
     const color = getRelationColor(edge.relationType);
     ctx.lineWidth = (focused ? 1.8 : 1.1) / zoom;
     ctx.globalAlpha = focused ? 0.85 : active ? 0.15 : 0.48;
     ctx.strokeStyle = focused ? color : this.theme.dark ? '#abb4c0' : '#747575';
     ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    if (start === end)
+    if (loop) {
+      const loopInset =
+        displayedRadius(start.radius, zoom) / (Math.SQRT2 * zoom);
+      ctx.moveTo(start.x + loopInset, start.y - loopInset);
       ctx.bezierCurveTo(
-        start.x + 55,
-        start.y - 60,
-        start.x - 55,
-        start.y - 60,
-        start.x,
-        start.y,
+        start.x + loopControlOffset.x,
+        start.y + loopControlOffset.y,
+        start.x - loopControlOffset.x,
+        start.y + loopControlOffset.y,
+        start.x - loopInset,
+        start.y - loopInset,
       );
-    else ctx.lineTo(end.x, end.y);
+    } else {
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+    }
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    if (focused && start !== end) {
-      const length = Math.hypot(end.x - start.x, end.y - start.y) * zoom;
-      const startInset = displayedRadius(start.radius, zoom) + 3;
+    if (focused && !loop) {
+      const startRadius = displayedRadius(start.radius, zoom);
       const endRadius = displayedRadius(end.radius, zoom);
+      const length = Math.hypot(end.x - start.x, end.y - start.y) * zoom;
       const bidirectional = isBidirectionalRelation(
         edge.relationType,
         edge.direction || '双向',
       );
-      const size = Math.min(5, length - startInset - endRadius);
+      const size = Math.min(5, length - startRadius - endRadius - 3);
       if (!bidirectional && size >= 2) {
         const angle = Math.atan2(end.y - start.y, end.x - start.x);
         const tip = along(start, end, 1 - endRadius / length);
@@ -295,29 +416,6 @@ export class PaperGraph {
       ctx.strokeText(edge.relationType, mid.x, mid.y - 5 / zoom);
       ctx.fillText(edge.relationType, mid.x, mid.y - 5 / zoom);
     }
-
-    if (
-      !time ||
-      start === end ||
-      (active && !focused) ||
-      (!focused && index % 6 !== 0) ||
-      (start.drift === 0 && end.drift === 0)
-    )
-      return;
-    const phase = (time / (4400 + (index % 7) * 270) + index * 0.137) % 1;
-    const progress =
-      start.drift === 0
-        ? 0.55 + phase * 0.45
-        : end.drift === 0
-          ? phase * 0.45
-          : phase;
-    const dot = along(start, end, progress);
-    ctx.beginPath();
-    ctx.arc(dot.x, dot.y, 1.6 / zoom, 0, tau);
-    ctx.globalAlpha = 0.8 * Math.sin(phase * Math.PI);
-    ctx.fillStyle = end.color;
-    ctx.fill();
-    ctx.globalAlpha = 1;
   }
 
   private endDrag = (event: PointerEvent) => {
@@ -379,12 +477,28 @@ export class PaperGraph {
         ];
       }),
     );
+    const previousLinks = new Map(this.links.map((link) => [link.edge, link]));
     this.links = [];
+    this.linkExits.clear();
     for (const edge of this.data.edges) {
       const start = this.points.get(edge.source);
       const end = this.points.get(edge.target);
-      if (start && end) this.links.push({ edge, start, end });
+      if (!start || !end) continue;
+      // 正反向或多条关系可能共用同一根可见连线。
+      const lineKey = JSON.stringify([edge.source, edge.target].sort());
+      const link = previousLinks.get(edge) ?? { edge, end, lineKey, start };
+      link.start = start;
+      link.end = end;
+      this.links.push(link);
+      this.addExit(edge.source, { link, reverse: false });
+      if (
+        start !== end &&
+        isBidirectionalRelation(edge.relationType, edge.direction || '双向')
+      ) {
+        this.addExit(edge.target, { link, reverse: true });
+      }
     }
+    this.updateDots();
     if (this.hovered && !this.points.has(this.hovered))
       this.hovered = undefined;
     if (this.selected && !this.points.has(this.selected))
@@ -413,6 +527,33 @@ export class PaperGraph {
         `${displayedRadius(radius, zoom)}px`,
       );
     }
+  }
+
+  private nextExit(
+    { link, reverse }: LinkExit,
+    occupied: Set<string>,
+  ): LinkExit {
+    const { source, target } = link.edge;
+    const node = reverse ? source : target;
+    const exits = this.linkExits.get(node) ?? [];
+    const onward = exits.filter((exit) => exit.link.lineKey !== link.lineKey);
+    const next = pickRandom(
+      (onward.length > 0 ? onward : exits).filter(
+        (exit) => !occupied.has(exit.link.lineKey),
+      ),
+    );
+    if (next) return next;
+
+    // 当前节点没有空闲出口时，从其他节点的空闲连线重新出发。
+    const starts: LinkExit[][] = [];
+    for (const [id, options] of this.linkExits) {
+      if (id === node) continue;
+      const free = options.filter((exit) => !occupied.has(exit.link.lineKey));
+      if (free.length > 0) starts.push(free);
+    }
+    const start = pickRandom(starts);
+    // 上一条线已经释放。没有其他起点时，可以从它的源节点出发。
+    return (start && pickRandom(start)) ?? { link, reverse: false };
   }
 
   private pointerDown = (event: PointerEvent) => {
@@ -531,6 +672,28 @@ export class PaperGraph {
   private setHovered(id?: string) {
     this.hovered = id;
     this.updateHighlight();
+  }
+
+  private updateDots() {
+    const links = new Set(this.links);
+    const availableByLine = new Map(
+      this.links.map((link) => [link.lineKey, link]),
+    );
+    const count = Math.min(maxDots, availableByLine.size);
+    this.dots = this.dots
+      .filter(({ exit }) => links.has(exit.link))
+      .slice(0, count);
+    for (const { exit } of this.dots) availableByLine.delete(exit.link.lineKey);
+    const available = [...availableByLine.values()];
+    while (this.dots.length < count) {
+      const index = Math.floor(Math.random() * available.length);
+      const [link] = available.splice(index, 1);
+      this.dots.push({
+        arrived: false,
+        distance: 0,
+        exit: { link: link!, reverse: false },
+      });
+    }
   }
 
   private updateHighlight() {
