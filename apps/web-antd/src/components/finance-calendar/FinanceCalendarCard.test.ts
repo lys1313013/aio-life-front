@@ -136,6 +136,8 @@ it('概览三项合计切换指标，结余为零但有收支时仍可打开明�
     ],
   };
   const wrapper = mount(FinanceCalendarCard, { props: { kind: 'finance' } });
+  expect(wrapper.get('header button').text()).toBe('收支');
+  expect(wrapper.find('header button[aria-label="记一笔"]').exists()).toBe(false);
   expect(
     wrapper
       .findAll('.finance-calendar-tabs button')

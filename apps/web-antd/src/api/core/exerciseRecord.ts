@@ -129,7 +129,7 @@ export interface ExerciseDashboardSummaryVO {
 
 export async function getDashboardSummaryApi(params?: {
   lastDate?: string;
-  limit?: number;
+  pageSize?: number;
 }) {
   return await requestClient.get<ExerciseDashboardSummaryVO>(
     '/exerciseRecord/dashboardSummary',

@@ -82,7 +82,7 @@ async function loadPage() {
   try {
     const res = await getDashboardSummaryApi({
       lastDate: cursor.value,
-      limit: PAGE_SIZE,
+      pageSize: PAGE_SIZE,
     });
     if (!request.current(version)) return;
     const incoming = res?.days || [];
@@ -112,7 +112,7 @@ const request = useActiveRequest({
     loadMoreFailed.value = false;
   },
   fetch: () =>
-    getDashboardSummaryApi({ lastDate: undefined, limit: PAGE_SIZE }),
+    getDashboardSummaryApi({ lastDate: undefined, pageSize: PAGE_SIZE }),
   apply: (res) => {
     days.value = res?.days || [];
     cursor.value = res?.lastDate;

@@ -103,7 +103,7 @@ describe('首页运动细项和趋势', () => {
     await flushPromises();
     expect(mocks.summary).toHaveBeenLastCalledWith({
       lastDate: '2026-09-25',
-      limit: 7,
+      pageSize: 7,
     });
     expect(wrapper.findAll('.exercise-row')).toHaveLength(2);
     expect(
@@ -184,7 +184,7 @@ describe('首页运动细项和趋势', () => {
     await flushPromises();
     expect(mocks.summary).toHaveBeenLastCalledWith({
       lastDate: '2026-09-25',
-      limit: 7,
+      pageSize: 7,
     });
     expect(wrapper.findAll('.exercise-row')).toHaveLength(2);
   });

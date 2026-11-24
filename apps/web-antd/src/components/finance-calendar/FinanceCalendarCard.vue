@@ -10,7 +10,7 @@ import type {
   FinanceMetric,
 } from '#/api/core/finance-calendar';
 
-import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { VbenIcon } from '@vben/common-ui';
@@ -37,7 +37,7 @@ import { useMenuVisualsStore } from '#/store/menu-visuals';
 const props = defineProps<{ kind: FinanceKind; page?: boolean }>();
 const emit = defineEmits<{ visibility: [visible: boolean] }>();
 const label = computed(
-  () => ({ income: '收入', expense: '支出', finance: '收支概览' })[props.kind],
+  () => ({ income: '收入', expense: '支出', finance: '收支' })[props.kind],
 );
 const metric = ref<FinanceMetric>('balance');
 const metrics = [
@@ -45,29 +45,6 @@ const metrics = [
   { value: 'expense', label: '支出' },
   { value: 'balance', label: '结余' },
 ] as const;
-const FinanceEntry = defineAsyncComponent(
-  () => import('#/components/finance-entry/FinanceEntryModal.vue'),
-);
-const financeRef = ref<InstanceType<typeof FinanceEntry>>();
-const entryMounted = ref(false);
-let pendingEntry = false;
-async function openEntry() {
-  await nextTick();
-  if (!financeRef.value || !pendingEntry || locked.value || !available.value)
-    return;
-  pendingEntry = false;
-  financeRef.value.open(metric.value === 'income' ? 'income' : 'expense');
-}
-watch(financeRef, openEntry);
-function addEntry() {
-  entryMounted.value = true;
-  pendingEntry = true;
-  void openEntry();
-}
-function closeEntry() {
-  entryMounted.value = false;
-  pendingEntry = false;
-}
 const options = computed(() => financeGranularities(props.kind));
 const user = useUserStore();
 const router = useRouter();
@@ -88,7 +65,6 @@ watch(
     cursor.value = null;
     selected.value = '';
     details.value = null;
-    closeEntry();
     metric.value = 'balance';
     granularity.value = readFinanceGranularity(identity.value, props.kind);
   },
@@ -187,7 +163,6 @@ watch(data, (value, previous) => {
 watch([locked, available], ([isLocked, isAvailable]) => {
   if (isLocked || !isAvailable) {
     closeDetails();
-    closeEntry();
   }
 });
 function openDetails(bucket: FinanceCalendarBucket) {
@@ -271,15 +246,6 @@ function navigate() {
         @click="navigate"
       >
         <BusinessIcon :card-key="`section.${kind}`" class="size-4" />{{ label }}
-      </button>
-      <button
-        v-if="kind === 'finance' && !locked"
-        type="button"
-        class="ml-auto flex size-7 items-center justify-center rounded hover:bg-muted"
-        aria-label="记一笔"
-        @click="addEntry"
-      >
-        <VbenIcon icon="mdi:plus" class="size-4" />
       </button>
       <div
         v-if="!locked"
@@ -475,7 +441,6 @@ function navigate() {
         </div>
       </div>
     </div>
-    <FinanceEntry v-if="entryMounted && !locked" ref="financeRef" />
     <FinanceCalendarDetailsModal
       v-if="details && !locked"
       :key="`${identity}:${details.key}`"
