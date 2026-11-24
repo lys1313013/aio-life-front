@@ -190,7 +190,7 @@ export interface CommonReq {
 }
 
 export interface DeviceCreateReq {
-  name?: null | string;
+  name: string;
   spec?: null | string;
   type?: null | string;
   status?: null | string;
@@ -290,13 +290,13 @@ export interface ExpenseCreateReq {
   deviceId?: null | string;
   newDevice?: DeviceCreateReq | null;
   transactionAmount?: null | number | string;
-  bookkeepingAmount?: null | number | string;
-  expenseTypeId?: null | string;
+  bookkeepingAmount: number | string;
+  expenseTypeId: string;
   payTypeId?: null | string;
   counterparty?: null | string;
   counterpartyAcct?: null | string;
   remark?: null | string;
-  expenseTime?: null | string;
+  expenseTime: string;
   transactionId?: null | string;
   expenseDesc?: null | string;
   merchantOrderNo?: null | string;
@@ -490,10 +490,10 @@ export interface HonorRecordUpdateReq {
 }
 
 export interface IncomeCreateReq {
-  grossAmount?: null | number | string;
-  incomeDate?: null | string;
+  grossAmount: number | string;
+  incomeDate: string;
   remark?: null | string;
-  incomeTypeId?: null | string;
+  incomeTypeId: string;
   taxAmount?: null | number | string;
 }
 
@@ -555,14 +555,14 @@ export interface MbtiResultSaveReq {
 }
 
 export interface MembershipCreateReq {
-  name?: null | string;
+  name: string;
   category?: null | string;
   provider?: null | string;
   providerId?: null | string;
   icon?: null | string;
   color?: null | string;
   startDate?: null | string;
-  expiryDate?: null | string;
+  expiryDate: string;
   price?: null | number | string;
   billingCycle?: null | string;
   monthlyAmount?: null | number | string;
@@ -579,7 +579,7 @@ export interface MembershipProviderReq {
 }
 
 export interface MembershipReq {
-  id?: null | string;
+  id: string;
   name?: null | string;
   category?: null | string;
   provider?: null | string;
@@ -817,11 +817,6 @@ export interface RegisterReq {
   password?: null | string;
   email?: null | string;
   code?: null | string;
-}
-
-export interface RelationshipDeleteReq {
-  sourcePersonId?: null | string;
-  targetPersonId?: null | string;
 }
 
 export interface RelationshipReq {
@@ -1378,7 +1373,6 @@ export interface ApiRequests {
   ReadRecordCreateReq: ReadRecordCreateReq;
   ReadRecordReq: ReadRecordReq;
   RegisterReq: RegisterReq;
-  RelationshipDeleteReq: RelationshipDeleteReq;
   RelationshipReq: RelationshipReq;
   RelationshipUpdateReq: RelationshipUpdateReq;
   ResetPasswordReq: ResetPasswordReq;
@@ -2181,10 +2175,6 @@ const fields: Record<string, Record<string, null | string>> = {
     email: null,
     code: null,
   },
-  RelationshipDeleteReq: {
-    sourcePersonId: null,
-    targetPersonId: null,
-  },
   RelationshipReq: {
     sourcePersonId: null,
     targetPersonId: null,
@@ -2731,7 +2721,7 @@ const queryFields: Record<string, string[]> = {
     'exerciseTypeId',
     'startDate',
   ],
-  '/exerciseRecord/dashboardSummary': ['lastDate', 'limit'],
+  '/exerciseRecord/dashboardSummary': ['lastDate', 'pageSize'],
   '/expense/query': [
     'counterparty',
     'endTime',
@@ -3525,12 +3515,6 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/relationships/{id}',
     model: 'RelationshipUpdateReq',
-    list: false,
-  },
-  {
-    method: 'DELETE',
-    path: '/relationships',
-    model: 'RelationshipDeleteReq',
     list: false,
   },
   {

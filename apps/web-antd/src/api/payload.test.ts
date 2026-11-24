@@ -278,14 +278,7 @@ describe('最小请求契约', () => {
     ).toEqual({ page: 0, pageSize: 20, inProgressFirst: false });
   });
 
-  it('删除关系和动态 MCP 参数有各自的契约', () => {
-    expect(
-      minimalRequestPayload('/relationships', 'DELETE', {
-        sourcePersonId: '1',
-        targetPersonId: '2',
-        description: 'readonly',
-      }),
-    ).toEqual({ sourcePersonId: '1', targetPersonId: '2' });
+  it('保留 MCP 工具动态参数', () => {
     const tool = {
       name: 'business_tool',
       arguments: { userDefined: { value: 0 } },
