@@ -62,6 +62,12 @@ const platformOptions = [
     color: '#28b78d',
   },
   {
+    label: '多邻国',
+    value: 'duolingo',
+    icon: 'simple-icons:duolingo',
+    color: '#58cc02',
+  },
+  {
     label: '豆瓣',
     value: 'douban',
     icon: 'simple-icons:douban',
@@ -101,6 +107,7 @@ function resetDoubanVerifyResult() {
 }
 
 function handlePlatformChange() {
+  formState.value.accessToken = '';
   resetDoubanVerifyResult();
 }
 
@@ -184,6 +191,15 @@ const handleOk = async () => {
   ) {
     message.warning('请填写微信读书 API Key');
     return;
+  }
+  if (formState.value.platform === 'duolingo') {
+    const username = formState.value.platformUsername?.trim();
+    if (!username) {
+      message.warning('请填写多邻国用户名');
+      return;
+    }
+    formState.value.platformUsername = username;
+    delete formState.value.accessToken;
   }
   modalLoading.value = true;
   try {
@@ -436,6 +452,9 @@ onMounted(() => {
               </a>
               → 点击右上角头像 → 个人主页，URL：blog.csdn.net/{用户名}
             </span>
+          </template>
+          <template v-else-if="formState.platform === 'duolingo'" #extra>
+            填写多邻国国际站公开主页 /profile/ 后的用户名。
           </template>
           <template v-else-if="formState.platform === 'shanbay'" #extra>
             <span class="text-xs text-gray-500">
