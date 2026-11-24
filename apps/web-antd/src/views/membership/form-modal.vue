@@ -238,7 +238,7 @@ const handleSave = async () => {
     };
 
     const saved = formState.value.id
-      ? await updateMembership(payload)
+      ? await updateMembership({ ...payload, id: formState.value.id })
       : await createMembership(payload);
 
     modalVisible.value = false;
