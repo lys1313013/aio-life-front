@@ -46,7 +46,7 @@ const emit = defineEmits<{
 const mode = ref('existing');
 const current = ref<LinkedDevice | null>(null);
 type DeviceDraft = {
-  [K in keyof DeviceCreateReq]: Exclude<DeviceCreateReq[K], null>;
+  [K in keyof DeviceCreateReq]?: Exclude<DeviceCreateReq[K], null>;
 };
 const draft = ref<DeviceDraft>({});
 const selectedId = ref<string>();
@@ -241,7 +241,7 @@ async function save() {
   try {
     const result =
       mode.value === 'new'
-        ? await createExpenseDevice(props.expenseId, draft.value)
+        ? await createExpenseDevice(props.expenseId, { ...draft.value, name: draft.value.name!.trim() })
         : await bindExpenseDevice(props.expenseId, selectedId.value!);
     if (alive) publish(result);
   } catch {

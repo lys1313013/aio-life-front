@@ -12,7 +12,7 @@ export interface LinkedDevice {
 }
 export interface ExpenseDeviceContext {
   device: LinkedDevice | null;
-  defaults: DeviceCreateReq;
+  defaults: Partial<DeviceCreateReq>;
 }
 export interface ExpenseDeviceChange {
   expenseId: string;

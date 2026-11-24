@@ -151,7 +151,6 @@ const [Form, formApi] = useAppForm({
       },
       fieldName: 'transactionAmount',
       label: '交易金额',
-      rules: 'required',
     },
     {
       component: 'Input',
@@ -254,6 +253,10 @@ const [Modal, modalApi] = useVbenModal({
       const formData = await formApi.submitForm();
       const processedData = { ...toRaw(formData) };
 
+      if (typeof processedData.transactionAmount === 'string' && !processedData.transactionAmount.trim()) {
+        processedData.transactionAmount = null;
+      }
+
       // 处理日期字段，确保格式正确
       if (
         processedData.expenseTime && // 如果只有日期部分，添加时间部分
@@ -272,6 +275,9 @@ const [Modal, modalApi] = useVbenModal({
       } else {
         await insertData({
           ...processedData,
+          bookkeepingAmount: processedData.bookkeepingAmount,
+          expenseTime: processedData.expenseTime,
+          expenseTypeId: processedData.expenseTypeId,
           deviceId: deviceSelection.value?.deviceId,
           newDevice: deviceSelection.value?.newDevice,
         });

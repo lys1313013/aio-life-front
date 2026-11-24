@@ -83,6 +83,7 @@ const [Form, formApi] = useAppForm({
       },
       fieldName: 'grossAmount',
       label: '金额',
+      rules: 'required',
     },
     {
       component: 'Select',
@@ -96,6 +97,7 @@ const [Form, formApi] = useAppForm({
       },
       fieldName: 'incomeTypeId',
       label: '收入类型',
+      rules: 'required',
     },
     {
       component: 'DatePicker',
@@ -134,7 +136,12 @@ const [Modal, modalApi] = useVbenModal({
       if (newVar.id) {
         await update(newVar.id, { ...originalValues.value, ...newVar });
       } else {
-        await add(newVar);
+        await add({
+          ...newVar,
+          grossAmount: newVar.grossAmount,
+          incomeDate: newVar.incomeDate,
+          incomeTypeId: newVar.incomeTypeId,
+        });
       }
       modalApi.close();
       tableReload();

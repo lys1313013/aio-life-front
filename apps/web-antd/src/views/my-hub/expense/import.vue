@@ -832,9 +832,16 @@ function submitData() {
     });
   }
 
-  console.log('提交数据:', transactions.value);
+  const rows = [];
+  for (const row of transactions.value) {
+    if (!row.expenseTypeId) {
+      message.warning('请为每笔账单选择支出类型');
+      return;
+    }
+    rows.push({ ...row, expenseTypeId: row.expenseTypeId });
+  }
   submitLoading.value = true;
-  saveBatch(transactions.value)
+  saveBatch(rows)
     .then(() => {
       message.success('数据提交成功');
     })
