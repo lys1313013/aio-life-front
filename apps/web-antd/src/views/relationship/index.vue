@@ -316,15 +316,11 @@ const handleRelationshipSubmit = async () => {
 
 const handleDeleteRelationship = async (relationship: RelationshipDetailVO) => {
   const source = selectedPersonDetail.value?.id;
-  const target = relationship.target?.id;
-  if (!source || !target || deletingRelationships.value.has(relationship.id))
+  if (!source || !relationship.id || deletingRelationships.value.has(relationship.id))
     return;
   deletingRelationships.value.add(relationship.id);
   try {
-    await deleteRelationship({
-      sourcePersonId: source,
-      targetPersonId: target,
-    });
+    await deleteRelationship(relationship.id);
     message.success('删除成功');
     await Promise.all([fetchGraphData(), refreshDetails(source)]);
   } catch {

@@ -44,7 +44,8 @@ const tau = 2 * Math.PI;
 const loopControlOffset = { x: 55, y: -60 };
 const loopSamples = 64;
 const dotSpeed = 20; // CSS 像素/秒
-const maxDots = 3;
+const maxDots = 10;
+const nodesPerDot = 3;
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
@@ -676,10 +677,18 @@ export class PaperGraph {
 
   private updateDots() {
     const links = new Set(this.links);
-    const availableByLine = new Map(
-      this.links.map((link) => [link.lineKey, link]),
+    const availableByLine = new Map<string, Link>();
+    const connected = new Set<string>();
+    for (const link of this.links) {
+      availableByLine.set(link.lineKey, link);
+      connected.add(link.edge.source);
+      connected.add(link.edge.target);
+    }
+    const count = Math.min(
+      Math.ceil(connected.size / nodesPerDot),
+      maxDots,
+      availableByLine.size,
     );
-    const count = Math.min(maxDots, availableByLine.size);
     this.dots = this.dots
       .filter(({ exit }) => links.has(exit.link))
       .slice(0, count);
