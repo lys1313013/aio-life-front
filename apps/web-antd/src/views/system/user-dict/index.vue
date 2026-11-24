@@ -624,13 +624,16 @@ const handleSave = async () => {
             </div>
           </div>
           <div class="mt-2 flex flex-wrap gap-2">
-            <div
-              v-for="color in CATEGORY_COLOR_PRESETS"
+            <button
+              v-for="color in [...CATEGORY_COLOR_PRESETS, '#000000']"
               :key="color"
+              type="button"
+              :aria-label="`选择颜色 ${color}`"
+              :aria-pressed="formState.color?.toLowerCase() === color"
               class="h-6 w-6 cursor-pointer rounded border border-border transition-transform hover:scale-110"
               :style="{ backgroundColor: color }"
               @click="formState.color = color"
-            ></div>
+            ></button>
           </div>
         </Form.Item>
 
