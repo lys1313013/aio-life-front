@@ -374,10 +374,10 @@ const handleDelete = async () => {
         <div class="min-w-0 flex-1 self-center">
           <div class="mb-2 flex items-center gap-2">
             <span class="text-sm font-medium text-gray-700 dark:text-gray-200">
-              豆瓣条目链接
+              豆瓣链接
             </span>
             <Tooltip
-              title="支持 movie.douban.com/subject/... 地址，解析后自动填写名称、演职员和封面"
+              title="支持豆瓣网页条目链接和 App 分享链接，解析后可自动填写名称、导演和封面"
             >
               <IconifyIcon
                 icon="lucide:circle-help"
@@ -390,7 +390,7 @@ const handleDelete = async () => {
             <div class="min-w-0 flex-1">
               <Input
                 v-model:value="doubanUrl"
-                placeholder="https://movie.douban.com/subject/..."
+                placeholder="粘贴豆瓣链接"
                 allow-clear
                 size="small"
               />
