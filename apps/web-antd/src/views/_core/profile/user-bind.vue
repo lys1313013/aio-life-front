@@ -64,8 +64,8 @@ const platformOptions = [
   {
     label: '多邻国',
     value: 'duolingo',
-    icon: 'simple-icons:duolingo',
-    color: '#58cc02',
+    icon: 'svg:duolingo',
+    color: '',
   },
   {
     label: '豆瓣',
