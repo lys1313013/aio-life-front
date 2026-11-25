@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import type {
-  DoubanAccountVerifyResult,
-  UserBindEntity,
-} from '#/api/core/user-bind';
+import type { UserBindEntity } from '#/api/core/user-bind';
 
-import { onMounted, ref } from 'vue';
+import { h, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 import { VbenIcon } from '@vben/common-ui';
 
@@ -25,7 +22,7 @@ import {
   deleteUserBindApi,
   getUserBindListApi,
   updateUserBindApi,
-  verifyDoubanAccountApi,
+  verifyUserBindApi,
 } from '#/api/core/user-bind';
 import csdnIcon from '#/assets/platforms/csdn.png';
 import { AppModal as Modal } from '#/components/app-modal';
@@ -35,10 +32,9 @@ const loading = ref(true);
 const deletingIds = ref(new Set<UserBindEntity['id']>());
 const modalVisible = ref(false);
 const modalLoading = ref(false);
-const doubanVerifying = ref(false);
-const doubanVerifyResult = ref<DoubanAccountVerifyResult>();
-const doubanVerifyError = ref('');
-let doubanVerifyRequestId = 0;
+const verifying = ref(false);
+const verificationError = ref('');
+let verificationController: AbortController | undefined;
 
 const formState = ref<UserBindEntity>({
   platform: 'github',
@@ -99,43 +95,75 @@ function clearGithubBindCache() {
   localStorage.removeItem(GITHUB_BIND_CACHE_KEY);
 }
 
-function resetDoubanVerifyResult() {
-  doubanVerifyRequestId += 1;
-  doubanVerifying.value = false;
-  doubanVerifyResult.value = undefined;
-  doubanVerifyError.value = '';
+function resetVerification() {
+  verificationController?.abort();
+  verificationController = undefined;
+  verifying.value = false;
+  verificationError.value = '';
 }
+
+watch(
+  [
+    modalVisible,
+    () => formState.value.id,
+    () => formState.value.platform,
+    () => formState.value.platformUsername,
+    () => formState.value.accessToken,
+  ],
+  resetVerification,
+  { flush: 'sync' },
+);
 
 function handlePlatformChange() {
   formState.value.accessToken = '';
-  resetDoubanVerifyResult();
 }
 
-function handleAccountInputChange() {
-  resetDoubanVerifyResult();
-}
-
-async function handleVerifyDouban() {
-  const accountId = formState.value.platformUsername?.trim() || '';
-  if (!accountId) {
-    doubanVerifyError.value = '请先填写豆瓣账号 ID';
+async function handleVerify() {
+  if (verifying.value || modalLoading.value) return;
+  resetVerification();
+  const { id, platform, platformUsername, accessToken } = formState.value;
+  const username = platformUsername?.trim();
+  const credential = accessToken?.trim();
+  if (platform !== 'weread' && !username) {
+    verificationError.value =
+      platform === 'douban' ? '请填写豆瓣账号 ID' : '请填写账号或用户名';
+    return;
+  }
+  if (platform === 'weread' && !id && !credential) {
+    verificationError.value = '请填写微信读书 API Key';
     return;
   }
 
-  formState.value.platformUsername = accountId;
-  resetDoubanVerifyResult();
-  const requestId = ++doubanVerifyRequestId;
-  doubanVerifying.value = true;
+  const controller = new AbortController();
+  verificationController = controller;
+  verifying.value = true;
   try {
-    const result = await verifyDoubanAccountApi(accountId);
-    if (requestId !== doubanVerifyRequestId) return;
-    doubanVerifyResult.value = result;
+    const result = await verifyUserBindApi(
+      {
+        id,
+        platform,
+        platformUsername: platform === 'weread' ? undefined : username,
+        accessToken: ['github', 'weread'].includes(platform)
+          ? credential || undefined
+          : undefined,
+      },
+      controller.signal,
+    );
+    if (controller.signal.aborted) return;
+    message.success({
+      content: h(
+        'span',
+        { class: 'break-all', role: 'status' },
+        result.accountName ? `验证成功 · ${result.accountName}` : '验证成功',
+      ),
+      key: 'binding-verification',
+    });
   } catch {
-    if (requestId !== doubanVerifyRequestId) return;
-    doubanVerifyError.value = '验证失败，请检查账号 ID 或稍后重试';
+    if (!controller.signal.aborted) verificationError.value = '验证失败';
   } finally {
-    if (requestId === doubanVerifyRequestId) {
-      doubanVerifying.value = false;
+    if (!controller.signal.aborted) {
+      verifying.value = false;
+      verificationController = undefined;
     }
   }
 }
@@ -155,13 +183,11 @@ const handleAdd = () => {
     platformUsername: '',
     accessToken: '',
   };
-  resetDoubanVerifyResult();
   modalVisible.value = true;
 };
 
 const handleEdit = (record: UserBindEntity) => {
   formState.value = { ...record, accessToken: '' }; // 编辑时不回显Token
-  resetDoubanVerifyResult();
   modalVisible.value = true;
 };
 
@@ -184,6 +210,7 @@ const handleDelete = async (id: UserBindEntity['id']) => {
 };
 
 const handleOk = async () => {
+  if (verifying.value || modalLoading.value) return;
   if (
     formState.value.platform === 'weread' &&
     !formState.value.id &&
@@ -220,6 +247,8 @@ const handleOk = async () => {
 onMounted(() => {
   fetchList();
 });
+
+onBeforeUnmount(() => verificationController?.abort());
 </script>
 
 <template>
@@ -341,6 +370,7 @@ onMounted(() => {
       centered
       @ok="handleOk"
       :confirm-loading="modalLoading"
+      :ok-button-props="{ disabled: verifying }"
     >
       <Form layout="vertical" :model="formState">
         <Form.Item label="平台" required>
@@ -383,30 +413,16 @@ onMounted(() => {
           "
           required
         >
-          <Input.Search
-            v-if="formState.platform === 'douban'"
+          <Input
             v-model:value="formState.platformUsername"
-            enter-button="验证"
-            placeholder="例如：1234567 或 doubanfilm"
-            :loading="doubanVerifying"
-            @search="handleVerifyDouban"
-            @update:value="handleAccountInputChange"
+            :placeholder="
+              formState.platform === 'douban'
+                ? '例如：1234567 或 doubanfilm'
+                : undefined
+            "
           />
-          <Input v-else v-model:value="formState.platformUsername" />
           <template v-if="formState.platform === 'douban'" #extra>
             <div class="flex flex-col gap-1 text-xs text-gray-500">
-              <span
-                v-if="doubanVerifyResult"
-                class="text-green-600 dark:text-green-400"
-              >
-                验证成功：{{ doubanVerifyResult.nickname }}
-              </span>
-              <span
-                v-else-if="doubanVerifyError"
-                class="text-red-500 dark:text-red-400"
-              >
-                {{ doubanVerifyError }}（仍可直接保存）
-              </span>
               <span>
                 获取方式：登录豆瓣后打开
                 <a
@@ -515,6 +531,22 @@ onMounted(() => {
           </template>
         </Form.Item>
       </Form>
+      <p
+        v-if="verificationError"
+        role="alert"
+        class="text-sm text-red-600 dark:text-red-400"
+      >
+        {{ verificationError }}
+      </p>
+      <template #footer-leading>
+        <Button
+          :loading="verifying"
+          :disabled="modalLoading"
+          @click="handleVerify"
+        >
+          验证
+        </Button>
+      </template>
     </Modal>
   </div>
 </template>

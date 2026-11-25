@@ -1,4 +1,4 @@
-import type { ApiRequests } from '#/api/payload';
+import type { ApiRequests, UserThirdPartyAccountVerifyVO } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
@@ -14,26 +14,24 @@ export interface UserBindEntity {
   updateTime?: string;
 }
 
-export interface DoubanAccountVerifyResult {
-  accountId: string;
-  homepageUrl: string;
-  nickname: string;
-}
-
 export const getUserBindListApi = (includeToken?: boolean) => {
   return requestClient.get<UserBindEntity[]>('/userbinds/list', {
     params: { includeToken },
   });
 };
 
-export const addUserBindApi = (data: ApiRequests['UserThirdPartyAccountCreateReq']) => {
+export const addUserBindApi = (
+  data: ApiRequests['UserThirdPartyAccountCreateReq'],
+) => {
   return requestClient.post<boolean>(
     '/userbinds',
     pickPayload('UserThirdPartyAccountCreateReq', data),
   );
 };
 
-export const updateUserBindApi = (data: ApiRequests['UserThirdPartyAccountUpdateReq']) => {
+export const updateUserBindApi = (
+  data: ApiRequests['UserThirdPartyAccountUpdateReq'],
+) => {
   return requestClient.put<boolean>(
     '/userbinds',
     pickPayload('UserThirdPartyAccountUpdateReq', data),
@@ -44,11 +42,13 @@ export const deleteUserBindApi = (id: string) => {
   return requestClient.delete<boolean>(`/userbinds/${id}`);
 };
 
-export const verifyDoubanAccountApi = (accountId: string) => {
-  return requestClient.get<DoubanAccountVerifyResult>(
-    '/userbinds/douban/verify',
-    {
-      params: { accountId },
-    },
+export async function verifyUserBindApi(
+  data: ApiRequests['UserThirdPartyAccountVerifyReq'],
+  signal: AbortSignal,
+) {
+  return await requestClient.post<UserThirdPartyAccountVerifyVO>(
+    '/userbinds/verify',
+    pickPayload('UserThirdPartyAccountVerifyReq', data),
+    { signal },
   );
-};
+}

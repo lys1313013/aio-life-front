@@ -1222,6 +1222,13 @@ export interface UserThirdPartyAccountUpdateReq {
   metaFields?: null | string;
 }
 
+export interface UserThirdPartyAccountVerifyReq {
+  id?: null | string;
+  platform: string;
+  platformUsername?: null | string;
+  accessToken?: null | string;
+}
+
 export interface UserUpdateReq {
   id: string;
   username?: null | string;
@@ -1423,6 +1430,7 @@ export interface ApiRequests {
   UserMenuHiddenSaveReq: UserMenuHiddenSaveReq;
   UserThirdPartyAccountCreateReq: UserThirdPartyAccountCreateReq;
   UserThirdPartyAccountUpdateReq: UserThirdPartyAccountUpdateReq;
+  UserThirdPartyAccountVerifyReq: UserThirdPartyAccountVerifyReq;
   UserUpdateReq: UserUpdateReq;
   WardrobeCategorySaveReq: WardrobeCategorySaveReq;
   WardrobeItemSaveReq: WardrobeItemSaveReq;
@@ -2528,6 +2536,12 @@ const fields: Record<string, Record<string, null | string>> = {
     accessToken: null,
     metaFields: null,
   },
+  UserThirdPartyAccountVerifyReq: {
+    id: null,
+    platform: null,
+    platformUsername: null,
+    accessToken: null,
+  },
   UserUpdateReq: {
     id: null,
     username: null,
@@ -2861,7 +2875,6 @@ const queryFields: Record<string, string[]> = {
   '/userDictType/dictTypeEnum': [],
   '/userDictType/getByDictType': ['dictType'],
   '/userbinds/list': ['includeToken'],
-  '/userbinds/douban/verify': ['accountId'],
   '/notification/channels/wechat-mini': [],
   '/weread/recent': ['cursor', 'pageSize'],
   '/weread/connection': [],
@@ -3476,6 +3489,12 @@ const requestModels: Array<{
     method: 'PUT',
     path: '/userDictData',
     model: 'UserDictDataUpdateReq',
+    list: false,
+  },
+  {
+    method: 'POST',
+    path: '/userbinds/verify',
+    model: 'UserThirdPartyAccountVerifyReq',
     list: false,
   },
   {
@@ -4180,12 +4199,6 @@ export interface DocumentationVO_OperationSummary {
   method: null | string;
   path: null | string;
   modules: Array<string> | null;
-}
-
-export interface DoubanAccountVO {
-  accountId: null | string;
-  nickname: null | string;
-  homepageUrl: null | string;
 }
 
 export interface DoubanMovieImportPreviewVO {
@@ -5383,6 +5396,10 @@ export interface UserThirdPartyAccountVO {
   platformUsername?: string;
   accessToken?: string;
   metaFields?: string;
+}
+
+export interface UserThirdPartyAccountVerifyVO {
+  accountName: null | string;
 }
 
 export interface UserVO {
