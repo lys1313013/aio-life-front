@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Message } from '#/api/core/message';
+import type { MessageConversationVO } from '#/api/payload';
 
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -11,10 +12,10 @@ import { message as antMessage } from 'ant-design-vue';
 
 import {
   createMessageApi,
-  deleteMessageApi,
-  getMessageListApi,
-  isSystemMessage,
-  markAsReadApi,
+  deleteConversationApi,
+  getConversationMessagesApi,
+  getConversationsApi,
+  markConversationReadApi,
   SYSTEM_CONVERSATION_ID,
 } from '#/api/core/message';
 import { getUserBasicInfoApi } from '#/api/core/user';
@@ -22,350 +23,230 @@ import { getUserBasicInfoApi } from '#/api/core/user';
 import ChatWindow from './components/ChatWindow.vue';
 import ConversationList from './components/ConversationList.vue';
 
+const PAGE_SIZE = 30;
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const { isMobile } = usePreferences();
 
+const summaries = ref<MessageConversationVO[]>([]);
+const conversationLoading = ref(false);
+const conversationError = ref(false);
+const moreConversations = ref(true);
+let conversationPage = 1;
+let summaryRevision = 0;
+
 const messages = ref<Message[]>([]);
 const loading = ref(false);
+const loadingOlder = ref(false);
+const chatError = ref(false);
+const moreMessages = ref(false);
 const sendingMessage = ref(false);
-const tempConversation = ref<any>(null);
+const deletingConversation = ref('');
+const peerInfo = ref<{ avatar: string; nickname: string; userId: string }>();
+let chatRevision = 0;
+let beforeId: string | undefined;
 
-// Current user ID
-const myId = computed(() => {
-  const info = userStore.userInfo as any;
-  return String(info?.userId || info?.id || '');
-});
-
-// Selected conversation user ID
-const selectedUserId = computed(() => {
-  const id = route.query.userId;
-  return id ? String(id) : undefined;
-});
-
+const myId = computed(() =>
+  String(userStore.userInfo?.userId || userStore.userInfo?.id || ''),
+);
+const selectedUserId = computed(() =>
+  typeof route.query.userId === 'string' ? route.query.userId : undefined,
+);
+const selectedSummary = computed(() =>
+  summaries.value.find((row) => row.userId === selectedUserId.value),
+);
 const selectedConversationName = computed(() => {
-  const id = selectedUserId.value;
-  if (!id) return '';
-  if (id === SYSTEM_CONVERSATION_ID) return '系统通知';
-  return userCache.value.get(id)?.nickname || `User ${id}`;
+  const peer = selectedUserId.value;
+  if (peer === SYSTEM_CONVERSATION_ID) return '系统通知';
+  return (
+    selectedSummary.value?.username ||
+    peerInfo.value?.nickname ||
+    `User ${peer}`
+  );
 });
 
-// 会话标识：系统通知归到固定会话，其余按对方用户归组
-const conversationIdOf = (msg: Message) => {
-  if (isSystemMessage(msg)) return SYSTEM_CONVERSATION_ID;
-  return String(msg.senderId) === String(myId.value)
-    ? String(msg.receiverId)
-    : String(msg.senderId);
-};
-
-// Mark conversation as read
-const markConversationAsRead = async (conversationId: string) => {
-  if (!myId.value) return;
-
-  const unreadMessages = messages.value.filter(
-    (m) =>
-      conversationIdOf(m) === conversationId &&
-      String(m.receiverId) === myId.value &&
-      !m.isRead,
-  );
-
-  if (unreadMessages.length > 0) {
-    try {
-      await Promise.all(unreadMessages.map((msg) => markAsReadApi(msg.id)));
-      unreadMessages.forEach((msg) => (msg.isRead = true));
-    } catch (error) {
-      console.error('Failed to mark messages as read:', error);
-    }
-  }
-};
-
-const checkUser = async (userId: string) => {
-  if (userId === SYSTEM_CONVERSATION_ID) {
-    tempConversation.value = null;
-    return;
-  }
-
-  const existing = messages.value.some(
-    (m) => conversationIdOf(m) === userId,
-  );
-
-  if (existing) {
-    tempConversation.value = null;
-    return;
-  }
-
-  if (userCache.value.has(userId)) {
-    const info = userCache.value.get(userId);
-    tempConversation.value = {
-      userId,
-      username: info?.nickname || `User ${userId}`,
-      avatar: info?.avatar,
-      lastMessage: '',
-      time: new Date().toISOString(),
-      unreadCount: 0,
-    };
-    return;
-  }
-
-  try {
-    const info = await getUserBasicInfoApi(userId);
-    if (info) {
-      userCache.value.set(userId, {
-        nickname: info.nickname,
-        avatar: info.avatar,
-      });
-      tempConversation.value = {
-        userId,
-        username: info.nickname || `User ${userId}`,
-        avatar: info.avatar,
-        lastMessage: '',
-        time: new Date().toISOString(),
-        unreadCount: 0,
-      };
-    } else {
-      throw new Error('User not found');
-    }
-  } catch {
-    antMessage.error('用户不存在');
-    router.replace({ query: { ...route.query, userId: undefined } });
-    tempConversation.value = null;
-  }
-};
-
-const fetchMessages = async () => {
-  try {
-    loading.value = true;
-    messages.value = await getMessageListApi();
-    if (selectedUserId.value) {
-      await markConversationAsRead(selectedUserId.value);
-      await checkUser(selectedUserId.value);
-    }
-  } finally {
-    loading.value = false;
-  }
-};
-
-const userCache = ref(new Map<string, { avatar: string; nickname: string }>());
-const fetchingUserIds = new Set<string>();
-
-const conversationCache = new Map<string, any>();
-
-const fetchUserInfo = async (userId: string) => {
-  if (
-    userId === SYSTEM_CONVERSATION_ID ||
-    userCache.value.has(userId) ||
-    fetchingUserIds.has(userId)
-  ) {
-    return;
-  }
-
-  fetchingUserIds.add(userId);
-  try {
-    const info = await getUserBasicInfoApi(userId);
-    const data = {
-      nickname: info.nickname || `User ${userId}`,
-      avatar: info.avatar || '',
-    };
-    userCache.value.set(userId, data);
-  } catch {
-    userCache.value.set(userId, { nickname: `User ${userId}`, avatar: '' });
-  } finally {
-    fetchingUserIds.delete(userId);
-  }
-};
-
-const conversations = computed(() => {
-  const groups = new Map<string, Message[]>();
-
-  messages.value.forEach((msg) => {
-    const otherId = conversationIdOf(msg);
-    if (!groups.has(otherId)) {
-      groups.set(otherId, []);
-    }
-    groups.get(otherId)?.push(msg);
-  });
-
-  const list = [...groups.entries()]
-    .map(([userId, msgs]) => {
-      msgs.sort(
-        (a, b) =>
-          new Date(b.createTime).getTime() - new Date(a.createTime).getTime(),
-      );
-      const lastMsg = msgs[0];
-
-      if (!lastMsg) {
-        return null;
-      }
-
-      const unreadCount = msgs.filter(
-        (m) => String(m.receiverId) === String(myId.value) && !m.isRead,
-      ).length;
-
-      const isSystem = userId === SYSTEM_CONVERSATION_ID;
-      const userInfo = isSystem ? undefined : userCache.value.get(userId);
-
-      const username = isSystem
+const conversations = computed(() =>
+  summaries.value.map((row) => ({
+    userId: row.userId || '',
+    username:
+      row.userId === SYSTEM_CONVERSATION_ID
         ? '系统通知'
-        : userInfo?.nickname || `User ${userId}`;
-      const avatar = isSystem ? undefined : userInfo?.avatar;
-      const lastMessage = lastMsg.content;
-      const time = lastMsg.createTime;
-
-      const cached = conversationCache.get(userId);
-      if (
-        cached &&
-        cached.username === username &&
-        cached.avatar === avatar &&
-        cached.lastMessage === lastMessage &&
-        cached.time === time &&
-        cached.unreadCount === unreadCount
-      ) {
-        return cached;
-      }
-
-      const newConversation = {
-        userId,
-        username,
-        avatar,
-        lastMessage,
-        time,
-        unreadCount,
-      };
-      conversationCache.set(userId, newConversation);
-      return newConversation;
-    })
-    .filter((item) => item !== null);
-
-  if (
-    tempConversation.value &&
-    !list.some((c) => c?.userId === tempConversation.value.userId)
-  ) {
-    list.push(tempConversation.value);
-  }
-
-  return list.sort(
-    (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime(),
-  );
-});
-
-watch(
-  () => conversations.value,
-  (newConversations) => {
-    newConversations.forEach((c) => {
-      if (!userCache.value.has(c.userId)) {
-        fetchUserInfo(c.userId);
-      }
-    });
-  },
-  { immediate: true, deep: true },
+        : row.username || `User ${row.userId}`,
+    avatar: row.avatarUrl || undefined,
+    time: row.time || '',
+    lastMessage: row.lastMessage || '',
+    unreadCount: row.unreadCount,
+  })),
 );
 
-const currentChatMessages = computed(() => {
-  if (!selectedUserId.value) return [];
-  const systemConversation =
-    selectedUserId.value === SYSTEM_CONVERSATION_ID;
-  return messages.value
-    .filter((m) => {
-      if (systemConversation) {
-        return (
-          isSystemMessage(m) &&
-          String(m.receiverId) === String(myId.value)
-        );
-      }
-      if (isSystemMessage(m)) return false;
-      return (
-        (String(m.senderId) === String(myId.value) &&
-          String(m.receiverId) === String(selectedUserId.value)) ||
-        (String(m.senderId) === String(selectedUserId.value) &&
-          String(m.receiverId) === String(myId.value))
-      );
-    })
-    .sort(
-      (a, b) =>
-        new Date(a.createTime).getTime() - new Date(b.createTime).getTime(),
+async function fetchConversations(reset = false) {
+  if (!reset && (conversationLoading.value || !moreConversations.value)) return;
+  const revision = ++summaryRevision;
+  const page = reset ? 1 : conversationPage;
+  conversationLoading.value = true;
+  conversationError.value = false;
+  try {
+    const result = await getConversationsApi(page, PAGE_SIZE);
+    if (revision !== summaryRevision) return;
+    const previous = reset ? [] : summaries.value;
+    const known = new Set(previous.map((row) => row.userId));
+    summaries.value = [
+      ...previous,
+      ...result.items.filter((row) => !known.has(row.userId)),
+    ];
+    moreConversations.value = result.items.length === PAGE_SIZE;
+    conversationPage = page + 1;
+  } catch {
+    if (revision === summaryRevision) conversationError.value = true;
+  } finally {
+    if (revision === summaryRevision) conversationLoading.value = false;
+  }
+}
+
+async function fetchChat(older = false) {
+  const peer = selectedUserId.value;
+  if (
+    !peer ||
+    (older && (!moreMessages.value || loadingOlder.value || loading.value))
+  )
+    return;
+  const revision = ++chatRevision;
+  const pending = older ? loadingOlder : loading;
+  pending.value = true;
+  chatError.value = false;
+  try {
+    const rows = await getConversationMessagesApi(
+      peer,
+      PAGE_SIZE,
+      older ? beforeId : undefined,
     );
-});
+    if (revision !== chatRevision) return;
+    beforeId = rows.at(-1)?.id;
+    moreMessages.value = rows.length === PAGE_SIZE;
+    const known = new Set(older ? messages.value.map((row) => row.id) : []);
+    const chronological = rows.filter((row) => !known.has(row.id)).toReversed();
+    messages.value = older
+      ? [...chronological, ...messages.value]
+      : chronological;
+    if (!older && rows.length > 0) {
+      await markConversationReadApi(peer);
+      if (revision !== chatRevision) return;
+      const summary = summaries.value.find((row) => row.userId === peer);
+      if (summary) summary.unreadCount = 0;
+    }
+    if (
+      !older &&
+      rows.length === 0 &&
+      peer !== SYSTEM_CONVERSATION_ID &&
+      !selectedSummary.value
+    ) {
+      const info = await getUserBasicInfoApi(peer);
+      if (revision === chatRevision)
+        peerInfo.value = {
+          userId: peer,
+          nickname: info.nickname,
+          avatar: info.avatar,
+        };
+    }
+  } catch {
+    if (revision === chatRevision) chatError.value = true;
+  } finally {
+    if (revision === chatRevision) pending.value = false;
+  }
+}
 
-const handleSelectConversation = (userId: string) => {
-  router.push({ query: { ...route.query, userId, conversationId: undefined } });
-};
+function handleSelectConversation(userId: string) {
+  void router.push({
+    query: { ...route.query, userId, conversationId: undefined },
+  });
+}
 
-const handleBack = () => {
-  router.push({
+function handleBack() {
+  void router.push({
     query: { ...route.query, userId: undefined, conversationId: undefined },
   });
-};
+}
 
 watch(
-  () => selectedUserId.value,
-  async (newId) => {
-    if (newId) {
-      await markConversationAsRead(newId);
-      await checkUser(newId);
-    }
+  selectedUserId,
+  () => {
+    chatRevision++;
+    peerInfo.value = undefined;
+    messages.value = [];
+    loading.value = false;
+    loadingOlder.value = false;
+    chatError.value = false;
+    moreMessages.value = false;
+    beforeId = undefined;
+    void fetchChat();
   },
+  { immediate: true },
 );
 
-const handleSendMessage = async (content: string) => {
-  if (!selectedUserId.value || selectedUserId.value === SYSTEM_CONVERSATION_ID)
-    return;
-
+async function handleSendMessage(content: string) {
+  const peer = selectedUserId.value;
+  if (!peer || peer === SYSTEM_CONVERSATION_ID || sendingMessage.value) return;
+  sendingMessage.value = true;
   try {
-    sendingMessage.value = true;
-    const newMessages = await createMessageApi({
-      receiverId: selectedUserId.value,
+    const row = await createMessageApi({
+      receiverId: peer,
       content,
       title: 'Chat Message',
       type: 1,
     });
-
-    if (newMessages) {
-      if (Array.isArray(newMessages)) {
-        messages.value.push(...newMessages);
-      } else {
-        messages.value.push(newMessages);
-      }
-      tempConversation.value = null;
-    }
-  } catch (error) {
-    console.error('Failed to send message:', error);
+    if (
+      selectedUserId.value === peer &&
+      !messages.value.some((item) => item.id === row.id)
+    )
+      messages.value.push(row);
+    const previous = summaries.value.find((item) => item.userId === peer);
+    summaries.value = [
+      {
+        userId: peer,
+        username:
+          previous?.username ||
+          (peerInfo.value?.userId === peer ? peerInfo.value.nickname : null),
+        avatarUrl:
+          previous?.avatarUrl ||
+          (peerInfo.value?.userId === peer ? peerInfo.value.avatar : null),
+        time: row.createTime,
+        lastMessage: row.content.slice(0, 180),
+        unreadCount: previous?.unreadCount || 0,
+      },
+      ...summaries.value.filter((item) => item.userId !== peer),
+    ];
   } finally {
     sendingMessage.value = false;
   }
-};
+}
 
-const handleDeleteMessage = (id: string) => {
-  messages.value = messages.value.filter((m) => m.id !== id);
-};
+function handleDeleteMessage(id: string) {
+  messages.value = messages.value.filter((row) => row.id !== id);
+  // 被删除的消息可能正是会话摘要所展示的最后一条。
+  void fetchConversations(true);
+}
 
-const handleDeleteConversation = async (userId: string) => {
-  const conversationMessages = messages.value.filter(
-    (m) => conversationIdOf(m) === userId,
-  );
-
+async function handleDeleteConversation(peer: string) {
+  if (deletingConversation.value) return;
+  deletingConversation.value = peer;
   try {
-    loading.value = true;
-    await Promise.all(
-      conversationMessages.map((msg) => deleteMessageApi(msg.id)),
-    );
-    messages.value = messages.value.filter(
-      (m) => conversationIdOf(m) !== userId,
-    );
-    if (selectedUserId.value === userId) {
+    await deleteConversationApi(peer);
+    summaries.value = summaries.value.filter((row) => row.userId !== peer);
+    if (selectedUserId.value === peer) {
+      chatRevision++;
+      messages.value = [];
       handleBack();
     }
+    void fetchConversations(true);
     antMessage.success('会话已删除');
-  } catch (error) {
-    console.error('Failed to delete conversation:', error);
-    antMessage.error('删除会话失败');
   } finally {
-    loading.value = false;
+    deletingConversation.value = '';
   }
-};
+}
 
 onMounted(() => {
-  fetchMessages();
+  void fetchConversations();
 });
 </script>
 
@@ -386,8 +267,13 @@ onMounted(() => {
       >
         <ConversationList
           :conversations="conversations"
+          :loading="conversationLoading"
+          :load-error="conversationError"
+          :has-more="moreConversations"
+          :deleting="deletingConversation"
           :selected-user-id="selectedUserId"
           @select="handleSelectConversation"
+          @load-more="fetchConversations()"
           @delete="handleDeleteConversation"
         />
       </div>
@@ -397,7 +283,11 @@ onMounted(() => {
       >
         <ChatWindow
           v-if="selectedUserId"
-          :messages="currentChatMessages"
+          :messages="messages"
+          :has-older="moreMessages"
+          :loading-older="loadingOlder"
+          :load-error="chatError"
+          :target-avatar="selectedSummary?.avatarUrl || peerInfo?.avatar"
           :target-id="selectedUserId"
           :target-name="selectedConversationName"
           :my-id="myId"
@@ -407,6 +297,8 @@ onMounted(() => {
           :is-mobile="isMobile"
           :read-only="selectedUserId === SYSTEM_CONVERSATION_ID"
           @send="handleSendMessage"
+          @load-older="fetchChat(true)"
+          @retry="fetchChat(moreMessages)"
           @delete="handleDeleteMessage"
           @back="handleBack"
         />

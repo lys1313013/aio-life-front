@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Message } from '#/api/core/message';
 
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { formatDate, formatDateTime } from '@vben/utils';
 
@@ -12,13 +12,17 @@ import { deleteMessageApi } from '#/api/core/message';
 import { AppModal as AModal } from '#/components/app-modal';
 
 const props = defineProps<{
+  hasOlder?: boolean;
   isMobile?: boolean;
+  loadError?: boolean;
   loading?: boolean;
+  loadingOlder?: boolean;
   messages: Message[];
   myAvatar?: string;
   myId: string;
   readOnly?: boolean;
   sending?: boolean;
+  targetAvatar?: string;
   targetId: string;
   targetName?: string;
 }>();
@@ -27,6 +31,8 @@ const emit = defineEmits<{
   (e: 'send', content: string): void;
   (e: 'delete', id: string): void;
   (e: 'back'): void;
+  (e: 'load-older'): void;
+  (e: 'retry'): void;
 }>();
 
 const inputContent = ref('');
@@ -84,13 +90,28 @@ onUnmounted(() => {
   document.removeEventListener('click', closeContextMenu);
 });
 
-// 首次挂载、切换会话及 loading 结束后，等待消息 DOM 更新再定位到底部。
+let previousHeight: number | undefined;
+function loadOlder() {
+  previousHeight = listRef.value?.scrollHeight;
+  emit('load-older');
+}
 watch(
-  [listRef, () => props.targetId, () => props.loading, () => props.messages],
-  () => {
-    if (!props.loading && listRef.value) {
-      listRef.value.scrollTop = listRef.value.scrollHeight;
+  [
+    listRef,
+    () => props.targetId,
+    () => props.loading,
+    () => props.messages,
+    () => props.loadingOlder,
+  ],
+  async ([list, target], [, previousTarget]) => {
+    if (!list || props.loading || props.loadingOlder) return;
+    await nextTick();
+    if (previousHeight !== undefined && target === previousTarget) {
+      list.scrollTop += list.scrollHeight - previousHeight;
+    } else {
+      list.scrollTop = list.scrollHeight;
     }
+    previousHeight = undefined;
   },
   { deep: true, flush: 'post' },
 );
@@ -122,6 +143,15 @@ watch(
 
     <!-- Messages -->
     <div ref="listRef" class="flex-1 overflow-y-auto bg-muted p-6">
+      <div v-if="hasOlder || loadError" class="flex justify-center">
+        <Button
+          type="text"
+          :loading="loadingOlder"
+          @click="hasOlder ? loadOlder() : emit('retry')"
+        >
+          {{ loadError ? '重试' : '查看更早消息' }}
+        </Button>
+      </div>
       <div v-if="loading" class="flex justify-center py-4">
         <span class="text-muted-foreground">Loading...</span>
       </div>
@@ -146,7 +176,7 @@ watch(
           <!-- Other User Avatar -->
           <Avatar
             v-if="String(msg.senderId) !== String(myId)"
-            :src="msg.avatar"
+            :src="targetAvatar || msg.avatar"
             class="mr-3 mt-1 flex-shrink-0"
             :size="40"
           >

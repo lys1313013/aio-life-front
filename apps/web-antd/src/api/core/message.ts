@@ -1,4 +1,4 @@
-import type { ApiRequests } from '#/api/payload';
+import type { ApiRequests, MessageConversationVO } from '#/api/payload';
 
 import { pickPayload } from '#/api/payload';
 import { requestClient } from '#/api/request';
@@ -21,13 +21,37 @@ export function isSystemMessage(message: Pick<Message, 'type'>): boolean {
   return message.type === 0;
 }
 
-export async function getMessageListApi(params?: { isRead?: boolean }) {
-  return requestClient.get<Message[]>('/message/list', { params });
+export async function getConversationsApi(page: number, pageSize: number) {
+  return requestClient.get<{
+    items: MessageConversationVO[];
+    total: null | number;
+  }>('/message/conversations', { params: { page, pageSize } });
+}
+
+const conversationPath = (peer: string) =>
+  `/message/conversations/${encodeURIComponent(peer)}`;
+
+export async function getConversationMessagesApi(
+  peer: string,
+  pageSize: number,
+  beforeId?: string,
+) {
+  return requestClient.get<Message[]>(`${conversationPath(peer)}/messages`, {
+    params: { beforeId, pageSize },
+  });
+}
+
+export async function markConversationReadApi(peer: string) {
+  return requestClient.put(`${conversationPath(peer)}/read`);
+}
+
+export async function deleteConversationApi(peer: string) {
+  return requestClient.delete(conversationPath(peer));
 }
 
 export async function getMessagePageApi(params: {
-  page: number;
   isRead?: boolean;
+  page: number;
   pageSize: number;
 }) {
   return requestClient.get<MessagePageResult>('/message/page', { params });

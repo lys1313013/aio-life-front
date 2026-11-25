@@ -2821,6 +2821,7 @@ const queryFields: Record<string, string[]> = {
   '/taskColumn/query': ['page', 'pageSize'],
   '/tasks': ['page', 'pageSize', 'taskId'],
   '/taskDetails': ['taskId'],
+  '/taskDetails/batch': ['taskIds'],
   '/taskDetails/watched': [],
   '/thought/query': [
     'content',
@@ -2879,6 +2880,8 @@ const queryFields: Record<string, string[]> = {
   '/message/admin/list': ['page', 'pageSize', 'userId'],
   '/message/list': ['isRead'],
   '/message/page': ['isRead', 'page', 'pageSize'],
+  '/message/conversations': ['page', 'pageSize'],
+  '/message/conversations/{peer}/messages': ['beforeId', 'pageSize'],
   '/message/unread-count': [],
   '/auth/qr-login/{id}/status': [],
   '/user-center/list': ['keyword', 'page', 'pageSize'],
@@ -4145,7 +4148,14 @@ export interface DeviceVO {
 }
 
 export interface DocumentationVO_Catalog {
-  modules: Array<unknown> | null;
+  modules: Array<DocumentationVO_Module> | null;
+  operationCount: number;
+}
+
+export interface DocumentationVO_Module {
+  id: null | string;
+  name: null | string;
+  description: null | string;
   operationCount: number;
 }
 
@@ -4158,10 +4168,18 @@ export interface DocumentationVO_OperationDetail {
 }
 
 export interface DocumentationVO_OperationPage {
-  items: Array<unknown> | null;
-  total: string;
+  items: Array<DocumentationVO_OperationSummary> | null;
+  total: number;
   page: number;
   pageSize: number;
+}
+
+export interface DocumentationVO_OperationSummary {
+  operationId: null | string;
+  name: null | string;
+  method: null | string;
+  path: null | string;
+  modules: Array<string> | null;
 }
 
 export interface DoubanAccountVO {
@@ -4779,6 +4797,15 @@ export interface MenuVisualsVO {
   cards: null | Record<string, unknown>;
 }
 
+export interface MessageConversationVO {
+  userId: null | string;
+  username: null | string;
+  avatarUrl: null | string;
+  lastMessage: null | string;
+  time: null | string;
+  unreadCount: number;
+}
+
 export interface MessageVO {
   id?: string;
   senderId?: string;
@@ -4955,6 +4982,7 @@ export interface QueryAccessModels_TokenDecision {
   role: null | string;
   scopes: null | unknown;
   expiresAt: string;
+  allowedDatasets: Array<string> | null;
 }
 
 export interface QuerySchemaVO {
@@ -5346,7 +5374,7 @@ export interface UserMenuPreferenceVO {
 export interface UserMenuPreferenceVO_Menu {
   id: null | string;
   title: null | string;
-  children: Array<unknown> | null;
+  children: Array<UserMenuPreferenceVO_Menu> | null;
 }
 
 export interface UserThirdPartyAccountVO {

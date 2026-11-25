@@ -5,6 +5,7 @@ import { formatDate } from '@vben/utils';
 
 import {
   Avatar,
+  Button,
   List,
   ListItem,
   ListItemMeta,
@@ -24,12 +25,17 @@ interface Conversation {
 
 const props = defineProps<{
   conversations: Conversation[];
+  deleting?: string;
+  hasMore?: boolean;
+  loadError?: boolean;
+  loading?: boolean;
   selectedUserId?: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'select', userId: string): void;
   (e: 'delete', userId: string): void;
+  (e: 'load-more'): void;
 }>();
 
 const handleSelect = (userId: string) => {
@@ -95,7 +101,7 @@ watch(
     <div class="border-b border-border p-4 text-lg font-medium text-foreground">
       我的消息
     </div>
-    <div class="flex-1 overflow-y-auto">
+    <div class="min-h-0 flex-1 overflow-y-auto">
       <List item-layout="horizontal" :data-source="conversations">
         <template #renderItem="{ item }">
           <ListItem
@@ -103,7 +109,7 @@ watch(
             class="cursor-pointer !py-3 px-4 transition-colors hover:bg-accent"
             :class="{ 'bg-accent': selectedUserId === item.userId }"
             @click="handleSelect(item.userId)"
-            @contextmenu="handleContextMenu($event, item.userId)"
+            @contextmenu="!deleting && handleContextMenu($event, item.userId)"
           >
             <ListItemMeta>
               <template #avatar>
@@ -140,6 +146,11 @@ watch(
           </ListItem>
         </template>
       </List>
+      <div v-if="hasMore || loadError" class="p-2 text-center">
+        <Button type="text" :loading="loading" @click="emit('load-more')">
+          {{ loadError ? '重试' : '更多会话' }}
+        </Button>
+      </div>
     </div>
 
     <!-- Context Menu -->

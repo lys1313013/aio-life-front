@@ -7,6 +7,7 @@ import MessagePage from './index.vue';
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   getMessages: vi.fn(),
+  getConversations: vi.fn(),
   getUser: vi.fn(),
   isMobile: { value: false },
   markRead: vi.fn(),
@@ -30,10 +31,11 @@ vi.mock('ant-design-vue', () => ({
 }));
 vi.mock('#/api/core/message', () => ({
   createMessageApi: mocks.create,
-  deleteMessageApi: mocks.remove,
-  getMessageListApi: mocks.getMessages,
+  deleteConversationApi: mocks.remove,
+  getConversationMessagesApi: mocks.getMessages,
+  getConversationsApi: mocks.getConversations,
   isSystemMessage: (message: { type?: number }) => message.type === 0,
-  markAsReadApi: mocks.markRead,
+  markConversationReadApi: mocks.markRead,
   SYSTEM_CONVERSATION_ID: 'system',
 }));
 vi.mock('#/api/core/user', () => ({ getUserBasicInfoApi: mocks.getUser }));
@@ -59,6 +61,10 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.query = {};
   mocks.isMobile.value = false;
+  mocks.getConversations.mockResolvedValue({
+    items: [{ userId: '2', username: '好友', unreadCount: 1 }],
+    total: null,
+  });
   mocks.getMessages.mockResolvedValue([
     {
       id: '10',
@@ -90,6 +96,7 @@ describe('普通消息中心', () => {
           unreadCount: 1,
         }),
       ]);
+      expect(mocks.getMessages).not.toHaveBeenCalled();
       expect(wrapper.findComponent({ name: 'ChatWindow' }).exists()).toBe(
         false,
       );
@@ -117,7 +124,7 @@ describe('普通消息中心', () => {
     expect(wrapper.findComponent({ name: 'ConversationList' }).exists()).toBe(
       false,
     );
-    expect(mocks.markRead).toHaveBeenCalledWith('10');
+    expect(mocks.markRead).toHaveBeenCalledWith('2');
     const chat = wrapper.findComponent({ name: 'ChatWindow' });
     chat.vm.$emit('send', '收到');
     await flushPromises();
@@ -136,6 +143,17 @@ describe('普通消息中心', () => {
     });
   });
 
+  it('删除会话只发送一次删除请求', async () => {
+    mocks.remove.mockResolvedValue(undefined);
+    const wrapper = mount(MessagePage);
+    await flushPromises();
+    wrapper.findComponent({ name: 'ConversationList' }).vm.$emit('delete', '2');
+    await flushPromises();
+    expect(mocks.remove).toHaveBeenCalledOnce();
+    expect(mocks.remove).toHaveBeenCalledWith('2');
+    expect(mocks.getMessages).not.toHaveBeenCalled();
+  });
+
   it('系统通知归入固定会话且不可发送', async () => {
     mocks.query = { userId: 'system' };
     mocks.getMessages.mockResolvedValue([
@@ -152,7 +170,7 @@ describe('普通消息中心', () => {
     const wrapper = mount(MessagePage);
     await flushPromises();
 
-    expect(mocks.markRead).toHaveBeenCalledWith('20');
+    expect(mocks.markRead).toHaveBeenCalledWith('system');
     expect(mocks.getUser).not.toHaveBeenCalled();
     const chat = wrapper.findComponent({ name: 'ChatWindow' });
     expect(chat.props('readOnly')).toBe(true);
