@@ -781,7 +781,7 @@ export interface QuickNavSaveReq_Item {
 
 export interface ReadRecordCreateReq {
   title: string;
-  type: number;
+  type?: null | number;
   author?: null | string;
   url?: null | string;
   fileId?: null | string;
